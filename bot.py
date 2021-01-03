@@ -16,6 +16,7 @@ bot = commands.Bot(command_prefix='!', intents=intents, description='Bot to move
 DAY_CATEGORY = 'BotC - Daytime'
 NIGHT_CATEGORY = 'BotC - Nighttime'
 TOWN_SQUARE = 'Town Square'
+CONTROL_CHANNEL = 'botc_mover'
 
 def getInfo(ctx):
     guild = ctx.guild
@@ -37,7 +38,7 @@ async def on_ready():
 
 @bot.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
 async def on_night(ctx):
-    if ctx.channel.name != 'botc_mover':
+    if ctx.channel.name != CONTROL_CHANNEL:
         return
 
     await ctx.send('Moving users to Cottages!')
@@ -61,7 +62,7 @@ async def on_night(ctx):
 
 @bot.command(name='day', help='Move users from Cottages back to Town Square')
 async def on_night(ctx):
-    if ctx.channel.name != 'botc_mover':
+    if ctx.channel.name != CONTROL_CHANNEL:
         return
 
     await ctx.send('Moving users from Cottages to Town Square.')
@@ -80,7 +81,7 @@ async def on_night(ctx):
 
 @bot.command(name='vote', help='Move users from other channels back to Town Square')
 async def on_night(ctx):
-    if ctx.channel.name != 'botc_mover':
+    if ctx.channel.name != CONTROL_CHANNEL:
         return
 
     await ctx.send('Moving users from other areas to Town Square.')
