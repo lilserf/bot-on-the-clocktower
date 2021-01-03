@@ -11,7 +11,11 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents().default()
 intents.members = True
 
-bot = commands.Bot(command_prefix='!', intents=intents, description='Bot to move users between BotC channels')
+help_command = commands.DefaultHelpCommand(
+    no_category = 'Commands'
+)
+
+bot = commands.Bot(command_prefix='!', intents=intents, description='Bot to move users between BotC channels', help_command=help_command)
 
 DAY_CATEGORY = 'BotC - Daytime'
 NIGHT_CATEGORY = 'BotC - Nighttime'
@@ -49,6 +53,7 @@ async def on_night(ctx):
     # get list of users in town square   
     users = (info['townSquare'].members)
     cottages = list(info['nightChannels'])
+    cottages.sort(key=lambda x: x.position)
 
     # pair up users with cottages
     pairs = list(map(lambda x, y: (x,y), users, cottages))
