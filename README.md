@@ -1,2 +1,26 @@
 # botc_mover
-Discord bot for moving people
+Discord bot for moving people to run a game of Blood on the Clocktower
+
+## Assumptions
+
+This bot is made for an extremely specific use case and makes assumptions:
+
+1. Voice channel categories exist called "BotC - Daytime" and "BotC - Nighttime"
+2. The Nighttime category should contain enough channels for each user in your game to get their own channel
+3. A channel exists called "Town Square" (probably in the Daytime category but that's not required)
+4. A role exists called "BotC Current Storyteller"
+    * The intent here is that this role is the only one that can see the channels in the Nighttime category - players will be sent to a channel but not be able to see the others, so that they can't cheat and see where the storyteller is going
+
+## Usage
+
+### `!night`
+
+Sends all users in the Town Square channel to individual channels within the Nighttime category. Also grants the `BotC Current Storyteller` role to the user who sent the command and removes it from all other users being moved.
+
+### `!day`
+
+Brings all users from the nighttime channels back to the Town Square
+
+### `!vote`
+
+Brings all users from other daytime channels back to the Town Square for nominations to begin
