@@ -34,6 +34,8 @@ def getInfo(ctx):
     d['dayChannels'] = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  d['dayCategory'].id)
     d['nightChannels'] = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id == d['nightCategory'].id)
 
+    d['storytellerRole'] = discord.utils.find(lambda r: r.name=='BotC Current Storyteller', guild.roles)
+
     return d
 
 @bot.event
@@ -50,6 +52,11 @@ async def on_night(ctx):
     # get channels we care about
     info = getInfo(ctx)
 
+    # grant the storyteller the Current Storyteller role
+    storyteller = ctx.message.author
+    role = info['storytellerRole']
+    await storyteller.add_roles(role)
+
     # get list of users in town square   
     users = (info['townSquare'].members)
     cottages = list(info['nightChannels'])
@@ -61,6 +68,9 @@ async def on_night(ctx):
     # move each user to a cottage
     for (user, cottage) in sorted(pairs, key=lambda x: x[0].name):
         print("Moving %s to %s %d" % (user.name, cottage.name, cottage.id))
+        # remove the Current Storyteller role from other folks we're moving
+        if user.id != storyteller.id:
+            await user.remove_roles(role)
         await user.move_to(cottage)
 
 
