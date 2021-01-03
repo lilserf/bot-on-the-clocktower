@@ -13,14 +13,18 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents, description='Bot to move users between BotC channels')
 
+DAY_CATEGORY = 'BotC - Daytime'
+NIGHT_CATEGORY = 'BotC - Nighttime'
+TOWN_SQUARE = 'Town Square'
+
 def getInfo(ctx):
     guild = ctx.guild
 
     d = dict()
 
-    d['dayCategory'] = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == 'BotC - Daytime', guild.channels)
-    d['nightCategory'] = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == 'BotC - Nighttime', guild.channels)
-    d['townSquare'] = discord.utils.find(lambda c: c.type == discord.ChannelType.voice and c.name == 'Town Square', guild.channels)
+    d['dayCategory'] = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == DAY_CATEGORY, guild.channels)
+    d['nightCategory'] = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == NIGHT_CATEGORY, guild.channels)
+    d['townSquare'] = discord.utils.find(lambda c: c.type == discord.ChannelType.voice and c.name == TOWN_SQUARE, guild.channels)
 
     d['dayChannels'] = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  d['dayCategory'].id)
     d['nightChannels'] = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id == d['nightCategory'].id)
