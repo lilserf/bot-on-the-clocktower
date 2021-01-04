@@ -47,71 +47,83 @@ async def on_night(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
 
-    await ctx.send('Moving users to Cottages!')
-    
-    # get channels we care about
-    info = getInfo(ctx)
+    try:
 
-    # grant the storyteller the Current Storyteller role
-    storyteller = ctx.message.author
-    role = info['storytellerRole']
-    await storyteller.add_roles(role)
+        await ctx.send('Moving users to Cottages!')
+        
+        # get channels we care about
+        info = getInfo(ctx)
 
-    # get list of users in town square   
-    users = (info['townSquare'].members)
-    cottages = list(info['nightChannels'])
-    cottages.sort(key=lambda x: x.position)
+        # grant the storyteller the Current Storyteller role
+        storyteller = ctx.message.author
+        role = info['storytellerRole']
+        await storyteller.add_roles(role)
 
-    # pair up users with cottages
-    pairs = list(map(lambda x, y: (x,y), users, cottages))
+        # get list of users in town square   
+        users = (info['townSquare'].members)
+        cottages = list(info['nightChannels'])
+        cottages.sort(key=lambda x: x.position)
 
-    # move each user to a cottage
-    for (user, cottage) in sorted(pairs, key=lambda x: x[0].name):
-        print("Moving %s to %s %d" % (user.name, cottage.name, cottage.id))
-        # remove the Current Storyteller role from other folks we're moving
-        if user.id != storyteller.id:
-            await user.remove_roles(role)
-        await user.move_to(cottage)
+        # pair up users with cottages
+        pairs = list(map(lambda x, y: (x,y), users, cottages))
 
+        # move each user to a cottage
+        for (user, cottage) in sorted(pairs, key=lambda x: x[0].name):
+            print("Moving %s to %s %d" % (user.name, cottage.name, cottage.id))
+            # remove the Current Storyteller role from other folks we're moving
+            if user.id != storyteller.id:
+                await user.remove_roles(role)
+            await user.move_to(cottage)
+
+    except Exception as ex:
+        await ctx.send('`' + repr(ex) + '`')
 
 
 @bot.command(name='day', help='Move users from Cottages back to Town Square')
-async def on_night(ctx):
+async def on_day(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
 
-    await ctx.send('Moving users from Cottages to Town Square.')
+    try:
+        await ctx.send('Moving users from Cottages to Town Square.')
 
-    info = getInfo(ctx)
+        info = getInfo(ctx)
 
-    # get users in night channels
-    users = list()
-    for c in info['nightChannels']:
-        users.extend(c.members)
+        # get users in night channels
+        users = list()
+        for c in info['nightChannels']:
+            users.extend(c.members)
 
-    # move them to Town Square
-    for user in users:
-        await user.move_to(info['townSquare'])
+        # move them to Town Square
+        for user in users:
+            await user.move_to(info['townSquare'])
+
+    except Exception as ex:
+        await ctx.send('`' + repr(ex) + '`')
 
 
 @bot.command(name='vote', help='Move users from other channels back to Town Square')
-async def on_night(ctx):
+async def on_vote(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
 
-    await ctx.send('Moving users from other areas to Town Square.')
+    try:
+        await ctx.send('Moving users from other areas to Town Square.')
 
-    info = getInfo(ctx)
+        info = getInfo(ctx)
+        
+        # get users in day channels other than Town Square
+        users = list()
+        for c in info['dayChannels']:
+            if c != info['townSquare']:
+                users.extend(c.members)
+
+        # move them to Town Square
+        for user in users:
+            await user.move_to(info['townSquare'])
     
-    # get users in day channels other than Town Square
-    users = list()
-    for c in info['dayChannels']:
-        if c != info['townSquare']:
-            users.extend(c.members)
-
-    # move them to Town Square
-    for user in users:
-        await user.move_to(info['townSquare'])
+    except Exception as ex:
+        await ctx.send('`' + repr(ex) + '`')
 
 
 bot.run(TOKEN)
