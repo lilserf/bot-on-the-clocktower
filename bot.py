@@ -45,10 +45,10 @@ async def on_ready():
 def getClosestUser(userlist, name):
     for u in userlist:
 
-        if u.name.lower() == name.lower():
+        if u.display_name.lower() == name.lower():
             return u
         else:
-            splits = u.name.split(' ')
+            splits = u.display_name.split(' ')
 
             if splits[0].lower() == name.lower():
                 return u
@@ -77,15 +77,15 @@ async def onEvil(ctx):
         minionUsers = list(map(lambda x: getClosestUser(users, x), minions))
         
 
-        demonMsg = f"{demonUser.name}: You are the **demon**. Your minions are: "
+        demonMsg = f"{demonUser.display_name}: You are the **demon**. Your minions are: "
         for m in minionUsers:
-            demonMsg += m.name + " "
+            demonMsg += m.display_name + " "
         await demonUser.send(demonMsg)
 
         minionMsg = "{}: You are a **minion**. Your demon is {}"
 
         for m in minionUsers:
-            formattedMsg = minionMsg.format(m.name, demonUser.name)
+            formattedMsg = minionMsg.format(m.display_name, demonUser.display_name)
             await m.send(formattedMsg)
 
         await ctx.message.delete()
