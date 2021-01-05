@@ -24,3 +24,25 @@ Brings all users from the nighttime channels back to the Town Square
 ### `!vote`
 
 Brings all users from other daytime channels back to the Town Square for nominations to begin
+
+### `!evil <demon> <minion> <minion> <minion>...`
+
+Sends DMs to the evil players informing them of their teammates.
+
+Example usage:
+
+> `!evil Alice Bob Carol`
+
+> `!evil Alice "Bob G" "Carol Anne Smith"`
+
+The demon gets a message reading:
+
+> Alice: You are the **demon**. Your minions are: Bob Carol
+
+Minions get a message reading:
+
+> Bob: You are a **minion**. Your demon is Alice
+
+### `!lunatic <demon> <minion> <minion> <minion>...`
+
+Sends a DM to the Lunatic identical to those sent by `!evil` telling them who their fake minions are.
