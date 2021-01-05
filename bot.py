@@ -77,18 +77,19 @@ async def onEvil(ctx):
         minionUsers = list(map(lambda x: getClosestUser(users, x), minions))
         
 
-        demonMsg = f"{demonUser.name}: You are the demon. Your minions are: "
+        demonMsg = f"{demonUser.name}: You are the **demon**. Your minions are: "
         for m in minionUsers:
             demonMsg += m.name + " "
         await demonUser.send(demonMsg)
 
-        minionMsg = "{}: You are a minion. Your demon is {}"
+        minionMsg = "{}: You are a **minion**. Your demon is {}"
 
         for m in minionUsers:
             formattedMsg = minionMsg.format(m.name, demonUser.name)
             await m.send(formattedMsg)
 
         await ctx.message.delete()
+        await ctx.send("The Evil team has been informed...")
         
     except Exception as ex:
         await ctx.send('`' + repr(ex) + '`')
