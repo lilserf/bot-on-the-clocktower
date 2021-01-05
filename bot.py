@@ -102,7 +102,7 @@ async def sendDemonMessage(demonUser, minionUsers):
 
 # Command to send fake evil info to the Lunatic
 # Works the same as !evil, but doesn't message the minions
-@bot.command(name='lunatic', help='Send fake evil info to the Lunatic. Format is `!evil <Lunatic> <fake minion> <fake minion> <fake minion>`')
+@bot.command(name='lunatic', help='Send fake evil info to the Lunatic. Format is `!lunatic <Lunatic> <fake minion> <fake minion> <fake minion>`')
 async def onLunatic(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
