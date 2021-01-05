@@ -42,8 +42,59 @@ def getInfo(ctx):
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
+def getClosestUser(userlist, name):
+    for u in userlist:
+
+        if u.name.lower() == name.lower():
+            return u
+        else:
+            splits = u.name.split(' ')
+
+            if splits[0].lower() == name.lower():
+                return u
+            else:
+                if splits[0].lower().startswith(name.lower()):
+                    return u
+    
+    return None
+
+@bot.command(name='evil', help='Send evil info to evil team. Format is `!evil <demon> <minion> <minion> <minion>`')
+async def onEvil(ctx):
+    if ctx.channel.name != CONTROL_CHANNEL:
+        return
+
+    try:
+        info = getInfo(ctx)
+
+        users = info['townSquare'].members
+
+        params = ctx.message.content.split(' ')
+
+        demon = params[1]
+        minions = params[2:]
+
+        demonUser = getClosestUser(users, demon)
+        minionUsers = list(map(lambda x: getClosestUser(users, x), minions))
+        
+
+        demonMsg = f"{demonUser.name}: You are the demon. Your minions are: "
+        for m in minionUsers:
+            demonMsg += m.name + " "
+        await demonUser.send(demonMsg)
+
+        minionMsg = "{}: You are a minion. Your demon is {}"
+
+        for m in minionUsers:
+            formattedMsg = minionMsg.format(m.name, demonUser.name)
+            await m.send(formattedMsg)
+
+        await ctx.message.delete()
+        
+    except Exception as ex:
+        await ctx.send('`' + repr(ex) + '`')
+
 @bot.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
-async def on_night(ctx):
+async def onNight(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
 
@@ -60,7 +111,7 @@ async def on_night(ctx):
         await storyteller.add_roles(role)
 
         # get list of users in town square   
-        users = (info['townSquare'].members)
+        users = info['townSquare'].members
         cottages = list(info['nightChannels'])
         cottages.sort(key=lambda x: x.position)
 
@@ -80,7 +131,7 @@ async def on_night(ctx):
 
 
 @bot.command(name='day', help='Move users from Cottages back to Town Square')
-async def on_day(ctx):
+async def onDay(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
 
@@ -103,7 +154,7 @@ async def on_day(ctx):
 
 
 @bot.command(name='vote', help='Move users from other channels back to Town Square')
-async def on_vote(ctx):
+async def onVote(ctx):
     if ctx.channel.name != CONTROL_CHANNEL:
         return
 
