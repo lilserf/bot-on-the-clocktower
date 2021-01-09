@@ -22,6 +22,8 @@ DAY_CATEGORY = 'BotC - Daytime'
 NIGHT_CATEGORY = 'BotC - Nighttime'
 TOWN_SQUARE = 'Town Square'
 CONTROL_CHANNEL = 'botc_mover'
+CURRENT_STORYTELLER = 'BotC Current Storyteller'
+CURRENT_GAME = 'BotC Current Game'
 
 # Grab a bunch of common info we need from this particular server,
 # based on the assumptions we make about servers
@@ -37,13 +39,63 @@ def getInfo(ctx):
     d['dayChannels'] = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  d['dayCategory'].id)
     d['nightChannels'] = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id == d['nightCategory'].id)
 
-    d['storytellerRole'] = discord.utils.find(lambda r: r.name=='BotC Current Storyteller', guild.roles)
+    d['storytellerRole'] = discord.utils.find(lambda r: r.name==CURRENT_STORYTELLER, guild.roles)
+    d['currentPlayerRole'] = discord.utils.find(lambda r: r.name==CURRENT_GAME, guild.roles)
 
     return d
 
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
+
+# Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
+@bot.command(name='currgame', help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
+async def onCurrGame(ctx):
+    if ctx.channel.name != CONTROL_CHANNEL:
+        return
+
+    try:
+        guild = ctx.guild
+
+        # find all guild members with the Current Game role
+        prevPlayers = set()
+        for m in guild.members:
+            for r in m.roles:
+                if r.name == CURRENT_GAME:
+                    prevPlayers.add(m)
+
+        info = getInfo(ctx)
+        role = info['currentPlayerRole']
+
+        # find all users currently in the channels we play in
+        currPlayers = set()
+        for c in info['dayChannels']:
+            currPlayers.update(c.members)
+        for c in info['nightChannels']:
+            currPlayers.update(c.members)
+
+        # find additions and deletions by diffing the sets
+        remove = prevPlayers - currPlayers
+        add = currPlayers - prevPlayers
+
+        # remove any stale players
+        if len(remove) > 0:
+            removeMsg = f"Removed {role.name} role from: "
+            for m in remove:
+                removeMsg += m.display_name + " "
+                await m.remove_roles(role)
+            await ctx.send(removeMsg)
+
+        # add any new players
+        if len(add) > 0:
+            addMsg = f"Added {role.name} role to: "
+            for m in add:
+                addMsg += m.display_name + " "
+                await m.add_roles(role)
+            await ctx.send(addMsg)
+
+    except Exception as ex:
+        await ctx.send('`' + repr(ex) + '`')
 
 # Given a list of users and a name string, find the user with the closest name
 def getClosestUser(userlist, name):
@@ -154,6 +206,8 @@ async def onNight(ctx):
         return
 
     try:
+        # do role switching for active game first!
+        await onCurrGame(ctx)
 
         await ctx.send('Moving users to Cottages!')
         
