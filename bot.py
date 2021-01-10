@@ -95,7 +95,7 @@ async def onCurrGame(ctx):
             await ctx.send(addMsg)
 
     except Exception as ex:
-        await ctx.send('`' + repr(ex) + '`')
+        await sendErrorToAuthor(ctx, repr(ex))
 
 # Given a list of users and a name string, find the user with the closest name
 def getClosestUser(userlist, name):
@@ -116,6 +116,9 @@ def getClosestUser(userlist, name):
     
     return None
 
+# Helper to send a message to the author of the command about what they did wrong
+async def sendErrorToAuthor(ctx, error):
+    await ctx.author.send(f"{error} (from message `{ctx.message.content}`)")
 
 # Common code for parsing !evil and !lunatic commands
 async def processMessage(ctx, users):
@@ -135,12 +138,12 @@ async def processMessage(ctx, users):
 
     # Error messages for users not found
     if demonUser is None:
-        await ctx.send(f"Unknown user '{demon}'.")
+        await sendErrorToAuthor(ctx, f"Unknown user '{demon}'.")
         return (False, None, None)
 
     for (i, m) in enumerate(minionUsers):
         if m is None:
-            await ctx.send(f"Unknown user '{minions[i]}'")
+            await sendErrorToAuthor(ctx, f"Unknown user '{minions[i]}'.")
             return (False, None, None)
 
     return (True, demonUser, minionUsers)
@@ -148,8 +151,8 @@ async def processMessage(ctx, users):
 # Send a message to the demon
 async def sendDemonMessage(demonUser, minionUsers):
     demonMsg = f"{demonUser.display_name}: You are the **demon**. Your minions are: "
-    for m in minionUsers:
-        demonMsg += m.display_name + " "
+    minionNames = list(map(lambda x: x.display_name, minionUsers))
+    demonMsg += ', '.join(minionNames)
     await demonUser.send(demonMsg)
 
 # Command to send fake evil info to the Lunatic
@@ -170,7 +173,7 @@ async def onLunatic(ctx):
         await sendDemonMessage(demonUser, minionUsers)
 
     except Exception as ex:
-        await ctx.send('`' + repr(ex) + '`')
+        await sendErrorToAuthor(ctx, repr(ex))
 
 # Command to send demon/minion info to the Demon and Minions
 @bot.command(name='evil', help='Send evil info to evil team. Format is `!evil <demon> <minion> <minion> <minion>`')
@@ -188,16 +191,20 @@ async def onEvil(ctx):
 
         await sendDemonMessage(demonUser, minionUsers)
 
-        minionMsg = "{}: You are a **minion**. Your demon is {}"
+        minionMsg = "{}: You are a **minion**. Your demon is: {}. Your fellow minions are: {}."
 
         for m in minionUsers:
-            formattedMsg = minionMsg.format(m.display_name, demonUser.display_name)
+            otherMinions = list(map(lambda x: x.display_name, minionUsers))
+            otherMinions.remove(m.display_name)
+
+            otherMinionsMsg = ', '.join(otherMinions)
+            formattedMsg = minionMsg.format(m.display_name, demonUser.display_name, otherMinionsMsg)
             await m.send(formattedMsg)
 
         await ctx.send("The Evil team has been informed...")
-        
+            
     except Exception as ex:
-        await ctx.send('`' + repr(ex) + '`')
+        await sendErrorToAuthor(ctx, repr(ex))
 
 # Move users to the night cottages
 @bot.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
@@ -236,7 +243,7 @@ async def onNight(ctx):
             await user.move_to(cottage)
 
     except Exception as ex:
-        await ctx.send('`' + repr(ex) + '`')
+        await sendErrorToAuthor(ctx, repr(ex))
 
 # Move users from night Cottages back to Town Square
 @bot.command(name='day', help='Move users from Cottages back to Town Square')
@@ -259,7 +266,7 @@ async def onDay(ctx):
             await user.move_to(info['townSquare'])
 
     except Exception as ex:
-        await ctx.send('`' + repr(ex) + '`')
+        await sendErrorToAuthor(ctx, repr(ex))
 
 # Move users from other daytime channels back to Town Square
 @bot.command(name='vote', help='Move users from other channels back to Town Square')
@@ -283,7 +290,7 @@ async def onVote(ctx):
             await user.move_to(info['townSquare'])
     
     except Exception as ex:
-        await ctx.send('`' + repr(ex) + '`')
+        await sendErrorToAuthor(ctx, repr(ex))
 
 
 bot.run(TOKEN)
