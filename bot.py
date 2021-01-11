@@ -81,16 +81,16 @@ async def onCurrGame(ctx):
         # remove any stale players
         if len(remove) > 0:
             removeMsg = f"Removed {role.name} role from: "
+            removeMsg += ', '.join(remove)
             for m in remove:
-                removeMsg += m.display_name + " "
                 await m.remove_roles(role)
             await ctx.send(removeMsg)
 
         # add any new players
         if len(add) > 0:
             addMsg = f"Added {role.name} role to: "
+            addMsg += ', '.join(add)
             for m in add:
-                addMsg += m.display_name + " "
                 await m.add_roles(role)
             await ctx.send(addMsg)
 
