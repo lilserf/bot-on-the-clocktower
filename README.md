@@ -1,6 +1,10 @@
 # botc_mover
 Discord bot for moving people to run a game of Blood on the Clocktower
 
+## Inviting this bot
+
+https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=285223936&scope=bot
+
 ## Assumptions
 
 This bot is made for an extremely specific use case and makes assumptions:
@@ -19,11 +23,15 @@ Sends all users in the Town Square channel to individual channels within the Nig
 
 ### `!day`
 
-Brings all users from the nighttime channels back to the Town Square
+Brings all users from the nighttime channels back to the Town Square.
 
 ### `!vote`
 
-Brings all users from other daytime channels back to the Town Square for nominations to begin
+Brings all users from other daytime channels back to the Town Square for nominations to begin.
+
+### `!currgame`
+
+Sets the correct roles on all users currently in the BotC categories. Useful if a late arrival shows up and it's not time for `!night` (which also runs this) yet.
 
 ### `!evil <demon> <minion> <minion> <minion>...`
 
@@ -37,11 +45,11 @@ Example usage:
 
 The demon gets a message reading:
 
-> Alice: You are the **demon**. Your minions are: Bob Carol
+> Alice: You are the **demon**. Your minions are: Bob, Carol
 
 Minions get a message reading:
 
-> Bob: You are a **minion**. Your demon is Alice
+> Bob: You are a **minion**. Your demon is: Alice. Your fellow minions are: Carol
 
 ### `!lunatic <demon> <minion> <minion> <minion>...`
 
