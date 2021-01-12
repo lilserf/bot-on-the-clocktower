@@ -1,4 +1,4 @@
-# botc_mover
+# Bot on the Clocktower (botc_mover)
 Discord bot for moving people to run a game of Blood on the Clocktower
 
 ## Inviting this bot
