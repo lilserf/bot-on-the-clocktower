@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from operator import itemgetter, attrgetter
 import shlex
+import traceback
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -48,6 +49,10 @@ def getInfo(ctx):
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
+# Given a list of users, return a list of their names
+def userNames(users):
+    return list(map(lambda x: x.display_name, users))
+
 # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
 @bot.command(name='currgame', help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
 async def onCurrGame(ctx):
@@ -81,7 +86,7 @@ async def onCurrGame(ctx):
         # remove any stale players
         if len(remove) > 0:
             removeMsg = f"Removed {role.name} role from: "
-            removeMsg += ', '.join(remove)
+            removeMsg += ', '.join(userNames(remove))
             for m in remove:
                 await m.remove_roles(role)
             await ctx.send(removeMsg)
@@ -89,7 +94,7 @@ async def onCurrGame(ctx):
         # add any new players
         if len(add) > 0:
             addMsg = f"Added {role.name} role to: "
-            addMsg += ', '.join(add)
+            addMsg += ', '.join(userNames(add))
             for m in add:
                 await m.add_roles(role)
             await ctx.send(addMsg)
@@ -118,7 +123,8 @@ def getClosestUser(userlist, name):
 
 # Helper to send a message to the author of the command about what they did wrong
 async def sendErrorToAuthor(ctx, error):
-    await ctx.author.send(f"{error} (from message `{ctx.message.content}`)")
+    formatted = traceback.format_exc(3)
+    await ctx.author.send(f"{formatted}\n(from message `{ctx.message.content}`)")
 
 # Common code for parsing !evil and !lunatic commands
 async def processMessage(ctx, users):
@@ -151,7 +157,7 @@ async def processMessage(ctx, users):
 # Send a message to the demon
 async def sendDemonMessage(demonUser, minionUsers):
     demonMsg = f"{demonUser.display_name}: You are the **demon**. Your minions are: "
-    minionNames = list(map(lambda x: x.display_name, minionUsers))
+    minionNames = userNames(minionUsers)
     demonMsg += ', '.join(minionNames)
     await demonUser.send(demonMsg)
 
@@ -194,7 +200,7 @@ async def onEvil(ctx):
         minionMsg = "{}: You are a **minion**. Your demon is: {}. Your fellow minions are: {}."
 
         for m in minionUsers:
-            otherMinions = list(map(lambda x: x.display_name, minionUsers))
+            otherMinions = userNames(minionUsers)
             otherMinions.remove(m.display_name)
 
             otherMinionsMsg = ', '.join(otherMinions)
