@@ -145,6 +145,10 @@ async def processMessage(ctx, users):
     demon = params[1]
     minions = params[2:]
 
+    if len(minions) == 0:
+        await sendErrorToAuthor(ctx, f"It seems you forgot to specify any minions!")
+        return (False, None, None)
+
     # Get the users from the names
     demonUser = getClosestUser(users, demon)
     minionUsers = list(map(lambda x: getClosestUser(users, x), minions))
