@@ -252,6 +252,7 @@ async def onNight(ctx):
 
         # get list of users in town square   
         users = info['activePlayers']
+        users.sort(key=lambda x: x.display_name)
         cottages = list(info['nightChannels'])
         cottages.sort(key=lambda x: x.position)
 
