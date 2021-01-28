@@ -3,7 +3,11 @@ Discord bot for moving people to run a game of Blood on the Clocktower
 
 ## Inviting this bot
 
-https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=285223936&scope=bot
+https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550528&scope=bot
+This bot requires the following permissions:
+* Manage Roles (to grant the storyteller role), View Channels (required for many operations), Change Nicknames (probably unneeded), Manage Nicknames (to add '(ST)' to the storyteller's nick)
+* Send Messages (required for many operations), Manage Messages (to delete !evil commands so they're not cheatable)
+* Move Members (to move players between rooms)
 
 ## Assumptions
 

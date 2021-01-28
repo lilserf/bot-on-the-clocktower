@@ -26,6 +26,15 @@ CONTROL_CHANNEL = 'botc_mover'
 CURRENT_STORYTELLER = 'BotC Current Storyteller'
 CURRENT_GAME = 'BotC Current Game'
 
+
+###########
+# Required permissions:
+#
+# Manage Roles, View Channels, Change Nicknames, Manage Nicknames
+# Send Messages, Manage Messages
+# Move Members
+
+
 # Grab a bunch of common info we need from this particular server,
 # based on the assumptions we make about servers
 def getInfo(ctx):
@@ -91,6 +100,18 @@ async def onCurrGame(ctx):
 
         # find all users currently in the channels we play in
         currPlayers = info['activePlayers']
+
+        storyTeller = ctx.message.author
+
+        # take any (ST) off of old storytellers
+        for o in currPlayers:
+            if o != storyTeller and o.display_name.startswith('(ST) '):
+                newnick = o.display_name[5:]
+                await o.edit(nick=newnick)
+        
+        # add (ST) to the start of the current storyteller
+        if not storyTeller.display_name.startswith('(ST) '):
+            await storyTeller.edit(nick=f"(ST) {storyTeller.display_name}")
 
         # find additions and deletions by diffing the sets
         remove = prevPlayers - currPlayers
@@ -261,10 +282,11 @@ async def onNight(ctx):
 
         # move each user to a cottage
         for (user, cottage) in sorted(pairs, key=lambda x: x[0].name):
-            # print("Moving %s to %s %d" % (user.name, cottage.name, cottage.id))
             # remove the Current Storyteller role from other folks we're moving
             if user.id != storyteller.id:
                 await user.remove_roles(role)
+            # grant the user permissions for their own cottage so they can see streams (if they're the Spy, for example)
+            await cottage.set_permissions(user, view_channel=True)
             await user.move_to(cottage)
 
     except Exception as ex:
@@ -285,6 +307,9 @@ async def onDay(ctx):
         users = list()
         for c in info['nightChannels']:
             users.extend(c.members)
+            # Take away specific permissions for their own cottage
+            for m in c.members:
+                await c.set_permissions(m, view_channel=False)
 
         # move them to Town Square
         for user in users:
