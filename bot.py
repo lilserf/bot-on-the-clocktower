@@ -307,9 +307,9 @@ async def onDay(ctx):
         users = list()
         for c in info['nightChannels']:
             users.extend(c.members)
-            # Take away specific permissions for their own cottage
+            # Take away permission overwrites for their cottage
             for m in c.members:
-                await c.set_permissions(m, view_channel=False)
+                await c.set_permissions(m, overwrite=None)
 
         # move them to Town Square
         for user in users:
