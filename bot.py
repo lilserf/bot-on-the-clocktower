@@ -78,6 +78,47 @@ async def isValid(ctx):
         await ctx.send(f"Whoops, you probably meant to send that in the `{CONTROL_CHANNEL}` channel instead! Sorry, mate.")
     return False
 
+# End the game and remove all the roles, permissions, etc
+@bot.command(name='endgame', help='End the current game and reset all permissions, roles, names, etc.')
+async def onEndGame(ctx):
+    if not await isValid(ctx):
+        return
+
+    try:
+        guild = ctx.guild
+
+        info = getInfo(ctx)
+        playerRole = info['currentPlayerRole']
+        stRole = info['storytellerRole']
+
+        # find all guild members with the Current Game role
+        prevPlayers = set()
+        prevSt = None
+        for m in guild.members:
+            if playerRole in m.roles:
+                prevPlayers.add(m)
+            if stRole in m.roles:
+                prevSt = m
+
+        # remove game role from players
+        for m in prevPlayers:
+            await m.remove_roles(playerRole)
+
+        # remove cottage permissions
+        for c in info['nightChannels']:
+            # Take away permission overwrites for this cottage
+            for m in prevPlayers:
+                await c.set_permissions(m, overwrite=None)
+
+        # remove storyteller role and name from storyteller
+        await prevSt.remove_roles(stRole)
+        if prevSt.display_name.startswith('(ST) '):
+            newnick = m.display_name[5:]
+            await m.edit(nick=newnick)
+
+    except Exception as ex:
+        await sendErrorToAuthor(ctx)
+
 
 # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
 @bot.command(name='currgame', help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
