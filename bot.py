@@ -7,6 +7,7 @@ from discord.ext import commands
 from operator import itemgetter, attrgetter
 import shlex
 import traceback
+import random
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -138,6 +139,11 @@ async def onCurrGame(ctx):
 
         info = getInfo(ctx)
         role = info['currentPlayerRole']
+
+        # grant the storyteller the Current Storyteller role
+        storyteller = ctx.message.author
+        strole = info['storytellerRole']
+        await storyteller.add_roles(strole)
 
         # find all users currently in the channels we play in
         currPlayers = info['activePlayers']
@@ -307,11 +313,6 @@ async def onNight(ctx):
         # get channels we care about
         info = getInfo(ctx)
 
-        # grant the storyteller the Current Storyteller role
-        storyteller = ctx.message.author
-        role = info['storytellerRole']
-        await storyteller.add_roles(role)
-
         # get list of users in town square   
         users = list(info['activePlayers'])
         users.sort(key=lambda x: x.display_name)
@@ -320,12 +321,11 @@ async def onNight(ctx):
 
         # pair up users with cottages
         pairs = list(map(lambda x, y: (x,y), users, cottages))
+        # randomize the order people are moved
+        random.shuffle(pairs)
 
         # move each user to a cottage
-        for (user, cottage) in sorted(pairs, key=lambda x: x[0].name):
-            # remove the Current Storyteller role from other folks we're moving
-            if user.id != storyteller.id:
-                await user.remove_roles(role)
+        for (user, cottage) in pairs:
             # grant the user permissions for their own cottage so they can see streams (if they're the Spy, for example)
             await cottage.set_permissions(user, view_channel=True)
             await user.move_to(cottage)
@@ -351,6 +351,9 @@ async def onDay(ctx):
             # Take away permission overwrites for their cottage
             for m in c.members:
                 await c.set_permissions(m, overwrite=None)
+
+        # randomize the order we bring people back
+        random.shuffle(users)
 
         # move them to Town Square
         for user in users:
