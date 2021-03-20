@@ -152,8 +152,8 @@ async def onCurrGame(ctx):
 
         # take any (ST) off of old storytellers
         for o in currPlayers:
-            if o != storyteller and stRole in o.roles:
-                await o.remove_roles(stRole)
+            if o != storyteller and strole in o.roles:
+                await o.remove_roles(strole)
             if o != storyTeller and o.display_name.startswith('(ST) '):
                 newnick = o.display_name[5:]
                 await o.edit(nick=newnick)
