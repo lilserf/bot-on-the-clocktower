@@ -110,6 +110,7 @@ async def onEndGame(ctx):
             # Take away permission overwrites for this cottage
             for m in prevPlayers:
                 await c.set_permissions(m, overwrite=None)
+            c.set_permissions(prevSt, overwrite=None)
 
         # remove storyteller role and name from storyteller
         await prevSt.remove_roles(stRole)
