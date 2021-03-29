@@ -8,6 +8,8 @@ from operator import itemgetter, attrgetter
 import shlex
 import traceback
 import random
+import pymongo
+from pymongo import MongoClient
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -20,6 +22,14 @@ help_command = commands.DefaultHelpCommand(
 
 bot = commands.Bot(command_prefix='!', intents=intents, description='Bot to move users between BotC channels', help_command=help_command)
 
+###########
+# Required permissions:
+#
+# Manage Roles, View Channels, Change Nicknames, Manage Nicknames
+# Send Messages, Manage Messages
+# Move Members
+
+
 DAY_CATEGORY = 'BotC - Daytime'
 NIGHT_CATEGORY = 'BotC - Nighttime'
 TOWN_SQUARE = 'Town Square'
@@ -27,13 +37,42 @@ CONTROL_CHANNEL = 'botc_mover'
 CURRENT_STORYTELLER = 'BotC Current Storyteller'
 CURRENT_GAME = 'BotC Current Game'
 
+MONGO_CONNECT = os.getenv('MONGO_CONNECT')
+cluster = MongoClient(MONGO_CONNECT)
+db = cluster['botc']
 
-###########
-# Required permissions:
-#
-# Manage Roles, View Channels, Change Nicknames, Manage Nicknames
-# Send Messages, Manage Messages
-# Move Members
+guildInfo = db['GuildInfo']
+
+@bot.command(name='addGame', help='Add a game on this server')
+async def addGame(ctx):
+    guild = ctx.guild
+    params = shlex.split(ctx.message.content)
+
+    controlChannel = params[1]
+    townSquare = params[2]
+    dayCategory = params[3]
+    nightCategory = params[4]
+
+    post = {"guild" : guild.id,
+        "controlChannel" : controlChannel,
+        "townSquare" : townSquare,
+        "dayCategory" : dayCategory,
+        "nightCategory" : nightCategory
+    }
+
+    guildInfo.insert_one(post)
+
+@bot.command(name='removeGame', help='Remove a game on this server')
+async def removeGame(ctx):
+    guild = ctx.guild
+
+    params = shlex.split(ctx.message.content)
+
+    post = {"guild" : guild.id,
+        "dayCategory" : params[1]}
+
+    guildInfo.delete_one(post)
+
 
 
 # Grab a bunch of common info we need from this particular server,
