@@ -43,27 +43,59 @@ db = cluster['botc']
 
 guildInfo = db['GuildInfo']
 
-@bot.command(name='addGame', help='Add a game on this server')
-async def addGame(ctx):
+
+def getChannelByName(guild, name):
+    return discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, guild.channels)
+
+def getCategoryByName(guild, name):
+    return discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
+
+def getRoleByName(guild, name):
+    return discord.utils.find(lambda r: r.name==name, guild.roles)
+
+@bot.command(name='addTown', help='Add a game on this server')
+async def addTown(ctx):
     guild = ctx.guild
+
     params = shlex.split(ctx.message.content)
 
-    controlChannel = params[1]
-    townSquare = params[2]
-    dayCategory = params[3]
-    nightCategory = params[4]
+    if len(params) < 7:
+        await ctx.send("Too few params to `!addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <ST role> <player role>`")
+
+    print(params)
 
     post = {"guild" : guild.id,
-        "controlChannel" : controlChannel,
-        "townSquare" : townSquare,
-        "dayCategory" : dayCategory,
-        "nightCategory" : nightCategory
+        "controlChannel" : getChannelByName(guild, params[1]).id,
+        "townSquare" : getChannelByName(guild, params[2]).id,
+        "dayCategory" : getCategoryByName(guild, params[3]).id,
+        "nightCategory" : getCategoryByName(guild, params[4]).id,
+        "storyTellerRole" : getRoleByName(guild, params[5]).id,
+        "villagerRole" : getRoleByName(guild, params[6]).id
     }
 
+    print(post)
+
+    # TODO: sanity check the provided params
+    # is the town square channel in the day category?
+    # is the control channel in the day category?
+    # does the night category contain some channels to distribute people to?
+    
+    # TODO: also specify the roles to set
+    # does the storyteller role have perms to see all the cottages?
+    # do the player roles NOT have perms to see the cottages
+
+    # TODO: convert all these strings to actual channel IDs etc?
+
+    print(f'Adding a town to guild {post["guild"]} with control channel [{post["controlChannel"]}], day category [{post["dayCategory"]}], night category [{post["nightCategory"]}]')
     guildInfo.insert_one(post)
 
-@bot.command(name='removeGame', help='Remove a game on this server')
-async def removeGame(ctx):
+    # TODO: send a confirmation message about everything we just saved
+    # TODO: run some kind of test, maybe?
+
+
+
+@bot.command(name='removeTown', help='Remove a game on this server')
+async def removeTown(ctx):
     guild = ctx.guild
 
     params = shlex.split(ctx.message.content)
@@ -71,14 +103,20 @@ async def removeGame(ctx):
     post = {"guild" : guild.id,
         "dayCategory" : params[1]}
 
+    print(f'Removing a game from guild {post.guild} with day category [{post.dayCategory}]')
     guildInfo.delete_one(post)
-
 
 
 # Grab a bunch of common info we need from this particular server,
 # based on the assumptions we make about servers
 def getInfo(ctx):
     guild = ctx.guild
+
+    post={"guild" : guild.id,
+        "controlChannel" : ctx.channel.id
+    }
+
+    guildinfo.find_one()
 
     d = dict()
 
