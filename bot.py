@@ -287,8 +287,8 @@ async def onEndGame(ctx):
             # remove storyteller role and name from storyteller
             await prevSt.remove_roles(info.storyTellerRole)
             if prevSt.display_name.startswith('(ST) '):
-                newnick = m.display_name[5:]
-                await m.edit(nick=newnick)
+                newnick = prevSt.display_name[5:]
+                await prevSt.edit(nick=newnick)
 
     except Exception as ex:
         await sendErrorToAuthor(ctx)
@@ -507,9 +507,8 @@ async def onDay(ctx):
         return
 
     try:
-        await ctx.send('Moving users from Cottages to Town Square.')
-
         info = getTownInfo(ctx)
+        await ctx.send(f'Moving users from Cottages to {info.townSquare.name}.')
 
         # get users in night channels
         users = list()
@@ -536,7 +535,7 @@ async def onVote(ctx):
         return
 
     try:
-        await ctx.send('Moving users from other areas to Town Square.')
+        await ctx.send(f'Moving users from other areas to {info.townSquare.name}.')
 
         info = getTownInfo(ctx)
         
