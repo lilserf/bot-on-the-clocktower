@@ -21,17 +21,16 @@ A general setup for using the bot is to have a set of categories, channels, and 
 * 2 server roles for the currently-running game
   * A "**Ravenswood Bluff Storyteller**" role
   * A "**Ravenswood Bluff Villager**" role
-* 2 Categories:
-  * A "**Ravenswood Bluff**" daytime category
-    * Category permissions should be set up to be visible to "**Ravenswood Bluff Villager**", and allow **Bot on the Clocktower** to move members
-    * The category should contain these channels:
-      * A "**mover**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
-      * A "**Town Square**" voice channel. This is the main lobby for the game. Permissions should allow this to be visible to anyone who wants to play.
-      * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
-      * A single "game-chat" text channel, also inheriting category permissions. This is for the villagers to chat, especially during the night phase.
-  * A "**Ravenswood Bluff - Night**" nighttime category
-    * Permission should be set up to be visible to "**Ravenswood Bluff Storyteller**", and allow **Bot on the Clocktower** to move members
-    * This category can contain a bunch of voice channels that inherit category permissions. We use 20 channels all named "Cottage"
+* A "**Ravenswood Bluff**" daytime category
+  * Category permissions should be set up to be visible to "**Ravenswood Bluff Villager**", and allow **Bot on the Clocktower** to move members
+  * The category should contain these channels:
+    * A "**mover**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
+    * A "**Town Square**" voice channel. This is the main lobby for the game. Permissions should allow this to be visible to anyone who wants to play.
+    * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
+    * A single "game-chat" text channel, also inheriting category permissions. This is for the villagers to chat, especially during the night phase.
+* A "**Ravenswood Bluff - Night**" nighttime category
+  * Permission should be set up to be visible to "**Ravenswood Bluff Storyteller**", and allow **Bot on the Clocktower** to move members
+  * This category can contain a bunch of voice channels that inherit category permissions. We use 20 channels all named "Cottage"
 
 Once all this is set up, you can run the `!addTown` command, telling it the name of your main channel, categories, and roles. For the above example, you would run:
 
