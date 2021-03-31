@@ -256,7 +256,7 @@ class Setup(commands.Cog):
         
         usageStr = "Usage: `<town name> [server storyteller role] [server player role]`"
 
-        if len(params) < 1:
+        if len(params) < 2:
             await ctx.send("Too few params to `!createTown`. " + usageStr)
             return None
 
@@ -270,8 +270,8 @@ class Setup(commands.Cog):
             await ctx.send("Could not find role for \"" + self.bot.user.name + "\". Cannot proceed! Where did the role go?")
             return None
         
-        serverStRole = len(params) >= 2 and getRoleByName(guild, params[2]) or None
-        serverPlayerRole = len(params) >= 3 and getRoleByName(guild, params[3]) or None
+        serverStRole = len(params) > 2 and getRoleByName(guild, params[2]) or None
+        serverPlayerRole = len(params) > 3 and getRoleByName(guild, params[3]) or None
         
         dayCatName = townName
         nightCatName = townName + " - Night"
@@ -285,6 +285,8 @@ class Setup(commands.Cog):
         neededNightChannels = 20
 
         try:
+            await ctx.send("Please hold, creating \"" + townName + "\" ...")
+            
             # Roles
             everyoneRole = getRoleByName(guild, "@everyone")
             if not everyoneRole:
@@ -335,6 +337,8 @@ class Setup(commands.Cog):
             chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
             if not chatChannel:
                 chatChannel = await dayCat.create_text_channel(chatChannelName)
+            if not serverPlayerRole:
+                await chatChannel.set_permissions(everyoneRole, view_channel=False)
 
 
             # Town Square 
@@ -352,6 +356,8 @@ class Setup(commands.Cog):
                 extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
                 if not extraChannel:
                     extraChannel = await dayCat.create_voice_channel(extraChannelName)
+                if not serverPlayerRole:
+                    await extraChannel.set_permissions(everyoneRole, view_channel=False)
 
 
             # Night channels
@@ -374,6 +380,105 @@ class Setup(commands.Cog):
             await ctx.send("The town of \"" + townName + "\" has been created!")
             await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
+        except Exception as ex:
+            await self.sendErrorToAuthor(ctx)
+
+
+    
+    @commands.command(name='destroyTown', aliases=['destroytown'], help='Destroy everything created from the \'createTown\' command')
+    async def destroyTown(self, ctx):
+        params = shlex.split(ctx.message.content)
+
+        guild = ctx.guild
+        
+        usageStr = "Usage: `<town name>`"
+
+        if len(params) < 1:
+            await ctx.send("Too few params to `!destroyTown`. " + usageStr)
+            return None
+
+        townName = params[1]        
+        if not townName:
+            await ctx.send("No town name provided. " + usageStr)
+            return None
+        
+        # These are in sync with those in createTown, could probably stand to abstract somehow
+        dayCatName = townName
+        nightCatName = townName + " - Night"
+        gameStRoleName = townName + " Storyteller"
+        gameVillagerRoleName = townName + " Villager"
+        moverChannelName = "botc_mover"
+        chatChannelName = "chat"
+        townSquareChannelName = "Town Square"
+        extraChannelNames = ["Dark Alley", "Library", "Graveyard"]
+        nightChannelName = "Cottage"
+        
+        success = True
+
+        try:
+            dayCat = getCategoryByName(guild, dayCatName)
+            if dayCat:
+                moverChannel = getChannelFromCategoryByName(dayCat, moverChannelName)
+                if moverChannel and moverChannel.type == discord.ChannelType.text:
+                    #print("I want to delete: " + moverChannel.name)
+                    await moverChannel.delete()
+                    
+                chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+                if chatChannel and chatChannel.type == discord.ChannelType.text:
+                    #print("I want to delete: " + chatChannel.name)
+                    await chatChannel.delete()
+                    
+                townSquareChannel = getChannelFromCategoryByName(dayCat, townSquareChannelName)
+                if townSquareChannel and townSquareChannel.type == discord.ChannelType.voice:
+                    #print("I want to delete: " + townSquareChannel.name)
+                    await townSquareChannel.delete()
+
+                for extraChannelName in extraChannelNames:
+                    extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
+                    if extraChannel and extraChannel.type == discord.ChannelType.voice:
+                        #print("I want to delete: " + extraChannel.name)
+                        await extraChannel.delete()
+                        
+                if len(dayCat.channels) == 0:
+                    #print("I want to delete: " + dayCat.name)
+                    await dayCat.delete()
+                else:
+                    success = False
+                    await ctx.send("Category \"" + dayCat.name + "\" had unexpected channels remaining. Not destroying it!")
+                
+            nightCat = getCategoryByName(guild, nightCatName)
+            if nightCat:
+                channelsToDestroy = []
+                for c in nightCat.channels:
+                    if c.type == discord.ChannelType.voice and c.name == nightChannelName:
+                        channelsToDestroy.append(c)
+                
+                for c in channelsToDestroy:
+                    #print("I want to delete: " + c.name)
+                    await c.delete()
+                    
+                if len(nightCat.channels) == 0:
+                    #print("I want to delete: " + nightCat.name)
+                    await nightCat.delete()
+                else:
+                    success = False
+                    await ctx.send("Category \"" + nightCat.name + "\" had unexpected channels remaining. Not destroying it!")
+                    
+            gameVillagerRole = getRoleByName(guild, gameVillagerRoleName)
+            if gameVillagerRole:
+                #print("I want to delete: " + gameVillagerRole.name)
+                await gameVillagerRole.delete()
+                
+            gameStRole = getRoleByName(guild, gameStRoleName)
+            if gameStRole:
+                #print("I want to delete: " + gameStRole.name)
+                await gameStRole.delete()
+            
+            if success:
+                await ctx.send("Town \"" + townName + "\" has been destroyed.")
+            else:
+                await ctx.send("Town \"" + townName + "\" has been destroyed, but there were issues while destroying it.")
+            
         except Exception as ex:
             await self.sendErrorToAuthor(ctx)
 
