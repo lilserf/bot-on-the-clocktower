@@ -42,7 +42,9 @@ Once all this is set up, you can run the `!addTown` command, telling it the name
 
 > `!addtown mover "Town Square" "Ravenswood Bluff" "Ravenswood Bluff - Night" "Ravenswood Bluff Storyteller" "Ravenswood Bluff Villager"`
 
-If that command works, you're ready to go!
+If that command works, you're ready to run a game!
+
+**NOTE:** The bot supports more than 1 town per Discord server. Use the above setup for a new town with different category and role names, and you can run 2 games at once on the same server.
 
 ## Usage
 
