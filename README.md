@@ -34,9 +34,8 @@ A general setup for using the bot is to have a set of categories, channels, and 
     * This category can contain a bunch of voice channels that inherit category permissions. We use 20 channels all named "Cottage"
 
 Once all this is set up, you can run the `!addTown` command, telling it the name of your main channel, categories, and roles. For the above example, you would run:
-```
-!addtown mover "Town Square" "Ravenswood Bluff" "Ravenswood Bluff - Night" "Ravenswood Bluff Storyteller" "Ravenswood Bluff Villager"
-```
+
+> `!addtown mover "Town Square" "Ravenswood Bluff" "Ravenswood Bluff - Night" "Ravenswood Bluff Storyteller" "Ravenswood Bluff Villager"`
 
 If that command works, you're ready to go!
 
