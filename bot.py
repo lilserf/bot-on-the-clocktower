@@ -565,8 +565,8 @@ class Gameplay(commands.Cog):
         except Exception as ex:
             await self.sendErrorToAuthor(ctx)
 
-
-bot = botcBot(command_prefix='!', intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
+COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
+bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(Setup(bot))
 bot.add_cog(Gameplay(bot))
 bot.run(TOKEN)
