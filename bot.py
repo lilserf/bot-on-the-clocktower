@@ -114,7 +114,7 @@ class Setup(commands.Cog):
         await self.sendEmbed(ctx, info)    
     
     
-    async def addTownInternal(self, ctx, post, info):
+    async def addTownInternal(self, ctx, post, info, message_if_exists=True):
         guild = ctx.guild
         
         # Check if a town already exists
@@ -123,10 +123,10 @@ class Setup(commands.Cog):
             "dayCategoryId" : post["dayCategoryId"],
         }
 
-        existing = guildInfo.find_one(query)
-
-        if existing:
-            await ctx.send(f'Found an existing town on this server using daytime category `{post["dayCategory"]}`, modifying it!')
+        if message_if_exists:
+            existing = guildInfo.find_one(query)
+            if existing:
+                await ctx.send(f'Found an existing town on this server using daytime category `{post["dayCategory"]}`, modifying it!')
 
         # Upsert the town into place
         #print(f'Adding a town to guild {post["guild"]} with control channel [{post["controlChannel"]}], day category [{post["dayCategory"]}], night category [{post["nightCategory"]}]')
@@ -285,6 +285,12 @@ class Setup(commands.Cog):
         neededNightChannels = 20
 
         try:
+            # Roles
+            everyoneRole = getRoleByName(guild, "@everyone")
+            if not everyoneRole:
+                await ctx.send("Could not find the \"@everyone\" role. Why not?")
+                return None
+        
             gameVillagerRole = getRoleByName(guild, gameVillagerRoleName)
             if not gameVillagerRole:
                 gameVillagerRole = await guild.create_role(name=gameVillagerRoleName, color=discord.Color.magenta())
@@ -293,44 +299,62 @@ class Setup(commands.Cog):
             if not gameStRole:
                 gameStRole = await guild.create_role(name=gameStRoleName, color=discord.Color.dark_magenta()) 
 
+
+            # Day category
             dayCat = getCategoryByName(guild, dayCatName)
             if not dayCat:
                 dayCat = await guild.create_category(dayCatName)
             
             await dayCat.set_permissions(gameVillagerRole, view_channel=True)
-            await dayCat.set_permissions(botRole, move_members=True)
+            await dayCat.set_permissions(botRole, view_channel=True, move_members=True)
 
+
+            # Night category
             nightCat = getCategoryByName(guild, nightCatName)
             if not nightCat:
                 nightCat = await guild.create_category(nightCatName)
-                
-            await nightCat.set_permissions(gameStRole, view_channel=True)
-            await dayCat.set_permissions(botRole, move_members=True)
 
+            await nightCat.set_permissions(gameStRole, view_channel=True)
+            await nightCat.set_permissions(botRole, view_channel=True, move_members=True)
+            await nightCat.set_permissions(everyoneRole, view_channel=False)
+
+
+            # Mover channel
             moverChannel = getChannelFromCategoryByName(dayCat, moverChannelName)
             if not moverChannel:
                 moverChannel = await dayCat.create_text_channel(moverChannelName)
-                
+            await moverChannel.set_permissions(botRole, view_channel=True)
+            await moverChannel.set_permissions(gameVillagerRole, overwrite=None)
+            
+            if serverStRole:
+                await moverChannel.set_permissions(serverStRole, view_channel=True)
+                await moverChannel.set_permissions(everyoneRole, view_channel=False)
+
+
+            # Chat channel
             chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
             if not chatChannel:
                 chatChannel = await dayCat.create_text_channel(chatChannelName)
 
-            if serverStRole:
-                await moverChannel.set_permissions(serverStRole, view_channel=True)
-            await moverChannel.set_permissions(botRole, view_channel=True)
 
+            # Town Square 
             townSquareChannel = getChannelFromCategoryByName(dayCat, townSquareChannelName)
             if not townSquareChannel:
                 townSquareChannel = await dayCat.create_voice_channel(townSquareChannelName)
-                
+
             if serverPlayerRole:
+                await dayCat.set_permissions(everyoneRole, view_channel=False)
                 await townSquareChannel.set_permissions(serverPlayerRole, view_channel=True)
             
+            
+            # Extra day channels
             for extraChannelName in extraChannelNames:
                 extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
                 if not extraChannel:
-                    extraChannel = await townSquareChannel.clone(name=extraChannelName)
+                    extraChannel = await dayCat.create_voice_channel(extraChannelName)
 
+
+            # Night channels
             for c in nightCat.channels:
                 if c.type == discord.ChannelType.voice and c.name == nightChannelName:
                     neededNightChannels = neededNightChannels - 1
@@ -339,6 +363,8 @@ class Setup(commands.Cog):
                 for x in range(neededNightChannels):
                     await nightCat.create_voice_channel(nightChannelName)
 
+
+            # Calling !addTown
             (post, info) = await self.resolveTownInfo(ctx, moverChannelName, townSquareChannelName, dayCatName, nightCatName, gameStRoleName, gameVillagerRoleName)
 
             if not post:
@@ -346,7 +372,7 @@ class Setup(commands.Cog):
                 return
                 
             await ctx.send("The town of \"" + townName + "\" has been created!")
-            await self.addTownInternal(ctx, post, info)
+            await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
         except Exception as ex:
             await self.sendErrorToAuthor(ctx)
