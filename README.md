@@ -6,19 +6,17 @@ Discord bot for moving people to run a game of Blood on the Clocktower
 https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550528&scope=bot
 
 This bot requires the following permissions:
-* Manage Roles (to grant the storyteller role), View Channels (required for many operations), Change Nicknames (probably unneeded), Manage Nicknames (to add '(ST)' to the storyteller's nick)
-* Send Messages (required for many operations), Manage Messages (to delete !evil commands so they're not cheatable)
-* Move Members (to move players between rooms)
+* View Channels - required for many operations
+* Manage Roles - to grant the storyteller and villager roles
+* Move Members - to move players to nighttime rooms or back to the Town Square
+* Manage Nicknames - to add/remove '(ST) ' to/from the storyteller's nickname
+* Change Nicknames - probably unneeded?
+* Send Messages - required for many operations
+* Manage Messages - to delete !evil commands so players can't see who's evil
 
-## Assumptions
+## Setup
 
-This bot is made for an extremely specific use case and makes assumptions:
-
-1. Voice channel categories exist called "BotC - Daytime" and "BotC - Nighttime"
-2. The Nighttime category should contain enough channels for each user in your game to get their own channel
-3. A channel exists called "Town Square" (probably in the Daytime category but that's not required)
-4. A role exists called "BotC Current Storyteller"
-    * The intent here is that this role is the only one that can see the channels in the Nighttime category - players will be sent to a channel but not be able to see the others, so that they can't cheat and see where the storyteller is going
+TODO: Explain expected Category / Channel setup, `!addTown` command
 
 ## Usage
 
