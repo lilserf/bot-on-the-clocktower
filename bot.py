@@ -13,6 +13,8 @@ from pymongo import MongoClient
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+if TOKEN is None:
+    raise Exception("No DISCORD_TOKEN found. Be sure you have an .env file with a DISCORD_TOKEN defined")
 intents = discord.Intents().default()
 intents.members = True
 
@@ -26,6 +28,8 @@ intents.members = True
 ################
 # Connect to mongo and get our DB object used globally throughout this file
 MONGO_CONNECT = os.getenv('MONGO_CONNECT')
+if MONGO_CONNECT is None:
+    raise Exception("No MONGO_CONNECT string found. Be sure you have an .env file with an appropriate MONGO_CONNECT string defined")
 cluster = MongoClient(MONGO_CONNECT)
 db = cluster['botc']
 
