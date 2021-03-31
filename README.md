@@ -43,23 +43,25 @@ If that command works, you're ready to go!
 
 ### `!night`
 
-Sends all users in the Town Square channel to individual channels within the Nighttime category. Also grants the `BotC Current Storyteller` role to the user who sent the command and removes it from all other users being moved.
+Sends all members in the Town Square channel to individual channels within the Nighttime category. Also runs `!currgame`.
 
 ### `!day`
 
-Brings all users from the nighttime channels back to the Town Square.
+Brings all members from the Nighttime category channels back to the Town Square. Also runs `!currgame`.
 
 ### `!vote`
 
-Brings all users from other daytime channels back to the Town Square for nominations to begin.
+Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currgame`.
 
 ### `!currgame`
 
-Sets the correct roles on all users currently daytime channels. Useful if a late arrival shows up and it's not time for `!night` (which also runs this) yet.
+Sets the correct roles on all members currently in the Daytime category channels, and gives the Storyteller the `(ST) ` nickname prefix.
+
+This logic is run by many other commands (`!night`, `!day`, etc.). This command is mostly useful if a Traveler enters the town.
 
 ### `!endgame`
 
-Removes Storyteller and Villager roles, as well as `(ST) ` nickname prefix
+Removes Storyteller and Villager roles, as well as `(ST) ` nickname prefix.
 
 ### `!evil <demon> <minion> <minion> <minion>...`
 
