@@ -20,7 +20,9 @@ This bot requires the following permissions:
 
 ## Setup
 
-A general setup for using the bot is to have a set of categories, channels, and roles representing a "Town". This example will use "Ravenswood Bluff" as the name of the Town, but you can use whatever names you like.
+A general setup for using the bot is to have a set of categories, channels, and roles representing a "Town".
+
+This example will use "Ravenswood Bluff" as the name of the Town, but you can use whatever names you like.
 
 * 2 server roles for the currently-running game
   * A "**Ravenswood Bluff Storyteller**" role
@@ -58,7 +60,7 @@ Brings all members from other Daytime category channels back to the Town Square 
 
 ### `!currgame`
 
-Sets the correct roles on all members currently in the Daytime category channels, and gives the Storyteller the `(ST) ` nickname prefix.
+Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the '(ST) ' nickname prefix.
 
 This logic is run by many other commands (`!night`, `!day`, etc.). This command is mostly useful if a Traveler enters the town.
 
