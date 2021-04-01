@@ -270,17 +270,17 @@ class Setup(commands.Cog):
             await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
             return None
         
-        serverStRole = None
+        guildStRole = None
         if len(params) > 2:
-            serverStRole = getRoleByName(guild, params[2])
-            if not serverStRole:
+            guildStRole = getRoleByName(guild, params[2])
+            if not guildStRole:
                 await ctx.send("Provided Storyteller Role **" + params[2] + "** not found.")
                 return None
                 
-        serverPlayerRole = None
+        guildPlayerRole = None
         if len(params) > 3:
-            serverPlayerRole = getRoleByName(guild, params[3])
-            if not serverPlayerRole:
+            guildPlayerRole = getRoleByName(guild, params[3])
+            if not guildPlayerRole:
                 await ctx.send("Provided Player Role **" + params[3] + "** not found.")
                 return None
         
@@ -341,8 +341,8 @@ class Setup(commands.Cog):
             await moverChannel.set_permissions(botRole, view_channel=True)
             await moverChannel.set_permissions(gameVillagerRole, overwrite=None)
             
-            if serverStRole:
-                await moverChannel.set_permissions(serverStRole, view_channel=True)
+            if guildStRole:
+                await moverChannel.set_permissions(guildStRole, view_channel=True)
                 await moverChannel.set_permissions(everyoneRole, view_channel=False)
 
 
@@ -350,7 +350,7 @@ class Setup(commands.Cog):
             chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
             if not chatChannel:
                 chatChannel = await dayCat.create_text_channel(chatChannelName)
-            if not serverPlayerRole:
+            if not guildPlayerRole:
                 await chatChannel.set_permissions(everyoneRole, view_channel=False)
 
 
@@ -359,9 +359,9 @@ class Setup(commands.Cog):
             if not townSquareChannel:
                 townSquareChannel = await dayCat.create_voice_channel(townSquareChannelName)
 
-            if serverPlayerRole:
+            if guildPlayerRole:
                 await dayCat.set_permissions(everyoneRole, view_channel=False)
-                await townSquareChannel.set_permissions(serverPlayerRole, view_channel=True)
+                await townSquareChannel.set_permissions(guildPlayerRole, view_channel=True)
             
             
             # Extra day channels
@@ -369,7 +369,7 @@ class Setup(commands.Cog):
                 extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
                 if not extraChannel:
                     extraChannel = await dayCat.create_voice_channel(extraChannelName)
-                if not serverPlayerRole:
+                if not guildPlayerRole:
                     await extraChannel.set_permissions(everyoneRole, view_channel=False)
 
 
