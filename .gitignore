@@ -1,2 +1,4 @@
 .env
 mongodb.txt
+/.vs
+/env
