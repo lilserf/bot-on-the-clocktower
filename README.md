@@ -54,7 +54,7 @@ If that command works, you're ready to run a game!
 
 **NOTE:** The bot supports more than 1 town per Discord server. Use the above setup for a new town with different category and role names, and you can run 2 games at once on the same server.
 
-## Usage
+## Gameplay
 
 All players can gather in the Town Square channel while the Storyteller sets up the game on http://clocktower.online or whatever other mechanism your group uses.
 
