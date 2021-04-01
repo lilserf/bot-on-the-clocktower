@@ -3,7 +3,7 @@ Discord bot for moving people to run a game of Blood on the Clocktower
 
 ## Inviting this bot
 
-https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550528&scope=bot
+**\>\>** [Click here to invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550544&scope=bot) **\<\<**
 
 This bot requires the following permissions:
 
@@ -11,9 +11,10 @@ This bot requires the following permissions:
 | ---------- | ---- |
 | View Channels | Required for many operations  |
 | Send Messages | Required for many operations |
-| Manage Roles | To grant the storyteller and villager roles |
+| Manage Roles | To grant the storyteller and villager roles, and to create/destroy roles with `!createTown` and `!destroyTown` commands |
 | Move Members | To move players to nighttime rooms or back to the Town Square |
-| Manage Messages | To delete !evil commands so players can't see who's evil |
+| Manage Messages | To delete `!evil` commands so players can't see who's evil |
+| Manage Channels | For creating/destroy channels and categories with `!createTown` and `!destroyTown` commands  |
 | Manage Nicknames | To add/remove '(ST) ' to/from the storyteller's nickname |
 | Change Nicknames | *Probably unneeded?* |
 
