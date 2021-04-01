@@ -1,15 +1,16 @@
 import os
 
-import discord
-import json
 from dotenv import load_dotenv
-from discord.ext import commands
+import datetime
+import discord
+from discord.ext import commands, tasks
+import json
 from operator import itemgetter, attrgetter
-import shlex
-import traceback
-import random
 import pymongo
 from pymongo import MongoClient
+import random
+import shlex
+import traceback
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -47,8 +48,7 @@ def getRoleByName(guild, name):
 
 # Nicer than a dict for storing info about the town
 class TownInfo:
-    def __init__(self, ctx, document):
-        guild = ctx.guild
+    def __init__(self, guild, document):
 
         if document:
             self.dayCategory = getCategoryByName(guild, document["dayCategory"])
@@ -83,7 +83,7 @@ class botcBot(commands.Bot):
         doc = guildInfo.find_one(query)
 
         if doc:
-            return TownInfo(ctx, doc)
+            return TownInfo(ctx.guild, doc)
         else:
             return None
         
@@ -558,6 +558,11 @@ class Setup(commands.Cog):
 class Gameplay(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.currentlyActiveGames = {}
+        #self.cleanupInactiveGames.start() This should only be run if we have active games in the DB
+
+    def cog_unload(self):
+        self.cleanupInactiveGames.cancel()
 
     # Given a list of users, return a list of their names
     def userNames(self, users):
@@ -580,6 +585,36 @@ class Gameplay(commands.Cog):
 
         return False
 
+    async def onEndGameInternal(self, guild, info):
+        # find all guild members with the Current Game role
+        prevPlayers = set()
+        prevSt = None
+        for m in guild.members:
+            if info.villagerRole in m.roles:
+                prevPlayers.add(m)
+            if info.storyTellerRole in m.roles:
+                prevSt = m
+
+        # remove game role from players
+        for m in prevPlayers:
+            await m.remove_roles(info.villagerRole)
+
+        # remove cottage permissions
+        for c in info.nightChannels:
+            # Take away permission overwrites for this cottage
+            for m in prevPlayers:
+                await c.set_permissions(m, overwrite=None)
+            if prevSt:
+                await c.set_permissions(prevSt, overwrite=None)
+
+        if prevSt:
+            # remove storyteller role and name from storyteller
+            await prevSt.remove_roles(info.storyTellerRole)
+            if prevSt.display_name.startswith('(ST) '):
+                newnick = prevSt.display_name[5:]
+                await prevSt.edit(nick=newnick)
+
+
     # End the game and remove all the roles, permissions, etc
     @commands.command(name='endGame', aliases=['endgame'], help='End the current game and reset all permissions, roles, names, etc.')
     async def onEndGame(self, ctx):
@@ -591,33 +626,15 @@ class Gameplay(commands.Cog):
 
             info = self.bot.getTownInfo(ctx)
 
-            # find all guild members with the Current Game role
-            prevPlayers = set()
-            prevSt = None
-            for m in guild.members:
-                if info.villagerRole in m.roles:
-                    prevPlayers.add(m)
-                if info.storyTellerRole in m.roles:
-                    prevSt = m
+            await self.onEndGameInternal(guild, info)
 
-            # remove game role from players
-            for m in prevPlayers:
-                await m.remove_roles(info.villagerRole)
-
-            # remove cottage permissions
-            for c in info.nightChannels:
-                # Take away permission overwrites for this cottage
-                for m in prevPlayers:
-                    await c.set_permissions(m, overwrite=None)
-                if prevSt:
-                    await c.set_permissions(prevSt, overwrite=None)
-
-            if prevSt:
-                # remove storyteller role and name from storyteller
-                await prevSt.remove_roles(info.storyTellerRole)
-                if prevSt.display_name.startswith('(ST) '):
-                    newnick = prevSt.display_name[5:]
-                    await prevSt.edit(nick=newnick)
+            # Remove this from the list of active games.
+            # TODO store in DB instead
+            guildActiveGames = self.currentlyActiveGames[guild.id]
+            if guildActiveGames:
+                guildActiveGames.pop(ctx.channel.id, None)
+            if not guildActiveGames:
+                self.currentlyActiveGames.pop(guild.id, None)
 
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
@@ -675,6 +692,22 @@ class Gameplay(commands.Cog):
                 for m in add:
                     await m.add_roles(info.villagerRole)
                 await ctx.send(addMsg)
+
+            # Remove this from the list of active games.
+            # TODO store in DB instead
+            if not guild.id in self.currentlyActiveGames:
+                self.currentlyActiveGames[guild.id] = {}
+            guildActiveGames = self.currentlyActiveGames[guild.id]
+
+            if not ctx.channel.id in guildActiveGames:
+                guildActiveGames[ctx.channel.id] = {}
+            townActiveGame = guildActiveGames[ctx.channel.id]
+
+            townActiveGame["lastActivity"] = datetime.datetime.now()
+
+            # Set a timer to clean up active games eventually
+            if not self.cleanupInactiveGames.is_running():
+                self.cleanupInactiveGames.start()
 
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
@@ -872,6 +905,64 @@ class Gameplay(commands.Cog):
         
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
+
+
+    # Called periodically to try and clean up old games that aren't in progress anymore
+    # This is 8 hours, with inactivity at 3, as the expectation is that 3-4 hours is probably
+    # at the the common upper limit for a town to be active, so 5 hours should catch most games.
+    @tasks.loop(hours=8)
+    async def cleanupInactiveGames(self):
+        print("Checking for inactive games")
+        # Inactive games are ones that haven't had any activity in the last 3 hours
+        inactiveTime = datetime.datetime.now() - datetime.timedelta(hours=3)
+
+        numEnded = 0
+
+        townsToEndByGuild = {}
+        
+        # TODO: This could use the DB instead of a cog member
+
+        # Collect all the inactive towns
+        for g, go in self.currentlyActiveGames.items():
+            townsToEndByGuild[g] = []
+            for t, to in go.items():
+                if "lastActivity" not in to or to["lastActivity"] < inactiveTime:
+                    townsToEndByGuild[g].append(t)
+
+        # Actually run endGame on each inactive town
+        for g, ts in townsToEndByGuild.items():
+            guild = self.bot.get_guild(g)
+            if guild:
+                for t in ts:
+                    query = { "guild" : guild.id, "controlChannelId" : t }
+                    doc = guildInfo.find_one(query)
+                    if doc:
+                        info = TownInfo(guild, doc)
+                        try:
+                            await self.onEndGameInternal(guild, info)
+                            numEnded = numEnded + 1
+                        except Exception:
+                            pass
+
+        if numEnded > 0:
+            print("Ended " + str(numEnded) + " inactive game(s)")
+
+        # Remove all the inactive towns from our list
+        for g, ts in townsToEndByGuild.items():
+            for t in ts:
+                self.currentlyActiveGames[g].pop(t, None)
+            if not self.currentlyActiveGames[g]:
+                self.currentlyActiveGames.pop(g, None)
+
+        # If nothing is left active at all, stop the timer
+        if not self.currentlyActiveGames:
+            print("No remaining active games, stopping checks")
+            self.cleanupInactiveGames.stop()
+    
+    @cleanupInactiveGames.before_loop
+    async def beforecleanupInactiveGames(self):
+        await self.bot.wait_until_ready()
+
 
 COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
