@@ -54,7 +54,6 @@ class TownInfo:
             self.dayCategory = getCategoryByName(guild, document["dayCategory"])
             self.nightCategory = getCategoryByName(guild, document["nightCategory"])
 
-
             self.townSquare = getChannelFromCategoryByName(self.dayCategory, document["townSquare"])
             self.controlChannel = getChannelFromCategoryByName(self.dayCategory, document["controlChannel"])
 
@@ -87,14 +86,6 @@ class botcBot(commands.Bot):
             return TownInfo(ctx, doc)
         else:
             return None
-
-    async def on_ready(self):
-        print(f'{bot.user.name} has connected to Discord!')
-
-# Setup cog
-class Setup(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
         
     # Helper to send a message to the author of the command about what they did wrong
     async def sendErrorToAuthor(self, ctx, error=None):
@@ -105,6 +96,14 @@ class Setup(commands.Cog):
             traceback.print_exc()
         await ctx.author.send(f"Alas, an error has occurred:\n{formatted}\n(from message `{ctx.message.content}`)")
 
+
+    async def on_ready(self):
+        print(f'{bot.user.name} has connected to Discord!')
+
+# Setup cog
+class Setup(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command(name='townInfo', aliases=['towninfo'], help='Show the stored info about the channels and roles that make up this town')
     async def townInfo(self, ctx):
@@ -381,7 +380,7 @@ class Setup(commands.Cog):
             await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
 
     
@@ -480,7 +479,7 @@ class Setup(commands.Cog):
                 await ctx.send("Town \"" + townName + "\" has been destroyed, but there were issues while destroying it.")
             
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
 
     async def sendEmbed(self, ctx, townInfo):
@@ -560,7 +559,7 @@ class Gameplay(commands.Cog):
                     await prevSt.edit(nick=newnick)
 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
@@ -617,7 +616,7 @@ class Gameplay(commands.Cog):
                 await ctx.send(addMsg)
 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
     # Given a list of users and a name string, find the user with the closest name
     def getClosestUser(self, userlist, name):
@@ -627,15 +626,6 @@ class Gameplay(commands.Cog):
                 return u
         
         return None
-
-    # Helper to send a message to the author of the command about what they did wrong
-    async def sendErrorToAuthor(self, ctx, error=None):
-        if error is not None:
-            formatted = error
-        else:
-            formatted = '```\n' + traceback.format_exc(3) + '\n```'
-            traceback.print_exc()
-        await ctx.author.send(f"Alas, an error has occurred:\n{formatted}\n(from message `{ctx.message.content}`)")
 
     # Common code for parsing !evil and !lunatic commands
     async def processMinionMessage(self, ctx, users):
@@ -650,7 +640,7 @@ class Gameplay(commands.Cog):
         minions = params[2:]
 
         if len(minions) == 0:
-            await self.sendErrorToAuthor(ctx, f"It seems you forgot to specify any minions!")
+            await self.bot.sendErrorToAuthor(ctx, f"It seems you forgot to specify any minions!")
             return (False, None, None)
 
         # Get the users from the names
@@ -663,12 +653,12 @@ class Gameplay(commands.Cog):
 
         # Error messages for users not found
         if demonUser is None:
-            await self.sendErrorToAuthor(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
+            await self.bot.sendErrorToAuthor(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
             return (False, None, None)
 
         for (i, m) in enumerate(minionUsers):
             if m is None:
-                await self.sendErrorToAuthor(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
+                await self.bot.sendErrorToAuthor(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
                 return (False, None, None)
 
         return (True, demonUser, minionUsers)
@@ -698,7 +688,7 @@ class Gameplay(commands.Cog):
             await self.sendDemonMessage(demonUser, minionUsers)
 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
     # Command to send demon/minion info to the Demon and Minions
     @commands.command(name='evil', help='Send evil info to evil team. Format is `!evil <demon> <minion> <minion> <minion>`')
@@ -732,7 +722,7 @@ class Gameplay(commands.Cog):
             await ctx.send("The Evil team has been informed...")
                 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
@@ -767,7 +757,7 @@ class Gameplay(commands.Cog):
                 await user.move_to(cottage)
 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move users from Cottages back to Town Square')
@@ -796,7 +786,7 @@ class Gameplay(commands.Cog):
                 await user.move_to(info.townSquare)
 
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
     # Move users from other daytime channels back to Town Square
     @commands.command(name='vote', help='Move users from daytime channels back to Town Square')
@@ -820,7 +810,7 @@ class Gameplay(commands.Cog):
                 await user.move_to(info.townSquare)
         
         except Exception as ex:
-            await self.sendErrorToAuthor(ctx)
+            await self.bot.sendErrorToAuthor(ctx)
 
 COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
