@@ -263,15 +263,28 @@ class Setup(commands.Cog):
         if not townName:
             await ctx.send("No town name provided. " + usageStr)
             return None
-            
+        
+        # Ensure all the roles exist
         botRole = getRoleByName(guild, self.bot.user.name)
         if not botRole:
             await ctx.send("Could not find role for \"" + self.bot.user.name + "\". Cannot proceed! Where did the role go?")
             return None
         
-        serverStRole = len(params) > 2 and getRoleByName(guild, params[2]) or None
-        serverPlayerRole = len(params) > 3 and getRoleByName(guild, params[3]) or None
+        serverStRole = None
+        if len(params) > 2:
+            serverStRole = getRoleByName(guild, params[2])
+            if not serverStRole:
+                await ctx.send("Provided Storyteller Role \"" + params[2] + "\" not found.")
+                return None
+                
+        serverPlayerRole = None
+        if len(params) > 3:
+            serverPlayerRole = getRoleByName(guild, params[3])
+            if not serverPlayerRole:
+                await ctx.send("Provided Player Role \"" + params[3] + "\" not found.")
+                return None
         
+        # These are in sync with those in destroyTown, could probably stand to abstract somehow
         dayCatName = townName
         nightCatName = townName + " - Night"
         gameStRoleName = townName + " Storyteller"
