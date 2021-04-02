@@ -616,7 +616,10 @@ class Gameplay(commands.Cog):
             await prevSt.remove_roles(info.storyTellerRole)
             if prevSt.display_name.startswith('(ST) '):
                 newnick = prevSt.display_name[5:]
-                await prevSt.edit(nick=newnick)
+                try:
+                    await prevSt.edit(nick=newnick)
+                except:
+                    pass
 
 
     # End the game and remove all the roles, permissions, etc
@@ -665,11 +668,17 @@ class Gameplay(commands.Cog):
                     await o.remove_roles(info.storyTellerRole)
                 if o != storyTeller and o.display_name.startswith('(ST) '):
                     newnick = o.display_name[5:]
-                    await o.edit(nick=newnick)
+                    try:
+                        await o.edit(nick=newnick)
+                    except:
+                        pass
             
             # add (ST) to the start of the current storyteller
             if not storyTeller.display_name.startswith('(ST) '):
-                await storyTeller.edit(nick=f"(ST) {storyTeller.display_name}")
+                try:
+                    await storyTeller.edit(nick=f"(ST) {storyTeller.display_name}")
+                except:
+                    pass
 
             # find additions and deletions by diffing the sets
             remove = prevPlayers - info.activePlayers
