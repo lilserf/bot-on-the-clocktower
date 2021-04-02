@@ -129,7 +129,7 @@ Sends a DM to the Lunatic identical to those sent by `!evil` telling them who th
 
 Creates an entire town from nothing, including all of its categories, channels, and roles.
 
-The optional `serverStorytellerRole` is an already-created server-wide role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyrone on the server will see this channel.
+The optional `serverStorytellerRole` is an already-created server-wide role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyone on the server will see this channel.
 
 The optional `serverPlayerRole` is an already-created server-wide role for members of your server who wish to play Blood on the Clocktower. They will be granted access to see the Town Square when a game is not in progress. If not provided, everyone on the server will see the Town Square.
 
@@ -143,11 +143,13 @@ If there are extra channels that the bot does not expect, it will leave them alo
 
 ### `!townInfo`
 
+When run in a control channel for a town, reports all the details stored by `!addTown` or `!createTown` - the channel & role names the bot is expecting.
+
 ### `!addTown <moverChannel> <townSquareChannel> <dayCategory> <nightCategory> <currentStorytellerRole> <currentVillageRole>`
 
-`!addTown` tell the bot about all the roles, categories, and channels it needs to know about to do its job. It expects these things are all already created; if they are not, use `!createTown` and it will handle all of this.
+`!addTown` tells the bot about all the roles, categories, and channels it needs to know about to do its job. It expects these things are all already created; if they are not, use `!createTown` and it will handle all of this.
 
-**NOTE:** It is recommended that you create a town using `!createTown` above instead of using `!addTown`. But, if you've already got a setup that works for you, then `!addTown` might be preferred.
+**NOTE:** It is recommended that you create a town using `!createTown` above instead of using `!addTown`. But, if you've already got a setup that works for you (or you want your roles and channels to be named differently than what `!createTown` assumes), then `!addTown` might be preferred.
 
 Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff" for the example town name.
 
@@ -157,7 +159,7 @@ Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff"
 * A "**Ravenswood Bluff**" daytime category
   * Category permissions should be set up to be visible to "**Ravenswood Bluff Villager**", and allow **Bot on the Clocktower** to move members
   * The category should contain these channels:
-    * A "**control**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
+    * A "**mover**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
     * A "**Town Square**" voice channel. This is the main lobby for the game. Permissions should allow this to be visible to anyone who wants to play.
     * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
     * A single "game-chat" text channel, also inheriting category permissions. This is for the villagers to chat, especially during the night phase.
@@ -172,3 +174,5 @@ Once all this is set up, you can run the `!addTown` command, telling it the name
 If that command works, you're ready to run a game!
 
 ### `!removeTown`
+
+The opposite of `!addTown` - when run in the control channel for a town, removes registration of this town from the bot. The channels and roles will still exist and are not touched.
