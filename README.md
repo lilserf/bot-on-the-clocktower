@@ -41,15 +41,9 @@ In addition to inviting the bot (see above), it is recommended (but optional) th
 
 You will of course want to grant this role to the appropriate members.
 
-These roles must be located BELOW the Bot's **Bot on the Clocktower** role, or else it cannot grant the role to members of the server.
+#### A note on Server Ownership
 
-#### A note on Roles / Ownership
-
-The **Bot on the Clocktower** role must be ABOVE any roles used by anyone who might be a Storyteller, in order for them to be granted the `(ST)` nickname prefix automatically. It is therefore recommended the **Bot on the Clocktower** role be placed near the top of the list of server roles.
-
-Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, the owner of the server can see all channels no matter what. In addition, the bot cannot change the nickname of the server owner.
-
-For these reasons, if the server owner wants to play too, it is recommended that they create a separate Discord account to act as the actual owner, and use a personal non-owner account to play Blood on the Clocktower.
+Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, the owner of the server can see all channels no matter what. In addition, the bot cannot change the nickname of the server owner. For these reasons, if the server owner wants to play too, it is recommended that they create a separate Discord account to act as the actual owner, and use a personal non-owner account to play Blood on the Clocktower.
 
 ### Quick Setup: `!createTown`
 
@@ -137,9 +131,9 @@ Sends a DM to the Lunatic identical to those sent by `!evil` telling them who th
 
 Creates an entire town from nothing, including all of its categories, channels, and roles.
 
-The optional `serverStorytellerRole` is a server-wide role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyrone on the server will see this channel.
+The optional `serverStorytellerRole` is an already-created server-wide role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyrone on the server will see this channel.
 
-The optional `serverPlayerRole` is a server-wide role for members of your server who wish to play Blood on the Clocktower. They will be granted access to see the Town Square when a game is not in progress. If not provided, everyone on the server will see the Town Square.
+The optional `serverPlayerRole` is an already-created server-wide role for members of your server who wish to play Blood on the Clocktower. They will be granted access to see the Town Square when a game is not in progress. If not provided, everyone on the server will see the Town Square.
 
 For more information about precisely what this sets up (in case you wanted to do it all yourself manually for some reason), see the `!addTown` command reference below.
 
