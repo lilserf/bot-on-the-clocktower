@@ -8,7 +8,7 @@ To easily play Blood on the Clocktower via Discord voice channels, you need:
 * Smaller gathering places for players to congregate for smaller semi-private conversations (other daytime channels)
 * Individual places for each player to go during the night, where the Storyteller can visit them privately (night "Cottage" channels)
 
-All of this can be set up manually, and general-purpose bots can be used to move players around, but it can ba awkward.
+All of this can be set up manually, and general-purpose bots can be used to move players around, but it can be awkward to manage.
 
 This bot handles setting up the channels, roles, and permissions automatically, as well as moving the players back and forth during the various phases of the game without needing to type in complex movement commands!
 
