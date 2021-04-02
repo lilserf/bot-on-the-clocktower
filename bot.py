@@ -28,13 +28,15 @@ intents.members = True
 
 ################
 # Connect to mongo and get our DB object used globally throughout this file
+# TODO: Make this not a big ol' global?
 MONGO_CONNECT = os.getenv('MONGO_CONNECT')
 if MONGO_CONNECT is None:
     raise Exception("No MONGO_CONNECT string found. Be sure you have MONGO_CONNECT defined in your environment")
 cluster = MongoClient(MONGO_CONNECT)
 db = cluster['botc']
 
-guildInfo = db['GuildInfo']
+g_dbGuildInfo = db['GuildInfo']
+g_dbActiveGames = db['ActiveGames']
 
 # Helpers
 def getChannelFromCategoryByName(category, name):
@@ -80,13 +82,13 @@ class botcBot(commands.Bot):
     def getTownInfo(self, ctx):
 
         query = { "guild" : ctx.guild.id, "controlChannelId" : ctx.channel.id }
-        doc = guildInfo.find_one(query)
+        doc = g_dbGuildInfo.find_one(query)
 
         if doc:
             return TownInfo(ctx.guild, doc)
         else:
             return None
-        
+    
     # Helper to send a message to the author of the command about what they did wrong
     async def sendErrorToAuthor(self, ctx, error=None):
         if error is not None:
@@ -98,7 +100,7 @@ class botcBot(commands.Bot):
 
 
     async def on_ready(self):
-        print(f'{bot.user.name} has connected to Discord!')
+        print(f'{self.user.name} has connected to Discord!')
 
 # Setup cog
 class Setup(commands.Cog):
@@ -123,13 +125,13 @@ class Setup(commands.Cog):
         }
 
         if message_if_exists:
-            existing = guildInfo.find_one(query)
+            existing = g_dbGuildInfo.find_one(query)
             if existing:
                 await ctx.send(f'Found an existing town on this server using daytime category `{post["dayCategory"]}`, modifying it!')
 
         # Upsert the town into place
         print(f'Adding a town to guild {post["guild"]} with control channel [{post["controlChannel"]}], day category [{post["dayCategory"]}], night category [{post["nightCategory"]}]')
-        guildInfo.replace_one(query, post, True)
+        g_dbGuildInfo.replace_one(query, post, True)
 
         await self.sendEmbed(ctx, info)
 
@@ -155,7 +157,7 @@ class Setup(commands.Cog):
             "dayCategory" : params[1]}
 
         print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
-        guildInfo.delete_one(post)
+        g_dbGuildInfo.delete_one(post)
 
         embed = discord.Embed(title=f'{guild.name} // {post["dayCategory"]}', description=f'Deleted!', color=0xcc0000)
         await ctx.send(embed=embed)
@@ -530,7 +532,7 @@ class Setup(commands.Cog):
             # Remove the town from the guild
             if success:
                 post = {"guild" : guild.id, "dayCategory" : dayCatName}
-                guildInfo.delete_one(post)
+                g_dbGuildInfo.delete_one(post)
 
             # Try to send to context, but it may have been a channel we deleted in which case send diretly to the author instead
             try:
@@ -558,8 +560,10 @@ class Setup(commands.Cog):
 class Gameplay(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.currentlyActiveGames = {}
-        #self.cleanupInactiveGames.start() This should only be run if we have active games in the DB
+
+        # Start the timer if we have active games
+        if g_dbActiveGames.count_documents({}) > 0:
+            self.cleanupInactiveGames.start() 
 
     def cog_unload(self):
         self.cleanupInactiveGames.cancel()
@@ -576,7 +580,7 @@ class Gameplay(commands.Cog):
             return False
         
         query = { "guild" : ctx.guild.id }
-        result = guildInfo.find(query)
+        result = g_dbGuildInfo.find(query)
         chanIds = map(lambda x: x["controlChannelId"], result)
 
         if isinstance(ctx.channel, discord.TextChannel):
@@ -628,13 +632,7 @@ class Gameplay(commands.Cog):
 
             await self.onEndGameInternal(guild, info)
 
-            # Remove this from the list of active games.
-            # TODO store in DB instead
-            guildActiveGames = self.currentlyActiveGames[guild.id]
-            if guildActiveGames:
-                guildActiveGames.pop(ctx.channel.id, None)
-            if not guildActiveGames:
-                self.currentlyActiveGames.pop(guild.id, None)
+            self.removeActiveGame(guild, ctx.channel)
 
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
@@ -693,17 +691,7 @@ class Gameplay(commands.Cog):
                     await m.add_roles(info.villagerRole)
                 await ctx.send(addMsg)
 
-            # Remove this from the list of active games.
-            # TODO store in DB instead
-            if not guild.id in self.currentlyActiveGames:
-                self.currentlyActiveGames[guild.id] = {}
-            guildActiveGames = self.currentlyActiveGames[guild.id]
-
-            if not ctx.channel.id in guildActiveGames:
-                guildActiveGames[ctx.channel.id] = {}
-            townActiveGame = guildActiveGames[ctx.channel.id]
-
-            townActiveGame["lastActivity"] = datetime.datetime.now()
+            self.recordGameActivity(guild, ctx.channel)
 
             # Set a timer to clean up active games eventually
             if not self.cleanupInactiveGames.is_running():
@@ -906,56 +894,55 @@ class Gameplay(commands.Cog):
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
 
+    def recordGameActivity(self, guild, controlChan):
+        post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
+        query = { "guild" : guild.id, "channel" : controlChan.id }
+        # Upsert this record
+        g_dbActiveGames.replace_one(query, post, True)
+
+    def removeActiveGame(self, guild, controlChan):
+        # Delete this game's record
+        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": controlChan.id })
 
     # Called periodically to try and clean up old games that aren't in progress anymore
     # This is 8 hours, with inactivity at 3, as the expectation is that 3-4 hours is probably
     # at the the common upper limit for a town to be active, so 5 hours should catch most games.
+    # For debugging, use the 3-second loop and the 10-second delta below
+    #@tasks.loop(seconds=3)
     @tasks.loop(hours=8)
     async def cleanupInactiveGames(self):
         print("Checking for inactive games")
         # Inactive games are ones that haven't had any activity in the last 3 hours
         inactiveTime = datetime.datetime.now() - datetime.timedelta(hours=3)
+        #inactiveTime = datetime.datetime.now() - datetime.timedelta(seconds=10)
 
         numEnded = 0
 
-        townsToEndByGuild = {}
+        # "Range query" that gives us all documents with a timestamp less than our inactive time
+        inactiveQuery = {"lastActivity" : {"$lt": inactiveTime}}
         
-        # TODO: This could use the DB instead of a cog member
-
-        # Collect all the inactive towns
-        for g, go in self.currentlyActiveGames.items():
-            townsToEndByGuild[g] = []
-            for t, to in go.items():
-                if "lastActivity" not in to or to["lastActivity"] < inactiveTime:
-                    townsToEndByGuild[g].append(t)
-
-        # Actually run endGame on each inactive town
-        for g, ts in townsToEndByGuild.items():
-            guild = self.bot.get_guild(g)
-            if guild:
-                for t in ts:
-                    query = { "guild" : guild.id, "controlChannelId" : t }
-                    doc = guildInfo.find_one(query)
-                    if doc:
-                        info = TownInfo(guild, doc)
-                        try:
-                            await self.onEndGameInternal(guild, info)
-                            numEnded = numEnded + 1
-                        except Exception:
-                            pass
+        for rec in g_dbActiveGames.find(inactiveQuery):
+            guildId = rec["guild"]
+            guild = self.bot.get_guild(guildId)
+            # Fetch the full info for this guild/channel combo
+            lookupQuery = { "guild" : guildId, "controlChannelId" : rec["channel"] }
+            doc = g_dbGuildInfo.find_one(lookupQuery)
+            if doc:
+                info = TownInfo(guild, doc)
+                try:
+                    await self.onEndGameInternal(guild, info)
+                    numEnded = numEnded + 1
+                except Exception:
+                    pass
 
         if numEnded > 0:
-            print("Ended " + str(numEnded) + " inactive game(s)")
+            print(f'Ended {numEnded} inactive game(s)')
 
         # Remove all the inactive towns from our list
-        for g, ts in townsToEndByGuild.items():
-            for t in ts:
-                self.currentlyActiveGames[g].pop(t, None)
-            if not self.currentlyActiveGames[g]:
-                self.currentlyActiveGames.pop(g, None)
+        result = g_dbActiveGames.delete_many(inactiveQuery)
 
         # If nothing is left active at all, stop the timer
-        if not self.currentlyActiveGames:
+        if g_dbActiveGames.count_documents({}) == 0:
             print("No remaining active games, stopping checks")
             self.cleanupInactiveGames.stop()
     
