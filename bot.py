@@ -637,6 +637,22 @@ class Gameplay(commands.Cog):
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
 
+    @commands.command(name='setStorytellers', aliases=['storytellers', 'sts', 'setstorytellers', 'setsts', 'setSts', 'setSTs'], help='Set a list of users to be Storytellers.')
+    async def onSetSTs(self, ctx):
+        if not await self.isValid(ctx):
+            return
+
+        # call setStorytellersInternal
+        
+    async def setStorytellersInternal(self, ctx, sts):
+
+        info = self.bot.getTownInfo(ctx)
+
+        for storyTeller in sts:
+            await storyTeller.add_roles(info.storyTellerRole)
+
+            
+
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
