@@ -176,3 +176,8 @@ If that command works, you're ready to run a game!
 ### `!removeTown`
 
 The opposite of `!addTown` - when run in the control channel for a town, removes registration of this town from the bot. The channels and roles will still exist and are not touched.
+
+## Support
+
+Please file a Github issue with lots of details if you run into problems.
+Of course, we're just doing this in our spare time and the bot features have primarily been driven by what our local play group needs, so please be patient.
