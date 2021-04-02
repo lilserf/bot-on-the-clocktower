@@ -55,7 +55,7 @@ For these reasons, if the server owner wants to play too, it is recommended that
 
 To quickly set up your town, simply send a command to the bot with the name of your own and - optionally - the roles mentioned above.
 
-> `!setupTown "Ravenswood Bluff" "BotC Storyteller" "BotC Player"
+> `!setupTown "Ravenswood Bluff" "BotC Storyteller" "BotC Player"`
 
 This will create all the categories, channels, and roles you need.
 
