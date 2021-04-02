@@ -145,7 +145,7 @@ If there are extra channels that the bot does not expect, it will leave them alo
 
 When run in a control channel for a town, reports all the details stored by `!addTown` or `!createTown` - the channel & role names the bot is expecting.
 
-### `!addTown <moverChannel> <townSquareChannel> <dayCategory> <nightCategory> <currentStorytellerRole> <currentVillageRole>`
+### `!addTown <controlChannel> <townSquareChannel> <dayCategory> <nightCategory> <currentStorytellerRole> <currentVillageRole>`
 
 `!addTown` tells the bot about all the roles, categories, and channels it needs to know about to do its job. It expects these things are all already created; if they are not, use `!createTown` and it will handle all of this.
 
@@ -159,7 +159,7 @@ Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff"
 * A "**Ravenswood Bluff**" daytime category
   * Category permissions should be set up to be visible to "**Ravenswood Bluff Villager**", and allow **Bot on the Clocktower** to move members
   * The category should contain these channels:
-    * A "**mover**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
+    * A "**control**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
     * A "**Town Square**" voice channel. This is the main lobby for the game. Permissions should allow this to be visible to anyone who wants to play.
     * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
     * A single "game-chat" text channel, also inheriting category permissions. This is for the villagers to chat, especially during the night phase.
@@ -169,7 +169,7 @@ Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff"
 
 Once all this is set up, you can run the `!addTown` command, telling it the name of your main channel, categories, and roles. For the above example, you would run:
 
-> `!addtown mover "Town Square" "Ravenswood Bluff" "Ravenswood Bluff - Night" "Ravenswood Bluff Storyteller" "Ravenswood Bluff Villager"`
+> `!addtown control "Town Square" "Ravenswood Bluff" "Ravenswood Bluff - Night" "Ravenswood Bluff Storyteller" "Ravenswood Bluff Villager"`
 
 If that command works, you're ready to run a game!
 
