@@ -1,9 +1,24 @@
 # Bot on the Clocktower (botc_mover)
-Discord bot for moving people to run a game of Blood on the Clocktower
+Discord bot to assist with running a game of Blood on the Clocktower on Discord
 
-## Inviting this bot
+## Introduction: What does this bot do?
 
-**\>\>** [Click here to invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550544&scope=bot) **\<\<**
+To easily play Blood on the Clocktower via Discord voice channels, you need:
+* A place for all players and the storyteller to discuss openly (the Town Square channel)
+* Smaller gathering places for players to congregate for smaller semi-private conversations (other daytime channels)
+* Individual places for each player to go during the night, where the Storyteller can visit them privately (night "Cottage" channels)
+
+This bot handles setting up the channels, roles and permissions to manage this, as well as moving the players back and forth during the various phases of the game.
+
+## Setup
+
+The expected setup for using the bot is to have a set of categories, channels, and roles representing a "Town".
+
+For these setup examples, we will use a town named "Ravenswood Bluff", but you can use whatever town name you like.
+
+### Prerequisites
+
+First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550544&scope=bot) **\<\<**
 
 This bot requires the following permissions:
 
@@ -18,24 +33,7 @@ This bot requires the following permissions:
 | Manage Nicknames | To add/remove '(ST) ' to/from the storyteller's nickname |
 | Change Nicknames | *Probably unneeded?* |
 
-## Introduction: What does this bot do?
-
-To easily play Blood on the Clocktower via Discord voice channels, you need:
-* A place for all players and the storyteller to discuss openly (the Town Square channel)
-* Smaller gathering places for players to congregate for smaller semi-private conversations (other daytime channels)
-* Individual places for each player to go during the night, where the Storyteller can visit them (night "cottage" channels)
-
-This bot handles setting up the channels, roles and permissions to manage this, as well as moving the players back and forth during the various phases of the game.
-
-## Setup
-
-As described above, the expected setup for using the bot is to have a set of categories, channels, and roles representing a "Town".
-
-For these setup examples, we will use "Ravenswood Bluff" as the name of the Town, but you can use whatever town name you like.
-
-### Prerequisites
-
-In addition to inviting the bot (see above), it is recommended (but optional) that you have already created:
+In addition, it is recommended (but optional) that you have already created:
 * A Role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
 * A Role for server members who play the game. Example role name: **BotC Player** (if your server is entirely based around playing Blood on the Clocktower, this is totally unnecessary)
 
