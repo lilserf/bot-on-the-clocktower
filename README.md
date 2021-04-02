@@ -31,7 +31,7 @@ This bot handles setting up the channels, roles and permissions to manage this, 
 
 As described above, the expected setup for using the bot is to have a set of categories, channels, and roles representing a "Town".
 
-For these setup examples, we will use "Ravenswood Bluff" as the name of the Town, but you can use whatever names you like.
+For these setup examples, we will use "Ravenswood Bluff" as the name of the Town, but you can use whatever town name you like.
 
 ### Prerequisites
 
