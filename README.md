@@ -45,7 +45,7 @@ Bot on the Clocktower works best by hiding nighttime channels from members. Unfo
 
 ### Quick Setup: `!createTown`
 
-To quickly set up your town, simply send a command to the bot with the name of your own and - optionally - the roles mentioned above.
+To quickly set up your town, simply send a command to the bot with the name of your town and - optionally - the roles mentioned above.
 
 > `!createTown "Ravenswood Bluff" "BotC Storyteller" "BotC Player"`
 
