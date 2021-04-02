@@ -51,9 +51,9 @@ To quickly set up your town, simply send a command to the bot with the name of y
 
 This will create all the categories, channels, and roles needed by Ravenswood Bluff.
 
-**Note:** This command will not create the "BotC Storyteller" or "BotC Player" roles. It is expected you create them yourself if you need them.
+The bot supports more than 1 town per Discord server. With 2 differently-named towns, you can run 2 games at once on the same server.
 
-**NOTE:** The bot supports more than 1 town per Discord server. With 2 differently-named towns, you can run 2 games at once on the same server.
+**Note:** This command will not create the "BotC Storyteller" or "BotC Player" roles. It is expected you create them yourself if you need them.
 
 ### Explanation of the Setup
 
