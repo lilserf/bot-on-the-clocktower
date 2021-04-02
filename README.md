@@ -35,7 +35,7 @@ For these setup examples, we will use "Ravenswood Bluff" as the name of the Town
 
 ### Prerequisites
 
-In addition to inviting the bot (see above), it is recommended (but optional) that you have:
+In addition to inviting the bot (see above), it is recommended (but optional) that you have already created:
 * A Role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
 * A Role for server members who play the game. Example role name: **BotC Player** (if your server is entirely based around playing Blood on the Clocktower, this is totally unnecessary)
 
@@ -57,7 +57,9 @@ To quickly set up your town, simply send a command to the bot with the name of y
 
 > `!setupTown "Ravenswood Bluff" "BotC Storyteller" "BotC Player"`
 
-This will create all the categories, channels, and roles you need.
+This will create all the categories, channels, and roles needed by Ravenswood Bluff.
+
+**Note:** This command will not create the "BotC Storyteller" or "BotC Player" roles. It is expected you create them yourself if you need them.
 
 **NOTE:** The bot supports more than 1 town per Discord server. With 2 differently-named towns, you can run 2 games at once on the same server.
 
