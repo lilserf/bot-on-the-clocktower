@@ -656,27 +656,26 @@ class Gameplay(commands.Cog):
         names = shlex.split(ctx.message.content)
         
         sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names))
-        
-        await self.setStorytellersInternal(ctx, sts, True)
+
+        await self.setStorytellersInternal(ctx, sts)
         
 
 
     # Helper for setting a list of users as the current storytellers
-    async def setStorytellersInternal(self, ctx, sts, only=False):
+    async def setStorytellersInternal(self, ctx, sts):
 
         info = self.bot.getTownInfo(ctx)
 
-        if only:
-            # take any (ST) off of old storytellers
-            for o in info.activePlayers:
-                if o not in sts and info.storyTellerRole in o.roles:
-                    await o.remove_roles(info.storyTellerRole)
-                if o not in sts and o.display_name.startswith('(ST) '):
-                    newnick = o.display_name[5:]
-                    try:
-                        await o.edit(nick=newnick)
-                    except:
-                        pass
+        # take any (ST) off of old storytellers
+        for o in info.storyTellers:
+            if o not in sts:
+                await o.remove_roles(info.storyTellerRole)
+            if o not in sts and o.display_name.startswith('(ST) '):
+                newnick = o.display_name[5:]
+                try:
+                    await o.edit(nick=newnick)
+                except:
+                    pass
 
         # set up the new storytellers
         for storyTeller in sts:
@@ -709,9 +708,10 @@ class Gameplay(commands.Cog):
                 if info.villagerRole in m.roles:
                     prevPlayers.add(m)
 
-            # grant the storyteller the Current Storyteller role
+            # grant the storyteller the Current Storyteller role if necessary
             storyTeller = ctx.message.author
-            await self.setStorytellersInternal(ctx, [storyTeller])
+            if storyTeller not in info.storyTellers:
+                await self.setStorytellersInternal(ctx, [storyTeller])
 
             # find additions and deletions by diffing the sets
             remove = prevPlayers - info.activePlayers
@@ -747,8 +747,10 @@ class Gameplay(commands.Cog):
         for u in userlist:
             # See if anybody's name starts with what was sent
             uname = u.display_name.lower()
-            if uname.startswith('(ST) '):
+            # But ignore the starting (ST) for storytellers
+            if uname.startswith('(st) '):
                 uname = uname[5:]
+
             if uname.startswith(name.lower()):
                 return u
         
