@@ -93,13 +93,17 @@ Brings all members from the Nighttime category channels back to the Town Square.
 
 Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currgame`.
 
-### `!currgame`
+### `!currGame`
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the '(ST) ' nickname prefix.
 
 This logic is run by many other commands (`!night`, `!day`, etc.). This command is mostly useful if a Traveler enters the town.
 
-### `!endgame`
+### `!setStorytellers <name> <name>`
+
+Used to specify multiple storytellers for a game. Will remove the storyteller role and "(ST)" prefix from any previous storytellers.
+
+### `!endGame`
 
 Removes Storyteller and Villager roles, as well as `(ST) ` nickname prefix.
 
