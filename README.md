@@ -77,7 +77,13 @@ Once the night phase is complete, the Storyteller uses the `!day` command to bri
 
 The players can jump out to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations - they can use the `!vote` command to drag all the players back to the Town Square from any other Daytime channels.
 
-This cycle of night & day continues until there's a winner! Once everyone says goodbye, the Storyteller can run `!endgame` to remove roles and nicknames so there aren't dozens of visible BotC channels clogging your server when no games are ongoing.
+This cycle of night & day continues until there's a winner!
+
+If you'd like to start a new game with a new storyteller, the new Storyteller can run `!night` when ready to take over Storytelling duties.
+
+If you have more than one Storyteller, check out the `!setStorytellers` command reference below.
+
+Once you're all done playing, a Storyteller can optionally run `!endgame` to remove roles and nicknames, generally cleaning up the town (though the bot will run this automatically after a few hours).
 
 ## Gameplay Command Details
 
