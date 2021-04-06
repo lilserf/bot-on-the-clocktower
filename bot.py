@@ -73,9 +73,12 @@ class TownInfo:
             self.activePlayers = activePlayers
 
             self.storyTellers = set()
+            self.villagers = set()
             for p in self.activePlayers:
                 if self.storyTellerRole in p.roles:
                     self.storyTellers.add(p)
+                else:
+                    self.villagers.add(p)
 
             self.authorName = document["authorName"]
             self.timestamp = document["timestamp"]
@@ -657,6 +660,10 @@ class Gameplay(commands.Cog):
         
         sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
 
+        foundNames = map(lambda x: x.display_name, sts)
+        nameMsg = ", ".join(foundNames)
+        await ctx.send(f"Setting storytellers to {nameMsg}...")
+
         await self.setStorytellersInternal(ctx, sts)
         
 
@@ -711,6 +718,7 @@ class Gameplay(commands.Cog):
             # grant the storyteller the Current Storyteller role if necessary
             storyTeller = ctx.message.author
             if storyTeller not in info.storyTellers:
+                await ctx.send(f"New storyteller! Switching storyteller to {storyTeller.name}")
                 await self.setStorytellersInternal(ctx, [storyTeller])
 
             # find additions and deletions by diffing the sets
@@ -867,13 +875,21 @@ class Gameplay(commands.Cog):
             info = self.bot.getTownInfo(ctx)
 
             # get list of users in town square   
-            users = list(info.activePlayers)
+            users = list(info.villagers)
             users.sort(key=lambda x: x.display_name)
             cottages = list(info.nightChannels)
             cottages.sort(key=lambda x: x.position)
 
-            await ctx.send(f'Moving {len(users)} users to Cottages!')
+            await ctx.send(f'Moving {len(info.storyTellers)} storytellers and {len(users)} villagers to Cottages!')
             
+            # Put all storytellers in the first cottage
+            firstCottage = cottages[0]
+            for st in info.storyTellers:
+                await st.move_to(firstCottage)
+
+            # And everybody else in the rest
+            cottages = cottages[1:]
+
             # pair up users with cottages
             pairs = list(map(lambda x, y: (x,y), users, cottages))
             # randomize the order people are moved
