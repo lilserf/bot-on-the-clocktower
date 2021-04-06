@@ -103,7 +103,7 @@ Brings all members from other Daytime category channels back to the Town Square 
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the '(ST) ' nickname prefix.
 
-This logic is run by many other commands (`!night`, `!day`, etc.). This command is mostly useful if a Traveler enters the town.
+This logic is run by `!night` already, so this command is mostly useful if a Traveler enters the town midday.
 
 ### `!setStorytellers <name> <name>`
 
