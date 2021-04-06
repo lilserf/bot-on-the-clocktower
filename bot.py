@@ -655,7 +655,7 @@ class Gameplay(commands.Cog):
 
         names = shlex.split(ctx.message.content)
         
-        sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names))
+        sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
         
         await self.setStorytellersInternal(ctx, sts, True)
         
