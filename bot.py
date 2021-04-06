@@ -72,6 +72,14 @@ class TownInfo:
                 activePlayers.update(c.members)
             self.activePlayers = activePlayers
 
+            self.storyTellers = set()
+            self.villagers = set()
+            for p in self.activePlayers:
+                if self.storyTellerRole in p.roles:
+                    self.storyTellers.add(p)
+                else:
+                    self.villagers.add(p)
+
             self.authorName = document["authorName"]
             self.timestamp = document["timestamp"]
 
@@ -592,12 +600,12 @@ class Gameplay(commands.Cog):
     async def onEndGameInternal(self, guild, info):
         # find all guild members with the Current Game role
         prevPlayers = set()
-        prevSt = None
+        prevSts = set()
         for m in guild.members:
             if info.villagerRole in m.roles:
                 prevPlayers.add(m)
             if info.storyTellerRole in m.roles:
-                prevSt = m
+                prevSts.add(m)
 
         # remove game role from players
         for m in prevPlayers:
@@ -608,10 +616,10 @@ class Gameplay(commands.Cog):
             # Take away permission overwrites for this cottage
             for m in prevPlayers:
                 await c.set_permissions(m, overwrite=None)
-            if prevSt:
+            for prevSt in prevSts:
                 await c.set_permissions(prevSt, overwrite=None)
 
-        if prevSt:
+        for prevSt in prevSts:
             # remove storyteller role and name from storyteller
             await prevSt.remove_roles(info.storyTellerRole)
             if prevSt.display_name.startswith('(ST) '):
@@ -640,6 +648,55 @@ class Gameplay(commands.Cog):
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
 
+    # Set the current storytellers
+    @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
+    async def onSetSTs(self, ctx):
+        if not await self.isValid(ctx):
+            return
+
+        info = self.bot.getTownInfo(ctx)
+
+        names = shlex.split(ctx.message.content)
+        
+        sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
+
+        foundNames = map(lambda x: x.display_name, sts)
+        nameMsg = ", ".join(foundNames)
+        await ctx.send(f"Setting storytellers to {nameMsg}...")
+
+        await self.setStorytellersInternal(ctx, sts)
+        
+
+
+    # Helper for setting a list of users as the current storytellers
+    async def setStorytellersInternal(self, ctx, sts):
+
+        info = self.bot.getTownInfo(ctx)
+
+        # take any (ST) off of old storytellers
+        for o in info.storyTellers:
+            if o not in sts:
+                await o.remove_roles(info.storyTellerRole)
+            if o not in sts and o.display_name.startswith('(ST) '):
+                newnick = o.display_name[5:]
+                try:
+                    await o.edit(nick=newnick)
+                except:
+                    pass
+
+        # set up the new storytellers
+        for storyTeller in sts:
+            if storyTeller is None:
+                continue
+
+            await storyTeller.add_roles(info.storyTellerRole)
+            
+            # add (ST) to the start of the current storyteller
+            if not storyTeller.display_name.startswith('(ST) '):
+                try:
+                    await storyTeller.edit(nick=f"(ST) {storyTeller.display_name}")
+                except:
+                    pass
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
@@ -658,27 +715,11 @@ class Gameplay(commands.Cog):
                 if info.villagerRole in m.roles:
                     prevPlayers.add(m)
 
-            # grant the storyteller the Current Storyteller role
+            # grant the storyteller the Current Storyteller role if necessary
             storyTeller = ctx.message.author
-            await storyTeller.add_roles(info.storyTellerRole)
-
-            # take any (ST) off of old storytellers
-            for o in info.activePlayers:
-                if o != storyTeller and info.storyTellerRole in o.roles:
-                    await o.remove_roles(info.storyTellerRole)
-                if o != storyTeller and o.display_name.startswith('(ST) '):
-                    newnick = o.display_name[5:]
-                    try:
-                        await o.edit(nick=newnick)
-                    except:
-                        pass
-            
-            # add (ST) to the start of the current storyteller
-            if not storyTeller.display_name.startswith('(ST) '):
-                try:
-                    await storyTeller.edit(nick=f"(ST) {storyTeller.display_name}")
-                except:
-                    pass
+            if storyTeller not in info.storyTellers:
+                await ctx.send(f"New storyteller! Switching storyteller to {storyTeller.name}")
+                await self.setStorytellersInternal(ctx, [storyTeller])
 
             # find additions and deletions by diffing the sets
             remove = prevPlayers - info.activePlayers
@@ -713,7 +754,12 @@ class Gameplay(commands.Cog):
     def getClosestUser(self, userlist, name):
         for u in userlist:
             # See if anybody's name starts with what was sent
-            if u.display_name.lower().startswith(name.lower()):
+            uname = u.display_name.lower()
+            # But ignore the starting (ST) for storytellers
+            if uname.startswith('(st) '):
+                uname = uname[5:]
+
+            if uname.startswith(name.lower()):
                 return u
         
         return None
@@ -829,13 +875,21 @@ class Gameplay(commands.Cog):
             info = self.bot.getTownInfo(ctx)
 
             # get list of users in town square   
-            users = list(info.activePlayers)
+            users = list(info.villagers)
             users.sort(key=lambda x: x.display_name)
             cottages = list(info.nightChannels)
             cottages.sort(key=lambda x: x.position)
 
-            await ctx.send(f'Moving {len(users)} users to Cottages!')
+            await ctx.send(f'Moving {len(info.storyTellers)} storytellers and {len(users)} villagers to Cottages!')
             
+            # Put all storytellers in the first cottage
+            firstCottage = cottages[0]
+            for st in info.storyTellers:
+                await st.move_to(firstCottage)
+
+            # And everybody else in the rest
+            cottages = cottages[1:]
+
             # pair up users with cottages
             pairs = list(map(lambda x, y: (x,y), users, cottages))
             # randomize the order people are moved
