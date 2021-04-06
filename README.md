@@ -105,13 +105,19 @@ Sets the correct roles on all members currently in the voice channels, and gives
 
 This logic is run by `!night` already, so this command is mostly useful if a Traveler enters the town midday.
 
+### `!endGame`
+
+Removes Storyteller and Villager roles, as well as `(ST) ` nickname prefix. Automatically run on the town after a few hours of inactivity.
+
 ### `!setStorytellers <name> <name>`
 
 Used to specify multiple storytellers for a game. Will remove the storyteller role and "(ST)" prefix from any previous storytellers.
 
-### `!endGame`
+Example usage:
 
-Removes Storyteller and Villager roles, as well as `(ST) ` nickname prefix.
+> `!setStorytellers Alice Bob`
+
+> `!setStorytellers Alice "Bob G"`
 
 ### `!evil <demon> <minion> <minion> <minion>...`
 
