@@ -20,20 +20,19 @@ For these setup examples, we will use a town named "Ravenswood Bluff", but you c
 
 ### Prerequisites
 
-First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=486550544&scope=bot) **\<\<**
+First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=bot) **\<\<**
 
 This bot requires the following permissions:
 
 | Permission | Why? |
 | ---------- | ---- |
-| View Channels | Required for many operations  |
-| Send Messages | Required for many operations |
 | Manage Roles | To grant the storyteller and villager roles, and to create/destroy roles with `!createTown` and `!destroyTown` commands |
-| Move Members | To move players to nighttime rooms or back to the Town Square |
-| Manage Messages | To delete `!evil` commands so players can't see who's evil |
 | Manage Channels | For creating/destroy channels and categories with `!createTown` and `!destroyTown` commands  |
 | Manage Nicknames | To add/remove '(ST) ' to/from the storyteller's nickname |
-| Change Nicknames | *Probably unneeded?* |
+| View Channels | Required for many operations  |
+| Send Messages | Required for many operations |
+| Manage Messages | To delete `!evil` commands so players can't see who's evil |
+| Move Members | To move players to nighttime rooms or back to the Town Square |
 
 In addition, it is recommended (but optional) that you have already created:
 * A Role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
