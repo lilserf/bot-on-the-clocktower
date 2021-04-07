@@ -578,7 +578,7 @@ class Gameplay(commands.Cog):
 
     # Given a list of users, return a list of their names
     def userNames(self, users):
-        return list(map(lambda x: x.display_name, users))
+        return list(map(lambda x: self.getUserName(x), users))
 
     # Helper to see if a command context is in a valid channel etc - used by all the commands
     async def isValid(self, ctx):
@@ -598,6 +598,9 @@ class Gameplay(commands.Cog):
         return False
 
     async def onEndGameInternal(self, guild, info):
+
+        msg = ""
+
         # find all guild members with the Current Game role
         prevPlayers = set()
         prevSts = set()
@@ -607,6 +610,8 @@ class Gameplay(commands.Cog):
             if info.storyTellerRole in m.roles:
                 prevSts.add(m)
 
+        nameList = ", ".join(self.userNames(prevPlayers))
+        msg += f"Removed **{info.villagerRole.name}** role from: **{nameList}**"
         # remove game role from players
         for m in prevPlayers:
             await m.remove_roles(info.villagerRole)
@@ -619,6 +624,9 @@ class Gameplay(commands.Cog):
             for prevSt in prevSts:
                 await c.set_permissions(prevSt, overwrite=None)
 
+        nameList = ", ".join(self.userNames(prevSts))
+        msg += f"\nRemoved **{info.storyTellerRole.name}** role from: **{nameList}**"
+
         for prevSt in prevSts:
             # remove storyteller role and name from storyteller
             await prevSt.remove_roles(info.storyTellerRole)
@@ -628,6 +636,8 @@ class Gameplay(commands.Cog):
                     await prevSt.edit(nick=newnick)
                 except:
                     pass
+
+        return msg
 
 
     # End the game and remove all the roles, permissions, etc
@@ -641,7 +651,8 @@ class Gameplay(commands.Cog):
 
             info = self.bot.getTownInfo(ctx)
 
-            await self.onEndGameInternal(guild, info)
+            msg = await self.onEndGameInternal(guild, info)
+            await ctx.send(msg)
 
             self.removeActiveGame(guild, ctx.channel)
 
@@ -660,9 +671,9 @@ class Gameplay(commands.Cog):
         
         sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
 
-        foundNames = map(lambda x: x.display_name, sts)
+        foundNames = map(lambda x: self.getUserName(x), sts)
         nameMsg = ", ".join(foundNames)
-        await ctx.send(f"Setting storytellers to {nameMsg}...")
+        await ctx.send(f"Setting storytellers to **{nameMsg}**...")
 
         await self.setStorytellersInternal(ctx, sts)
         
@@ -698,6 +709,12 @@ class Gameplay(commands.Cog):
                 except:
                     pass
 
+        addMsg = f"Set **{info.storyTellerRole.name}** role for: **"
+        addMsg += ', '.join(map(lambda x: self.getUserName(x), sts))
+        addMsg += "**"
+        await ctx.send(addMsg)
+
+
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
     async def onCurrGame(self, ctx):
@@ -718,7 +735,7 @@ class Gameplay(commands.Cog):
             # grant the storyteller the Current Storyteller role if necessary
             storyTeller = ctx.message.author
             if storyTeller not in info.storyTellers:
-                await ctx.send(f"New storyteller! Switching storyteller to {storyTeller.name}")
+                await ctx.send(f"New storyteller: **{self.getUserName(storyTeller)}**. (Use `!setStorytellers` for 2+ storytellers)")
                 await self.setStorytellersInternal(ctx, [storyTeller])
 
             # find additions and deletions by diffing the sets
@@ -727,16 +744,18 @@ class Gameplay(commands.Cog):
 
             # remove any stale players
             if len(remove) > 0:
-                removeMsg = f"Removed {info.villagerRole.name} role from: "
+                removeMsg = f"Removed **{info.villagerRole.name} role from: **"
                 removeMsg += ', '.join(self.userNames(remove))
+                removeMsg += "**"
                 for m in remove:
                     await m.remove_roles(info.villagerRole)
                 await ctx.send(removeMsg)
 
             # add any new players
             if len(add) > 0:
-                addMsg = f"Added {info.villagerRole.name} role to: "
+                addMsg = f"Added **{info.villagerRole.name}** role to: **"
                 addMsg += ', '.join(self.userNames(add))
+                addMsg += "**"
                 for m in add:
                     await m.add_roles(info.villagerRole)
                 await ctx.send(addMsg)
@@ -750,14 +769,20 @@ class Gameplay(commands.Cog):
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
 
+    def getUserName(self, user):
+        name = user.display_name
+        # But ignore the starting (ST) for storytellers
+        if name.startswith('(ST) '):
+            name = name[5:]
+
+        return name
+
+
     # Given a list of users and a name string, find the user with the closest name
     def getClosestUser(self, userlist, name):
         for u in userlist:
             # See if anybody's name starts with what was sent
-            uname = u.display_name.lower()
-            # But ignore the starting (ST) for storytellers
-            if uname.startswith('(st) '):
-                uname = uname[5:]
+            uname = self.getUserName(u).lower()
 
             if uname.startswith(name.lower()):
                 return u
@@ -802,7 +827,7 @@ class Gameplay(commands.Cog):
 
     # Send a message to the demon
     async def sendDemonMessage(self, demonUser, minionUsers):
-        demonMsg = f"{demonUser.display_name}: You are the **demon**. Your minions are: "
+        demonMsg = f"{self.getUserName(demonUser)}: You are the **demon**. Your minions are: "
         minionNames = self.userNames(minionUsers)
         demonMsg += ', '.join(minionNames)
         await demonUser.send(demonMsg)
@@ -850,10 +875,10 @@ class Gameplay(commands.Cog):
 
             for m in minionUsers:
                 otherMinions = self.userNames(minionUsers)
-                otherMinions.remove(m.display_name)
+                otherMinions.remove(self.getUserName(m))
 
                 otherMinionsMsg = ', '.join(otherMinions)
-                formattedMsg = minionMsg.format(m.display_name, demonUser.display_name, otherMinionsMsg)
+                formattedMsg = minionMsg.format(self.getUserName(m), self.getUserName(demonUser), otherMinionsMsg)
                 await m.send(formattedMsg)
 
             await ctx.send("The Evil team has been informed...")
@@ -905,7 +930,7 @@ class Gameplay(commands.Cog):
             await self.bot.sendErrorToAuthor(ctx)
 
     # Move users from night Cottages back to Town Square
-    @commands.command(name='day', help='Move users from Cottages back to Town Square')
+    @commands.command(name='day', help='Move players from Cottages back to Town Square')
     async def onDay(self, ctx):
         if not await self.isValid(ctx):
             return
@@ -921,7 +946,7 @@ class Gameplay(commands.Cog):
                 for m in c.members:
                     await c.set_permissions(m, overwrite=None)
 
-            await ctx.send(f'Moving {len(users)} users from Cottages to {info.townSquare.name}.')
+            await ctx.send(f'Moving {len(users)} players from Cottages to **{info.townSquare.name}**.')
 
             # randomize the order we bring people back
             random.shuffle(users)
@@ -934,7 +959,7 @@ class Gameplay(commands.Cog):
             await self.bot.sendErrorToAuthor(ctx)
 
     # Move users from other daytime channels back to Town Square
-    @commands.command(name='vote', help='Move users from daytime channels back to Town Square')
+    @commands.command(name='vote', help='Move players from daytime channels back to Town Square')
     async def onVote(self, ctx):
         if not await self.isValid(ctx):
             return
@@ -948,7 +973,7 @@ class Gameplay(commands.Cog):
                 if c != info.townSquare:
                     users.extend(c.members)
 
-            await ctx.send(f'Moving {len(users)} users from daytime channels to {info.townSquare.name}.')
+            await ctx.send(f'Moving {len(users)} players from daytime channels to **{info.townSquare.name}**.')
 
             # move them to Town Square
             for user in users:
