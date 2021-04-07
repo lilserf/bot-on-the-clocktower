@@ -142,7 +142,7 @@ Minions get a message reading:
 
 > Bob: You are a **minion**. Your demon is: Alice. Your fellow minions are: Carol
 
-### `!lunatic <demon> <minion> <minion> <minion>...`
+### `!lunatic <lunatic> <fake minion> <fake minion> <fake minion>...`
 
 Sends a DM to the Lunatic identical to those sent by `!evil` telling them who their fake minions are.
 
