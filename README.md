@@ -37,8 +37,8 @@ This bot requires the following permissions:
 | Move Members | To move players to nighttime rooms or back to the Town Square |
 
 In addition, it is recommended (but optional) that you have already created:
-* A Role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
-* A Role for server members who play the game. Example role name: **BotC Player** (if your server is entirely based around playing Blood on the Clocktower, this is totally unnecessary)
+* A role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
+* A role for server members who play the game. Example role name: **BotC Player** (if your server is entirely based around playing Blood on the Clocktower, this is totally unnecessary)
 
 You will of course want to grant this role to the appropriate members.
 
