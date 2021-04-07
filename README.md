@@ -72,9 +72,9 @@ When it's time for Night 1 to begin, the Storyteller can use `!night` to send al
 
 Each player has permissions only for the Cottage they're placed in, so they can't see each other at all, but the Storyteller can see all the Cottages.
 
-At this point the Storyteller can visit Cottages as dictated by the night order (the players are even alphabetized into the Cottages to make finding the player you need easier!).
+At this point the Storyteller can visit Cottages as dictated by the night order (the players are even alphabetized into the Cottages to make finding the player you need easier!). The permissions will even allow the storyteller to screen-share with users in the Cottages (for instance, to show the Grimoire to the Spy).
 
-Optionally, to distribute the Minion and Demon info, the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
+Optionally, to distribute the Minion and Demon info (but not the demon bluffs), the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
 
 Once the night phase is complete, the Storyteller uses the `!day` command to bring the players back to the Town Square, tell them who died, and start discussion.
 
