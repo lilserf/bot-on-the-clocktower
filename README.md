@@ -24,27 +24,28 @@ For these setup examples, we will use a town named "Ravenswood Bluff", but you c
 
 First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=bot) **\<\<**
 
-This bot requires the following permissions:
+This bot requests the following permissions:
 
 | Permission | Why? |
 | ---------- | ---- |
-| Manage Roles | To grant the Storyteller and villager roles, and to create/destroy roles with `!createTown` and `!destroyTown` commands |
-| Manage Channels | For creating/destroy channels and categories with `!createTown` and `!destroyTown` commands  |
-| Manage Nicknames | To add/remove **(ST)** to/from the Storyteller's nickname |
-| View Channels | Required for many operations  |
-| Send Messages | Required for many operations |
-| Manage Messages | To delete `!evil` commands so players can't see who's evil |
+| Manage Channels | To create/destroy channels and categories with `!createTown` and `!destroyTown` commands |
+| Manage Roles | To grant/remove Storyteller and Villager roles<br/>To create/destroy roles with `!createTown` and `!destroyTown` commands |
+| Manage Nicknames | To add/remove **(ST)** for the Storyteller's nickname |
 | Move Members | To move players to nighttime rooms or back to the Town Square |
+| Manage Messages | To delete `!evil` command messages so players can't see who's evil |
+| View Channels | Required for many operations |
+| Send Messages | Required for many operations |
 
-In addition, it is recommended (but optional) that you have already created:
+In addition, it is recommended (but optional) that your server has the following roles:
 * A role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
-* A role for server members who play the game. Example role name: **BotC Player** (if your server is entirely based around playing Blood on the Clocktower, this is totally unnecessary)
+* A role for server members who play the game. Example role name: **BotC Player**
+  * If your server is entirely based around playing Blood on the Clocktower, this is unnecessary.
 
-You will of course want to grant this role to the appropriate members.
+You should grant this role to appropriate server members, as the bot will not grant these roles for you.
 
 #### A note on Server Ownership
 
-Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, the owner of the server can see all channels no matter what. In addition, the bot cannot change the nickname of the server owner. For these reasons, if the server owner wants to play too, it is recommended that they create a separate Discord account to act as the actual owner, and use a personal non-owner account to play Blood on the Clocktower.
+Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, the server owner can always see all channels. In addition, the bot cannot change the nickname of the server owner. For these reasons, if the server owner wants to play too, it is recommended that they create a separate Discord account to act as the actual server owner, and use a non-owner account to play instead.
 
 ### Quick Setup: `!createTown`
 
@@ -66,27 +67,25 @@ For more information on precisely what this setup does (what categories, roles, 
 
 ## Gameplay
 
-All players can gather in the Town Square channel while the Storyteller sets up the game on http://clocktower.online or whatever other mechanism your group uses.
+All players can gather in the Town Square channel while the Storyteller sets up the game on http://clocktower.online (or whatever mechanism your group uses).
 
-When it's time for Night 1 to begin, the Storyteller can use `!night` to send all players to their individual Cottages.
+When it's time for Night 1 to begin, the Storyteller uses `!night` to send all players to their individual Cottages. Each player has permissions only for the Cottage they're placed in, so they can't see each other at all, but the Storyteller can see all the Cottages.
 
-Each player has permissions only for the Cottage they're placed in, so they can't see each other at all, but the Storyteller can see all the Cottages.
+Optionally, to distribute the Minion and Demon info (but not the Demon bluffs), the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
 
-At this point the Storyteller can visit Cottages as dictated by the night order (the players are even alphabetized into the Cottages to make finding the player you need easier!).
+At this point, the Storyteller can visit Cottages as dictated by the night order (the players are alphabetized into the Cottages to make finding players easier). The permissions are set up to allow the Storyteller to screen-share with users in the Cottages (for instance, to show the Grimoire to the Spy or Widow).
 
-Optionally, to distribute the Minion and Demon info, the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
+Once the night phase is complete, the Storyteller uses the `!day` command to bring the players back to the Town Square and begin the day.
 
-Once the night phase is complete, the Storyteller uses the `!day` command to bring the players back to the Town Square, tell them who died, and start discussion.
-
-The players can jump out to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations - they can use the `!vote` command to drag all the players back to the Town Square from any other Daytime channels.
+Players can switch to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations. The Storyteller may use the `!vote` command to drag all the players back to the Town Square.
 
 This cycle of night & day continues until there's a winner!
 
 If you'd like to start a new game with a new Storyteller, the new Storyteller can run `!night` when ready to take over Storytelling duties.
 
-If you have more than one Storyteller, check out the `!setStorytellers` command reference below.
-
 Once you're all done playing, a Storyteller can optionally run `!endgame` to remove roles and nicknames, generally cleaning up the town (though the bot will run this automatically after a few hours).
+
+If you have more than one Storyteller, check out the `!setStorytellers` command reference below. This would be run before starting the first night.
 
 ---
 
@@ -94,21 +93,21 @@ Once you're all done playing, a Storyteller can optionally run `!endgame` to rem
 
 ### `!night`
 
-Sends all members in the Town Square channel to individual channels within the Nighttime category. Also runs `!currgame`.
+Sends all members in the Town Square channel to individual channels within the Nighttime category. Also runs `!currGame`.
 
 ### `!day`
 
-Brings all members from the Nighttime category channels back to the Town Square. Also runs `!currgame`.
+Brings all members from the Nighttime category channels back to the Town Square. Also runs `!currGame`.
 
 ### `!vote`
 
-Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currgame`.
+Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currGame`.
 
 ### `!currGame`
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the **(ST)** nickname prefix.
 
-This logic is run by `!night` already, so this command is mostly useful if a Traveler enters the town midday.
+This logic is run by other commands already, so this command is mostly useful if a Traveler enters the town midday.
 
 ### `!endGame`
 
@@ -117,6 +116,8 @@ Removes Storyteller and Villager roles, as well as the **(ST)** nickname prefix.
 ### `!setStorytellers <name> <name>`
 
 Used to specify multiple Storytellers for a game. Will remove the Storyteller role and **(ST)** nickname prefix from any previous Storyteller(s).
+
+Any of these Storytellers may run the various gameplay commands. They will also be grouped together into the first Cottage during the night.
 
 Example usage:
 
@@ -142,7 +143,7 @@ Minions get a message reading:
 
 > Bob: You are a **minion**. Your demon is: Alice. Your fellow minions are: Carol
 
-### `!lunatic <demon> <minion> <minion> <minion>...`
+### `!lunatic <lunatic> <fake minion> <fake minion> <fake minion>...`
 
 Sends a DM to the Lunatic identical to those sent by `!evil` telling them who their fake minions are.
 
@@ -187,7 +188,7 @@ Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff"
     * A "**control**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend be a Storyteller, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
     * A "**Town Square**" voice channel. This is the main lobby for the game. Permissions should allow this to be visible to anyone who wants to play.
     * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
-    * A single "game-chat" text channel, also inheriting category permissions. This is for the villagers to chat, especially during the night phase.
+    * A single "game-chat" text channel, also inheriting category permissions. This is for the Villagers to chat, especially during the night phase.
 * A "**Ravenswood Bluff - Night**" nighttime category
   * Permission should be set up to be visible to "**Ravenswood Bluff Storyteller**", and allow **Bot on the Clocktower** to move members
   * This category can contain a bunch of voice channels that inherit category permissions. Common setup is to use 20 channels all named "Cottage"
