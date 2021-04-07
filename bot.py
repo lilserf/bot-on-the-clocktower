@@ -185,7 +185,7 @@ class Setup(commands.Cog):
         stRoleName = params[5]
         villagerName = params[6]
         
-        await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName)
+        return await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName)
 
 
     # Using passed-in name params, resolve town info and find all the stuff needed to post to DB
