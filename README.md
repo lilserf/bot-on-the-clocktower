@@ -12,6 +12,8 @@ All of this can be set up manually, and general-purpose bots can be used to move
 
 This bot handles setting up the channels, roles, and permissions automatically, as well as moving the players back and forth during the various phases of the game without needing to type in complex movement commands!
 
+---
+
 ## Setup
 
 The expected setup for using the bot is to have a set of categories, channels, and roles representing a "Town".
@@ -56,9 +58,11 @@ The bot supports more than 1 town per Discord server. With 2 differently-named t
 
 **Note:** This command will not create the "BotC Storyteller" or "BotC Player" roles. It is expected you create them yourself if you need them.
 
-### Explanation of the Setup
+#### Explanation of the Setup
 
 For more information on precisely what this setup does (what categories, roles, and permissions are created), see the `!addTown` command reference, below.
+
+---
 
 ## Gameplay
 
@@ -83,6 +87,8 @@ If you'd like to start a new game with a new storyteller, the new Storyteller ca
 If you have more than one Storyteller, check out the `!setStorytellers` command reference below.
 
 Once you're all done playing, a Storyteller can optionally run `!endgame` to remove roles and nicknames, generally cleaning up the town (though the bot will run this automatically after a few hours).
+
+---
 
 ## Gameplay Command Details
 
@@ -140,6 +146,8 @@ Minions get a message reading:
 
 Sends a DM to the Lunatic identical to those sent by `!evil` telling them who their fake minions are.
 
+---
+
 ## Setup Command Details
 
 ### `!createTown <townName> [serverStorytellerRole] [serverPlayerRole]`
@@ -193,6 +201,8 @@ If that command works, you're ready to run a game!
 ### `!removeTown`
 
 The opposite of `!addTown` - when run in the control channel for a town, removes registration of this town from the bot. The channels and roles will still exist and are not touched.
+
+---
 
 ## Support
 
