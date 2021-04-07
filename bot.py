@@ -252,7 +252,7 @@ class Setup(commands.Cog):
             "timestamp" : ctx.message.created_at
         }
 
-        objs = TownInfo(ctx, post)
+        objs = TownInfo(guild, post)
 
         return (post, objs)
 
