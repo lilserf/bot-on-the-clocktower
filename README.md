@@ -93,21 +93,21 @@ If you have more than one Storyteller, check out the `!setStorytellers` command 
 
 ### `!night`
 
-Sends all members in the Town Square channel to individual channels within the Nighttime category. Also runs `!currgame`.
+Sends all members in the Town Square channel to individual channels within the Nighttime category. Also runs `!currGame`.
 
 ### `!day`
 
-Brings all members from the Nighttime category channels back to the Town Square. Also runs `!currgame`.
+Brings all members from the Nighttime category channels back to the Town Square. Also runs `!currGame`.
 
 ### `!vote`
 
-Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currgame`.
+Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currGame`.
 
 ### `!currGame`
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the **(ST)** nickname prefix.
 
-This logic is run by `!night` already, so this command is mostly useful if a Traveler enters the town midday.
+This logic is run by other commands already, so this command is mostly useful if a Traveler enters the town midday.
 
 ### `!endGame`
 
