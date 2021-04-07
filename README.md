@@ -4,7 +4,7 @@ Discord bot to assist with running a game of Blood on the Clocktower on Discord
 ## Introduction: What does this bot do?
 
 To easily play Blood on the Clocktower via Discord voice channels, you need:
-* A place for all players and the storyteller to discuss openly (the Town Square channel)
+* A place for all players and the Storyteller to discuss openly (the Town Square channel)
 * Smaller gathering places for players to congregate for smaller semi-private conversations (other daytime channels)
 * Individual places for each player to go during the night, where the Storyteller can visit them privately (night "Cottage" channels)
 
@@ -28,9 +28,9 @@ This bot requires the following permissions:
 
 | Permission | Why? |
 | ---------- | ---- |
-| Manage Roles | To grant the storyteller and villager roles, and to create/destroy roles with `!createTown` and `!destroyTown` commands |
+| Manage Roles | To grant the Storyteller and villager roles, and to create/destroy roles with `!createTown` and `!destroyTown` commands |
 | Manage Channels | For creating/destroy channels and categories with `!createTown` and `!destroyTown` commands  |
-| Manage Nicknames | To add/remove '(ST) ' to/from the storyteller's nickname |
+| Manage Nicknames | To add/remove **(ST)** to/from the Storyteller's nickname |
 | View Channels | Required for many operations  |
 | Send Messages | Required for many operations |
 | Manage Messages | To delete `!evil` commands so players can't see who's evil |
@@ -56,7 +56,7 @@ This will create all the categories, channels, and roles needed by Ravenswood Bl
 
 The bot supports more than 1 town per Discord server. With 2 differently-named towns, you can run 2 games at once on the same server.
 
-**Note:** This command will not create the "BotC Storyteller" or "BotC Player" roles. It is expected you create them yourself if you need them.
+**Note:** This command will create neither the **BotC Storyteller** nor **BotC Player** roles. It is expected you create them yourself if you need them.
 
 #### Explanation of the Setup
 
@@ -82,7 +82,7 @@ The players can jump out to other Daytime channels to have semi-private conversa
 
 This cycle of night & day continues until there's a winner!
 
-If you'd like to start a new game with a new storyteller, the new Storyteller can run `!night` when ready to take over Storytelling duties.
+If you'd like to start a new game with a new Storyteller, the new Storyteller can run `!night` when ready to take over Storytelling duties.
 
 If you have more than one Storyteller, check out the `!setStorytellers` command reference below.
 
@@ -106,17 +106,17 @@ Brings all members from other Daytime category channels back to the Town Square 
 
 ### `!currGame`
 
-Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the '(ST) ' nickname prefix.
+Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the **(ST)** nickname prefix.
 
 This logic is run by `!night` already, so this command is mostly useful if a Traveler enters the town midday.
 
 ### `!endGame`
 
-Removes Storyteller and Villager roles, as well as `(ST) ` nickname prefix. Automatically run on the town after a few hours of inactivity.
+Removes Storyteller and Villager roles, as well as the **(ST)** nickname prefix. Automatically run on the town after a few hours of inactivity.
 
 ### `!setStorytellers <name> <name>`
 
-Used to specify multiple storytellers for a game. Will remove the storyteller role and "(ST)" prefix from any previous storytellers.
+Used to specify multiple Storytellers for a game. Will remove the Storyteller role and **(ST)** nickname prefix from any previous Storyteller(s).
 
 Example usage:
 
@@ -154,9 +154,9 @@ Sends a DM to the Lunatic identical to those sent by `!evil` telling them who th
 
 Creates an entire town from nothing, including all of its categories, channels, and roles.
 
-The optional `serverStorytellerRole` is an already-created server-wide role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyone on the server will see this channel.
+The optional `serverStorytellerRole` is an already-created server role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyone on the server will see this channel.
 
-The optional `serverPlayerRole` is an already-created server-wide role for members of your server who wish to play Blood on the Clocktower. They will be granted access to see the Town Square when a game is not in progress. If not provided, everyone on the server will see the Town Square.
+The optional `serverPlayerRole` is an already-created server role for members of your server who wish to play Blood on the Clocktower. They will be granted access to see the Town Square when a game is not in progress. If not provided, everyone on the server will see the Town Square.
 
 For more information about precisely what this sets up (in case you wanted to do it all yourself manually for some reason), see the `!addTown` command reference below.
 
@@ -184,7 +184,7 @@ Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff"
 * A "**Ravenswood Bluff**" daytime category
   * Category permissions should be set up to be visible to "**Ravenswood Bluff Villager**", and allow **Bot on the Clocktower** to move members
   * The category should contain these channels:
-    * A "**control**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend to do any storytelling, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
+    * A "**control**" text channel. This is for interacting with the bot. Permissions should make this visible only to the **Bot on the Clocktower** role, as well as any members who may want to be Storytellers. It can be hidden from members who don't intend be a Storyteller, so you can remove "**Ravenswood Bluff Villager**" from the permissions set.
     * A "**Town Square**" voice channel. This is the main lobby for the game. Permissions should allow this to be visible to anyone who wants to play.
     * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
     * A single "game-chat" text channel, also inheriting category permissions. This is for the villagers to chat, especially during the night phase.
