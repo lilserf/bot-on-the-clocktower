@@ -71,9 +71,9 @@ All players can gather in the Town Square channel while the Storyteller sets up 
 
 When it's time for Night 1 to begin, the Storyteller uses `!night` to send all players to their individual Cottages. Each player has permissions only for the Cottage they're placed in, so they can't see each other at all, but the Storyteller can see all the Cottages.
 
-Optionally, to distribute the Minion and Demon info, the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
+Optionally, to distribute the Minion and Demon info (but not the Demon bluffs), the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
 
-At this point, the Storyteller can visit Cottages as dictated by the night order (the players are alphabetized into the Cottages to make finding players easier).
+At this point, the Storyteller can visit Cottages as dictated by the night order (the players are alphabetized into the Cottages to make finding players easier). The permissions are set up to allow the Storyteller to screen-share with users in the Cottages (for instance, to show the Grimoire to the Spy or Widow).
 
 Once the night phase is complete, the Storyteller uses the `!day` command to bring the players back to the Town Square and begin the day.
 
@@ -143,7 +143,7 @@ Minions get a message reading:
 
 > Bob: You are a **minion**. Your demon is: Alice. Your fellow minions are: Carol
 
-### `!lunatic <demon> <minion> <minion> <minion>...`
+### `!lunatic <lunatic> <fake minion> <fake minion> <fake minion>...`
 
 Sends a DM to the Lunatic identical to those sent by `!evil` telling them who their fake minions are.
 
