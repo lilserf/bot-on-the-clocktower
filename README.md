@@ -43,9 +43,9 @@ In addition, it is recommended (but optional) that your server has the following
 
 You should grant this role to appropriate server members, as the bot will not grant these roles for you.
 
-#### A note on Server Ownership
+#### A note on Server Administrators
 
-Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, the server owner can always see all channels. In addition, the bot cannot change the nickname of the server owner. For these reasons, if the server owner wants to play too, it is recommended that they create a separate Discord account to act as the actual server owner, and use a non-owner account to play instead.
+Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators (including the server owner) can always see all channels. In addition, the bot cannot change the nickname of Administrators. For these reasons, if an Administrator wants to play too, it is recommended that they create a separate Discord account to act as the actual Administrator / server owner, and use a non-Administrator account to play instead.
 
 ### Quick Setup: `!createTown`
 
