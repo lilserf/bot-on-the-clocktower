@@ -292,19 +292,19 @@ class Setup(commands.Cog):
         return (post, objs)
 
 
-    @commands.command(name='createTown', aliases=['createtown'], help='Create an entire town on this server, including categories, roles, channels, and permissions')
+    @commands.command(name='createTown', aliases=['createtown'], help='Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: !createTown <town name> [server storyteller role] [server player role] [noNight]')
     async def createTown(self, ctx):
         params = shlex.split(ctx.message.content)
 
         guild = ctx.guild
         
-        usageStr = "Usage: `<town name> [server storyteller role] [server player role]`"
+        usageStr = "Usage: `!createTown <town name> [server storyteller role] [server player role] [noNight]`"
 
         if len(params) < 2:
             await ctx.send("Too few params to `!createTown`. " + usageStr)
             return None
 
-        townName = params[1]        
+        townName = params[1]
         if not townName:
             await ctx.send("No town name provided. " + usageStr)
             return None
@@ -315,23 +315,34 @@ class Setup(commands.Cog):
             await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
             return None
         
+        allowNightCategory = True
         guildStRole = None
-        if len(params) > 2:
-            guildStRole = getRoleByName(guild, params[2])
-            if not guildStRole:
-                await ctx.send("Provided Storyteller Role **" + params[2] + "** not found.")
-                return None
-                
         guildPlayerRole = None
-        if len(params) > 3:
-            guildPlayerRole = getRoleByName(guild, params[3])
-            if not guildPlayerRole:
-                await ctx.send("Provided Player Role **" + params[3] + "** not found.")
-                return None
+
+        # Check for additional params beyond the required ones
+        additionalParamCount = 0
+
+        for i in range(2, len(params)):
+            p = params[i]
+            if p.lower() == "nonight":
+                allowNightCategory = False
+            else:
+                if additionalParamCount == 0:
+                    guildStRole = getRoleByName(guild, p)
+                    if not guildStRole:
+                        await ctx.send("Provided Storyteller Role **" + p + "** not found.")
+                        return None
+                elif additionalParamCount == 1:
+                    guildPlayerRole = getRoleByName(guild, params[3])
+                    if not guildPlayerRole:
+                        await ctx.send("Provided Player Role **" + params[3] + "** not found.")
+                        return None
+                else:
+                    ctx.send(f"Unknown parameter: {p}")
         
         # These are in sync with those in destroyTown, could probably stand to abstract somehow
         dayCatName = townName
-        nightCatName = townName + " - Night"
+        nightCatName = allowNightCategory and townName + " - Night" or None
         gameStRoleName = townName + " Storyteller"
         gameVillagerRoleName = townName + " Villager"
         moverChannelName = "botc_mover"
@@ -370,13 +381,14 @@ class Setup(commands.Cog):
 
 
             # Night category
-            nightCat = getCategoryByName(guild, nightCatName)
-            if not nightCat:
-                nightCat = await guild.create_category(nightCatName)
+            if allowNightCategory:
+                nightCat = getCategoryByName(guild, nightCatName)
+                if not nightCat:
+                    nightCat = await guild.create_category(nightCatName)
 
-            await nightCat.set_permissions(gameStRole, view_channel=True)
-            await nightCat.set_permissions(botRole, view_channel=True, move_members=True)
-            await nightCat.set_permissions(everyoneRole, view_channel=False)
+                await nightCat.set_permissions(gameStRole, view_channel=True)
+                await nightCat.set_permissions(botRole, view_channel=True, move_members=True)
+                await nightCat.set_permissions(everyoneRole, view_channel=False)
 
 
             # Mover channel
@@ -419,13 +431,14 @@ class Setup(commands.Cog):
 
 
             # Night channels
-            for c in nightCat.channels:
-                if c.type == discord.ChannelType.voice and c.name == nightChannelName:
-                    neededNightChannels = neededNightChannels - 1
+            if allowNightCategory:
+                for c in nightCat.channels:
+                    if c.type == discord.ChannelType.voice and c.name == nightChannelName:
+                        neededNightChannels = neededNightChannels - 1
 
-            if neededNightChannels > 0:
-                for x in range(neededNightChannels):
-                    await nightCat.create_voice_channel(nightChannelName)
+                if neededNightChannels > 0:
+                    for x in range(neededNightChannels):
+                        await nightCat.create_voice_channel(nightChannelName)
 
 
             # Calling !addTown
@@ -454,7 +467,7 @@ class Setup(commands.Cog):
             await ctx.send("Too few params to `!destroyTown`. " + usageStr)
             return None
 
-        townName = params[1]        
+        townName = params[1]
         if not townName:
             await ctx.send("No town name provided. " + usageStr)
             return None
@@ -930,15 +943,15 @@ class Gameplay(commands.Cog):
             return
 
         try:
+            # do role switching for active game
+            await self.onCurrGame(ctx)
+
             # get channels we care about
             info = self.bot.getTownInfo(ctx)
             
             if not info.nightCategory:
                 await ctx.send(f'This town does not have a Night category and therefore does not support the `!day` or `!night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
                 return
-
-            # do role switching for active game
-            await self.onCurrGame(ctx)
 
             # get list of users in town square   
             users = list(info.villagers)
