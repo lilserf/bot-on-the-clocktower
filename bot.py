@@ -339,6 +339,8 @@ class Setup(commands.Cog):
                         return None
                 else:
                     ctx.send(f"Unknown parameter: {p}")
+
+                additionalParamCount = additionalParamCount + 1
         
         # These are in sync with those in destroyTown, could probably stand to abstract somehow
         dayCatName = townName
