@@ -339,6 +339,7 @@ class Setup(commands.Cog):
                         return None
                 else:
                     ctx.send(f"Unknown parameter: {p}")
+                    return None
 
                 additionalParamCount = additionalParamCount + 1
         
