@@ -1,5 +1,11 @@
 # Bot on the Clocktower Changelog
 
+## Version 1.0.4
+
+* Improved `!townInfo` output when used in an unrecognized channel
+* Fixed exception when `!removeTown` is run with no params
+* Optional MONGO_DB to allow for Dev DB separate from Prod
+
 ## Version 1.0.3
 
 * Improved `!removeTown` error messages and made it flexible - either run in the control channel, or name the town

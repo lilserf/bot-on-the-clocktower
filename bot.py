@@ -30,10 +30,11 @@ intents.members = True
 # Connect to mongo and get our DB object used globally throughout this file
 # TODO: Make this not a big ol' global?
 MONGO_CONNECT = os.getenv('MONGO_CONNECT')
+MONGO_DB = os.getenv('MONGO_DB') or 'botc'
 if MONGO_CONNECT is None:
     raise Exception("No MONGO_CONNECT string found. Be sure you have MONGO_CONNECT defined in your environment")
 cluster = MongoClient(MONGO_CONNECT)
-db = cluster['botc']
+db = cluster[MONGO_DB]
 
 g_dbGuildInfo = db['GuildInfo']
 g_dbActiveGames = db['ActiveGames']
@@ -120,7 +121,10 @@ class Setup(commands.Cog):
 
         info = self.bot.getTownInfo(ctx)
 
-        await self.sendEmbed(ctx, info)
+        if info is not None:
+            await self.sendEmbed(ctx, info)
+        else:
+            await ctx.send("Sorry, I couldn't find a town registered to this channel.")
     
     
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
@@ -172,10 +176,11 @@ class Setup(commands.Cog):
             await ctx.send(f'Unexpected parameters. {usageStr}')
             return
 
+        info = g_dbGuildInfo.find_one(post)
         result = g_dbGuildInfo.delete_one(post)
 
         if result.deleted_count > 0:
-            embed = discord.Embed(title=f'{guild.name} // {post["dayCategory"]}', description=f'This town is no longer registered.', color=0xcc0000)
+            embed = discord.Embed(title=f'{guild.name} // {info["dayCategory"]}', description=f'This town is no longer registered.', color=0xcc0000)
             await ctx.send(embed=embed)
         else:
             await ctx.send(f"Couldn't find a town to remove! {usageStr}")
