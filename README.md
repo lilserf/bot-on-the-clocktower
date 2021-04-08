@@ -151,13 +151,15 @@ Sends a DM to the Lunatic identical to those sent by `!evil` telling them who th
 
 ## Setup Command Details
 
-### `!createTown <townName> [serverStorytellerRole] [serverPlayerRole]`
+### `!createTown <townName> [serverStorytellerRole] [serverPlayerRole] [noNight]`
 
 Creates an entire town from nothing, including all of its categories, channels, and roles.
 
 The optional `serverStorytellerRole` is an already-created server role for members of your server who wish to be Storytellers. They will be given access to a channel to control Bot on the Clocktower. If not provided, everyone on the server will see this channel.
 
 The optional `serverPlayerRole` is an already-created server role for members of your server who wish to play Blood on the Clocktower. They will be granted access to see the Town Square when a game is not in progress. If not provided, everyone on the server will see the Town Square.
+
+If `noNight` is provided, the Nighttime category and its Cottages will not be created. This will disable the `!day` and `!night` commands.
 
 For more information about precisely what this sets up (in case you wanted to do it all yourself manually for some reason), see the `!addTown` command reference below.
 
@@ -175,6 +177,10 @@ When run in a control channel for a town, reports all the details stored by `!ad
 
 `!addTown` tells the bot about all the roles, categories, and channels it needs to know about to do its job. It expects these things are all already created; if they are not, use `!createTown` and it will handle all of this.
 
+Alternative usage:
+
+```!addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> nightCategory=<night category> stRole=<storyteller role> villagerRole=<villager role>```
+
 **NOTE:** It is recommended that you create a town using `!createTown` above instead of using `!addTown`. But, if you've already got a setup that works for you (or you want your roles and channels to be named differently than what `!createTown` assumes), then `!addTown` might be preferred.
 
 Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff" for the example town name.
@@ -190,6 +196,7 @@ Here is what the bot expects to exist. Note that we are using "Ravenswood Bluff"
     * A variety of other voice channels for private conversations, such as "Dark Alley" and "Graveyard". These can all inherit permissions from the category.
     * A single "game-chat" text channel, also inheriting category permissions. This is for the Villagers to chat, especially during the night phase.
 * A "**Ravenswood Bluff - Night**" nighttime category
+  * **NOTE**: The nighttime category is optional. With the "Alternative Usage" of the command, you may leave the Night category out. This will disable the `!night` and `!day` commands.
   * Permission should be set up to be visible to "**Ravenswood Bluff Storyteller**", and allow **Bot on the Clocktower** to move members
   * This category can contain a bunch of voice channels that inherit category permissions. Common setup is to use 20 channels all named "Cottage"
 
