@@ -120,7 +120,7 @@ class Setup(commands.Cog):
 
         info = self.bot.getTownInfo(ctx)
 
-        await self.sendEmbed(ctx, info)    
+        await self.sendEmbed(ctx, info)
     
     
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
@@ -160,15 +160,25 @@ class Setup(commands.Cog):
         guild = ctx.guild
 
         params = shlex.split(ctx.message.content)
+        usageStr = "Usage: `!removeTown <day category name>` or `!removeTown` alone if run from the town's control channel"
 
-        post = {"guild" : guild.id,
-            "dayCategory" : params[1]}
+        if len(params) == 1:
+            post = {"guild" : guild.id, "controlChannelId" : ctx.channel.id }
+            print(f'Removing a game from guild {post["guild"]} with control channel [{post["controlChannelId"]}]')
+        elif len(params) == 2:
+            post = {"guild" : guild.id, "dayCategory" : params[1]}
+            print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
+        else:
+            await ctx.send(f'Unexpected parameters. {usageStr}')
+            return
 
-        print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
-        g_dbGuildInfo.delete_one(post)
+        result = g_dbGuildInfo.delete_one(post)
 
-        embed = discord.Embed(title=f'{guild.name} // {post["dayCategory"]}', description=f'Deleted!', color=0xcc0000)
-        await ctx.send(embed=embed)
+        if result.deleted_count > 0:
+            embed = discord.Embed(title=f'{guild.name} // {post["dayCategory"]}', description=f'This town is no longer registered.', color=0xcc0000)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"Couldn't find a town to remove! {usageStr}")
 
 
     # Parse all the params for addTown, sanity check them, and return useful dicts
@@ -176,7 +186,7 @@ class Setup(commands.Cog):
 
         if len(params) < 7:
             await ctx.send("Too few params to `!addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <ST role> <player role>`")
-            return None
+            return (None, None)
 
         controlName = params[1]
         townSquareName = params[2]
@@ -269,7 +279,7 @@ class Setup(commands.Cog):
             await ctx.send("Too few params to `!createTown`. " + usageStr)
             return None
 
-        townName = params[1]        
+        townName = params[1]
         if not townName:
             await ctx.send("No town name provided. " + usageStr)
             return None
@@ -415,11 +425,11 @@ class Setup(commands.Cog):
         
         usageStr = "Usage: `<town name>`"
 
-        if len(params) < 1:
+        if len(params) < 2:
             await ctx.send("Too few params to `!destroyTown`. " + usageStr)
             return None
 
-        townName = params[1]        
+        townName = params[1]
         if not townName:
             await ctx.send("No town name provided. " + usageStr)
             return None
