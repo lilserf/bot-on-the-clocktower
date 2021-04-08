@@ -30,10 +30,11 @@ intents.members = True
 # Connect to mongo and get our DB object used globally throughout this file
 # TODO: Make this not a big ol' global?
 MONGO_CONNECT = os.getenv('MONGO_CONNECT')
+MONGO_DB = os.getenv('MONGO_DB') or 'botc'
 if MONGO_CONNECT is None:
     raise Exception("No MONGO_CONNECT string found. Be sure you have MONGO_CONNECT defined in your environment")
 cluster = MongoClient(MONGO_CONNECT)
-db = cluster['botc']
+db = cluster[MONGO_DB]
 
 g_dbGuildInfo = db['GuildInfo']
 g_dbActiveGames = db['ActiveGames']
@@ -120,7 +121,10 @@ class Setup(commands.Cog):
 
         info = self.bot.getTownInfo(ctx)
 
-        await self.sendEmbed(ctx, info)    
+        if info is not None:
+            await self.sendEmbed(ctx, info)
+        else:
+            await ctx.send("Sorry, I couldn't find a town registered to this channel.")
     
     
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
@@ -161,15 +165,26 @@ class Setup(commands.Cog):
         guild = ctx.guild
 
         params = shlex.split(ctx.message.content)
+        usageStr = "Usage: `!removeTown <day category name>` or `!removeTown` alone if run from the town's control channel"
 
-        post = {"guild" : guild.id,
-            "dayCategory" : params[1]}
+        if len(params) == 1:
+            post = {"guild" : guild.id, "controlChannelId" : ctx.channel.id }
+            print(f'Removing a game from guild {post["guild"]} with control channel [{post["controlChannelId"]}]')
+        elif len(params) == 2:
+            post = {"guild" : guild.id, "dayCategory" : params[1]}
+            print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
+        else:
+            await ctx.send(f'Unexpected parameters. {usageStr}')
+            return
 
-        print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
-        g_dbGuildInfo.delete_one(post)
+        info = g_dbGuildInfo.find_one(post)
+        result = g_dbGuildInfo.delete_one(post)
 
-        embed = discord.Embed(title=f'{guild.name} // {post["dayCategory"]}', description=f'Deleted!', color=0xcc0000)
-        await ctx.send(embed=embed)
+        if result.deleted_count > 0:
+            embed = discord.Embed(title=f'{guild.name} // {info["dayCategory"]}', description=f'This town is no longer registered.', color=0xcc0000)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"Couldn't find a town to remove! {usageStr}")
 
 
     # Parse all the params for addTown, sanity check them, and return useful dicts
@@ -207,12 +222,12 @@ class Setup(commands.Cog):
                 villagerName = v
             else:
                 await ctx.send(f'Unknown param to `!addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole')
-                return None
+                return (None, None)
 
         if not hasNamedArgs:
             if len(params) < 7:
                 await ctx.send("Too few params to `!addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role>`")
-                return None
+                return (None, None)
 
             controlName = params[1]
             townSquareName = params[2]
@@ -466,7 +481,7 @@ class Setup(commands.Cog):
         
         usageStr = "Usage: `<town name>`"
 
-        if len(params) < 1:
+        if len(params) < 2:
             await ctx.send("Too few params to `!destroyTown`. " + usageStr)
             return None
 
