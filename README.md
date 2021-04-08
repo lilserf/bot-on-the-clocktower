@@ -97,17 +97,17 @@ Sends all members in the Town Square channel to individual channels within the N
 
 ### `!day`
 
-Brings all members from the Nighttime category channels back to the Town Square. Also runs `!currGame`.
+Brings all members from the Nighttime category channels back to the Town Square.
 
 ### `!vote`
 
-Brings all members from other Daytime category channels back to the Town Square for nominations to begin. Also runs `!currGame`.
+Brings all members from other Daytime category channels back to the Town Square for nominations to begin.
 
 ### `!currGame`
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the **(ST)** nickname prefix.
 
-This logic is run by other commands already, so this command is mostly useful if a Traveler enters the town midday.
+This logic is run by the `!night` command already, so this command is mostly useful if a Traveler enters the town midday, or if you do not plan on using the `!night` command.
 
 ### `!endGame`
 
