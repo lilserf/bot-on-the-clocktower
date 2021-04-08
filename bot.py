@@ -333,12 +333,12 @@ class Setup(commands.Cog):
                         await ctx.send("Provided Storyteller Role **" + p + "** not found.")
                         return None
                 elif additionalParamCount == 1:
-                    guildPlayerRole = getRoleByName(guild, params[3])
+                    guildPlayerRole = getRoleByName(guild, p)
                     if not guildPlayerRole:
-                        await ctx.send("Provided Player Role **" + params[3] + "** not found.")
+                        await ctx.send("Provided Player Role **" + p + "** not found.")
                         return None
                 else:
-                    ctx.send(f"Unknown parameter: {p}")
+                    await ctx.send(f"Unknown parameter: {p}")
                     return None
 
                 additionalParamCount = additionalParamCount + 1
