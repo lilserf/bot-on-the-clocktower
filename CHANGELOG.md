@@ -2,7 +2,7 @@
 
 ## Version 1.1.0
 
-* The bot no longer **requires** the Night category. See help in `!createTown` or `!addTown` for details.
+* The bot no longer **requires** the Night category. Run `!help` for `createTown` or `addTown` for details.
 
 ## Version 1.0.4
 
