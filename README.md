@@ -89,6 +89,18 @@ If you have more than one Storyteller, check out the `!setStorytellers` command 
 
 ---
 
+## A Word About Rate Limits
+
+Discord sometimes limits how many commands a bot can execute in a given timeframe (for good reason).
+
+This is most noticeable when you run `!night`, `!day`, or `!vote` in larger groups - frequently only some of the players will initially be moved, and there will be a delay of several seconds before the rest are moved.
+
+This is normal behavior and not something to worry about! Just be patient and everyone will move eventually.
+
+If you run into much longer delays, failures to move, or other errors, do let us know, however.
+
+---
+
 ## Gameplay Command Details
 
 ### `!night`
