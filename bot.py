@@ -55,13 +55,13 @@ class TownInfo:
 
         if document:
             self.dayCategory = getCategoryByName(guild, document["dayCategory"])
-            self.nightCategory = getCategoryByName(guild, document["nightCategory"])
+            self.nightCategory = document["nightCategory"] and getCategoryByName(guild, document["nightCategory"]) or None
 
             self.townSquare = getChannelFromCategoryByName(self.dayCategory, document["townSquare"])
             self.controlChannel = getChannelFromCategoryByName(self.dayCategory, document["controlChannel"])
 
             self.dayChannels = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.dayCategory.id)
-            self.nightChannels = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.nightCategory.id)
+            self.nightChannels = self.nightCategory and list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.nightCategory.id) or []
 
             self.storyTellerRole = getRoleByName(guild, document["storyTellerRole"])
             self.villagerRole = getRoleByName(guild, document["villagerRole"])
@@ -142,12 +142,13 @@ class Setup(commands.Cog):
                 await ctx.send(f'Found an existing town on this server using daytime category `{post["dayCategory"]}`, modifying it!')
 
         # Upsert the town into place
-        print(f'Adding a town to guild {post["guild"]} with control channel [{post["controlChannel"]}], day category [{post["dayCategory"]}], night category [{post["nightCategory"]}]')
+        nightCatInfo = post["nightCategory"] and f'night category [{post["nightCategory"]}]' or '<no night category>'
+        print(f'Adding a town to guild {post["guild"]} with control channel [{post["controlChannel"]}], day category [{post["dayCategory"]}], {nightCatInfo}')
         g_dbGuildInfo.replace_one(query, post, True)
 
         await self.sendEmbed(ctx, info)
 
-    @commands.command(name='addTown', aliases=['addtown'], help='Add a game on this server.\nUsage: !addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role>')
+    @commands.command(name='addTown', aliases=['addtown'], help='Add a game on this server.\n\nUsage: !addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role>\n\nAlternate usage: !addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> nightCategory=<night category> stRole=<storyteller role> villagerRole=<villager role>')
     async def addTown(self, ctx):
         params = shlex.split(ctx.message.content)
 
@@ -188,17 +189,52 @@ class Setup(commands.Cog):
 
     # Parse all the params for addTown, sanity check them, and return useful dicts
     async def resolveTownInfoParams(self, ctx, params):
+        controlName = None
+        townSquareName = None
+        dayCatName = None
+        nightCatName = None
+        stRoleName = None
+        villagerName = None
 
-        if len(params) < 7:
-            await ctx.send("Too few params to `!addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <ST role> <player role>`")
-            return (None, None)
+        hasNamedArgs = False
 
-        controlName = params[1]
-        townSquareName = params[2]
-        dayCatName = params[3]
-        nightCatName = params[4]
-        stRoleName = params[5]
-        villagerName = params[6]
+        for i in range(1, len(params)):
+            ar = params[i].split("=")
+            if len(ar) != 2:
+                hasNamedArgs = False
+                break
+
+            hasNamedArgs = True
+            p = ar[0].lower()
+            v = ar[1]
+
+            if p == "control":
+                controlName = v
+            elif p == "townsquare":
+                townSquareName = v
+            elif p == "daycategory":
+                dayCatName = v
+            elif p == "nightcategory":
+                nightCatName = v
+            elif p == "strole":
+                stRoleName = v
+            elif p == "villagerrole":
+                villagerName = v
+            else:
+                await ctx.send(f'Unknown param to `!addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole')
+                return (None, None)
+
+        if not hasNamedArgs:
+            if len(params) < 7:
+                await ctx.send("Too few params to `!addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role>`")
+                return (None, None)
+
+            controlName = params[1]
+            townSquareName = params[2]
+            dayCatName = params[3]
+            nightCatName = params[4]
+            stRoleName = params[5]
+            villagerName = params[6]
         
         return await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName)
 
@@ -208,7 +244,7 @@ class Setup(commands.Cog):
         guild = ctx.guild
         
         dayCat = getCategoryByName(guild, dayCatName)
-        nightCat = getCategoryByName(guild, nightCatName)
+        nightCat = nightCatName and getCategoryByName(guild, nightCatName) or None
         
         controlChan = getChannelFromCategoryByName(dayCat, controlName)
         townSquare = getChannelFromCategoryByName(dayCat, townSquareName)
@@ -227,10 +263,6 @@ class Setup(commands.Cog):
             await ctx.send(f'Couldn\'t find a category named `{dayCatName}`!')
             return None
 
-        if not nightCat:
-            await ctx.send(f'Couldn\'t find a category named `{nightCatName}`!')
-            return None
-
         if not controlChan:
             await ctx.send(f'Couldn\'t find a channel named `{controlName}` in category `{dayCatName}`!')
             return None
@@ -247,6 +279,9 @@ class Setup(commands.Cog):
             await ctx.send(f'Couldn\'t find a role named `{villagerName}`!')
             return None
 
+        # Night category is optional
+        nightCatId = nightCat and nightCat.id or None
+
         # Object suitable for mongo
         post = {   
             "guild" : guild.id,
@@ -257,7 +292,7 @@ class Setup(commands.Cog):
             "dayCategory" : dayCatName,
             "dayCategoryId" : dayCat.id,
             "nightCategory" : nightCatName,
-            "nightCategoryId" : nightCat.id,
+            "nightCategoryId" : nightCatId,
             "storyTellerRole" : stRoleName,
             "storyTellerRoleId" : stRole.id,
             "villagerRole" : villagerName,
@@ -272,13 +307,13 @@ class Setup(commands.Cog):
         return (post, objs)
 
 
-    @commands.command(name='createTown', aliases=['createtown'], help='Create an entire town on this server, including categories, roles, channels, and permissions')
+    @commands.command(name='createTown', aliases=['createtown'], help='Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: !createTown <town name> [server storyteller role] [server player role] [noNight]')
     async def createTown(self, ctx):
         params = shlex.split(ctx.message.content)
 
         guild = ctx.guild
         
-        usageStr = "Usage: `<town name> [server storyteller role] [server player role]`"
+        usageStr = "Usage: `!createTown <town name> [server storyteller role] [server player role] [noNight]`"
 
         if len(params) < 2:
             await ctx.send("Too few params to `!createTown`. " + usageStr)
@@ -295,23 +330,37 @@ class Setup(commands.Cog):
             await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
             return None
         
+        allowNightCategory = True
         guildStRole = None
-        if len(params) > 2:
-            guildStRole = getRoleByName(guild, params[2])
-            if not guildStRole:
-                await ctx.send("Provided Storyteller Role **" + params[2] + "** not found.")
-                return None
-                
         guildPlayerRole = None
-        if len(params) > 3:
-            guildPlayerRole = getRoleByName(guild, params[3])
-            if not guildPlayerRole:
-                await ctx.send("Provided Player Role **" + params[3] + "** not found.")
-                return None
+
+        # Check for additional params beyond the required ones
+        additionalParamCount = 0
+
+        for i in range(2, len(params)):
+            p = params[i]
+            if p.lower() == "nonight":
+                allowNightCategory = False
+            else:
+                if additionalParamCount == 0:
+                    guildStRole = getRoleByName(guild, p)
+                    if not guildStRole:
+                        await ctx.send("Provided Storyteller Role **" + p + "** not found.")
+                        return None
+                elif additionalParamCount == 1:
+                    guildPlayerRole = getRoleByName(guild, p)
+                    if not guildPlayerRole:
+                        await ctx.send("Provided Player Role **" + p + "** not found.")
+                        return None
+                else:
+                    await ctx.send(f"Unknown parameter: {p}")
+                    return None
+
+                additionalParamCount = additionalParamCount + 1
         
         # These are in sync with those in destroyTown, could probably stand to abstract somehow
         dayCatName = townName
-        nightCatName = townName + " - Night"
+        nightCatName = allowNightCategory and townName + " - Night" or None
         gameStRoleName = townName + " Storyteller"
         gameVillagerRoleName = townName + " Villager"
         moverChannelName = "botc_mover"
@@ -350,13 +399,14 @@ class Setup(commands.Cog):
 
 
             # Night category
-            nightCat = getCategoryByName(guild, nightCatName)
-            if not nightCat:
-                nightCat = await guild.create_category(nightCatName)
+            if allowNightCategory:
+                nightCat = getCategoryByName(guild, nightCatName)
+                if not nightCat:
+                    nightCat = await guild.create_category(nightCatName)
 
-            await nightCat.set_permissions(gameStRole, view_channel=True)
-            await nightCat.set_permissions(botRole, view_channel=True, move_members=True)
-            await nightCat.set_permissions(everyoneRole, view_channel=False)
+                await nightCat.set_permissions(gameStRole, view_channel=True)
+                await nightCat.set_permissions(botRole, view_channel=True, move_members=True)
+                await nightCat.set_permissions(everyoneRole, view_channel=False)
 
 
             # Mover channel
@@ -399,13 +449,14 @@ class Setup(commands.Cog):
 
 
             # Night channels
-            for c in nightCat.channels:
-                if c.type == discord.ChannelType.voice and c.name == nightChannelName:
-                    neededNightChannels = neededNightChannels - 1
+            if allowNightCategory:
+                for c in nightCat.channels:
+                    if c.type == discord.ChannelType.voice and c.name == nightChannelName:
+                        neededNightChannels = neededNightChannels - 1
 
-            if neededNightChannels > 0:
-                for x in range(neededNightChannels):
-                    await nightCat.create_voice_channel(nightChannelName)
+                if neededNightChannels > 0:
+                    for x in range(neededNightChannels):
+                        await nightCat.create_voice_channel(nightChannelName)
 
 
             # Calling !addTown
@@ -574,7 +625,7 @@ class Setup(commands.Cog):
         embed.add_field(name="Control Channel", value=townInfo.controlChannel.name, inline=False)
         embed.add_field(name="Town Square", value=townInfo.townSquare.name, inline=False)
         embed.add_field(name="Day Category", value=townInfo.dayCategory.name, inline=False)
-        embed.add_field(name="Night Category", value=townInfo.nightCategory.name, inline=False)
+        embed.add_field(name="Night Category", value=townInfo.nightCategory and townInfo.nightCategory.name or "<None>", inline=False)
         embed.add_field(name="Storyteller Role", value=townInfo.storyTellerRole.name, inline=False)
         embed.add_field(name="Villager Role", value=townInfo.villagerRole.name, inline=False)
         await ctx.send(embed=embed)
@@ -825,7 +876,9 @@ class Gameplay(commands.Cog):
         minionUsers = list(map(lambda x: self.getClosestUser(users, x), minions))
 
         info = self.bot.getTownInfo(ctx)
-        categories = [info.dayCategory.name, info.nightCategory.name]
+        categories = [info.dayCategory.name]
+        if info.nightCategory:
+            categories.append(info.nightCategory.name)
         catString = ', '.join(categories)
 
         # Error messages for users not found
@@ -908,11 +961,15 @@ class Gameplay(commands.Cog):
             return
 
         try:
-            # do role switching for active game first!
+            # do role switching for active game
             await self.onCurrGame(ctx)
 
             # get channels we care about
             info = self.bot.getTownInfo(ctx)
+            
+            if not info.nightCategory:
+                await ctx.send(f'This town does not have a Night category and therefore does not support the `!day` or `!night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
+                return
 
             # get list of users in town square   
             users = list(info.villagers)
@@ -952,6 +1009,10 @@ class Gameplay(commands.Cog):
 
         try:
             info = self.bot.getTownInfo(ctx)
+
+            if not info.nightCategory:
+                await ctx.send(f'This town does not have a Night category and therefore does not support the `!day` or `!night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
+                return
 
             # get users in night channels
             users = list()
