@@ -973,7 +973,7 @@ class Gameplay(commands.Cog):
 
             # get list of users in town square   
             users = list(info.villagers)
-            users.sort(key=lambda x: x.display_name)
+            users.sort(key=lambda x: x.display_name.lower())
             cottages = list(info.nightChannels)
             cottages.sort(key=lambda x: x.position)
 
