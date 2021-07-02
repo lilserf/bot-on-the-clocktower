@@ -1,5 +1,9 @@
 # Bot on the Clocktower Changelog
 
+## Version 1.1.0
+
+* The bot no longer **requires** the Night category. Run `!help` for `createTown` or `addTown` for details.
+
 ## Version 1.0.4
 
 * Improved `!townInfo` output when used in an unrecognized channel
