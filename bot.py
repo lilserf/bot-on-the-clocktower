@@ -49,22 +49,61 @@ def getCategoryByName(guild, name):
 def getRoleByName(guild, name):
     return discord.utils.find(lambda r: r.name==name, guild.roles)
 
+# Get a category by ID or name, preferring ID
+def getCategory(guild, name, catId):
+    catById = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.id == catId, guild.channels)
+    return catById or discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
+
+# Get a channel by ID or name, preferring ID
+def getChannelFromCategory(category, name, chanId):
+    chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
+    return chanById or  discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
+
+# Get a role by ID or name, preferring ID
+def getRole(guild, name, roleId):
+    roleById = discord.utils.find(lambda r: r.id == roleId, guild.roles)
+    return roleById or discord.utils.find(lambda r: r.name==name, guild.roles)
+
+# Do some sanity checking of a DB document and see if a valid town can even be found on a guild with these params
+def isTownValid(guild, doc):
+    dayCat = getCategory(guild, doc["dayCategory"], doc["dayCategoryId"])
+    if dayCat is None:
+        return (False, "missing day category " + doc["dayCategory"])
+
+    townSquare = getChannelFromCategory(dayCat, doc["townSquare"], doc["townSquareId"])
+    if townSquare is None:
+        return (False, "missing Town Square " + doc["townSquare"])
+
+    control = getChannelFromCategory(dayCat, doc["controlChannel"], doc["controlChannelId"])
+    if control is None:
+        return (False, "missing control channel " + doc["controlChannel"])
+
+    stRole = getRole(guild, doc["storyTellerRole"], doc["storyTellerRoleId"])
+    if stRole is None:
+        return (False, "missing Storyteller role " + doc["storyTellerRole"])
+
+    villagerRole = getRole(guild, doc["villagerRole"], doc["villagerRoleId"])
+    if villagerRole is None:
+        return (False, "missing Villager role " + doc["villagerRole"])
+
+    return (True, "Valid")
+
 # Nicer than a dict for storing info about the town
 class TownInfo:
     def __init__(self, guild, document):
 
         if document:
-            self.dayCategory = getCategoryByName(guild, document["dayCategory"])
-            self.nightCategory = document["nightCategory"] and getCategoryByName(guild, document["nightCategory"]) or None
+            self.dayCategory = getCategory(guild, document["dayCategory"], document["dayCategoryId"])
+            self.nightCategory = document["nightCategory"] and getCategory(guild, document["nightCategory"], document["nightCategoryId"]) or None
 
-            self.townSquare = getChannelFromCategoryByName(self.dayCategory, document["townSquare"])
-            self.controlChannel = getChannelFromCategoryByName(self.dayCategory, document["controlChannel"])
+            self.townSquare = getChannelFromCategory(self.dayCategory, document["townSquare"], document["townSquareId"])
+            self.controlChannel = getChannelFromCategory(self.dayCategory, document["controlChannel"], document["controlChannelId"])
 
             self.dayChannels = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.dayCategory.id)
             self.nightChannels = self.nightCategory and list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.nightCategory.id) or []
 
-            self.storyTellerRole = getRoleByName(guild, document["storyTellerRole"])
-            self.villagerRole = getRoleByName(guild, document["villagerRole"])
+            self.storyTellerRole = getRole(guild, document["storyTellerRole"], document["storyTellerRoleId"])
+            self.villagerRole = getRole(guild, document["villagerRole"], document["villagerRoleId"])
 
             activePlayers = set()
             for c in self.dayChannels:
@@ -1092,17 +1131,24 @@ class Gameplay(commands.Cog):
             lookupQuery = { "guild" : guildId, "controlChannelId" : rec["channel"] }
             doc = g_dbGuildInfo.find_one(lookupQuery)
             if doc:
-                info = TownInfo(guild, doc)
-                try:
-                    await self.onEndGameInternal(guild, info)
-                    numEnded = numEnded + 1
-                except Exception:
-                    pass
+                (townValid, townError) = isTownValid(guild, doc)
+                if townValid:
+                    info = TownInfo(guild, doc)
+                    try:
+                        await self.onEndGameInternal(guild, info)
+                        numEnded = numEnded + 1
+                        print(f"Ended game in guild {guildId}")
+                        g_dbActiveGames.delete_one(lookupQuery)
+                    except Exception:
+                        pass
+                else:
+                    print(f"Couldn't end game in guild {guildId} due to {townError}")
+                    g_dbActiveGames.delete_one(lookupQuery)
 
         if numEnded > 0:
             print(f'Ended {numEnded} inactive game(s)')
 
-        # Remove all the inactive towns from our list
+        # Remove all the inactive towns from our list just in case any fell through
         result = g_dbActiveGames.delete_many(inactiveQuery)
 
         # If nothing is left active at all, stop the timer
