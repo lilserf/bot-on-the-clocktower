@@ -1164,7 +1164,30 @@ class Gameplay(commands.Cog):
         await self.bot.wait_until_ready()
 
 
+
+class Lookup(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    def findRoleFromMessageContent(self, content):
+        return " ".join(shlex.split(content)[1:])
+
+    # Perform a role lookup
+    @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
+    async def roleLookup(self, ctx):
+        try:
+            info = self.bot.getTownInfo(ctx)
+
+            roleToCheck = self.findRoleFromMessageContent(ctx.message.content)
+
+            await ctx.send(f'Lookup requested for {roleToCheck}')
+
+        except Exception as ex:
+            await self.bot.sendErrorToAuthor(ctx)
+
+
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(Setup(bot))
 bot.add_cog(Gameplay(bot))
+bot.add_cog(Lookup(bot))
 bot.run(TOKEN)
