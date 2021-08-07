@@ -12,6 +12,10 @@ import random
 import shlex
 import traceback
 
+import aiohttp
+import asyncio
+import json
+
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN is None:
@@ -1169,25 +1173,71 @@ class Lookup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def findRoleFromMessageContent(self, content):
+    def find_role_from_message_content(self, content):
         return " ".join(shlex.split(content)[1:])
+
+    async def fetch_url(self, url, session):
+        async with session.get(url) as response:
+            try:
+                return await response.json()
+            except Exception:
+                return []
+
+    async def fetch_urls(self, urls):
+        loop = asyncio.get_event_loop()
+        async with aiohttp.ClientSession() as session:
+            tasks = [loop.create_task(self.fetch_url(url, session)) for url in urls]
+            return await asyncio.gather(*tasks)
+
+    def add_role(self, role, roles):
+        #TODO
+        print(role['name'])
+
+    def is_valid_role(self, role):
+        return role != None and isinstance(role, dict) and 'id' in role and role['id'] != '_meta' and 'name' in role and 'team' in role and 'ability' in role
+
+    def collect_roles_for_set(self, set, roles):
+        for role in set:
+            if self.is_valid_role(role):
+                 self.add_role(role, roles)
+
+    async def collect_all_roles(self):
+        urls = [
+            'https://www.bloodstar.xyz/p/MagRoader/StarWars/script.json',
+            'https://www.bloodstar.xyz/p/morilac/Pandemonium/script.json',
+        ]
+        results = await self.fetch_urls(urls)
+
+        roles = {}
+        for set in results:
+            if isinstance(set, list):
+                self.collect_roles_for_set(set, roles)
+
 
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
     async def roleLookup(self, ctx):
         try:
-            info = self.bot.getTownInfo(ctx)
+            #info = self.bot.getTownInfo(ctx)
 
-            roleToCheck = self.findRoleFromMessageContent(ctx.message.content)
+            roleToCheck = self.find_role_from_message_content(ctx.message.content)
 
-            await ctx.send(f'Lookup requested for {roleToCheck}')
+            roleLookup = {}
+
+            # TODO: collect roles (if needed), compare vs. request, output result
 
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
 
 
-bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
-bot.add_cog(Setup(bot))
-bot.add_cog(Gameplay(bot))
-bot.add_cog(Lookup(bot))
-bot.run(TOKEN)
+is_test = False
+
+if not is_test:
+    bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
+    bot.add_cog(Setup(bot))
+    bot.add_cog(Gameplay(bot))
+    bot.add_cog(Lookup(bot))
+    bot.run(TOKEN)
+else:
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(Lookup(None).collect_all_roles())
