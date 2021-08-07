@@ -1189,9 +1189,24 @@ class Lookup(commands.Cog):
             tasks = [loop.create_task(self.fetch_url(url, session)) for url in urls]
             return await asyncio.gather(*tasks)
 
+    def are_roles_same(self, r1, r2):
+        return r1['name'] == r2['name'] and r1['team'] == r2['team'] and r1['ability'] == r2['ability']
+
+    def combine_or_append_role(self, role, roleList):
+        found = False
+        for r in roleList:
+            if self.are_roles_same(r, role):
+                found = True
+                break
+        if not found:
+            roleList.append(role)
+
     def add_role(self, role, roles):
-        #TODO
-        print(role['name'])
+        name = role['name']
+        if name in roles:
+            self.combine_or_append_role(role, roles[name])
+        else:
+            roles[name] = [ role ]
 
     def is_valid_role(self, role):
         return role != None and isinstance(role, dict) and 'id' in role and role['id'] != '_meta' and 'name' in role and 'team' in role and 'ability' in role
@@ -1216,7 +1231,7 @@ class Lookup(commands.Cog):
 
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
-    async def roleLookup(self, ctx):
+    async def role_lookup(self, ctx):
         try:
             #info = self.bot.getTownInfo(ctx)
 
@@ -1230,7 +1245,7 @@ class Lookup(commands.Cog):
             await self.bot.sendErrorToAuthor(ctx)
 
 
-is_test = False
+is_test = True
 
 if not is_test:
     bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
