@@ -2,3 +2,4 @@
 mongodb.txt
 /.vs
 /env
+.vscode/launch.json

@@ -36,6 +36,8 @@ if MONGO_CONNECT is None:
 cluster = MongoClient(MONGO_CONNECT)
 db = cluster[MONGO_DB]
 
+COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
+
 g_dbGuildInfo = db['GuildInfo']
 g_dbActiveGames = db['ActiveGames']
 
@@ -187,7 +189,7 @@ class Setup(commands.Cog):
 
         await self.sendEmbed(ctx, info)
 
-    @commands.command(name='addTown', aliases=['addtown'], help='Add a game on this server.\n\nUsage: !addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role>\n\nAlternate usage: !addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> nightCategory=<night category> stRole=<storyteller role> villagerRole=<villager role>')
+    @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role>\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> nightCategory=<night category> stRole=<storyteller role> villagerRole=<villager role>')
     async def addTown(self, ctx):
         params = shlex.split(ctx.message.content)
 
@@ -204,7 +206,7 @@ class Setup(commands.Cog):
         guild = ctx.guild
 
         params = shlex.split(ctx.message.content)
-        usageStr = "Usage: `!removeTown <day category name>` or `!removeTown` alone if run from the town's control channel"
+        usageStr = f'Usage: `{COMMAND_PREFIX}removeTown <day category name>` or `{COMMAND_PREFIX}removeTown` alone if run from the town\'s control channel'
 
         if len(params) == 1:
             post = {"guild" : guild.id, "controlChannelId" : ctx.channel.id }
@@ -260,12 +262,12 @@ class Setup(commands.Cog):
             elif p == "villagerrole":
                 villagerName = v
             else:
-                await ctx.send(f'Unknown param to `!addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole')
+                await ctx.send(f'Unknown param to `{COMMAND_PREFIX}addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole')
                 return (None, None)
 
         if not hasNamedArgs:
             if len(params) < 7:
-                await ctx.send("Too few params to `!addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role>`")
+                await ctx.send(f'Too few params to `{COMMAND_PREFIX}addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role>`')
                 return (None, None)
 
             controlName = params[1]
@@ -346,16 +348,16 @@ class Setup(commands.Cog):
         return (post, objs)
 
 
-    @commands.command(name='createTown', aliases=['createtown'], help='Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: !createTown <town name> [server storyteller role] [server player role] [noNight]')
+    @commands.command(name='createTown', aliases=['createtown'], help=f'Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: {COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]')
     async def createTown(self, ctx):
         params = shlex.split(ctx.message.content)
 
         guild = ctx.guild
         
-        usageStr = "Usage: `!createTown <town name> [server storyteller role] [server player role] [noNight]`"
+        usageStr = f"Usage: `{COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]`"
 
         if len(params) < 2:
-            await ctx.send("Too few params to `!createTown`. " + usageStr)
+            await ctx.send(f"Too few params to `{COMMAND_PREFIX}createTown`. " + usageStr)
             return None
 
         townName = params[1]
@@ -498,7 +500,7 @@ class Setup(commands.Cog):
                         await nightCat.create_voice_channel(nightChannelName)
 
 
-            # Calling !addTown
+            # Calling addTown
             (post, info) = await self.resolveTownInfo(ctx, moverChannelName, townSquareChannelName, dayCatName, nightCatName, gameStRoleName, gameVillagerRoleName)
 
             if not post:
@@ -521,7 +523,7 @@ class Setup(commands.Cog):
         usageStr = "Usage: `<town name>`"
 
         if len(params) < 2:
-            await ctx.send("Too few params to `!destroyTown`. " + usageStr)
+            await ctx.send(f"Too few params to `{COMMAND_PREFIX}destroyTown`. " + usageStr)
             return None
 
         townName = params[1]
@@ -840,7 +842,7 @@ class Gameplay(commands.Cog):
             # grant the storyteller the Current Storyteller role if necessary
             storyTeller = ctx.message.author
             if storyTeller not in info.storyTellers:
-                await ctx.send(f"New storyteller: **{self.getUserName(storyTeller)}**. (Use `!setStorytellers` for 2+ storytellers)")
+                await ctx.send(f"New storyteller: **{self.getUserName(storyTeller)}**. (Use `{COMMAND_PREFIX}setStorytellers` for 2+ storytellers)")
                 await self.setStorytellersInternal(ctx, [storyTeller])
 
             # find additions and deletions by diffing the sets
@@ -894,7 +896,7 @@ class Gameplay(commands.Cog):
         
         return None
 
-    # Common code for parsing !evil and !lunatic commands
+    # Common code for parsing evil and lunatic commands
     async def processMinionMessage(self, ctx, users):
 
         # Split the message allowing quoted substrings
@@ -940,8 +942,8 @@ class Gameplay(commands.Cog):
         await demonUser.send(demonMsg)
 
     # Command to send fake evil info to the Lunatic
-    # Works the same as !evil, but doesn't message the minions
-    @commands.command(name='lunatic', help='Send fake evil info to the Lunatic. Format is `!lunatic <Lunatic> <fake minion> <fake minion> <fake minion>`')
+    # Works the same as evil, but doesn't message the minions
+    @commands.command(name='lunatic', help=f'Send fake evil info to the Lunatic. Format is `{COMMAND_PREFIX}lunatic <Lunatic> <fake minion> <fake minion> <fake minion>`')
     async def onLunatic(self, ctx):
         if not await self.isValid(ctx):
             return
@@ -960,7 +962,7 @@ class Gameplay(commands.Cog):
             await self.bot.sendErrorToAuthor(ctx)
 
     # Command to send demon/minion info to the Demon and Minions
-    @commands.command(name='evil', help='Send evil info to evil team. Format is `!evil <demon> <minion> <minion> <minion>`')
+    @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
     async def onEvil(self, ctx):
         if not await self.isValid(ctx):
             return
@@ -1007,7 +1009,7 @@ class Gameplay(commands.Cog):
             info = self.bot.getTownInfo(ctx)
             
             if not info.nightCategory:
-                await ctx.send(f'This town does not have a Night category and therefore does not support the `!day` or `!night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
+                await ctx.send(f'This town does not have a Night category and therefore does not support the `{COMMAND_PREFIX}day` or `{COMMAND_PREFIX}night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
                 return
 
             # get list of users in town square   
@@ -1050,7 +1052,7 @@ class Gameplay(commands.Cog):
             info = self.bot.getTownInfo(ctx)
 
             if not info.nightCategory:
-                await ctx.send(f'This town does not have a Night category and therefore does not support the `!day` or `!night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
+                await ctx.send(f'This town does not have a Night category and therefore does not support the `{COMMAND_PREFIX}day` or `{COMMAND_PREFIX}night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
                 return
 
             # get users in night channels
@@ -1155,13 +1157,13 @@ class Gameplay(commands.Cog):
         if g_dbActiveGames.count_documents({}) == 0:
             print("No remaining active games, stopping checks")
             self.cleanupInactiveGames.stop()
+
     
     @cleanupInactiveGames.before_loop
     async def beforecleanupInactiveGames(self):
         await self.bot.wait_until_ready()
 
 
-COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(Setup(bot))
 bot.add_cog(Gameplay(bot))
