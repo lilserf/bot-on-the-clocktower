@@ -12,9 +12,7 @@ import random
 import shlex
 import traceback
 
-import aiohttp
-import asyncio
-import json
+import lookup
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -157,7 +155,7 @@ class botcBot(commands.Bot):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
 
 # Setup cog
-class Setup(commands.Cog):
+class SetupCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -676,7 +674,7 @@ class Setup(commands.Cog):
         await ctx.send(embed=embed)
 
 
-class Gameplay(commands.Cog):
+class GameplayCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -1168,91 +1166,18 @@ class Gameplay(commands.Cog):
         await self.bot.wait_until_ready()
 
 
-
-class Lookup(commands.Cog):
+class LookupCog(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
-
-    def find_role_from_message_content(self, content):
-        return " ".join(shlex.split(content)[1:])
-
-    async def fetch_url(self, url, session):
-        async with session.get(url) as response:
-            try:
-                return await response.json()
-            except Exception:
-                return []
-
-    async def fetch_urls(self, urls):
-        loop = asyncio.get_event_loop()
-        async with aiohttp.ClientSession() as session:
-            tasks = [loop.create_task(self.fetch_url(url, session)) for url in urls]
-            return await asyncio.gather(*tasks)
-
-    def are_roles_same(self, r1, r2):
-        return r1['name'] == r2['name'] and r1['team'] == r2['team'] and r1['ability'] == r2['ability']
-
-    def combine_or_append_role(self, role, roleList):
-        found = False
-        for r in roleList:
-            if self.are_roles_same(r, role):
-                found = True
-                break
-        if not found:
-            roleList.append(role)
-
-    def add_role(self, role, roles):
-        name = role['name']
-        if name in roles:
-            self.combine_or_append_role(role, roles[name])
-        else:
-            roles[name] = [ role ]
-
-    def is_valid_role(self, role):
-        return role != None and isinstance(role, dict) and 'id' in role and role['id'] != '_meta' and 'name' in role and 'team' in role and 'ability' in role
-
-    def collect_roles_for_set(self, set, roles):
-        for role in set:
-            if self.is_valid_role(role):
-                 self.add_role(role, roles)
-
-    async def collect_all_roles(self):
-        urls = [
-            'https://www.bloodstar.xyz/p/MagRoader/StarWars/script.json',
-            'https://www.bloodstar.xyz/p/morilac/Pandemonium/script.json',
-        ]
-        results = await self.fetch_urls(urls)
-
-        roles = {}
-        for set in results:
-            if isinstance(set, list):
-                self.collect_roles_for_set(set, roles)
-
+        self.lookup = lookup.Lookup(bot)
 
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
     async def role_lookup(self, ctx):
-        try:
-            #info = self.bot.getTownInfo(ctx)
-
-            roleToCheck = self.find_role_from_message_content(ctx.message.content)
-
-            roleLookup = {}
-
-            # TODO: collect roles (if needed), compare vs. request, output result
-
-        except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+        await self.lookup.role_lookup(ctx)
 
 
-is_test = True
-
-if not is_test:
-    bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
-    bot.add_cog(Setup(bot))
-    bot.add_cog(Gameplay(bot))
-    bot.add_cog(Lookup(bot))
-    bot.run(TOKEN)
-else:
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(Lookup(None).collect_all_roles())
+bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
+bot.add_cog(SetupCog(bot))
+bot.add_cog(GameplayCog(bot))
+bot.add_cog(LookupCog(bot))
+bot.run(TOKEN)

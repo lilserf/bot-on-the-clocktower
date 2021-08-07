@@ -3,3 +3,4 @@ mongodb.txt
 /.vs
 /env
 .vscode/launch.json
+__pycache__/
