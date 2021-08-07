@@ -150,7 +150,7 @@ class botcBot(commands.Bot):
 
 
     async def on_ready(self):
-        print(f'{self.user.name} has connected to Discord!')
+        print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
 
 # Setup cog
 class Setup(commands.Cog):
