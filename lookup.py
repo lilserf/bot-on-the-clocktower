@@ -1,4 +1,4 @@
-import aiohttp
+﻿import aiohttp
 import asyncio
 import datetime
 from fuzzywuzzy import process
@@ -58,9 +58,6 @@ class LookupRoleParser:
 
 
 class LookupRoleDownloader:
-    def find_role_from_message_content(self, content):
-        return " ".join(shlex.split(content)[1:])
-
     async def fetch_url(self, url, session):
         async with session.get(url) as response:
             try:
@@ -110,16 +107,14 @@ class Lookup:
         #    'https://www.bloodstar.xyz/p/morilac/Pandemonium/script.json',
         #]
 
+    def find_role_from_message_content(self, content):
+        return " ".join(shlex.split(content)[1:])
 
     async def role_lookup(self, ctx):
-        try:
-            #info = ctx.bot.getTownInfo(ctx)
+        #info = ctx.bot.getTownInfo(ctx)
 
-            roleToCheck = self.find_role_from_message_content(ctx.message.content)
+        roleToCheck = self.find_role_from_message_content(ctx.message.content)
 
-            roleLookup = {}
+        roleLookup = {}
 
-            # TODO: collect roles (if needed), compare vs. request, output result
-
-        except Exception as ex:
-            await ctx.bot.sendErrorToAuthor(ctx)
+        # TODO: collect roles (if needed), compare vs. request, output result

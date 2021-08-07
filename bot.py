@@ -1173,7 +1173,10 @@ class LookupCog(commands.Cog):
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
     async def role_lookup(self, ctx):
-        await self.lookup.role_lookup(ctx)
+        try:
+            await self.lookup.role_lookup(ctx)
+        except Exception as ex:
+            await ctx.bot.sendErrorToAuthor(ctx)
 
 
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
