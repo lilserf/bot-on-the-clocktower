@@ -1167,8 +1167,8 @@ class GameplayCog(commands.Cog):
 
 
 class LookupCog(commands.Cog):
-    def __init__(self, bot):
-        self.lookup = lookup.Lookup(bot)
+    def __init__(self):
+        self.lookup = lookup.Lookup()
 
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
@@ -1178,9 +1178,25 @@ class LookupCog(commands.Cog):
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
 
+    # Add a set url
+    @commands.command(name='addset', help=f'Add a set by its json.\n\nUsage: {COMMAND_PREFIX}addset <url to json>')
+    async def add_set(self, ctx):
+        try:
+            await self.lookup.add_set(ctx)
+        except Exception as ex:
+            await ctx.bot.sendErrorToAuthor(ctx)
+
+    # Remove a set url
+    @commands.command(name='removeset', help=f'Remove a set by its json.\n\nUsage: {COMMAND_PREFIX}removeset <url to json>')
+    async def remove_set(self, ctx):
+        try:
+            await self.lookup.remove_set(ctx)
+        except Exception as ex:
+            await ctx.bot.sendErrorToAuthor(ctx)
+
 
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
-bot.add_cog(LookupCog(bot))
+bot.add_cog(LookupCog())
 bot.run(TOKEN)

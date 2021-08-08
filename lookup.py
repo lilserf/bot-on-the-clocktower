@@ -49,15 +49,22 @@ class LookupRoleParser:
             if role != None:
                  self.add_role(role, roles)
 
-    def collect_roles_from_json(self, results):
-        roles = {}
-        for set in results:
+    def merge_roles_from_json(self, json, roles):
+        for set in json:
             if isinstance(set, list):
                 self.collect_roles_for_set_json(set, roles)
+
+    def collect_roles_from_json(self, json):
+        roles = {}
+        self.merge_roles_from_json(json, roles)
         return roles
 
 
-class LookupRoleDownloader:
+class LookupRoleDownloaderVirtual:
+    async def collect_roles_from_urls(self, urls):
+        pass
+
+class LookupRoleDownloaderConcrete(LookupRoleDownloaderVirtual):
     async def fetch_url(self, url, session):
         async with session.get(url) as response:
             try:
@@ -71,7 +78,6 @@ class LookupRoleDownloader:
             tasks = [loop.create_task(self.fetch_url(url, session)) for url in urls]
             return await asyncio.gather(*tasks)
 
-
     async def collect_roles_from_urls(self, urls):
         results = await self.fetch_urls(urls)
         parser = LookupRoleParser()
@@ -83,6 +89,9 @@ class LookupRoleServerData:
         self.role_lookup = role_lookup
         self.last_refresh_time = datetime.datetime.now()
 
+    def get_roll_lookup(self):
+        return self.role_lookup
+
     def get_matching_roles(self, role_name):
         option = process.extractOne(role_name, self.role_lookup.keys(), score_cutoff=80)
         if option != None:
@@ -90,31 +99,113 @@ class LookupRoleServerData:
         return None
 
 
-class LookupRoleDatabase:
-    def __init__(self):
-        self.server_data = {}
+class LookupRoleDatabaseVirtual:
+    def get_server_urls(self, server_token):
+        return []
 
-    def update_server_data(self, server_token, role_lookup):
-        self.server_data[server_token] = LookupRoleServerData(role_lookup)
+    def add_server_url(self, server_token, url):
+        pass
 
-    def server_needs_update(self, server_token):
-        return (not server_token in self.server_data) or self.server_data[server_token].last_refresh_time == None or (datetime.datetime.now() - self.server_data[server_token].last_refresh_time) > datetime.timedelta(days=1)
+    def remove_server_url(self, server_token, url):
+        pass
 
 
+class LookupRoleDatabaseConcrete(LookupRoleDatabaseVirtual):
+    def get_server_urls(self, server_token):
+        #TODO query
+        return []
+
+    def add_server_url(self, server_token, url):
+        #TODO query
+        pass
+
+    def remove_server_url(self, server_token, url):
+        #TODO query
+        pass
+
+
+class LookupRoleData:
+    def __init__(self, db):
+        self.server_role_data = {}
+        self.db = db
+
+    def add_set(self, server_token, url):
+        self.db.add_server_url(server_token, url)
+
+    def remove_set(self, server_token, url):
+        self.db.remove_server_url(server_token, url)
+
+    def get_server_urls(self, server_token):
+        return self.db.get_server_urls(server_token)
+
+    def get_server_role_data(self, server_token):
+        return server_token in self.server_role_data and self.server_role_data[server_token] or {}
+
+    def update_server_role_data(self, server_token, role_lookup):
+        self.server_role_data[server_token] = LookupRoleServerData(role_lookup)
+
+    def server_roles_need_update(self, server_token):
+        return (not server_token in self.server_role_data) or self.server_role_data[server_token].last_refresh_time == None or (datetime.datetime.now() - self.server_role_data[server_token].last_refresh_time) > datetime.timedelta(days=1)
+
+
+class LookupImpl:    
+    def __init__(self, db, downloader):
+        self.data = LookupRoleData(db)
+        self.downloader = downloader
+
+    async def refresh_roles_for_server(self, server_token):
+        urls = self.data.get_server_urls(server_token)
+        #TODO: exception(?) leading to message if roles empty
+        roles = await self.downloader.collect_roles_from_urls(urls)
+        self.data.update_server_role_data(server_token, roles)
+
+    async def refresh_roles_for_server_if_needed(self, server_token):
+        if self.data.server_roles_need_update(server_token):
+            await self.refresh_roles_for_server(server_token)
+            return True
+        return False
+
+    async def role_lookup(self, server_token, role_to_check):
+        await self.refresh_roles_for_server_if_needed(server_token)
+        role_data = self.data.get_server_role_data(server_token)
+        role_found = role_data.get_matching_roles(role_to_check)
+        # TODO: output role info to user somehow (note that this class does not know about ctx, this function may need to be passed a virtual object
+
+    async def add_set(self, server_token, url):
+        self.data.add_set(server_token, url)
+        await self.refresh_roles_for_server(server_token) # could just add the new one
+
+    async def remove_set(self, server_token, url):
+        self.data.remove_set(server_token, url)
+        await self.refresh_roles_for_server(server_token)
+
+
+# Concrete class for use by the Cog
 class Lookup:
-        #urls = [
-        #    'https://www.bloodstar.xyz/p/MagRoader/StarWars/script.json',
-        #    'https://www.bloodstar.xyz/p/morilac/Pandemonium/script.json',
-        #]
+    def __init__(self):
+        self.impl = LookupImpl(LookupRoleDatabaseConcrete(), LookupRoleDownloaderConcrete())
 
     def find_role_from_message_content(self, content):
         return " ".join(shlex.split(content)[1:])
 
     async def role_lookup(self, ctx):
-        #info = ctx.bot.getTownInfo(ctx)
+        server_token = ctx.guild.id
+        await self.impl.role_lookup(server_token, self.find_role_from_message_content(ctx.message.content))
 
-        roleToCheck = self.find_role_from_message_content(ctx.message.content)
+    async def add_set(self, ctx):
+        server_token = ctx.guild.id
+        params = shlex.split(ctx.message.content)
+        if len(params) == 2:
+            await self.impl.add_set(server_token, params[1])
+        else:
+            #TODO error message
+            pass
 
-        roleLookup = {}
-
-        # TODO: collect roles (if needed), compare vs. request, output result
+    async def remove_set(self, ctx):
+        server_token = ctx.guild.id
+        params = shlex.split(ctx.message.content)
+        if len(params) == 2:
+            await self.impl.remove_set(server_token, params[1])
+        else:
+            #TODO error message
+            pass
