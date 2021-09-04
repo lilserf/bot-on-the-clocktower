@@ -667,6 +667,7 @@ class SetupCog(commands.Cog):
         embed = discord.Embed(title=f'{guild.name} // {townInfo.dayCategory.name}', description=f'Created {townInfo.timestamp} by {townInfo.authorName}', color=0xcc0000)
         embed.add_field(name="Control Channel", value=townInfo.controlChannel.name, inline=False)
         embed.add_field(name="Town Square", value=townInfo.townSquare.name, inline=False)
+        embed.add_field(name="Chat Channel", value=townInfo.chatChannel and townInfo.chatChannel.name or "<None>", inline=False)
         embed.add_field(name="Day Category", value=townInfo.dayCategory.name, inline=False)
         embed.add_field(name="Night Category", value=townInfo.nightCategory and townInfo.nightCategory.name or "<None>", inline=False)
         embed.add_field(name="Storyteller Role", value=townInfo.storyTellerRole.name, inline=False)
@@ -1166,8 +1167,8 @@ class GameplayCog(commands.Cog):
 
 
 class VoteTimerCog(commands.Cog):
-    def __init__(self):
-        self.votetimer = votetimer.VoteTimer()
+    def __init__(self, bot):
+        self.votetimer = votetimer.VoteTimer(bot)
 
     # Start the vote timer
     @commands.command(name='votetimer', help=f'Start a countdown to voting time.\n\nUsage: {COMMAND_PREFIX}votetimer <time string>\n\nTime string can look like: "5 minutes 30 seconds" or "5:30" or "5m30s"')
@@ -1181,9 +1182,9 @@ class VoteTimerCog(commands.Cog):
 
     async def perform_action(self, action, ctx):
         try:
-            error = await action(ctx)
-            if error != None:
-                await ctx.send(error)
+            message = await action(ctx)
+            if message != None:
+                await ctx.send(message)
 
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
@@ -1191,5 +1192,5 @@ class VoteTimerCog(commands.Cog):
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
-bot.add_cog(VoteTimerCog())
+bot.add_cog(VoteTimerCog(bot))
 bot.run(TOKEN)
