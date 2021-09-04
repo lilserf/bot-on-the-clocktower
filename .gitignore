@@ -4,3 +4,4 @@ mongodb.txt
 /env
 __pycache__/
 .vscode/
+package-lock.json
