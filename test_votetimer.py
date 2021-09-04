@@ -207,11 +207,13 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         ts = TestStorage()
         tt = TestTicker()
         tb = TestBroadcaster()
+        
+        self.assertIsNone(tt.set_callback_cb)
+        self.assertEqual(0, tt.set_count)
 
         cd = votetimer.VoteTimerCountdown(ts, tt, tb)
-
-        self.assertIsNotNone(cd)
-
+        
+        self.assertIsNotNone(tt.set_callback_cb)
 
 if __name__ == '__main__':
     unittest.main()
