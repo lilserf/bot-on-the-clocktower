@@ -2,3 +2,5 @@
 mongodb.txt
 /.vs
 /env
+__pycache__/
+.vscode/
