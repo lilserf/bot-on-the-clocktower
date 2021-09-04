@@ -1,4 +1,5 @@
 ﻿import datetime
+from discord.ext import tasks
 import pytimeparse
 import shlex
 
@@ -6,6 +7,102 @@ class VoteTownInfo:
     def __init__(self, chat_channel, villager_role):
         self.chat_channel = chat_channel
         self.villager_role = villager_role
+
+
+class VoteTimerCountdown:
+    def __init__(self, town_storage, town_ticker, message_broadcaster):
+        self.town_storage = town_storage
+        self.town_ticker = town_ticker
+        self.message_broadcaster = message_broadcaster
+
+        self.town_ticker.set_callback(self.on_timer_complete)
+
+    def add_town(self, town_info, seconds):
+        pass
+
+    async def on_timer_complete(town_info):
+        pass
+
+
+class VoteTownTickerVirtual:
+    def set_callback(self, cb):
+        pass
+
+    def start_ticking(self):
+        pass
+
+    def stop_ticking(self):
+        pass
+
+
+class MessageBroadcasterVirtual:
+    def send_message(self, message):
+        pass
+
+
+class VoteTownTickerConcrete(VoteTownTickerVirtual):
+    def __del__(self):
+        self.tick.cancel()
+
+    def set_callback(self, cb):
+        self.cb = cb
+
+    def start_ticking(self):
+        if not self.tick.is_running():
+            self.tick.start()
+
+    def stop_ticking(self):
+        if not self.tick.is_running():
+            self.tick.stop()
+
+    @tasks.loop(seconds=1)
+    async def tick(self):
+        await self.cb()
+
+
+
+class VoteTownStorageVirtual:
+    def add_town(self, town_info, ticks):
+        pass
+
+    def remove_town(self, town_info):
+        pass
+
+    def tick_and_return_towns(self):
+        pass
+
+    def has_towns_ticking(self):
+        pass
+
+
+class VoteTownStorageConcrete(VoteTownStorageVirtual):
+    def __init__(self):
+        self.ticking_towns = {}
+
+    def add_town(self, town_info, ticks):
+        self.ticking_towns[town_info] = ticks
+
+    def remove_town(self, town_info):
+        if town_info in self.ticking_towns:
+            self.ticking_towns.pop(town_info)
+        pass
+
+    def tick_and_return_towns(self):
+        ret = []
+        keys = self.ticking_towns.keys()
+        for key in keys:
+            ticks = self.ticking_towns[key] - 1
+            if ticks <= 0:
+                ret.append(key)
+            else:
+                self.ticking_towns[key] = ticks
+        for key in ret:
+            self.ticking_towns.pop(key)
+        return ret
+
+    def has_towns_ticking(self):
+        return self.ticking_towns
+
 
 class VoteTownInfoProviderVirtual:
     def get_town_info(self):

@@ -1,6 +1,11 @@
 ﻿import unittest
-
 import votetimer
+
+class TestValidTownInfoProvider(votetimer.VoteTownInfoProviderVirtual):
+    def get_town_info(self):
+        valid_obj = {'valid':True}
+        return votetimer.VoteTownInfo(valid_obj, valid_obj)
+
 
 class TestVoteTimerSync(unittest.TestCase):
 
@@ -19,11 +24,68 @@ class TestVoteTimerSync(unittest.TestCase):
         test4 = impl.get_seconds_from_string('foo bar')
         self.assertIsNone(test4, 'Expected bad string to parse to None')
 
+
+    def test_town_storage(self):
+        ts = votetimer.VoteTownStorageConcrete()
+
+        self.assertFalse(ts.has_towns_ticking(), 'should start with no ticking towns')
+
+        t1 = TestValidTownInfoProvider()
+        t2 = TestValidTownInfoProvider()
+
+        ts.add_town(t1, 5)
+        
+        self.assertTrue(ts.has_towns_ticking(), 'should now have ticking town')
+
+        for x in range(4):
+            ret = ts.tick_and_return_towns()
+            self.assertEqual(0, len(ret), 'should not return towns still ticking')
+            self.assertTrue(ts.has_towns_ticking(), 'towns should still be ticking')
+
+        ret = ts.tick_and_return_towns()
+        self.assertEqual(1, len(ret), 'should return single ticking town')
+        self.assertEqual(t1, ret[0], 'should return town done ticking')
+        self.assertFalse(ts.has_towns_ticking(), 'should be no more towns ticking')
+
+        ts.add_town(t1, 5)
+
+        for x in range(3):
+            ret = ts.tick_and_return_towns()
+            self.assertEqual(0, len(ret), 'should not return towns still ticking')
+            self.assertTrue(ts.has_towns_ticking(), 'towns should still be ticking')
+            
+        ts.add_town(t1, 10)
+        ts.add_town(t2, 10)
+
+        for x in range(9):
+            ret = ts.tick_and_return_towns()
+            self.assertEqual(0, len(ret), 'should not return towns still ticking')
+            self.assertTrue(ts.has_towns_ticking(), 'towns should still be ticking')
+
+        ret = ts.tick_and_return_towns()
+        self.assertEqual(2, len(ret), 'should return both ticking towns')
+        self.assertTrue(t1 in ret, 'should return t1 done ticking')
+        self.assertTrue(t2 in ret, 'should return t2 done ticking')
+        self.assertFalse(ts.has_towns_ticking(), 'should be no more towns ticking')
+        
+        ts.add_town(t1, 1)
+        ts.add_town(t2, 1)        
+        self.assertTrue(ts.has_towns_ticking(), 'should be towns ticking')
+        ts.remove_town(t2)
+        self.assertTrue(ts.has_towns_ticking(), 'should be towns ticking')
+        ts.remove_town(t2)
+        self.assertTrue(ts.has_towns_ticking(), 'should be towns ticking')
+        ts.remove_town(t1)
+        self.assertFalse(ts.has_towns_ticking(), 'should be no towns ticking')
+        
+        for x in range(5):
+            ret = ts.tick_and_return_towns()
+            self.assertEqual(0, len(ret), 'should not return towns still ticking')
+            self.assertFalse(ts.has_towns_ticking(), 'no towns should be ticking')
+
+
+
 class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
-    class TestValidTownInfoProvider(votetimer.VoteTownInfoProviderVirtual):
-        def get_town_info(self):
-            valid_obj = {'valid':True}
-            return votetimer.VoteTownInfo(valid_obj, valid_obj)
 
     async def test_start_time_invalid_town_info(self):
         impl = votetimer.VoteTimerImpl()
@@ -56,25 +118,89 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
     async def test_start_time_invalid_times(self):
         impl = votetimer.VoteTimerImpl()
 
-        message = await impl.start_timer(TestVoteTimerAsync.TestValidTownInfoProvider(), 9)
+        message = await impl.start_timer(TestValidTownInfoProvider(), 9)
         self.assertIsNotNone(message)
         self.assertTrue("10 seconds" in message)
 
-        message = await impl.start_timer(TestVoteTimerAsync.TestValidTownInfoProvider(), 1201)
+        message = await impl.start_timer(TestValidTownInfoProvider(), 1201)
         self.assertIsNotNone(message)
         self.assertTrue("20 minutes" in message)
 
     async def test_start_time_valid_times(self):
         impl = votetimer.VoteTimerImpl()
     
-        message = await impl.start_timer(TestVoteTimerAsync.TestValidTownInfoProvider(), 10)
+        message = await impl.start_timer(TestValidTownInfoProvider(), 10)
         self.assertIsNone(message)
     
-        message = await impl.start_timer(TestVoteTimerAsync.TestValidTownInfoProvider(), 300)
+        message = await impl.start_timer(TestValidTownInfoProvider(), 300)
         self.assertIsNone(message)
     
-        message = await impl.start_timer(TestVoteTimerAsync.TestValidTownInfoProvider(), 1200)
+        message = await impl.start_timer(TestValidTownInfoProvider(), 1200)
         self.assertIsNone(message)
+
+
+    async def test_countdowns(self):
+
+        class TestTicker(votetimer.VoteTownTickerVirtual):
+            def __init__(self):
+                self.set_count = 0
+                self.start_count = 0
+                self.stop_count = 0
+
+                self.set_callback_cb = None
+
+            def set_callback(self, cb):
+                self.set_count = self.set_count+1
+                self.set_callback_cb = cb
+
+            def start_ticking(self):
+                self.start_count = self.start_count+1
+
+            def stop_ticking(self):
+                self.stop_count = self.stop_count+1
+
+        class TestStorage(votetimer.VoteTownStorageVirtual):
+            def __init__(self):
+                self.add_count = 0
+                self.remove_count = 0
+                self.tick_count = 0
+                self.has_count = 0
+
+            def add_town(self, town_info, ticks):
+                self.add_count = self.add_count+1
+                self.add_town_town_info = town_info
+                self.add_town_ticks = ticks
+
+            def remove_town(self, town_info):
+                self.remove_count = self.remove_count+1
+                self.remove_town_town_info = town_info
+
+            def tick_and_return_towns(self):
+                self.tick_count = self.tick_count+1
+                return self.tick_ret
+
+            def has_towns_ticking(self):
+                self.has_count = self.has_count+1
+                return self.has_ret
+
+
+        class TestBroadcaster(votetimer.MessageBroadcasterVirtual):
+            def __init__(self):
+                self.send_count = 0
+
+            def send_message(self, message):
+                self.send_count = self.send_count+1
+                self.last_message = message
+
+                
+        ts = TestStorage()
+        tt = TestTicker()
+        tb = TestBroadcaster()
+
+        cd = votetimer.VoteTimerCountdown(ts, tt, tb)
+
+        self.assertIsNotNone(cd)
+
 
 if __name__ == '__main__':
     unittest.main()
