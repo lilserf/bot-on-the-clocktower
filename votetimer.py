@@ -9,6 +9,7 @@ class VoteTownInfo:
         self.villager_role = villager_role
 
 
+
 class VoteTimerCountdown:
     def __init__(self, town_storage, town_ticker, message_broadcaster):
         self.town_storage = town_storage
@@ -17,14 +18,24 @@ class VoteTimerCountdown:
 
         self.town_ticker.set_callback(self.on_timer_complete)
 
-    def add_town(self, town_info, seconds):
+    def add_town(self, town_info, end_time):
         pass
 
     async def on_timer_complete(town_info):
         pass
 
 
-class VoteTownTickerVirtual:
+
+class IDateTimeProvider:
+    def now(self):
+        pass
+
+class DateTimeProvider(IDateTimeProvider):
+    def now(self):
+        return datetime.now()
+
+
+class IVoteTownTicker:
     def set_callback(self, cb):
         pass
 
@@ -35,12 +46,12 @@ class VoteTownTickerVirtual:
         pass
 
 
-class MessageBroadcasterVirtual:
+class IMessageBroadcaster:
     def send_message(self, message):
         pass
 
 
-class VoteTownTickerConcrete(VoteTownTickerVirtual):
+class VoteTownTicker(IVoteTownTicker):
     def __del__(self):
         self.tick.cancel()
 
@@ -61,41 +72,40 @@ class VoteTownTickerConcrete(VoteTownTickerVirtual):
 
 
 
-class VoteTownStorageVirtual:
-    def add_town(self, town_info, ticks):
+class IVoteTownStorage:
+    def add_town(self, town_info, finish_time):
         pass
 
     def remove_town(self, town_info):
         pass
 
-    def tick_and_return_towns(self):
+    def tick_and_return_finished_towns(self):
         pass
 
     def has_towns_ticking(self):
         pass
 
 
-class VoteTownStorageConcrete(VoteTownStorageVirtual):
-    def __init__(self):
+class VoteTownStorage(IVoteTownStorage):
+    def __init__(self, datetime_provider):
         self.ticking_towns = {}
+        self.datetime_provider = datetime_provider
 
-    def add_town(self, town_info, ticks):
-        self.ticking_towns[town_info] = ticks
+    def add_town(self, town_info, finish_time):
+        self.ticking_towns[town_info] = finish_time
 
     def remove_town(self, town_info):
         if town_info in self.ticking_towns:
             self.ticking_towns.pop(town_info)
         pass
 
-    def tick_and_return_towns(self):
+    def tick_and_return_finished_towns(self):
         ret = []
         keys = self.ticking_towns.keys()
+        now = self.datetime_provider.now()
         for key in keys:
-            ticks = self.ticking_towns[key] - 1
-            if ticks <= 0:
+            if now >= self.ticking_towns[key]:
                 ret.append(key)
-            else:
-                self.ticking_towns[key] = ticks
         for key in ret:
             self.ticking_towns.pop(key)
         return ret
@@ -104,11 +114,11 @@ class VoteTownStorageConcrete(VoteTownStorageVirtual):
         return self.ticking_towns
 
 
-class VoteTownInfoProviderVirtual:
+class IVoteTownInfoProvider:
     def get_town_info(self):
         pass
 
-class VoteTownInfoProviderConcrete(VoteTownInfoProviderVirtual):
+class VoteTownInfoProvider(IVoteTownInfoProvider):
     def __init__(self, bot, ctx):
         self.bot = bot
         self.ctx = ctx
@@ -168,7 +178,7 @@ class VoteTimer:
         if not time_seconds:
             return usage
 
-        town_info_provider = VoteTownInfoProviderConcrete(self.bot, ctx)
+        town_info_provider = VoteTownInfoProvider(self.bot, ctx)
 
         return f'TEMP time in seconds passed: {time_seconds}'
 
