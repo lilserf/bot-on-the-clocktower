@@ -1,4 +1,5 @@
-﻿import datetime
+﻿import botctypes
+import datetime
 import unittest
 import votetimer
 
@@ -251,7 +252,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         
         guild_id1 = "guild_id_1"
         channel_id1 = "channel_id_1"
-        town1 = votetimer.VoteTownId(guild_id1, channel_id1)
+        town1 = botctypes.TownId(guild_id1, channel_id1)
 
         # Adding a town starts the timer going
 

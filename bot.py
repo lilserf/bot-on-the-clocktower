@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+import botctypes
 import datetime
 import discord
 from discord.ext import commands, tasks
@@ -136,6 +137,9 @@ class botcBot(commands.Bot):
     # Get a well-defined TownInfo based on the stored DB info for this guild
     def getTownInfo(self, ctx):
         return self.getTownInfoByIds(ctx.guild.id, ctx.channel.id, ctx.guild)
+
+    def getTownInfoByTownId(self, town_id, guild=None):
+        return self.getTownInfoByIds(town_id.guild_id, town_id.channel_id, guild)
 
     def getTownInfoByIds(self, guild_id, channel_id, guild=None):
         query = { "guild" : guild_id, "controlChannelId" : channel_id }

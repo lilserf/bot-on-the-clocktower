@@ -1,4 +1,5 @@
-﻿import datetime
+﻿import botctypes
+import datetime
 from discord.ext import tasks
 import math
 import pytimeparse
@@ -8,14 +9,6 @@ class VoteTownInfo:
     def __init__(self, chat_channel, villager_role):
         self.chat_channel = chat_channel
         self.villager_role = villager_role
-
-
-class VoteTownId:
-    def __init__(self, guild_id, channel_id):
-        self.guild_id = guild_id
-        self.channel_id = channel_id
-
-
 
 class IVoteTimerController:
     async def add_town(self, town_id, end_time):
@@ -228,7 +221,7 @@ class VoteTownInfoProvider(IVoteTownInfoProvider):
         self.bot = bot
 
     def get_town_info(self, town_id):
-        town_info = self.bot.getTownInfoByIds(town_id.guild_id, town_id.channel_id)
+        town_info = self.bot.getTownInfoByTownId(town_id)
         if not town_info:
             return None
 
@@ -301,10 +294,9 @@ class VoteTimer:
         if not time_seconds:
             return usage
 
-        town_id = VoteTownId(ctx.guild.id, ctx.channel.id)
-
+        town_id = botctypes.TownId(ctx.guild.id, ctx.channel.id)
         return await self.impl.start_timer(town_id, time_seconds)
 
     async def stop_timer(self, ctx):
-        town_id = VoteTownId(ctx.guild.id, cts.channel.id)
+        town_id = botctypes.TownId(ctx.guild.id, cts.channel.id)
         return await self.impl.stop_timer(town_id, time_seconds)
