@@ -1201,23 +1201,27 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         
         for rec in g_dbActiveGames.find(inactiveQuery):
             guildId = rec["guild"]
-            guild = self.bot.get_guild(guildId)
             # Fetch the full info for this guild/channel combo
             lookupQuery = { "guild" : guildId, "controlChannelId" : rec["channel"] }
             doc = g_dbGuildInfo.find_one(lookupQuery)
             if doc:
-                (townValid, townError) = isTownValid(guild, doc)
-                if townValid:
-                    info = TownInfo(guild, doc)
-                    try:
-                        await self.onEndGameInternal(guild, info)
-                        numEnded = numEnded + 1
-                        print(f"Ended game in guild {guildId}")
+                guild = self.bot.get_guild(guildId)
+                if guild:
+                    (townValid, townError) = isTownValid(guild, doc)
+                    if townValid:
+                        info = TownInfo(guild, doc)
+                        try:
+                            await self.onEndGameInternal(guild, info)
+                            numEnded = numEnded + 1
+                            print(f"Ended game in guild {guildId}")
+                            g_dbActiveGames.delete_one(lookupQuery)
+                        except Exception:
+                            pass
+                    else:
+                        print(f"Couldn't end game in guild {guildId} due to {townError}")
                         g_dbActiveGames.delete_one(lookupQuery)
-                    except Exception:
-                        pass
                 else:
-                    print(f"Couldn't end game in guild {guildId} due to {townError}")
+                    print(f"Couldn't find guild with id {guildId}, may have been deleted")
                     g_dbActiveGames.delete_one(lookupQuery)
 
         if numEnded > 0:
