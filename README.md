@@ -117,6 +117,14 @@ Brings all members from the Nighttime category channels back to the Town Square.
 
 Brings all members from other Daytime category channels back to the Town Square for nominations to begin.
 
+### `!voteTimer <time>`
+
+Runs `!vote` after the specified amount of time. Valid times range from 15 seconds to 20 minutes.
+
+### `!stopVoteTimer`
+
+Cancels an existing timer created by `!voteTimer`.
+
 ### `!currGame`
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the **(ST)** nickname prefix.
@@ -223,6 +231,10 @@ If that command works, you're ready to run a game!
 ### `!removeTown`
 
 The opposite of `!addTown` - when run in the control channel for a town, removes registration of this town from the bot. The channels and roles will still exist and are not touched.
+
+### `!setChatChannel <chat channel name>`
+
+Informs the bot about what your chat channel is. This is needed to use the `!voteTimer` command, as the bot periodically informs villagers how much time they have before the vote.
 
 ---
 

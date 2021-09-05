@@ -1,5 +1,10 @@
 # Bot on the Clocktower Changelog
 
+## Version x.x.x
+
+* **New feature:** `!voteTimer 5 minutes` to start a countdown timer that will perform the `!vote` command after 5 minutes.</br>Times can range from 15 seconds to 20 minutes.</br>Also has corresponding `!stopVoteTimer` command to cancel the timer, as well as shortcuts `!vt` and `!svt`.
+* Added `!setChatChannel <chat channel name>` command to support `!voteTimer`.
+
 ## Version 1.1.0
 
 * The bot no longer **requires** the Night category. Run `!help` for `createTown` or `addTown` for details.
