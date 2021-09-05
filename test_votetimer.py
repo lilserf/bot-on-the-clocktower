@@ -7,6 +7,10 @@ class TestValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
         valid_obj = {'valid':True}
         return votetimer.VoteTownInfo(valid_obj, valid_obj)
 
+class TestDateTimeProvider(votetimer.IDateTimeProvider):
+    def now(self):
+        return self.time_now
+
 
 class TestVoteTimerSync(unittest.TestCase):
 
@@ -27,10 +31,6 @@ class TestVoteTimerSync(unittest.TestCase):
 
 
     def test_town_storage(self):
-
-        class TestDateTimeProvider(votetimer.IDateTimeProvider):
-            def now(self):
-                return self.time_now
 
         tdt = TestDateTimeProvider()
 
@@ -153,7 +153,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(message)
 
 
-    async def test_countdowns(self):
+    async def test_controller(self):
 
         class TestTicker(votetimer.IVoteTownTicker):
             def __init__(self):
@@ -180,10 +180,10 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
                 self.tick_count = 0
                 self.has_count = 0
 
-            def add_town(self, town_info, ticks):
+            def add_town(self, town_info, end_time):
                 self.add_count = self.add_count+1
                 self.add_town_town_info = town_info
-                self.add_town_ticks = ticks
+                self.add_town_end_time = end_time
 
             def remove_town(self, town_info):
                 self.remove_count = self.remove_count+1
@@ -197,7 +197,6 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
                 self.has_count = self.has_count+1
                 return self.has_ret
 
-
         class TestBroadcaster(votetimer.IMessageBroadcaster):
             def __init__(self):
                 self.send_count = 0
@@ -206,17 +205,73 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
                 self.send_count = self.send_count+1
                 self.last_message = message
 
-                
+        class TestVoteHandler(votetimer.IVoteHandler):
+            def __init__(self):
+                self.perform_vote_count = 0
+
+            async def perform_vote(self, town_id):
+                self.perform_vote_count = self.perform_vote_count + 1
+                self.perform_vote_town_id = town_id
+
         ts = TestStorage()
         tt = TestTicker()
         tb = TestBroadcaster()
+        td = TestDateTimeProvider()
+        tv = TestVoteHandler()
+
+        td.time_now = datetime.datetime.combine(datetime.date(2021, 9, 4), datetime.time(18, 20, 0))
         
         self.assertIsNone(tt.set_callback_cb)
         self.assertEqual(0, tt.set_count)
 
-        cd = votetimer.VoteTimerCountdown(ts, tt, tb)
+        c = votetimer.VoteTimerController(td, ts, tt, tb, tv)
         
+        self.assertEqual(1, tt.set_count)
         self.assertIsNotNone(tt.set_callback_cb)
+        
+        guild_id1 = "guild_id_1"
+        channel_id1 = "channel_id_1"
+        town1 = votetimer.VoteTownId(guild_id1, channel_id1)
+
+        # Adding a town starts the timer going
+
+        self.assertEqual(0, ts.add_count)
+        self.assertEqual(0, tt.start_count)
+
+        town1_end_time = td.time_now+datetime.timedelta(seconds=5)
+        c.add_town(town1, town1_end_time)
+
+        self.assertEqual(1, ts.add_count)
+        self.assertEqual(town1, ts.add_town_town_info)
+
+        self.assertEqual(1, tt.start_count)
+
+        # Ticking ticks the storage
+        self.assertEqual(0, ts.tick_count)
+        ts.tick_ret = []
+
+        await tt.set_callback_cb()
+        
+        self.assertEqual(1, ts.tick_count)
+
+
+        # Storage empty when time expired performs vote
+
+        td.time_now = td.time_now+datetime.timedelta(seconds=10)
+
+        self.assertEqual(0, tv.perform_vote_count)
+        ts.tick_ret = [town1]
+        
+        await tt.set_callback_cb()
+
+        self.assertEqual(2, ts.tick_count)
+        
+        self.assertEqual(1, tv.perform_vote_count)
+        self.assertEqual(town1, tv.perform_vote_town_id)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

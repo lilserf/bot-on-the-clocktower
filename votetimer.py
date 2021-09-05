@@ -15,20 +15,23 @@ class VoteTownId:
         self.channel_id = channel_id
 
 
-class VoteTimerCountdown:
-    def __init__(self, town_storage, town_ticker, message_broadcaster):
+class VoteTimerController:
+
+    def __init__(self, datetime_provider, town_storage, town_ticker, message_broadcaster, vote_handler):
+        self.datetime_provider = datetime_provider
         self.town_storage = town_storage
         self.town_ticker = town_ticker
         self.message_broadcaster = message_broadcaster
+        self.vote_handler = vote_handler
 
-        self.town_ticker.set_callback(self.on_timer_complete)
+        self.town_ticker.set_callback(self.tick)
 
     def add_town(self, town_id, end_time):
-        pass
+        self.town_storage.add_town(town_id, end_time)
+        self.town_ticker.start_ticking()
 
-    async def on_timer_complete(town_id):
-        pass
-
+    async def tick(self):
+        finished = self.town_storage.tick_and_return_finished_towns()
 
 
 class IDateTimeProvider:
@@ -117,6 +120,11 @@ class VoteTownStorage(IVoteTownStorage):
 
     def has_towns_ticking(self):
         return self.ticking_towns
+
+
+class IVoteHandler:
+    async def perform_vote(self, town_id):
+        pass
 
 
 class IVoteTownInfoProvider:
