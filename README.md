@@ -232,6 +232,10 @@ If that command works, you're ready to run a game!
 
 The opposite of `!addTown` - when run in the control channel for a town, removes registration of this town from the bot. The channels and roles will still exist and are not touched.
 
+### `!setChatChannel <chat channel name>`
+
+Informs the bot about what your chat channel is. This is needed to use the `!voteTimer` command.
+
 ---
 
 ## Support
