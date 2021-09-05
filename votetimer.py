@@ -16,7 +16,15 @@ class VoteTownId:
         self.channel_id = channel_id
 
 
-class VoteTimerController:
+
+class IVoteTimerController:
+    async def add_town(self, town_id, end_time):
+        pass
+
+    async def remove_town(self, town_id):
+        pass
+
+class VoteTimerController(IVoteTimerController):
 
     def __init__(self, datetime_provider, town_info_provider, town_storage, town_ticker, message_broadcaster, vote_handler):
         self.datetime_provider = datetime_provider
@@ -37,6 +45,14 @@ class VoteTimerController:
         await self.send_message(town_id, end_time, now)
         self.queue_next_time(town_id, end_time, now)
         self.town_ticker.start_ticking()
+
+    async def remove_town(self, town_id):
+        if town_id in self.town_map:
+            self.town_map.pop(town_id)
+            self.town_storage.remove_town(town_id)
+
+        if not self.town_storage.has_towns_ticking():
+            self.town_ticker.stop_ticking()
 
     async def tick(self):
         finished = self.town_storage.tick_and_return_finished_towns()
@@ -122,11 +138,6 @@ class IVoteTownTicker:
         pass
 
 
-class IMessageBroadcaster:
-    async def send_message(self, town_info, message):
-        pass
-
-
 class VoteTownTicker(IVoteTownTicker):
     def __del__(self):
         self.tick.cancel()
@@ -147,6 +158,16 @@ class VoteTownTicker(IVoteTownTicker):
         await self.cb()
 
 
+class IMessageBroadcaster:
+    async def send_message(self, town_info, message):
+        pass
+
+class MessageBroadcaster:
+    async def send_message(self, town_info, message):
+        #TODO
+        pass
+
+    
 
 class IVoteTownStorage:
     def add_town(self, town_id, finish_time):
@@ -172,7 +193,6 @@ class VoteTownStorage(IVoteTownStorage):
     def remove_town(self, town_id):
         if town_id in self.ticking_towns:
             self.ticking_towns.pop(town_id)
-        pass
 
     def tick_and_return_finished_towns(self):
         ret = []
@@ -193,6 +213,11 @@ class IVoteHandler:
     async def perform_vote(self, town_id):
         pass
 
+class VoteHandler(IVoteHandler):
+    async def perform_vote(self, town_id):
+        #TODO
+        pass
+
 
 class IVoteTownInfoProvider:
     def get_town_info(self, town_id):
@@ -211,7 +236,9 @@ class VoteTownInfoProvider(IVoteTownInfoProvider):
 
 
 class VoteTimerImpl:
-    def __init__(self, town_info_provider):
+    def __init__(self, controller, datetime_provider, town_info_provider):
+        self.controller = controller
+        self.datetime_provider = datetime_provider
         self.town_info_provider = town_info_provider
         pass
 
@@ -227,16 +254,22 @@ class VoteTimerImpl:
         if not town_info.villager_role:
             return 'No villager role found for this town. Please set up the town properly via the "addTown" command.'
 
-        required_time_str = 'Please choose a time between 10 seconds and 20 minutes.'
+        required_time_str = 'Please choose a time between 20 seconds and 20 minutes.'
 
-        if time_in_seconds < 10:
+        if time_in_seconds < 20:
             return required_time_str
 
         if time_in_seconds > 1200:
             return required_time_str
 
-        # TODO more stuff
-        return None
+        now = self.datetime_provider.now()
+        end_time = now+datetime.timedelta(seconds=time_in_seconds)
+        await self.controller.add_town(town_id, end_time)
+
+
+    async def stop_timer(self, town_id):
+        await self.controller.remove_town(town_id)
+
 
     def get_seconds_from_string(self, str):
         return pytimeparse.parse(str)
@@ -244,7 +277,15 @@ class VoteTimerImpl:
 # Concrete class for use by the Cog
 class VoteTimer:
     def __init__(self, bot):
-        self.impl = VoteTimerImpl(VoteTownInfoProvider(bot))
+        info_provider = VoteTownInfoProvider(bot)
+        dt_provider = DateTimeProvider()
+        storage = VoteTownStorage(dt_provider)
+        ticker = VoteTownTicker()
+        broadcaster = MessageBroadcaster()
+        vote_handler = VoteHandler()
+        controller = VoteTimerController(dt_provider, info_provider, storage, ticker, broadcaster, vote_handler)
+
+        self.impl = VoteTimerImpl(controller, dt_provider, info_provider)
         self.bot = bot
 
     async def start_timer(self, ctx):
@@ -260,11 +301,10 @@ class VoteTimer:
         if not time_seconds:
             return usage
 
-        return f'TEMP time in seconds passed: {time_seconds}'
-
         town_id = VoteTownId(ctx.guild.id, cts.channel.id)
 
         return await self.impl.start_timer(town_id, time_seconds)
 
     async def stop_timer(self, ctx):
-        return f'TEMP okay we should stop that timer'
+        town_id = VoteTownId(ctx.guild.id, cts.channel.id)
+        return await self.impl.stop_timer(town_id, time_seconds)

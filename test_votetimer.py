@@ -12,14 +12,23 @@ class TestValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
         return votetimer.VoteTownInfo(valid_channel, FakeValidRole())
 
 class TestDateTimeProvider(votetimer.IDateTimeProvider):
+    def __init__(self):
+        self.time_now = datetime.datetime.combine(datetime.date(2021, 9, 4), datetime.time(18, 20, 0))
+
     def now(self):
         return self.time_now
+
+class DoNothingController(votetimer.IVoteTimerController):
+    async def add_town(self, town_id, end_time):
+        pass
+    async def remove_town(self, town_id):
+        pass
 
 
 class TestVoteTimerSync(unittest.TestCase):
 
     def test_time_parsing(self):
-        impl = votetimer.VoteTimerImpl(TestValidTownInfoProvider())
+        impl = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestValidTownInfoProvider())
 
         test1 = impl.get_seconds_from_string("5 minutes 30 seconds")
         self.assertEqual(test1, 330, 'Expected "x minutes y seconds" to parse properly')
@@ -37,8 +46,6 @@ class TestVoteTimerSync(unittest.TestCase):
     def test_town_storage(self):
 
         tdt = TestDateTimeProvider()
-
-        tdt.time_now = datetime.datetime.combine(datetime.date(2021, 9, 4), datetime.time(18, 20, 0))
 
         ts = votetimer.VoteTownStorage(tdt)
 
@@ -109,7 +116,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
             def get_town_info(self, town_id):
                 return None
 
-        impl1 = votetimer.VoteTimerImpl(TestNoInfoChannelProvider())
+        impl1 = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestNoInfoChannelProvider())
         message = await impl1.start_timer(None, 60)
         self.assertIsNotNone(message)
         self.assertTrue("town" in message and "channel" in message and "found" in message)
@@ -118,7 +125,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
             def get_town_info(self, town_id):
                 return votetimer.VoteTownInfo(None, FakeValidRole())
             
-        impl2 = votetimer.VoteTimerImpl(TestNoChatChannelProvider())
+        impl2 = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestNoChatChannelProvider())
         message = await impl2.start_timer(None, 60)
         self.assertIsNotNone(message)
         self.assertTrue("chat channel" in message and "found" in message)
@@ -127,27 +134,27 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
             def get_town_info(self, town_id):
                 return votetimer.VoteTownInfo(valid_channel, None)
             
-        impl3 = votetimer.VoteTimerImpl(TestNoVillagerRoleProvider())
+        impl3 = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestNoVillagerRoleProvider())
         message = await impl3.start_timer(None, 60)
         self.assertIsNotNone(message)
         self.assertTrue("role" in message and "villager" in message)
 
     async def test_start_time_invalid_times(self):
         
-        impl = votetimer.VoteTimerImpl(TestValidTownInfoProvider())
+        impl = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestValidTownInfoProvider())
 
-        message = await impl.start_timer(None, 9)
+        message = await impl.start_timer(None, 19)
         self.assertIsNotNone(message)
-        self.assertTrue("10 seconds" in message)
+        self.assertTrue("20 seconds" in message)
 
         message = await impl.start_timer(None, 1201)
         self.assertIsNotNone(message)
         self.assertTrue("20 minutes" in message)
 
     async def test_start_time_valid_times(self):
-        impl = votetimer.VoteTimerImpl(TestValidTownInfoProvider())
+        impl = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestValidTownInfoProvider())
 
-        message = await impl.start_timer(None, 10)
+        message = await impl.start_timer(None, 20)
         self.assertIsNone(message)
     
         message = await impl.start_timer(None, 300)
@@ -233,8 +240,6 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         td = TestDateTimeProvider()
         tv = TestVoteHandler()
         ti = TestTownInfoProvider()
-
-        td.time_now = datetime.datetime.combine(datetime.date(2021, 9, 4), datetime.time(18, 20, 0))
         
         self.assertIsNone(tt.set_callback_cb)
         self.assertEqual(0, tt.set_count)
@@ -332,7 +337,6 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(4, tb.send_count)
         self.assertTrue('4 minutes, 50 seconds' in tb.last_message)
         self.assertEqual(ti.town_info, tb.last_town_info)
-
 
 
 if __name__ == '__main__':
