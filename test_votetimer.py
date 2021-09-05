@@ -25,6 +25,75 @@ class DoNothingController(votetimer.IVoteTimerController):
     async def remove_town(self, town_id):
         pass
 
+class TestTicker(votetimer.IVoteTownTicker):
+    def __init__(self):
+        self.set_count = 0
+        self.start_count = 0
+        self.stop_count = 0
+
+        self.set_callback_cb = None
+
+    def set_callback(self, cb):
+        self.set_count = self.set_count+1
+        self.set_callback_cb = cb
+
+    def start_ticking(self):
+        self.start_count = self.start_count+1
+
+    def stop_ticking(self):
+        self.stop_count = self.stop_count+1
+
+class TestStorage(votetimer.IVoteTownStorage):
+    def __init__(self):
+        self.add_count = 0
+        self.remove_count = 0
+        self.tick_count = 0
+        self.has_count = 0
+        self.has_ret = False
+
+    def add_town(self, town_info, end_time):
+        self.add_count = self.add_count+1
+        self.add_town_town_info = town_info
+        self.add_town_end_time = end_time
+
+    def remove_town(self, town_info):
+        self.remove_count = self.remove_count+1
+        self.remove_town_town_info = town_info
+
+    def tick_and_return_finished_towns(self):
+        self.tick_count = self.tick_count+1
+        return self.tick_ret
+
+    def has_towns_ticking(self):
+        self.has_count = self.has_count+1
+        return self.has_ret
+
+class TestBroadcaster(votetimer.IMessageBroadcaster):
+    def __init__(self):
+        self.send_count = 0
+        self.message_ret = None
+
+    async def send_message(self, town_info, message):
+        self.send_count = self.send_count+1
+        self.last_message = message
+        self.last_town_info = town_info
+        return self.message_ret
+
+class TestVoteHandler(votetimer.IVoteHandler):
+    def __init__(self):
+        self.perform_vote_count = 0
+
+    async def perform_vote(self, town_id):
+        self.perform_vote_count = self.perform_vote_count + 1
+        self.perform_vote_town_id = town_id
+
+class TestTownInfoProvider(votetimer.IVoteTownInfoProvider):
+    def __init__(self):
+        self.town_info = votetimer.VoteTownInfo({'valid':True}, FakeValidRole())
+
+    def get_town_info(self, town_id):
+        return self.town_info
+
 
 class TestVoteTimerSync(unittest.TestCase):
 
@@ -110,6 +179,8 @@ class TestVoteTimerSync(unittest.TestCase):
 
 class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
+
+
     async def test_start_time_invalid_town_info(self):
         valid_channel = {'valid':True}
 
@@ -166,74 +237,6 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_controller(self):
-
-        class TestTicker(votetimer.IVoteTownTicker):
-            def __init__(self):
-                self.set_count = 0
-                self.start_count = 0
-                self.stop_count = 0
-
-                self.set_callback_cb = None
-
-            def set_callback(self, cb):
-                self.set_count = self.set_count+1
-                self.set_callback_cb = cb
-
-            def start_ticking(self):
-                self.start_count = self.start_count+1
-
-            def stop_ticking(self):
-                self.stop_count = self.stop_count+1
-
-        class TestStorage(votetimer.IVoteTownStorage):
-            def __init__(self):
-                self.add_count = 0
-                self.remove_count = 0
-                self.tick_count = 0
-                self.has_count = 0
-                self.has_ret = False
-
-            def add_town(self, town_info, end_time):
-                self.add_count = self.add_count+1
-                self.add_town_town_info = town_info
-                self.add_town_end_time = end_time
-
-            def remove_town(self, town_info):
-                self.remove_count = self.remove_count+1
-                self.remove_town_town_info = town_info
-
-            def tick_and_return_finished_towns(self):
-                self.tick_count = self.tick_count+1
-                return self.tick_ret
-
-            def has_towns_ticking(self):
-                self.has_count = self.has_count+1
-                return self.has_ret
-
-        class TestBroadcaster(votetimer.IMessageBroadcaster):
-            def __init__(self):
-                self.send_count = 0
-
-            async def send_message(self, town_info, message):
-                self.send_count = self.send_count+1
-                self.last_message = message
-                self.last_town_info = town_info
-
-        class TestVoteHandler(votetimer.IVoteHandler):
-            def __init__(self):
-                self.perform_vote_count = 0
-
-            async def perform_vote(self, town_id):
-                self.perform_vote_count = self.perform_vote_count + 1
-                self.perform_vote_town_id = town_id
-
-        
-        class TestTownInfoProvider(votetimer.IVoteTownInfoProvider):
-            def __init__(self):
-                self.town_info = votetimer.VoteTownInfo({'valid':True}, FakeValidRole())
-
-            def get_town_info(self, town_id):
-                return self.town_info
 
         ts = TestStorage()
         tt = TestTicker()
@@ -301,14 +304,14 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1, tt.stop_count)
 
 
-        # Adds to storage with 10 seconds remaining
+        # Adds to storage with 15 seconds remaining
         
         town1_end_time = td.time_now+datetime.timedelta(seconds=25)
         await c.add_town(town1, town1_end_time)
         
         self.assertEqual(2, ts.add_count)
         self.assertEqual(town1, ts.add_town_town_info)
-        self.assertEqual(town1_end_time-datetime.timedelta(seconds=10), ts.add_town_end_time)
+        self.assertEqual(town1_end_time-datetime.timedelta(seconds=15), ts.add_town_end_time)
 
         self.assertEqual(2, tb.send_count)
         self.assertTrue('25 seconds' in tb.last_message)
@@ -338,6 +341,28 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(4, tb.send_count)
         self.assertTrue('4 minutes, 50 seconds' in tb.last_message)
         self.assertEqual(ti.town_info, tb.last_town_info)
+
+        
+    async def test_broadcaster_returns_value_controller_returns_it(self):
+    
+        ts = TestStorage()
+        tt = TestTicker()
+        tb = TestBroadcaster()
+        td = TestDateTimeProvider()
+        tv = TestVoteHandler()
+        ti = TestTownInfoProvider()
+    
+        c = votetimer.VoteTimerController(td, ti, ts, tt, tb, tv)
+    
+        town_id = botctypes.TownId('guild_id', 'channel_id')
+        ret = await c.add_town(town_id, td.time_now+datetime.timedelta(seconds=30))
+    
+        self.assertIsNone(ret)
+    
+        tb.message_ret = 'foo bar'
+    
+        ret = await c.add_town(town_id, td.time_now+datetime.timedelta(seconds=30))
+        self.assertEqual(tb.message_ret, ret)
 
 
 if __name__ == '__main__':

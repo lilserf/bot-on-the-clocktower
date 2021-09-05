@@ -35,9 +35,10 @@ class VoteTimerController(IVoteTimerController):
         self.town_map[town_id] = end_time
         now = self.datetime_provider.now()
 
-        await self.send_message(town_id, end_time, now)
+        ret = await self.send_message(town_id, end_time, now)
         self.queue_next_time(town_id, end_time, now)
         self.town_ticker.start_ticking()
+        return ret
 
     async def remove_town(self, town_id):
         if town_id in self.town_map:
@@ -69,7 +70,7 @@ class VoteTimerController(IVoteTimerController):
     async def send_message(self, town_id, end_time, now):
         town_info = self.town_info_provider.get_town_info(town_id)
         message = self.construct_message(town_info, end_time, now)
-        await self.message_broadcaster.send_message(town_info, message)
+        return await self.message_broadcaster.send_message(town_info, message)
 
     def queue_next_time(self, town_id, end_time, now):
         next_time = end_time
@@ -257,7 +258,7 @@ class VoteTimerImpl:
 
         now = self.datetime_provider.now()
         end_time = now+datetime.timedelta(seconds=time_in_seconds)
-        await self.controller.add_town(town_id, end_time)
+        return await self.controller.add_town(town_id, end_time)
 
 
     async def stop_timer(self, town_id):
