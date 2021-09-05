@@ -234,7 +234,7 @@ The opposite of `!addTown` - when run in the control channel for a town, removes
 
 ### `!setChatChannel <chat channel name>`
 
-Informs the bot about what your chat channel is. This is needed to use the `!voteTimer` command.
+Informs the bot about what your chat channel is. This is needed to use the `!voteTimer` command, as the bot periodically informs villagers how much time they have before the vote.
 
 ---
 
