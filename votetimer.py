@@ -1,5 +1,6 @@
 ﻿import datetime
 from discord.ext import tasks
+import math
 import pytimeparse
 import shlex
 
@@ -17,8 +18,9 @@ class VoteTownId:
 
 class VoteTimerController:
 
-    def __init__(self, datetime_provider, town_storage, town_ticker, message_broadcaster, vote_handler):
+    def __init__(self, datetime_provider, town_info_provider, town_storage, town_ticker, message_broadcaster, vote_handler):
         self.datetime_provider = datetime_provider
+        self.town_info_provider = town_info_provider
         self.town_storage = town_storage
         self.town_ticker = town_ticker
         self.message_broadcaster = message_broadcaster
@@ -26,13 +28,79 @@ class VoteTimerController:
 
         self.town_ticker.set_callback(self.tick)
 
-    def add_town(self, town_id, end_time):
-        self.town_storage.add_town(town_id, end_time)
+        self.town_map = {}
+
+    async def add_town(self, town_id, end_time):
+        self.town_map[town_id] = end_time
+        now = self.datetime_provider.now()
+
+        await self.send_message(town_id, end_time, now)
+        self.queue_next_time(town_id, end_time, now)
         self.town_ticker.start_ticking()
 
     async def tick(self):
         finished = self.town_storage.tick_and_return_finished_towns()
 
+        for town_id in finished:
+            await self.advance_town(town_id, self.datetime_provider.now())
+        
+        if not self.town_storage.has_towns_ticking():
+            self.town_ticker.stop_ticking()
+
+    async def advance_town(self, town_id, now):
+        if (town_id in self.town_map):
+            end_time = self.town_map[town_id]
+            if (end_time < now):
+                self.town_map.pop(town_id)
+                await self.vote_handler.perform_vote(town_id)
+            else:
+                await self.send_message(town_id, end_time, now)
+                self.queue_next_time(town_id, end_time, now)
+
+    async def send_message(self, town_id, end_time, now):
+        town_info = self.town_info_provider.get_town_info(town_id)
+        message = self.construct_message(town_info, end_time, now)
+        await self.message_broadcaster.send_message(town_info, message)
+
+    def queue_next_time(self, town_id, end_time, now):
+        next_time = end_time
+        delta = (end_time - now).total_seconds()
+        if delta >= 0:
+            advance_times = [300, 60, 10, 0]
+            for x in advance_times:
+                if delta > x:
+                    next_time = end_time - datetime.timedelta(seconds=x)
+                    break
+
+        self.town_storage.add_town(town_id, next_time)
+
+    def construct_message(self, town_info, end_time, now):
+        role_name = town_info.villager_role.name
+        delta_seconds = (end_time - now).total_seconds()
+
+        rounded_seconds = round(delta_seconds/5)*5
+
+        message = f'@{role_name} - '
+
+        if rounded_seconds > 0:
+            minutes = math.floor(rounded_seconds / 60)
+            seconds = rounded_seconds % 60
+
+            if minutes > 0:
+                message = message + f'{minutes} minute'
+                if minutes > 1:
+                    message = message + 's'
+                if seconds > 0:
+                    message = message + ', '
+
+            if seconds > 0:
+                message = message + f'{seconds} seconds'
+
+            message = message + ' remaining!'
+        else:
+            message = message + 'Time to vote!'
+
+        return message
 
 class IDateTimeProvider:
     def now(self):
@@ -55,7 +123,7 @@ class IVoteTownTicker:
 
 
 class IMessageBroadcaster:
-    def send_message(self, message):
+    async def send_message(self, town_info, message):
         pass
 
 
@@ -92,7 +160,6 @@ class IVoteTownStorage:
 
     def has_towns_ticking(self):
         pass
-
 
 class VoteTownStorage(IVoteTownStorage):
     def __init__(self, datetime_provider):
@@ -141,6 +208,7 @@ class VoteTownInfoProvider(IVoteTownInfoProvider):
             return None
 
         return VoteTownInfo(town_info.chatChannel, town_info.villagerRole)
+
 
 class VoteTimerImpl:
     def __init__(self, town_info_provider):

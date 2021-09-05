@@ -2,10 +2,14 @@
 import unittest
 import votetimer
 
+class FakeValidRole:
+    def __init__(self):
+        self.name = 'role_name'
+
 class TestValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
     def get_town_info(self, town_id):
-        valid_obj = {'valid':True}
-        return votetimer.VoteTownInfo(valid_obj, valid_obj)
+        valid_channel = {'valid':True}
+        return votetimer.VoteTownInfo(valid_channel, FakeValidRole())
 
 class TestDateTimeProvider(votetimer.IDateTimeProvider):
     def now(self):
@@ -99,7 +103,7 @@ class TestVoteTimerSync(unittest.TestCase):
 class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
     async def test_start_time_invalid_town_info(self):
-        valid_obj = {'valid':True}
+        valid_channel = {'valid':True}
 
         class TestNoInfoChannelProvider(votetimer.IVoteTownInfoProvider):
             def get_town_info(self, town_id):
@@ -112,7 +116,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
         class TestNoChatChannelProvider(votetimer.IVoteTownInfoProvider):
             def get_town_info(self, town_id):
-                return votetimer.VoteTownInfo(None, valid_obj)
+                return votetimer.VoteTownInfo(None, FakeValidRole())
             
         impl2 = votetimer.VoteTimerImpl(TestNoChatChannelProvider())
         message = await impl2.start_timer(None, 60)
@@ -121,7 +125,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
         class TestNoVillagerRoleProvider(votetimer.IVoteTownInfoProvider):
             def get_town_info(self, town_id):
-                return votetimer.VoteTownInfo(valid_obj, None)
+                return votetimer.VoteTownInfo(valid_channel, None)
             
         impl3 = votetimer.VoteTimerImpl(TestNoVillagerRoleProvider())
         message = await impl3.start_timer(None, 60)
@@ -179,6 +183,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
                 self.remove_count = 0
                 self.tick_count = 0
                 self.has_count = 0
+                self.has_ret = False
 
             def add_town(self, town_info, end_time):
                 self.add_count = self.add_count+1
@@ -201,9 +206,10 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
             def __init__(self):
                 self.send_count = 0
 
-            def send_message(self, message):
+            async def send_message(self, town_info, message):
                 self.send_count = self.send_count+1
                 self.last_message = message
+                self.last_town_info = town_info
 
         class TestVoteHandler(votetimer.IVoteHandler):
             def __init__(self):
@@ -213,18 +219,27 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
                 self.perform_vote_count = self.perform_vote_count + 1
                 self.perform_vote_town_id = town_id
 
+        
+        class TestTownInfoProvider(votetimer.IVoteTownInfoProvider):
+            def __init__(self):
+                self.town_info = votetimer.VoteTownInfo({'valid':True}, FakeValidRole())
+
+            def get_town_info(self, town_id):
+                return self.town_info
+
         ts = TestStorage()
         tt = TestTicker()
         tb = TestBroadcaster()
         td = TestDateTimeProvider()
         tv = TestVoteHandler()
+        ti = TestTownInfoProvider()
 
         td.time_now = datetime.datetime.combine(datetime.date(2021, 9, 4), datetime.time(18, 20, 0))
         
         self.assertIsNone(tt.set_callback_cb)
         self.assertEqual(0, tt.set_count)
 
-        c = votetimer.VoteTimerController(td, ts, tt, tb, tv)
+        c = votetimer.VoteTimerController(td, ti, ts, tt, tb, tv)
         
         self.assertEqual(1, tt.set_count)
         self.assertIsNotNone(tt.set_callback_cb)
@@ -239,37 +254,84 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(0, tt.start_count)
 
         town1_end_time = td.time_now+datetime.timedelta(seconds=5)
-        c.add_town(town1, town1_end_time)
+        await c.add_town(town1, town1_end_time)
 
         self.assertEqual(1, ts.add_count)
         self.assertEqual(town1, ts.add_town_town_info)
+        self.assertEqual(town1_end_time, ts.add_town_end_time)
 
         self.assertEqual(1, tt.start_count)
+        
+        self.assertEqual(1, tb.send_count)
+        self.assertTrue('5 seconds' in tb.last_message)
+        self.assertEqual(ti.town_info, tb.last_town_info)
+
 
         # Ticking ticks the storage
         self.assertEqual(0, ts.tick_count)
         ts.tick_ret = []
+        ts.has_ret = True
 
         await tt.set_callback_cb()
         
         self.assertEqual(1, ts.tick_count)
 
 
-        # Storage empty when time expired performs vote
+        # End time hit performs vote
 
         td.time_now = td.time_now+datetime.timedelta(seconds=10)
 
         self.assertEqual(0, tv.perform_vote_count)
         ts.tick_ret = [town1]
-        
+        ts.has_ret = False
+        self.assertEqual(0, tt.stop_count)
+
         await tt.set_callback_cb()
 
         self.assertEqual(2, ts.tick_count)
         
         self.assertEqual(1, tv.perform_vote_count)
         self.assertEqual(town1, tv.perform_vote_town_id)
+        self.assertEqual(1, tt.stop_count)
 
 
+        # Adds to storage with 10 seconds remaining
+        
+        town1_end_time = td.time_now+datetime.timedelta(seconds=25)
+        await c.add_town(town1, town1_end_time)
+        
+        self.assertEqual(2, ts.add_count)
+        self.assertEqual(town1, ts.add_town_town_info)
+        self.assertEqual(town1_end_time-datetime.timedelta(seconds=10), ts.add_town_end_time)
+
+        self.assertEqual(2, tb.send_count)
+        self.assertTrue('25 seconds' in tb.last_message)
+        self.assertEqual(ti.town_info, tb.last_town_info)
+        
+        
+        # Adds to storage with 300 seconds remaining
+
+        town1_end_time = td.time_now+datetime.timedelta(seconds=350)
+        await c.add_town(town1, town1_end_time)
+        
+        self.assertEqual(3, ts.add_count)
+        self.assertEqual(town1, ts.add_town_town_info)
+        self.assertEqual(town1_end_time-datetime.timedelta(seconds=300), ts.add_town_end_time)
+
+        self.assertEqual(3, tb.send_count)
+        self.assertTrue('5 minutes, 50 seconds' in tb.last_message)
+        self.assertEqual(ti.town_info, tb.last_town_info)
+
+
+        # Fires message when time hits - should be at 288 left here
+        
+        td.time_now = td.time_now+datetime.timedelta(seconds=62)
+        
+        await tt.set_callback_cb()
+
+        self.assertEqual(4, tb.send_count)
+        self.assertTrue('4 minutes, 50 seconds' in tb.last_message)
+        self.assertEqual(ti.town_info, tb.last_town_info)
 
 
 
