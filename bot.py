@@ -1167,8 +1167,8 @@ class GameplayCog(commands.Cog):
 
 
 class LookupCog(commands.Cog):
-    def __init__(self):
-        self.lookup = lookup.Lookup()
+    def __init__(self, db):
+        self.lookup = lookup.Lookup(db)
 
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
@@ -1198,5 +1198,5 @@ class LookupCog(commands.Cog):
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
-bot.add_cog(LookupCog())
+bot.add_cog(LookupCog(db))
 bot.run(TOKEN)
