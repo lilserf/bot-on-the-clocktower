@@ -157,10 +157,15 @@ class IMessageBroadcaster:
         pass
 
 class MessageBroadcaster:
-    async def send_message(self, town_info, message):
-        #TODO
-        pass
+    def __init__(self, bot):
+        self.bot = bot
 
+    async def send_message(self, town_info, message):
+        if town_info.chat_channel:
+            try:
+                await town_info.chat_channel.send(message)
+            except Exception as ex:
+                return f'Unable to send chat message. Do I have permission to send messages to chat channel `{town_info.chat_channel.name}`?\n\n{ex}'
     
 
 class IVoteTownStorage:
@@ -275,7 +280,7 @@ class VoteTimer:
         dt_provider = DateTimeProvider()
         storage = VoteTownStorage(dt_provider)
         ticker = VoteTownTicker()
-        broadcaster = MessageBroadcaster()
+        broadcaster = MessageBroadcaster(bot)
         vote_handler = VoteHandler()
         controller = VoteTimerController(dt_provider, info_provider, storage, ticker, broadcaster, vote_handler)
 

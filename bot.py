@@ -62,7 +62,7 @@ def getCategory(guild, name, catId):
 # Get a channel by ID or name, preferring ID
 def getChannelFromCategory(category, name, chanId):
     chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
-    return chanById or  discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
+    return chanById or discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
 
 # Get a role by ID or name, preferring ID
 def getRole(guild, name, roleId):
@@ -110,8 +110,9 @@ class TownInfo:
             self.storyTellerRole = getRole(guild, document["storyTellerRole"], document["storyTellerRoleId"])
             self.villagerRole = getRole(guild, document["villagerRole"], document["villagerRoleId"])
 
-            # TODO
             self.chatChannel = None
+            if 'chatChannel' in document and 'chatChannelId' in document:
+                self.chatChannel = getChannelFromCategory(self.dayCategory, document['chatChannel'], document['chatChannelId'])
 
             activePlayers = set()
             for c in self.dayChannels:
@@ -203,7 +204,7 @@ class SetupCog(commands.Cog):
 
         await self.sendEmbed(ctx, info)
 
-    @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role>\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> nightCategory=<night category> stRole=<storyteller role> villagerRole=<villager role>')
+    @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role> [chat channel]\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> [nightCategory=<night category>] stRole=<storyteller role> villagerRole=<villager role> [chatChannel=<chat channel>]')
     async def addTown(self, ctx):
         params = shlex.split(ctx.message.content)
 
@@ -241,6 +242,42 @@ class SetupCog(commands.Cog):
         else:
             await ctx.send(f"Couldn't find a town to remove! {usageStr}")
 
+    @commands.command(name='setChatChannel', help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
+    async def set_chat_channel(self, ctx):
+        params = shlex.split(ctx.message.content)
+        
+        if len(params) != 2:
+            await ctx.send(f'Incorrect usage for `{COMMAND_PREFIX}setChatChannel`: should provide `<chat channel>`')
+            return None
+
+        chat_channel_name = params[1]
+        
+        query = { "guild" : ctx.guild.id, "controlChannelId" : ctx.channel.id }
+        doc = g_dbGuildInfo.find_one(query)
+        if not doc:
+            await ctx.send(f'Could not find a town! Are you running this command from the town control channel?')
+            return None
+
+        day_category = getCategory(ctx.guild, doc['dayCategory'], doc['dayCategory'])
+        if not day_category:
+            await ctx.send(f'Could not find the category {doc["dayCategory"]}!')
+            return None
+
+        chat_channel = getChannelFromCategoryByName(day_category, chat_channel_name)
+        if not chat_channel:
+            await ctx.send(f'Could not find the channel {chat_channel_name} in the category {doc["dayCategory"]}!')
+            return None
+
+        doc['chatChannel'] = chat_channel.name
+        doc['chatChannelId'] = chat_channel.id
+        g_dbGuildInfo.replace_one(query, doc, True)
+
+        info = self.bot.getTownInfo(ctx)
+        if info:
+            await self.sendEmbed(ctx, info)
+        else:
+            await ctx.send(f'There was a problem adding {chat_channel_name} to the town.')
+
 
     # Parse all the params for addTown, sanity check them, and return useful dicts
     async def resolveTownInfoParams(self, ctx, params):
@@ -250,6 +287,7 @@ class SetupCog(commands.Cog):
         nightCatName = None
         stRoleName = None
         villagerName = None
+        chatChannelName = None
 
         hasNamedArgs = False
 
@@ -275,13 +313,15 @@ class SetupCog(commands.Cog):
                 stRoleName = v
             elif p == "villagerrole":
                 villagerName = v
+            elif p == "chatchannel":
+                chatChannelName = v
             else:
-                await ctx.send(f'Unknown param to `{COMMAND_PREFIX}addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole')
+                await ctx.send(f'Unknown param to `{COMMAND_PREFIX}addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole, chatChannel')
                 return (None, None)
 
         if not hasNamedArgs:
             if len(params) < 7:
-                await ctx.send(f'Too few params to `{COMMAND_PREFIX}addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role>`')
+                await ctx.send(f'Too few params to `{COMMAND_PREFIX}addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role> [chat channel]`')
                 return (None, None)
 
             controlName = params[1]
@@ -290,12 +330,14 @@ class SetupCog(commands.Cog):
             nightCatName = params[4]
             stRoleName = params[5]
             villagerName = params[6]
+            if len(params) < 8:
+                chatChannelName = params[7]
         
-        return await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName)
+        return await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName)
 
 
     # Using passed-in name params, resolve town info and find all the stuff needed to post to DB
-    async def resolveTownInfo(self, ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName):
+    async def resolveTownInfo(self, ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName):
         guild = ctx.guild
         
         dayCat = getCategoryByName(guild, dayCatName)
@@ -306,6 +348,10 @@ class SetupCog(commands.Cog):
 
         stRole = getRoleByName(guild, stRoleName)
         villagerRole = getRoleByName(guild, villagerName)
+
+        chatChannel = None
+        if chatChannelName:
+            chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
 
         # TODO: more checks
         # does the night category contain some channels to distribute people to?
@@ -322,6 +368,10 @@ class SetupCog(commands.Cog):
             await ctx.send(f'Couldn\'t find a channel named `{controlName}` in category `{dayCatName}`!')
             return None
 
+        if chatChannelName and not chatChannel:
+            await ctx.send(f'Couldn\'t find a chat channel named `{chatChannelName}` in category `{dayCatName}`!')
+            return None
+
         if not townSquare:
             await ctx.send(f'Couldn\'t find a channel named `{townSquareName}` in category `{dayCatName}`!')
             return None
@@ -334,14 +384,17 @@ class SetupCog(commands.Cog):
             await ctx.send(f'Couldn\'t find a role named `{villagerName}`!')
             return None
 
-        # Night category is optional
+        # Some categories/channels are optional
         nightCatId = nightCat and nightCat.id or None
+        chatChannelId = chatChannel and chatChannel.id or None
 
         # Object suitable for mongo
         post = {   
             "guild" : guild.id,
             "controlChannel" : controlName,
             "controlChannelId" : controlChan.id,
+            "chatChannel" : chatChannelName,
+            "chatChannelId" : chatChannelId,
             "townSquare" : townSquareName,
             "townSquareId" : townSquare.id,
             "dayCategory" : dayCatName,
@@ -480,6 +533,7 @@ class SetupCog(commands.Cog):
             chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
             if not chatChannel:
                 chatChannel = await dayCat.create_text_channel(chatChannelName)
+            await chatChannel.set_permissions(botRole, view_channel=True)
             if not guildPlayerRole:
                 await chatChannel.set_permissions(everyoneRole, view_channel=False)
 
@@ -515,7 +569,7 @@ class SetupCog(commands.Cog):
 
 
             # Calling addTown
-            (post, info) = await self.resolveTownInfo(ctx, moverChannelName, townSquareChannelName, dayCatName, nightCatName, gameStRoleName, gameVillagerRoleName)
+            (post, info) = await self.resolveTownInfo(ctx, moverChannelName, townSquareChannelName, dayCatName, nightCatName, gameStRoleName, gameVillagerRoleName, chatChannelName)
 
             if not post:
                 await ctx.send("There was a problem creating the town of **" + townName + "**.")
