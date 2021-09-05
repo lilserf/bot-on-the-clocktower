@@ -124,7 +124,7 @@ class IDateTimeProvider:
 
 class DateTimeProvider(IDateTimeProvider):
     def now(self):
-        return datetime.now()
+        return datetime.datetime.now()
 
 
 class IVoteTownTicker:
