@@ -1,5 +1,11 @@
 # Bot on the Clocktower Changelog
 
+## Version ?? UNKNOWN ??
+
+* The bot can now look up roles with the `!role` command - this requires some setup:
+  * `!addset <json url>` adds a custom set to the list for this server
+  * `!removeset <json url>` removes a custom set from the list for this server
+
 ## Version 1.1.0
 
 * The bot no longer **requires** the Night category. Run `!help` for `createTown` or `addTown` for details.
