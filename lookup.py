@@ -4,28 +4,39 @@ import datetime
 from fuzzywuzzy import process
 import json
 import shlex
-
+import discord
 
 class LookupRole:
     def matches_other(self, other):
         return self.name == other.name and self.team == other.team and self.ability == other.ability
 
-    def __init__(self, name, ability, team):
+    def __init__(self, name, ability, team, image, setInfo=None):
         self.name = name
-        self.team = ability
-        self.ability = team
+        self.team = team
+        self.ability = ability
+        self.image = image
+        self.setInfo = setInfo
 
+class SetInfo:
+    def __init__(self, name, author, img):
+        self.name = name
+        self.author = author
+        self.image = img
 
 class LookupRoleParser:
     def is_valid_role_json(self, json):
         return json != None and isinstance(json, dict) and 'id' in json and json['id'] != '_meta' and 'name' in json and 'team' in json and 'ability' in json
 
-    def create_role_from_json(self, json):
+    def create_role_from_json(self, json, setInfo):
         if self.is_valid_role_json(json):
             name = json['name']
             team = json['team']
             ability = json['ability']
-            return LookupRole(name, ability, team)
+            try:
+                image = json['image']
+            except KeyError:
+                image = None
+            return LookupRole(name, ability, team, image, setInfo)
         return None
 
     def combine_or_append_role(self, role, roleList):
@@ -44,8 +55,16 @@ class LookupRoleParser:
             roles[role.name] = [ role ]
 
     def collect_roles_for_set_json(self, set, roles):
+        
+        setInfo = None
+
         for json in set:
-            role = self.create_role_from_json(json)
+            if json["id"] == "_meta":
+                setInfo = SetInfo(json["name"], json["author"], json["logo"])
+                break
+
+        for json in set:
+            role = self.create_role_from_json(json, setInfo)
             if role != None:
                  self.add_role(role, roles)
 
@@ -60,11 +79,11 @@ class LookupRoleParser:
         return roles
 
 
-class LookupRoleDownloaderVirtual:
+class ILookupRoleDownloader:
     async def collect_roles_from_urls(self, urls):
         pass
 
-class LookupRoleDownloaderConcrete(LookupRoleDownloaderVirtual):
+class LookupRoleDownloader(ILookupRoleDownloader):
     async def fetch_url(self, url, session):
         async with session.get(url) as response:
             try:
@@ -89,7 +108,7 @@ class LookupRoleServerData:
         self.role_lookup = role_lookup
         self.last_refresh_time = datetime.datetime.now()
 
-    def get_roll_lookup(self):
+    def get_role_lookup(self):
         return self.role_lookup
 
     def get_matching_roles(self, role_name):
@@ -99,7 +118,7 @@ class LookupRoleServerData:
         return None
 
 
-class LookupRoleDatabaseVirtual:
+class ILookupRoleDatabase:
     def get_server_urls(self, server_token):
         return []
 
@@ -110,19 +129,34 @@ class LookupRoleDatabaseVirtual:
         pass
 
 
-class LookupRoleDatabaseConcrete(LookupRoleDatabaseVirtual):
+class LookupRoleDatabase(ILookupRoleDatabase):
+    def __init__(self, db):
+        self.serverRoleUrls = db['ServerRoleUrls']
+
+    def get_doc_internal(self, server_token):
+        lookupQuery = { "server" : server_token }
+        doc = self.serverRoleUrls.find_one(lookupQuery)
+        if doc == None:
+            doc = { "server" : server_token, "urls" : list() }
+        return doc
+
+    def update_doc_internal(self, server_token, doc):
+        lookupQuery = { "server" : server_token }
+        self.serverRoleUrls.replace_one(lookupQuery, doc, True)
+
     def get_server_urls(self, server_token):
-        #TODO query
-        return []
+        doc = self.get_doc_internal(server_token)
+        return doc["urls"]
 
     def add_server_url(self, server_token, url):
-        #TODO query
-        pass
+        doc = self.get_doc_internal(server_token)
+        doc["urls"].append(url)
+        self.update_doc_internal(server_token, doc)
 
     def remove_server_url(self, server_token, url):
-        #TODO query
-        pass
-
+        doc = self.get_doc_internal(server_token)
+        doc["urls"].remove(url)
+        self.update_doc_internal(server_token, doc)
 
 class LookupRoleData:
     def __init__(self, db):
@@ -148,7 +182,7 @@ class LookupRoleData:
         return (not server_token in self.server_role_data) or self.server_role_data[server_token].last_refresh_time == None or (datetime.datetime.now() - self.server_role_data[server_token].last_refresh_time) > datetime.timedelta(days=1)
 
 
-class LookupImpl:    
+class LookupImpl:
     def __init__(self, db, downloader):
         self.data = LookupRoleData(db)
         self.downloader = downloader
@@ -169,7 +203,7 @@ class LookupImpl:
         await self.refresh_roles_for_server_if_needed(server_token)
         role_data = self.data.get_server_role_data(server_token)
         role_found = role_data.get_matching_roles(role_to_check)
-        # TODO: output role info to user somehow (note that this class does not know about ctx, this function may need to be passed a virtual object
+        return role_found
 
     async def add_set(self, server_token, url):
         self.data.add_set(server_token, url)
@@ -182,15 +216,16 @@ class LookupImpl:
 
 # Concrete class for use by the Cog
 class Lookup:
-    def __init__(self):
-        self.impl = LookupImpl(LookupRoleDatabaseConcrete(), LookupRoleDownloaderConcrete())
+    def __init__(self, db):
+        self.impl = LookupImpl(LookupRoleDatabase(db), LookupRoleDownloader())
 
     def find_role_from_message_content(self, content):
         return " ".join(shlex.split(content)[1:])
 
     async def role_lookup(self, ctx):
         server_token = ctx.guild.id
-        await self.impl.role_lookup(server_token, self.find_role_from_message_content(ctx.message.content))
+        role = await self.impl.role_lookup(server_token, self.find_role_from_message_content(ctx.message.content))
+        await self.send_role(ctx, role)
 
     async def add_set(self, ctx):
         server_token = ctx.guild.id
@@ -209,3 +244,27 @@ class Lookup:
         else:
             #TODO error message
             pass
+
+    async def send_role(self, ctx, roles):
+        if roles == None:
+            await ctx.send("No matching roles found!")
+            return
+
+        for role in roles:
+            color = discord.Color.from_rgb(32, 100, 252)
+            if role.team == 'outsider':
+                color = discord.Color.from_rgb(69, 209, 251)
+            if role.team == 'minion':
+                color = discord.Color.from_rgb(251, 103, 0)
+            if role.team == 'demon':
+                color = discord.Color.from_rgb(203, 1, 0)
+
+            embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
+            footer = f'{role.team.capitalize()}'
+            if role.setInfo != None:
+                footer += f' - {role.setInfo.name} by {role.setInfo.author}'
+            embed.set_footer(text=footer)
+            if role.image != None:
+                embed.set_thumbnail(url=role.image)
+            await ctx.send(embed=embed)
+
