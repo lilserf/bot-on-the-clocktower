@@ -476,7 +476,7 @@ class SetupCog(commands.Cog):
         townSquareChannelName = "Town Square"
         extraChannelNames = ["Dark Alley", "Library", "Graveyard"]
         nightChannelName = "Cottage"
-        neededNightChannels = 2
+        neededNightChannels = 20
 
 
         try:
