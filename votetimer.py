@@ -85,12 +85,11 @@ class VoteTimerController(IVoteTimerController):
         self.town_storage.add_town(town_id, next_time)
 
     def construct_message(self, town_info, end_time, now):
-        role_name = town_info.villager_role.name
         delta_seconds = (end_time - now).total_seconds()
 
         rounded_seconds = round(delta_seconds/5)*5
 
-        message = f'@{role_name} - '
+        message = f'{town_info.villager_role.mention} - '
 
         if rounded_seconds > 0:
             minutes = math.floor(rounded_seconds / 60)
@@ -213,9 +212,13 @@ class IVoteHandler:
         pass
 
 class VoteHandler(IVoteHandler):
+    def __init__(self, bot, move_cb):
+        self.bot = bot
+        self.move_cb = move_cb
+
     async def perform_vote(self, town_id):
-        #TODO
-        pass
+        town_info = self.bot.getTownInfoByTownId(town_id)
+        await self.move_cb(town_info)
 
 
 class IVoteTownInfoProvider:
@@ -275,13 +278,13 @@ class VoteTimerImpl:
 
 # Concrete class for use by the Cog
 class VoteTimer:
-    def __init__(self, bot):
+    def __init__(self, bot, move_cb):
         info_provider = VoteTownInfoProvider(bot)
         dt_provider = DateTimeProvider()
         storage = VoteTownStorage(dt_provider)
         ticker = VoteTownTicker()
         broadcaster = MessageBroadcaster(bot)
-        vote_handler = VoteHandler()
+        vote_handler = VoteHandler(bot, move_cb)
         controller = VoteTimerController(dt_provider, info_provider, storage, ticker, broadcaster, vote_handler)
 
         self.impl = VoteTimerImpl(controller, dt_provider, info_provider)

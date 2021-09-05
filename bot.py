@@ -744,7 +744,7 @@ class SetupCog(commands.Cog):
 class GameplayCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.votetimer = votetimer.VoteTimer(bot)
+        self.votetimer = votetimer.VoteTimer(bot, self.move_users_for_vote)
 
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
@@ -1145,6 +1145,20 @@ class GameplayCog(commands.Cog):
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
 
+    async def move_users_for_vote(self, town_info):
+        # get users in day channels other than Town Square
+        users = list()
+        for c in town_info.dayChannels:
+            if c != town_info.townSquare:
+                users.extend(c.members)
+
+        await town_info.controlChannel.send(f'Moving {len(users)} players from daytime channels to **{town_info.townSquare.name}**.')
+
+        # move them to Town Square
+        for user in users:
+            await user.move_to(town_info.townSquare)
+
+
     # Move users from other daytime channels back to Town Square
     @commands.command(name='vote', help='Move players from daytime channels back to Town Square')
     async def onVote(self, ctx):
@@ -1153,18 +1167,7 @@ class GameplayCog(commands.Cog):
 
         try:
             info = self.bot.getTownInfo(ctx)
-            
-            # get users in day channels other than Town Square
-            users = list()
-            for c in info.dayChannels:
-                if c != info.townSquare:
-                    users.extend(c.members)
-
-            await ctx.send(f'Moving {len(users)} players from daytime channels to **{info.townSquare.name}**.')
-
-            # move them to Town Square
-            for user in users:
-                await user.move_to(info.townSquare)
+            await self.move_users_for_vote(info)
         
         except Exception as ex:
             await self.bot.sendErrorToAuthor(ctx)
