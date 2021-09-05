@@ -150,7 +150,7 @@ class VoteTownTicker(IVoteTownTicker):
             self.tick.start()
 
     def stop_ticking(self):
-        if not self.tick.is_running():
+        if self.tick.is_running():
             self.tick.stop()
 
     @tasks.loop(seconds=1)
