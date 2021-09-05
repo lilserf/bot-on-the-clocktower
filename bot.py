@@ -109,6 +109,9 @@ class TownInfo:
             self.storyTellerRole = getRole(guild, document["storyTellerRole"], document["storyTellerRoleId"])
             self.villagerRole = getRole(guild, document["villagerRole"], document["villagerRoleId"])
 
+            # TODO
+            self.chatChannel = None
+
             activePlayers = set()
             for c in self.dayChannels:
                 activePlayers.update(c.members)
@@ -132,14 +135,17 @@ class botcBot(commands.Bot):
 
     # Get a well-defined TownInfo based on the stored DB info for this guild
     def getTownInfo(self, ctx):
-        return self.getTownInfoByIds(ctx.guild.id, ctx.channel.id)
+        return self.getTownInfoByIds(ctx.guild.id, ctx.channel.id, ctx.guild)
 
-    def getTownInfoByIds(self, guild_id, channel_id):
+    def getTownInfoByIds(self, guild_id, channel_id, guild=None):
         query = { "guild" : guild_id, "controlChannelId" : channel_id }
         doc = g_dbGuildInfo.find_one(query)
+        
+        if not guild:
+            guild = self.get_guild(guild_id)
 
-        if doc:
-            return TownInfo(ctx.guild, doc)
+        if doc and guild:
+            return TownInfo(guild, doc)
         else:
             return None
     

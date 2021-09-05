@@ -301,7 +301,7 @@ class VoteTimer:
         if not time_seconds:
             return usage
 
-        town_id = VoteTownId(ctx.guild.id, cts.channel.id)
+        town_id = VoteTownId(ctx.guild.id, ctx.channel.id)
 
         return await self.impl.start_timer(town_id, time_seconds)
 
