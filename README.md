@@ -117,6 +117,14 @@ Brings all members from the Nighttime category channels back to the Town Square.
 
 Brings all members from other Daytime category channels back to the Town Square for nominations to begin.
 
+### `!voteTimer <time>`
+
+Runs `!vote` after the specified amount of time. Valid times range from 15 seconds to 20 minutes.
+
+### `!stopVoteTimer`
+
+Cancels an existing timer created by `!voteTimer`.
+
 ### `!currGame`
 
 Sets the correct roles on all members currently in the voice channels, and gives the Storyteller the **(ST)** nickname prefix.
