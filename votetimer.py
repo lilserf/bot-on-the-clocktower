@@ -9,6 +9,11 @@ class VoteTownInfo:
         self.villager_role = villager_role
 
 
+class VoteTownId:
+    def __init__(self, guild_id, channel_id):
+        self.guild_id = guild_id
+        self.channel_id = channel_id
+
 
 class VoteTimerCountdown:
     def __init__(self, town_storage, town_ticker, message_broadcaster):
@@ -18,10 +23,10 @@ class VoteTimerCountdown:
 
         self.town_ticker.set_callback(self.on_timer_complete)
 
-    def add_town(self, town_info, end_time):
+    def add_town(self, town_id, end_time):
         pass
 
-    async def on_timer_complete(town_info):
+    async def on_timer_complete(town_id):
         pass
 
 
@@ -73,10 +78,10 @@ class VoteTownTicker(IVoteTownTicker):
 
 
 class IVoteTownStorage:
-    def add_town(self, town_info, finish_time):
+    def add_town(self, town_id, finish_time):
         pass
 
-    def remove_town(self, town_info):
+    def remove_town(self, town_id):
         pass
 
     def tick_and_return_finished_towns(self):
@@ -91,12 +96,12 @@ class VoteTownStorage(IVoteTownStorage):
         self.ticking_towns = {}
         self.datetime_provider = datetime_provider
 
-    def add_town(self, town_info, finish_time):
-        self.ticking_towns[town_info] = finish_time
+    def add_town(self, town_id, finish_time):
+        self.ticking_towns[town_id] = finish_time
 
-    def remove_town(self, town_info):
-        if town_info in self.ticking_towns:
-            self.ticking_towns.pop(town_info)
+    def remove_town(self, town_id):
+        if town_id in self.ticking_towns:
+            self.ticking_towns.pop(town_id)
         pass
 
     def tick_and_return_finished_towns(self):
@@ -115,27 +120,27 @@ class VoteTownStorage(IVoteTownStorage):
 
 
 class IVoteTownInfoProvider:
-    def get_town_info(self):
+    def get_town_info(self, town_id):
         pass
 
 class VoteTownInfoProvider(IVoteTownInfoProvider):
-    def __init__(self, bot, ctx):
+    def __init__(self, bot):
         self.bot = bot
-        self.ctx = ctx
 
-    def get_town_info(self):
-        town_info = self.bot.getTownInfo(self.ctx)
+    def get_town_info(self, town_id):
+        town_info = self.bot.getTownInfoByIds(town_id.guild_id, town_id.channel_id)
         if not town_info:
             return None
 
         return VoteTownInfo(town_info.chatChannel, town_info.villagerRole)
 
 class VoteTimerImpl:
-    def __init__(self):
+    def __init__(self, town_info_provider):
+        self.town_info_provider = town_info_provider
         pass
 
-    async def start_timer(self, town_info_provider, time_in_seconds):
-        town_info = town_info_provider.get_town_info()
+    async def start_timer(self, town_id, time_in_seconds):
+        town_info = self.town_info_provider.get_town_info(town_id)
 
         if not town_info:
             return 'No town found here. Are you in a town control channel added via the "addTown" or "createTown" commands?'
@@ -154,6 +159,7 @@ class VoteTimerImpl:
         if time_in_seconds > 1200:
             return required_time_str
 
+        # TODO more stuff
         return None
 
     def get_seconds_from_string(self, str):
@@ -162,7 +168,7 @@ class VoteTimerImpl:
 # Concrete class for use by the Cog
 class VoteTimer:
     def __init__(self, bot):
-        self.impl = VoteTimerImpl()
+        self.impl = VoteTimerImpl(VoteTownInfoProvider(bot))
         self.bot = bot
 
     async def start_timer(self, ctx):
@@ -178,11 +184,11 @@ class VoteTimer:
         if not time_seconds:
             return usage
 
-        town_info_provider = VoteTownInfoProvider(self.bot, ctx)
-
         return f'TEMP time in seconds passed: {time_seconds}'
 
-        #return await self.impl.start_timer(server_token, self.find_role_from_message_content(ctx.message.content))
+        town_id = VoteTownId(ctx.guild.id, cts.channel.id)
+
+        return await self.impl.start_timer(town_id, time_seconds)
 
     async def stop_timer(self, ctx):
         return f'TEMP okay we should stop that timer'

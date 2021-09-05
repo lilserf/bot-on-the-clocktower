@@ -3,7 +3,7 @@ import unittest
 import votetimer
 
 class TestValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
-    def get_town_info(self):
+    def get_town_info(self, town_id):
         valid_obj = {'valid':True}
         return votetimer.VoteTownInfo(valid_obj, valid_obj)
 
@@ -11,7 +11,7 @@ class TestValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
 class TestVoteTimerSync(unittest.TestCase):
 
     def test_time_parsing(self):
-        impl = votetimer.VoteTimerImpl()
+        impl = votetimer.VoteTimerImpl(TestValidTownInfoProvider())
 
         test1 = impl.get_seconds_from_string("5 minutes 30 seconds")
         self.assertEqual(test1, 330, 'Expected "x minutes y seconds" to parse properly')
@@ -99,54 +99,57 @@ class TestVoteTimerSync(unittest.TestCase):
 class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
     async def test_start_time_invalid_town_info(self):
-        impl = votetimer.VoteTimerImpl()
         valid_obj = {'valid':True}
 
         class TestNoInfoChannelProvider(votetimer.IVoteTownInfoProvider):
-            def get_town_info(self):
+            def get_town_info(self, town_id):
                 return None
 
-        message = await impl.start_timer(TestNoInfoChannelProvider(), 60)
+        impl1 = votetimer.VoteTimerImpl(TestNoInfoChannelProvider())
+        message = await impl1.start_timer(None, 60)
         self.assertIsNotNone(message)
         self.assertTrue("town" in message and "channel" in message and "found" in message)
 
         class TestNoChatChannelProvider(votetimer.IVoteTownInfoProvider):
-            def get_town_info(self):
+            def get_town_info(self, town_id):
                 return votetimer.VoteTownInfo(None, valid_obj)
-
-        message = await impl.start_timer(TestNoChatChannelProvider(), 60)
+            
+        impl2 = votetimer.VoteTimerImpl(TestNoChatChannelProvider())
+        message = await impl2.start_timer(None, 60)
         self.assertIsNotNone(message)
         self.assertTrue("chat channel" in message and "found" in message)
 
         class TestNoVillagerRoleProvider(votetimer.IVoteTownInfoProvider):
-            def get_town_info(self):
+            def get_town_info(self, town_id):
                 return votetimer.VoteTownInfo(valid_obj, None)
-
-        message = await impl.start_timer(TestNoVillagerRoleProvider(), 60)
+            
+        impl3 = votetimer.VoteTimerImpl(TestNoVillagerRoleProvider())
+        message = await impl3.start_timer(None, 60)
         self.assertIsNotNone(message)
         self.assertTrue("role" in message and "villager" in message)
 
     async def test_start_time_invalid_times(self):
-        impl = votetimer.VoteTimerImpl()
+        
+        impl = votetimer.VoteTimerImpl(TestValidTownInfoProvider())
 
-        message = await impl.start_timer(TestValidTownInfoProvider(), 9)
+        message = await impl.start_timer(None, 9)
         self.assertIsNotNone(message)
         self.assertTrue("10 seconds" in message)
 
-        message = await impl.start_timer(TestValidTownInfoProvider(), 1201)
+        message = await impl.start_timer(None, 1201)
         self.assertIsNotNone(message)
         self.assertTrue("20 minutes" in message)
 
     async def test_start_time_valid_times(self):
-        impl = votetimer.VoteTimerImpl()
-    
-        message = await impl.start_timer(TestValidTownInfoProvider(), 10)
+        impl = votetimer.VoteTimerImpl(TestValidTownInfoProvider())
+
+        message = await impl.start_timer(None, 10)
         self.assertIsNone(message)
     
-        message = await impl.start_timer(TestValidTownInfoProvider(), 300)
+        message = await impl.start_timer(None, 300)
         self.assertIsNone(message)
     
-        message = await impl.start_timer(TestValidTownInfoProvider(), 1200)
+        message = await impl.start_timer(None, 1200)
         self.assertIsNone(message)
 
 

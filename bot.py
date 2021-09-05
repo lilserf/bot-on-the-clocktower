@@ -132,8 +132,10 @@ class botcBot(commands.Bot):
 
     # Get a well-defined TownInfo based on the stored DB info for this guild
     def getTownInfo(self, ctx):
+        return self.getTownInfoByIds(ctx.guild.id, ctx.channel.id)
 
-        query = { "guild" : ctx.guild.id, "controlChannelId" : ctx.channel.id }
+    def getTownInfoByIds(self, guild_id, channel_id):
+        query = { "guild" : guild_id, "controlChannelId" : channel_id }
         doc = g_dbGuildInfo.find_one(query)
 
         if doc:
