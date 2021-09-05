@@ -690,6 +690,7 @@ class SetupCog(commands.Cog):
 class GameplayCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.votetimer = votetimer.VoteTimer(bot)
 
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
@@ -1177,22 +1178,17 @@ class GameplayCog(commands.Cog):
     async def beforecleanupInactiveGames(self):
         await self.bot.wait_until_ready()
 
-
-class VoteTimerCog(commands.Cog):
-    def __init__(self, bot):
-        self.votetimer = votetimer.VoteTimer(bot)
-
     # Start the vote timer
     @commands.command(name='votetimer', help=f'Start a countdown to voting time.\n\nUsage: {COMMAND_PREFIX}votetimer <time string>\n\nTime string can look like: "5 minutes 30 seconds" or "5:30" or "5m30s"')
     async def start_timer(self, ctx):
-        await self.perform_action(self.votetimer.start_timer, ctx)
+        await self.perform_action_reporting_errors(self.votetimer.start_timer, ctx)
 
     # Stop an ongoing vote timer
     @commands.command(name='stopvotetimer', help=f'Stop an existing countdown to voting.\n\nUsage: {COMMAND_PREFIX}stopvotetimer')
     async def stop_timer(self, ctx):
-        await self.perform_action(self.votetimer.stop_timer, ctx)
+        await self.perform_action_reporting_errors(self.votetimer.stop_timer, ctx)
 
-    async def perform_action(self, action, ctx):
+    async def perform_action_reporting_errors(self, action, ctx):
         try:
             message = await action(ctx)
             if message != None:
@@ -1204,5 +1200,4 @@ class VoteTimerCog(commands.Cog):
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
-bot.add_cog(VoteTimerCog(bot))
 bot.run(TOKEN)

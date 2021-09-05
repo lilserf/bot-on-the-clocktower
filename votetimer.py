@@ -75,7 +75,7 @@ class VoteTimerController(IVoteTimerController):
         next_time = end_time
         delta = (end_time - now).total_seconds()
         if delta >= 0:
-            advance_times = [300, 60, 10, 0]
+            advance_times = [300, 60, 15, 0]
             for x in advance_times:
                 if delta > x:
                     next_time = end_time - datetime.timedelta(seconds=x)
@@ -239,17 +239,17 @@ class VoteTimerImpl:
         town_info = self.town_info_provider.get_town_info(town_id)
 
         if not town_info:
-            return 'No town found here. Are you in a town control channel added via the "addTown" or "createTown" commands?'
+            return 'No town found here. Are you in a town control channel added via the `addTown` or `createTown` commands?'
 
         if not town_info.chat_channel:
-            return 'No chat channel found for this town. Please set the chat channel via the "setChatChannel" command.'
+            return 'No chat channel found for this town. Please set the chat channel via the `setChatChannel` command.'
 
         if not town_info.villager_role:
-            return 'No villager role found for this town. Please set up the town properly via the "addTown" command.'
+            return 'No villager role found for this town. Please set up the town properly via the `addTown` command.'
 
-        required_time_str = 'Please choose a time between 20 seconds and 20 minutes.'
+        required_time_str = 'Please choose a time between 15 seconds and 20 minutes.'
 
-        if time_in_seconds < 20:
+        if time_in_seconds < 15:
             return required_time_str
 
         if time_in_seconds > 1200:

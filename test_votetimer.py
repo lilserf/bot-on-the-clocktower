@@ -144,9 +144,9 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         
         impl = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestValidTownInfoProvider())
 
-        message = await impl.start_timer(None, 19)
+        message = await impl.start_timer(None, 14)
         self.assertIsNotNone(message)
-        self.assertTrue("20 seconds" in message)
+        self.assertTrue("15 seconds" in message)
 
         message = await impl.start_timer(None, 1201)
         self.assertIsNotNone(message)
@@ -155,7 +155,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
     async def test_start_time_valid_times(self):
         impl = votetimer.VoteTimerImpl(DoNothingController(), TestDateTimeProvider(), TestValidTownInfoProvider())
 
-        message = await impl.start_timer(None, 20)
+        message = await impl.start_timer(None, 15)
         self.assertIsNone(message)
     
         message = await impl.start_timer(None, 300)
