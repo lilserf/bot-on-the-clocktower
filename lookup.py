@@ -10,18 +10,24 @@ class LookupRole:
     def matches_other(self, other):
         return self.name == other.name and self.team == other.team and self.ability == other.ability
 
-    def __init__(self, name, ability, team, image, set=None):
+    def __init__(self, name, ability, team, image, setInfo=None):
         self.name = name
         self.team = team
         self.ability = ability
         self.image = image
-        self.set = set
+        self.setInfo = setInfo
+
+class SetInfo:
+    def __init__(self, name, author, img):
+        self.name = name
+        self.author = author
+        self.image = img
 
 class LookupRoleParser:
     def is_valid_role_json(self, json):
         return json != None and isinstance(json, dict) and 'id' in json and json['id'] != '_meta' and 'name' in json and 'team' in json and 'ability' in json
 
-    def create_role_from_json(self, json):
+    def create_role_from_json(self, json, setInfo):
         if self.is_valid_role_json(json):
             name = json['name']
             team = json['team']
@@ -30,7 +36,7 @@ class LookupRoleParser:
                 image = json['image']
             except KeyError:
                 image = None
-            return LookupRole(name, ability, team, image)
+            return LookupRole(name, ability, team, image, setInfo)
         return None
 
     def combine_or_append_role(self, role, roleList):
@@ -49,8 +55,16 @@ class LookupRoleParser:
             roles[role.name] = [ role ]
 
     def collect_roles_for_set_json(self, set, roles):
+        
+        setInfo = None
+
         for json in set:
-            role = self.create_role_from_json(json)
+            if json["id"] == "_meta":
+                setInfo = SetInfo(json["name"], json["author"], json["logo"])
+                break
+
+        for json in set:
+            role = self.create_role_from_json(json, setInfo)
             if role != None:
                  self.add_role(role, roles)
 
@@ -247,8 +261,8 @@ class Lookup:
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
-            if role.set != None:
-                footer += f' - {role.set}'
+            if role.setInfo != None:
+                footer += f' - {role.setInfo.name} by {role.setInfo.author}'
             embed.set_footer(text=footer)
             if role.image != None:
                 embed.set_thumbnail(url=role.image)
