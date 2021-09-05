@@ -7,6 +7,9 @@ class FakeValidRole:
     def __init__(self):
         self.name = 'role_name'
 
+    def mention(self):
+        return '@role_name'
+
 class TestValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
     def get_town_info(self, town_id):
         valid_channel = {'valid':True}
