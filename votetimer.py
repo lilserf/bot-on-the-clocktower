@@ -41,12 +41,19 @@ class VoteTimerController(IVoteTimerController):
         return ret
 
     async def remove_town(self, town_id):
+        had_town = False
         if town_id in self.town_map:
+            had_town = True
             self.town_map.pop(town_id)
             self.town_storage.remove_town(town_id)
 
         if not self.town_storage.has_towns_ticking():
             self.town_ticker.stop_ticking()
+        
+        if had_town:
+            town_info = self.town_info_provider.get_town_info(town_id)
+            message = f'{town_info.villager_role.mention} - Vote countdown stopped!'
+            await self.message_broadcaster.send_message(town_info, message)
 
     async def tick(self):
         finished = self.town_storage.tick_and_return_finished_towns()
@@ -307,5 +314,5 @@ class VoteTimer:
         return await self.impl.start_timer(town_id, time_seconds)
 
     async def stop_timer(self, ctx):
-        town_id = botctypes.TownId(ctx.guild.id, cts.channel.id)
-        return await self.impl.stop_timer(town_id, time_seconds)
+        town_id = botctypes.TownId(ctx.guild.id, ctx.channel.id)
+        return await self.impl.stop_timer(town_id)

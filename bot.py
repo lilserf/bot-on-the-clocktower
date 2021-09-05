@@ -330,7 +330,7 @@ class SetupCog(commands.Cog):
             nightCatName = params[4]
             stRoleName = params[5]
             villagerName = params[6]
-            if len(params) < 8:
+            if len(params) > 7:
                 chatChannelName = params[7]
         
         return await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName)
@@ -476,7 +476,7 @@ class SetupCog(commands.Cog):
         townSquareChannelName = "Town Square"
         extraChannelNames = ["Dark Alley", "Library", "Graveyard"]
         nightChannelName = "Cottage"
-        neededNightChannels = 20
+        neededNightChannels = 2
 
 
         try:
@@ -1236,12 +1236,12 @@ class GameplayCog(commands.Cog):
         await self.bot.wait_until_ready()
 
     # Start the vote timer
-    @commands.command(name='votetimer', help=f'Start a countdown to voting time.\n\nUsage: {COMMAND_PREFIX}votetimer <time string>\n\nTime string can look like: "5 minutes 30 seconds" or "5:30" or "5m30s"')
+    @commands.command(name='voteTimer', aliases=['vt', 'votetimer'], help=f'Start a countdown to voting time.\n\nUsage: {COMMAND_PREFIX}votetimer <time string>\n\nTime string can look like: "5 minutes 30 seconds" or "5:30" or "5m30s"')
     async def start_timer(self, ctx):
         await self.perform_action_reporting_errors(self.votetimer.start_timer, ctx)
 
     # Stop an ongoing vote timer
-    @commands.command(name='stopvotetimer', help=f'Stop an existing countdown to voting.\n\nUsage: {COMMAND_PREFIX}stopvotetimer')
+    @commands.command(name='stopVoteTimer', aliases=['svt', 'stopvotetimer'], help=f'Stop an existing countdown to voting.\n\nUsage: {COMMAND_PREFIX}stopvotetimer')
     async def stop_timer(self, ctx):
         await self.perform_action_reporting_errors(self.votetimer.stop_timer, ctx)
 
