@@ -168,7 +168,7 @@ class botcBot(commands.Bot):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
 
 # Setup cog
-class SetupCog(commands.Cog):
+class SetupCog(commands.Cog, name='Setup'):
     def __init__(self, bot):
         self.bot = bot
 
@@ -741,7 +741,7 @@ class SetupCog(commands.Cog):
         await ctx.send(embed=embed)
 
 
-class GameplayCog(commands.Cog):
+class GameplayCog(commands.Cog, name='Gameplay'):
     def __init__(self, bot):
         self.bot = bot
         self.votetimer = votetimer.VoteTimer(bot, self.move_users_for_vote)
