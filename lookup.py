@@ -27,6 +27,9 @@ class LookupRole:
 
     def has_script_info(self):
         return len(self.scriptInfos) > 0
+
+    def merge_script_infos(self, other):
+        self.scriptInfos.extend(other.scriptInfos)
         
 
 class ScriptInfo:
@@ -60,6 +63,7 @@ class LookupRoleParser:
         for r in roleList:
             if role.matches_other(r):
                 found = True
+                r.merge_script_infos(role)
                 break
         if not found:
             roleList.append(role)
@@ -331,6 +335,8 @@ class Lookup:
                 color = discord.Color.from_rgb(251, 103, 0)
             if role.team == 'demon':
                 color = discord.Color.from_rgb(203, 1, 0)
+            if role.team == 'traveler':
+                color = discord.Color.purple()
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
