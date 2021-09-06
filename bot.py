@@ -1267,10 +1267,7 @@ class LookupCog(commands.Cog, name='Lookup'):
     # Perform a role lookup
     @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
     async def role_lookup(self, ctx):
-        try:
-            await self.lookup.role_lookup(ctx)
-        except Exception as ex:
-            await ctx.bot.sendErrorToAuthor(ctx)
+        await self.perform_action_reporting_errors(self.lookup.role_lookup, ctx)
 
     # Add a script url
     @commands.command(name='addScript', aliases=['addscript'], help=f'Add a script by its json.\n\nUsage: {COMMAND_PREFIX}addScript <url to json>')
@@ -1284,8 +1281,13 @@ class LookupCog(commands.Cog, name='Lookup'):
 
     # Refresh the list of scripts
     @commands.command(name='refreshScripts', aliases=['refreshscripts'], help=f'Refresh all scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}refreshScripts')
-    async def refresh_script(self, ctx):
+    async def refresh_scripts(self, ctx):
         await self.perform_action_reporting_errors(self.lookup.refresh_scripts, ctx)
+
+    # List all known scripts
+    @commands.command(name='listScripts', aliases=['listscripts'], help=f'List all the scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}listScripts')
+    async def list_scripts(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.list_scripts, ctx)
 
     async def perform_action_reporting_errors(self, action, ctx):
         try:

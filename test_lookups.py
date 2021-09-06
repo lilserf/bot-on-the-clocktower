@@ -113,7 +113,7 @@ class TestLookupImpl(unittest.IsolatedAsyncioTestCase):
             def __init__(self):
                 self.urls = [];
 
-            def get_server_urls(self, server_token):
+            def get_script_urls(self, server_token):
                 return self.urls;
 
             def add_server_url(self, server_token, url):
