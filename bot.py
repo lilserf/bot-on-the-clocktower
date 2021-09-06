@@ -1272,19 +1272,22 @@ class LookupCog(commands.Cog, name='Lookup'):
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
 
-    # Add a set url
-    @commands.command(name='addset', help=f'Add a set by its json.\n\nUsage: {COMMAND_PREFIX}addset <url to json>')
-    async def add_set(self, ctx):
-        try:
-            await self.lookup.add_set(ctx)
-        except Exception as ex:
-            await ctx.bot.sendErrorToAuthor(ctx)
+    # Add a script url
+    @commands.command(name='addScript', aliases=['addscript'], help=f'Add a script by its json.\n\nUsage: {COMMAND_PREFIX}addScript <url to json>')
+    async def add_script(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.add_script, ctx)
 
-    # Remove a set url
-    @commands.command(name='removeset', help=f'Remove a set by its json.\n\nUsage: {COMMAND_PREFIX}removeset <url to json>')
-    async def remove_set(self, ctx):
+    # Remove a script url
+    @commands.command(name='removeScript', aliases=['removescript'], help=f'Remove a script by its json.\n\nUsage: {COMMAND_PREFIX}removeScript <url to json>')
+    async def remove_script(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.remove_script, ctx)
+
+    async def perform_action_reporting_errors(self, action, ctx):
         try:
-            await self.lookup.remove_set(ctx)
+            message = await action(ctx)
+            if message != None:
+                await ctx.send(message)
+
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
 

@@ -10,14 +10,14 @@ class LookupRole:
     def matches_other(self, other):
         return self.name == other.name and self.team == other.team and self.ability == other.ability
 
-    def __init__(self, name, ability, team, image, setInfo=None):
+    def __init__(self, name, ability, team, image, scriptInfo=None):
         self.name = name
         self.team = team
         self.ability = ability
         self.image = image
-        self.setInfo = setInfo
+        self.scriptInfo = scriptInfo
 
-class SetInfo:
+class ScriptInfo:
     def __init__(self, name, author, img):
         self.name = name
         self.author = author
@@ -27,7 +27,7 @@ class LookupRoleParser:
     def is_valid_role_json(self, json):
         return json != None and isinstance(json, dict) and 'id' in json and json['id'] != '_meta' and 'name' in json and 'team' in json and 'ability' in json
 
-    def create_role_from_json(self, json, setInfo):
+    def create_role_from_json(self, json, scriptInfo):
         if self.is_valid_role_json(json):
             name = json['name']
             team = json['team']
@@ -36,7 +36,7 @@ class LookupRoleParser:
                 image = json['image']
             except KeyError:
                 image = None
-            return LookupRole(name, ability, team, image, setInfo)
+            return LookupRole(name, ability, team, image, scriptInfo)
         return None
 
     def combine_or_append_role(self, role, roleList):
@@ -54,24 +54,24 @@ class LookupRoleParser:
         else:
             roles[role.name] = [ role ]
 
-    def collect_roles_for_set_json(self, set, roles):
+    def collect_roles_for_script_json(self, script, roles):
         
-        setInfo = None
+        scriptInfo = None
 
-        for json in set:
+        for json in script:
             if json["id"] == "_meta":
-                setInfo = SetInfo(json["name"], json["author"], json["logo"])
+                scriptInfo = ScriptInfo(json["name"], json["author"], json["logo"])
                 break
 
-        for json in set:
-            role = self.create_role_from_json(json, setInfo)
+        for json in script:
+            role = self.create_role_from_json(json, scriptInfo)
             if role != None:
                  self.add_role(role, roles)
 
     def merge_roles_from_json(self, json, roles):
-        for set in json:
-            if isinstance(set, list):
-                self.collect_roles_for_set_json(set, roles)
+        for script in json:
+            if isinstance(script, list):
+                self.collect_roles_for_script_json(script, roles)
 
     def collect_roles_from_json(self, json):
         roles = {}
@@ -85,11 +85,11 @@ class ILookupRoleDownloader:
 
 class LookupRoleDownloader(ILookupRoleDownloader):
     async def fetch_url(self, url, session):
-        async with session.get(url) as response:
-            try:
+        try:
+            async with session.get(url) as response:
                 return await response.json()
-            except Exception:
-                return []
+        except Exception:
+            return []
 
     async def fetch_urls(self, urls):
         loop = asyncio.get_event_loop()
@@ -163,10 +163,10 @@ class LookupRoleData:
         self.server_role_data = {}
         self.db = db
 
-    def add_set(self, server_token, url):
+    def add_script(self, server_token, url):
         self.db.add_server_url(server_token, url)
 
-    def remove_set(self, server_token, url):
+    def remove_script(self, server_token, url):
         self.db.remove_server_url(server_token, url)
 
     def get_server_urls(self, server_token):
@@ -189,7 +189,7 @@ class LookupImpl:
 
     async def refresh_roles_for_server(self, server_token):
         urls = self.data.get_server_urls(server_token)
-        #TODO: exception(?) leading to message if roles empty
+        #TODO: exception(?) leading to message if roles empty - it can be returned
         roles = await self.downloader.collect_roles_from_urls(urls)
         self.data.update_server_role_data(server_token, roles)
 
@@ -205,13 +205,13 @@ class LookupImpl:
         role_found = role_data.get_matching_roles(role_to_check)
         return role_found
 
-    async def add_set(self, server_token, url):
-        self.data.add_set(server_token, url)
-        await self.refresh_roles_for_server(server_token) # could just add the new one
+    async def add_script(self, server_token, url):
+        self.data.add_script(server_token, url)
+        return await self.refresh_roles_for_server(server_token) # could just add the new one instead of a full refresh
 
-    async def remove_set(self, server_token, url):
-        self.data.remove_set(server_token, url)
-        await self.refresh_roles_for_server(server_token)
+    async def remove_script(self, server_token, url):
+        self.data.remove_script(server_token, url)
+        return await self.refresh_roles_for_server(server_token)
 
 
 # Concrete class for use by the Cog
@@ -227,23 +227,21 @@ class Lookup:
         role = await self.impl.role_lookup(server_token, self.find_role_from_message_content(ctx.message.content))
         await self.send_role(ctx, role)
 
-    async def add_set(self, ctx):
+    async def add_script(self, ctx):
         server_token = ctx.guild.id
         params = shlex.split(ctx.message.content)
         if len(params) == 2:
-            await self.impl.add_set(server_token, params[1])
+            return await self.impl.add_script(server_token, params[1])
         else:
-            #TODO error message
-            pass
+            return 'Incorrect usage. Please pass the URL of a script to add.'
 
-    async def remove_set(self, ctx):
+    async def remove_script(self, ctx):
         server_token = ctx.guild.id
         params = shlex.split(ctx.message.content)
         if len(params) == 2:
-            await self.impl.remove_set(server_token, params[1])
+            await self.impl.remove_script(server_token, params[1])
         else:
-            #TODO error message
-            pass
+            return 'Incorrect usage. Please pass the URL of a script to remove.'
 
     async def send_role(self, ctx, roles):
         if roles == None:
@@ -261,8 +259,8 @@ class Lookup:
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
-            if role.setInfo != None:
-                footer += f' - {role.setInfo.name} by {role.setInfo.author}'
+            if role.scriptInfo != None:
+                footer += f' - {role.scriptInfo.name} by {role.scriptInfo.author}'
             embed.set_footer(text=footer)
             if role.image != None:
                 embed.set_thumbnail(url=role.image)
