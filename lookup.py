@@ -168,7 +168,8 @@ class LookupRoleDatabase(ILookupRoleDatabase):
 
     def add_server_url(self, server_token, url):
         doc = self.get_doc_internal(server_token)
-        doc["urls"].append(url)
+        if not url in doc["urls"]:
+            doc["urls"].append(url)
         self.update_doc_internal(server_token, doc)
 
     def remove_server_url(self, server_token, url):
