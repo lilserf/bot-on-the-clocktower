@@ -19,8 +19,6 @@ class LookupRole:
         self.scriptInfos = list()
         if scriptInfo:
             self.scriptInfos.append(scriptInfo)
-            if self.image == None and scriptInfo.is_official:
-                self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{urllib.parse.quote(self.name.lower())}.png'
             
     def clone(self):
         c = LookupRole(self.name, self.ability, self.team, self.image)
@@ -77,13 +75,14 @@ class LookupRoleParser:
 
     def create_role_from_json(self, json, scriptInfo):
         if self.is_valid_role_json(json):
-            name = json['name']
-            team = json['team']
-            ability = json['ability']
-            try:
-                image = json['image']
-            except KeyError:
-                image = None
+            name = 'name' in json and json['name'] or None
+            team = 'team' in json and json['team'] or None
+            ability = 'ability' in json and json['ability'] or None
+            image = 'image' in json and json['image'] or None
+            if not image and scriptInfo and scriptInfo.is_official:
+                id = 'id' in json and json['id']
+                if id:
+                    image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{id}.png'
             return LookupRole(name, ability, team, image, scriptInfo)
         return None
 
@@ -93,7 +92,7 @@ class LookupRoleParser:
 
         for json in script:
             if json["id"] == "_meta":
-                scriptInfo = ScriptInfo('name' in json and json["name"], 'author' in json and json["author"], 'logo' in json and json["logo"], is_official)
+                scriptInfo = ScriptInfo('name' in json and json["name"] or None, 'author' in json and json["author"] or None, 'logo' in json and json["logo"] or None, is_official)
                 break
 
         for json in script:
@@ -357,7 +356,7 @@ class Lookup:
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
             if role.has_script_info():
-                footer += " - " + role.get_formatted_script_list()
+                footer += "\n" + role.get_formatted_script_list()
             embed.set_footer(text=footer)
             if role.image != None:
                 embed.set_thumbnail(url=role.image)
