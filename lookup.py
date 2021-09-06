@@ -16,6 +16,8 @@ class LookupRole:
         self.ability = ability
         self.image = image
         self.scriptInfo = scriptInfo
+        if self.image == None and self.scriptInfo.is_official:
+            self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{self.name.lower()}.png'
 
 class ScriptInfo:
     def __init__(self, name, author, img, is_official):
@@ -166,7 +168,8 @@ class LookupRoleDatabase(ILookupRoleDatabase):
 
     def add_server_url(self, server_token, url):
         doc = self.get_doc_internal(server_token)
-        doc["urls"].append(url)
+        if not url in doc["urls"]:
+            doc["urls"].append(url)
         self.update_doc_internal(server_token, doc)
 
     def remove_server_url(self, server_token, url):
