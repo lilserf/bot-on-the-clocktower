@@ -5,6 +5,7 @@ from fuzzywuzzy import process
 import json
 import shlex
 import discord
+import urllib
 
 class LookupRole:
     def matches_other(self, other):
@@ -15,9 +16,18 @@ class LookupRole:
         self.team = team
         self.ability = ability
         self.image = image
-        self.scriptInfo = scriptInfo
-        if self.image == None and self.scriptInfo.is_official:
-            self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{self.name.lower()}.png'
+        self.scriptInfos = list()
+        self.scriptInfos.append(scriptInfo)
+        if self.image == None and scriptInfo.is_official:
+            self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{urllib.parse.quote(self.name.lower())}.png'
+
+    def get_formatted_script_list(self):
+        strs = map(lambda x: f'{x.tostring()}', self.scriptInfos)
+        return ", ".join(strs)
+
+    def has_script_info(self):
+        return len(self.scriptInfos) > 0
+        
 
 class ScriptInfo:
     def __init__(self, name, author, img, is_official):
@@ -25,6 +35,9 @@ class ScriptInfo:
         self.author = author
         self.image = img
         self.is_official = is_official
+
+    def tostring(self):
+        return f'{self.name} by {self.author}'
 
 class LookupRoleParser:
     def is_valid_role_json(self, json):
@@ -310,10 +323,14 @@ class Lookup:
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
-            if role.scriptInfo != None:
-                footer += f' - {role.scriptInfo.name} by {role.scriptInfo.author}'
+            if role.has_script_info():
+                footer += " - " + role.get_formatted_script_list()
             embed.set_footer(text=footer)
             if role.image != None:
                 embed.set_thumbnail(url=role.image)
-            await ctx.send(embed=embed)
+
+            try:
+                await ctx.send(embed=embed)
+            except Exception:
+                print("Bad embed!")
 
