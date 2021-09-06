@@ -78,9 +78,7 @@ class LookupRoleParser:
             name = 'name' in json and json['name'] or None
             team = 'team' in json and json['team'] or None
             ability = 'ability' in json and json['ability'] or None
-            # this does't work, argh, the : in http: gets messed up
-            #image = 'image' in json and urllib.parse.quote(json['image']) or None
-            image = 'image' in json and json['image'] or None
+            image = 'image' in json and urllib.parse.quote(json['image'], safe='/:') or None
             if not image and scriptInfo and scriptInfo.is_official:
                 id = 'id' in json and json['id']
                 if id:
