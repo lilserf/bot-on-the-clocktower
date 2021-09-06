@@ -1282,16 +1282,16 @@ class LookupCog(commands.Cog, name='Lookup'):
     async def remove_script(self, ctx):
         await self.perform_action_reporting_errors(self.lookup.remove_script, ctx)
 
-    # Remove a script url
+    # Refresh the list of scripts
     @commands.command(name='refreshScripts', aliases=['refreshscripts'], help=f'Refresh all scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}refreshScripts')
-    async def refresh_scripts(self, ctx):
+    async def refresh_script(self, ctx):
         await self.perform_action_reporting_errors(self.lookup.refresh_scripts, ctx)
 
-    # Remove a script url
+    # List all known scripts
     @commands.command(name='listScripts', aliases=['listscripts'], help=f'List all the scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}listScripts')
-    async def remove_script(self, ctx):
+    async def list_scripts(self, ctx):
         await self.perform_action_reporting_errors(self.lookup.list_scripts, ctx)
-
+		
     async def perform_action_reporting_errors(self, action, ctx):
         try:
             message = await action(ctx)
