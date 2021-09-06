@@ -8,7 +8,7 @@ class TestLookups(unittest.TestCase):
         parser = lookup.LookupRoleParser()
 
         results_json = [[]]
-        roles = parser.collect_roles_from_json(results_json)
+        roles = parser.collect_roles_from_json(results_json, False)
 
         self.assertEqual(len(roles), 0, 'Expected 0 roles')
 
@@ -17,7 +17,7 @@ class TestLookups(unittest.TestCase):
         parser = lookup.LookupRoleParser()
 
         results_json = [[{'id':'role-id', 'name':'Has Name', 'ability':'has no team', 'image':'some image'}]]
-        roles = parser.collect_roles_from_json(results_json)
+        roles = parser.collect_roles_from_json(results_json, False)
 
         self.assertEqual(len(roles), 0, 'Expected 0 roles')
 
@@ -26,7 +26,7 @@ class TestLookups(unittest.TestCase):
         parser = lookup.LookupRoleParser()
 
         results_json = [[{'id':'role-id', 'name':'Has Name', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'}]]
-        roles = parser.collect_roles_from_json(results_json)
+        roles = parser.collect_roles_from_json(results_json, False)
 
         self.assertEqual(len(roles), 1, 'Expected 1 role')
 
@@ -39,7 +39,7 @@ class TestLookups(unittest.TestCase):
             {'id':'role-id-2', 'name':'Name 2', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             {'id':'role-id-3', 'name':'Name 3', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             ]]
-        roles = parser.collect_roles_from_json(results_json)
+        roles = parser.collect_roles_from_json(results_json, False)
 
         self.assertEqual(len(roles), 3, 'Expected 3 roles')
 
@@ -52,7 +52,7 @@ class TestLookups(unittest.TestCase):
             {'id':'role-id', 'name':'Name', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             {'id':'role-id', 'name':'Name', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             ]]
-        roles = parser.collect_roles_from_json(results_json)
+        roles = parser.collect_roles_from_json(results_json, False)
 
         self.assertEqual(len(roles), 1, 'Expected 1 role')
 
@@ -61,7 +61,7 @@ class TestLookups(unittest.TestCase):
         roles = {}
         db = lookup.LookupRoleServerData(roles)
 
-        result = db.get_matching_roles('foo')
+        result = db.get_matching_roles('foo', {})
 
         self.assertIsNone(result, 'Expected no results')
 
@@ -71,7 +71,7 @@ class TestLookups(unittest.TestCase):
         roles = {role.name : [role]}
         db = lookup.LookupRoleServerData(roles)
 
-        result = db.get_matching_roles('Some Role')
+        result = db.get_matching_roles('Some Role', {})
 
         self.assertEqual(result[0], role, 'Expected matching role')
 
@@ -81,7 +81,7 @@ class TestLookups(unittest.TestCase):
         roles = {role.name : [role]}
         db = lookup.LookupRoleServerData(roles)
 
-        result = db.get_matching_roles('Som')
+        result = db.get_matching_roles('Som', {})
 
         self.assertEqual(result[0], role, 'Expected matching role')
 
@@ -91,7 +91,7 @@ class TestLookups(unittest.TestCase):
         roles = {role.name : [role]}
         db = lookup.LookupRoleServerData(roles)
 
-        result = db.get_matching_roles('bwuh')
+        result = db.get_matching_roles('bwuh', {})
         
         self.assertIsNone(result, 'Expected no results')
 
@@ -101,7 +101,7 @@ class TestLookups(unittest.TestCase):
         roles = {role.name : [role]}
         db = lookup.LookupRoleServerData(roles)
 
-        result = db.get_matching_roles('bomdand')
+        result = db.get_matching_roles('bomdand', {})
         
         self.assertEqual(result[0], role, 'Expected matching role')
 
@@ -123,7 +123,7 @@ class TestLookupImpl(unittest.IsolatedAsyncioTestCase):
                 self.urls.remove(url)
 
         class TestDownloader(lookup.ILookupRoleDownloader):
-            async def collect_roles_from_urls(self, urls):
+            async def collect_roles_from_urls(self, urls, is_official):
                 pass
 
         tdb = TestDb()
