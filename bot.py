@@ -1265,7 +1265,7 @@ class LookupCog(commands.Cog, name='Lookup'):
         self.lookup = lookup.Lookup(db)
 
     # Perform a role lookup
-    @commands.command(name='role', help=f'Look up a role by name\n\nUsage: {COMMAND_PREFIX}role <role name>')
+    @commands.command(name='character', aliases=['role', 'char'], help=f'Look up a character by name\n\nUsage: {COMMAND_PREFIX}character <character name>')
     async def role_lookup(self, ctx):
         await self.perform_action_reporting_errors(self.lookup.role_lookup, ctx)
 

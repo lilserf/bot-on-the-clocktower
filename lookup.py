@@ -26,8 +26,15 @@ class LookupRole:
         return c
 
     def get_formatted_script_list(self):
-        strs = map(lambda x: f'{x.tostring()}', self.scriptInfos)
-        return "\n".join(strs)
+
+        scripts = list()
+        for si in self.scriptInfos:
+            (label, link) = si.get_almanac_or_wiki_link(self.name)
+            val = f'{si.tostring()}'
+            if link != None:
+                val += f' - [{label}]({link})'
+            scripts.append(val)
+        return "\n".join(scripts)
 
     def has_script_info(self):
         return len(self.scriptInfos) > 0
@@ -45,6 +52,17 @@ class ScriptInfo:
 
     def tostring(self):
         return f'{self.name} by {self.author}'
+
+    def get_almanac_or_wiki_link(self, roleName):
+        if self.is_official:
+            words = roleName.split(' ')
+            map(lambda x: x.capitalize(), words)
+            final = "_".join(words)
+            final = urllib.parse.quote(final)
+            return ('Wiki', f'https://bloodontheclocktower.com/wiki/{final}')
+        else:
+            #TODO resolve almanacs from Bloodstar json
+            return (None, None)
 
 
 class LookupRoleMerger:
@@ -377,10 +395,13 @@ class Lookup:
                 color = discord.Color.purple()
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
-            footer = f'{role.team.capitalize()}'
+            team = f'{role.team.capitalize()}'
+            embed.set_footer(text=team)
+
             if role.has_script_info():
-                footer += "\n" + role.get_formatted_script_list()
-            embed.set_footer(text=footer)
+                scripts = role.get_formatted_script_list()
+                embed.add_field(name='Scripts', value=scripts, inline=False)
+            
             if role.image != None:
                 embed.set_thumbnail(url=role.image)
 
