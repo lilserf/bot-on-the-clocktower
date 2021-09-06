@@ -16,6 +16,8 @@ class LookupRole:
         self.ability = ability
         self.image = image
         self.scriptInfo = scriptInfo
+        if self.image == None and self.scriptInfo.is_official:
+            self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{self.name.lower()}.png'
 
 class ScriptInfo:
     def __init__(self, name, author, img, is_official):
