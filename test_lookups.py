@@ -73,7 +73,7 @@ class TestLookups(unittest.TestCase):
 
         result = db.get_matching_roles('Some Role', {})
 
-        self.assertEqual(result[0], role, 'Expected matching role')
+        self.assertTrue(result[0].matches_other(role), 'Expected matching role')
 
 
     def test_serverdatahasroles_findsclosematch(self):
@@ -83,7 +83,7 @@ class TestLookups(unittest.TestCase):
 
         result = db.get_matching_roles('Som', {})
 
-        self.assertEqual(result[0], role, 'Expected matching role')
+        self.assertTrue(result[0].matches_other(role), 'Expected matching role')
 
 
     def test_serverdatahasroles_doesntfindnomatch(self):
@@ -103,7 +103,52 @@ class TestLookups(unittest.TestCase):
 
         result = db.get_matching_roles('bomdand', {})
         
-        self.assertEqual(result[0], role, 'Expected matching role')
+        self.assertTrue(result[0].matches_other(role), 'Expected matching role')
+
+
+    def test_lookuprole_merging(self):
+        merger = lookup.LookupRoleMerger()
+
+        role1 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image1', lookup.ScriptInfo('script1', 'author1', 'scriptimage1', False))
+        role2 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image2', lookup.ScriptInfo('script2', 'author2', 'scriptimage2', False))
+
+        merged = {}
+        merger.add_to_merged_dict(role1, merged)
+        merger.add_to_merged_dict(role2, merged)
+
+        self.assertEqual(1, len(merged.keys()))
+        self.assertEqual(1, len(merged[role1.name]))
+        self.assertEqual(2, len(merged[role1.name][0].scriptInfos))
+        self.assertNotEqual(role1, merged[role1.name][0], 'after merging, LookupRole should be unique object to not pollute main data')
+        self.assertNotEqual(role2, merged[role1.name][0], 'after merging, LookupRole should be unique object to not pollute main data')
+        
+    def test_serverdata_merge_with_official(self):
+        merger = lookup.LookupRoleMerger()
+
+        off_merged = {}
+        role_official = lookup.LookupRole('somename', 'ability', 'townsfolk', 'official_role_image', lookup.ScriptInfo('official', 'official_author', 'official_image', True))
+        merger.add_to_merged_dict(role_official, off_merged)
+
+        unoff_merged = {}
+        role_unofficial_1 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_1', lookup.ScriptInfo('unofficial_1', 'unofficial_author_1', 'unofficial_image_1', False))
+        role_unofficial_2 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_2', lookup.ScriptInfo('unofficial_2', 'unofficial_author_2', 'unofficial_image_2', False))
+        merger.add_to_merged_dict(role_unofficial_1, unoff_merged)
+        merger.add_to_merged_dict(role_unofficial_2, unoff_merged)
+
+        server_data = lookup.LookupRoleServerData(unoff_merged)
+        ret = server_data.get_matching_roles('somename', off_merged)
+
+        self.assertEqual(1, len(ret))
+        found_main_role = ret[0]
+        self.assertEqual(3, len(found_main_role.scriptInfos))
+        self.assertEqual('somename', found_main_role.name)
+        self.assertEqual('ability', found_main_role.ability)
+        self.assertEqual('townsfolk', found_main_role.team)
+        self.assertEqual('official_role_image', found_main_role.image)
+        self.assertEqual('official', found_main_role.scriptInfos[0].name)
+        self.assertEqual('official_author', found_main_role.scriptInfos[0].author)
+        self.assertEqual('official_image', found_main_role.scriptInfos[0].image)
+
 
 class TestLookupImpl(unittest.IsolatedAsyncioTestCase):
 

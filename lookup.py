@@ -17,13 +17,19 @@ class LookupRole:
         self.ability = ability
         self.image = image
         self.scriptInfos = list()
-        self.scriptInfos.append(scriptInfo)
-        if self.image == None and scriptInfo.is_official:
-            self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{urllib.parse.quote(self.name.lower())}.png'
+        if scriptInfo:
+            self.scriptInfos.append(scriptInfo)
+            if self.image == None and scriptInfo.is_official:
+                self.image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{urllib.parse.quote(self.name.lower())}.png'
+            
+    def clone(self):
+        c = LookupRole(self.name, self.ability, self.team, self.image)
+        c.scriptInfos.extend(self.scriptInfos)
+        return c
 
     def get_formatted_script_list(self):
         strs = map(lambda x: f'{x.tostring()}', self.scriptInfos)
-        return ", ".join(strs)
+        return "\n".join(strs)
 
     def has_script_info(self):
         return len(self.scriptInfos) > 0
@@ -42,7 +48,30 @@ class ScriptInfo:
     def tostring(self):
         return f'{self.name} by {self.author}'
 
+
+class LookupRoleMerger:
+
+    def add_to_merged_list(self, role, role_list):
+        found = False
+        for r in role_list:
+            if role.matches_other(r):
+                found = True
+                r.merge_script_infos(role)
+                break
+        if not found:
+            role_list.append(role.clone())
+
+    def add_to_merged_dict(self, role, role_dict):
+        if role.name in role_dict:
+            self.add_to_merged_list(role, role_dict[role.name])
+        else:
+            role_dict[role.name] = [ role.clone() ]
+
+
 class LookupRoleParser:
+    def __init__(self):
+        self.merger = LookupRoleMerger()
+
     def is_valid_role_json(self, json):
         return json != None and isinstance(json, dict) and 'id' in json and json['id'] != '_meta' and 'name' in json and 'team' in json and 'ability' in json
 
@@ -57,22 +86,6 @@ class LookupRoleParser:
                 image = None
             return LookupRole(name, ability, team, image, scriptInfo)
         return None
-
-    def combine_or_append_role(self, role, roleList):
-        found = False
-        for r in roleList:
-            if role.matches_other(r):
-                found = True
-                r.merge_script_infos(role)
-                break
-        if not found:
-            roleList.append(role)
-
-    def add_role(self, role, roles):
-        if role.name in roles:
-            self.combine_or_append_role(role, roles[role.name])
-        else:
-            roles[role.name] = [ role ]
 
     def collect_roles_for_script_json(self, script, roles, is_official):
         
@@ -92,7 +105,7 @@ class LookupRoleParser:
 
             role = self.create_role_from_json(json, thisScriptInfo)
             if role != None:
-                 self.add_role(role, roles)
+                 self.merger.add_to_merged_dict(role, roles)
 
     def merge_roles_from_json(self, json, roles, are_official):
         for script in json:
@@ -134,6 +147,7 @@ class LookupRoleServerData:
     def __init__(self, role_lookup):
         self.role_lookup = role_lookup
         self.last_refresh_time = datetime.datetime.now()
+        self.merger = LookupRoleMerger()
 
     def get_role_lookup(self):
         return self.role_lookup
@@ -150,9 +164,11 @@ class LookupRoleServerData:
     def get_roles_with_name(self, name, official_roles):
         ret = []
         if name in official_roles:
-            ret.extend(official_roles[name])
+            for r in official_roles[name]:
+                self.merger.add_to_merged_list(r, ret)
         if name in self.role_lookup:
-            ret.extend(self.role_lookup[name])
+            for r in self.role_lookup[name]:
+                self.merger.add_to_merged_list(r, ret)
         return ret
 
 
