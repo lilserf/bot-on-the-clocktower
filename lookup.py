@@ -137,7 +137,7 @@ class LookupRoleServerData:
 
 
 class ILookupRoleDatabase:
-    def get_server_urls(self, server_token):
+    def get_script_urls(self, server_token):
         return []
 
     def add_server_url(self, server_token, url):
@@ -162,7 +162,7 @@ class LookupRoleDatabase(ILookupRoleDatabase):
         lookupQuery = { "server" : server_token }
         self.serverRoleUrls.replace_one(lookupQuery, doc, True)
 
-    def get_server_urls(self, server_token):
+    def get_script_urls(self, server_token):
         doc = self.get_doc_internal(server_token)
         return doc["urls"]
 
@@ -188,11 +188,11 @@ class LookupRoleData:
     def remove_script(self, server_token, url):
         self.db.remove_server_url(server_token, url)
 
-    def get_server_urls(self, server_token):
-        return self.db.get_server_urls(server_token)
+    def get_script_urls(self, server_token):
+        return self.db.get_script_urls(server_token)
 
     def get_script_count(self, server_token):
-        return len(self.get_server_urls(server_token))
+        return len(self.get_script_urls(server_token))
 
     def get_server_role_data(self, server_token):
         return server_token in self.server_role_data and self.server_role_data[server_token] or {}
@@ -213,7 +213,7 @@ class LookupImpl:
         self.official_role_urls = ['https://raw.githubusercontent.com/bra1n/townsquare/develop/src/roles.json']
 
     async def refresh_roles_for_server(self, server_token):
-        urls = self.data.get_server_urls(server_token)
+        urls = self.data.get_script_urls(server_token)
         #TODO: exception(?) leading to message if roles empty - it can be returned
         roles = await self.downloader.collect_roles_from_urls(urls, False)
         self.data.update_server_role_data(server_token, roles)
@@ -241,6 +241,9 @@ class LookupImpl:
 
     def get_script_count(self, server_token):
         return self.data.get_script_count(server_token)
+
+    def get_script_urls(self, server_token):
+        return self.data.get_script_urls(server_token)
 
     def official_roles_need_refresh(self):
         return not self.official_roles or not self.last_official_refresh_time or (datetime.datetime.now() - self.last_official_refresh_time) > datetime.timedelta(days=1)
@@ -290,6 +293,14 @@ class Lookup:
         server_token = ctx.guild.id
         await self.impl.refresh_roles_for_server(server_token)
         return f'{self.impl.get_script_count(server_token)} scripts refreshed to latest versions.'
+
+    async def list_scripts(self, ctx):
+        server_token = ctx.guild.id
+        scripts = self.impl.get_script_urls(server_token)
+        if scripts and len(scripts) > 0:
+            scripts_str = "\n * ".join(scripts)
+            return f'The following scripts are known for this server:\n * {scripts_str}'
+        return 'No scripts are known. Try adding some!'
 
     async def send_role(self, ctx, roles):
         if roles == None:

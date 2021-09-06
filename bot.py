@@ -1284,8 +1284,13 @@ class LookupCog(commands.Cog, name='Lookup'):
 
     # Remove a script url
     @commands.command(name='refreshScripts', aliases=['refreshscripts'], help=f'Refresh all scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}refreshScripts')
-    async def remove_script(self, ctx):
+    async def refresh_scripts(self, ctx):
         await self.perform_action_reporting_errors(self.lookup.refresh_scripts, ctx)
+
+    # Remove a script url
+    @commands.command(name='listScripts', aliases=['listscripts'], help=f'List all the scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}listScripts')
+    async def remove_script(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.list_scripts, ctx)
 
     async def perform_action_reporting_errors(self, action, ctx):
         try:
