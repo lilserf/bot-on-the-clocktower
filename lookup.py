@@ -66,14 +66,14 @@ class LookupRoleParser:
                 scriptInfo = ScriptInfo('name' in json and json["name"], 'author' in json and json["author"], 'logo' in json and json["logo"], is_official)
                 break
 
-
         for json in script:
-            if not scriptInfo and is_official:
+            thisScriptInfo = scriptInfo
+            if not thisScriptInfo and is_official:
                 lookup = { "tb" : "Trouble Brewing (Official)", "bmr": "Bad Moon Rising (Official)", "snv": "Sects & Violets (Official)", "": "Experimental/Unreleased"}
                 setname = lookup[json["edition"]]
-                scriptInfo = ScriptInfo(setname, "Pandemonium Institute", None, True)
+                thisScriptInfo = ScriptInfo(setname, "Pandemonium Institute", None, True)
 
-            role = self.create_role_from_json(json, scriptInfo)
+            role = self.create_role_from_json(json, thisScriptInfo)
             if role != None:
                  self.add_role(role, roles)
 
