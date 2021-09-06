@@ -63,7 +63,7 @@ class LookupRoleParser:
 
         for json in script:
             if json["id"] == "_meta":
-                scriptInfo = ScriptInfo(json["name"], json["author"], json["logo"], is_official)
+                scriptInfo = ScriptInfo('name' in json and json["name"], 'author' in json and json["author"], 'logo' in json and json["logo"], is_official)
                 break
 
 
@@ -194,6 +194,9 @@ class LookupRoleData:
     def get_server_urls(self, server_token):
         return self.db.get_server_urls(server_token)
 
+    def get_script_count(self, server_token):
+        return len(self.get_server_urls(server_token))
+
     def get_server_role_data(self, server_token):
         return server_token in self.server_role_data and self.server_role_data[server_token] or {}
 
@@ -239,6 +242,9 @@ class LookupImpl:
         self.data.remove_script(server_token, url)
         return await self.refresh_roles_for_server(server_token)
 
+    def get_script_count(self, server_token):
+        return self.data.get_script_count(server_token)
+
     def official_roles_need_refresh(self):
         return not self.official_roles or not self.last_official_refresh_time or (datetime.datetime.now() - self.last_official_refresh_time) > datetime.timedelta(days=1)
 
@@ -264,7 +270,10 @@ class Lookup:
         server_token = ctx.guild.id
         params = shlex.split(ctx.message.content)
         if len(params) == 2:
-            return await self.impl.add_script(server_token, params[1])
+            message = await self.impl.add_script(server_token, params[1])
+            if message:
+                return message
+            return f'Added script at URL: {params[1]}\nI now know about {self.impl.get_script_count(server_token)} scripts.'
         else:
             return 'Incorrect usage. Please pass the URL of a script to add.'
 
@@ -272,9 +281,18 @@ class Lookup:
         server_token = ctx.guild.id
         params = shlex.split(ctx.message.content)
         if len(params) == 2:
-            await self.impl.remove_script(server_token, params[1])
+            message = await self.impl.remove_script(server_token, params[1])
+            message = await self.impl.add_script(server_token, params[1])
+            if message:
+                return message
+            return f'Removed script at URL: {params[1]}\nI now know about {self.impl.get_script_count(server_token)} scripts.'
         else:
             return 'Incorrect usage. Please pass the URL of a script to remove.'
+
+    async def refresh_scripts(self, ctx):
+        server_token = ctx.guild.id
+        await self.impl.refresh_roles_for_server(server_token)
+        return f'{self.impl.get_script_count(server_token)} scripts refreshed to latest versions.'
 
     async def send_role(self, ctx, roles):
         if roles == None:
