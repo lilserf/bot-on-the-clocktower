@@ -18,10 +18,11 @@ class LookupRole:
         self.scriptInfo = scriptInfo
 
 class ScriptInfo:
-    def __init__(self, name, author, img):
+    def __init__(self, name, author, img, is_official):
         self.name = name
         self.author = author
         self.image = img
+        self.is_official = is_official
 
 class LookupRoleParser:
     def is_valid_role_json(self, json):
@@ -54,41 +55,45 @@ class LookupRoleParser:
         else:
             roles[role.name] = [ role ]
 
-    def collect_roles_for_script_json(self, script, roles):
+    def collect_roles_for_script_json(self, script, roles, is_official):
         
         scriptInfo = None
 
         for json in script:
             if json["id"] == "_meta":
-                scriptInfo = ScriptInfo(json["name"], json["author"], json["logo"])
+                scriptInfo = ScriptInfo(json["name"], json["author"], json["logo"], is_official)
                 break
+
+        if not scriptInfo and is_official:
+            scriptInfo = ScriptInfo(None, None, None, True)
 
         for json in script:
             role = self.create_role_from_json(json, scriptInfo)
             if role != None:
                  self.add_role(role, roles)
 
-    def merge_roles_from_json(self, json, roles):
+    def merge_roles_from_json(self, json, roles, are_official):
         for script in json:
             if isinstance(script, list):
-                self.collect_roles_for_script_json(script, roles)
+                self.collect_roles_for_script_json(script, roles, are_official)
 
-    def collect_roles_from_json(self, json):
+    def collect_roles_from_json(self, json, are_official):
         roles = {}
-        self.merge_roles_from_json(json, roles)
+        self.merge_roles_from_json(json, roles, are_official)
         return roles
 
 
 class ILookupRoleDownloader:
-    async def collect_roles_from_urls(self, urls):
+    async def collect_roles_from_urls(self, urls, are_official):
         pass
 
 class LookupRoleDownloader(ILookupRoleDownloader):
     async def fetch_url(self, url, session):
         try:
             async with session.get(url) as response:
-                return await response.json()
-        except Exception:
+                data = await response.read()
+            return json.loads(data)
+        except Exception as ex:
             return []
 
     async def fetch_urls(self, urls):
@@ -97,10 +102,10 @@ class LookupRoleDownloader(ILookupRoleDownloader):
             tasks = [loop.create_task(self.fetch_url(url, session)) for url in urls]
             return await asyncio.gather(*tasks)
 
-    async def collect_roles_from_urls(self, urls):
+    async def collect_roles_from_urls(self, urls, are_official):
         results = await self.fetch_urls(urls)
         parser = LookupRoleParser()
-        return parser.collect_roles_from_json(results)
+        return parser.collect_roles_from_json(results, are_official)
 
 
 class LookupRoleServerData:
@@ -111,11 +116,22 @@ class LookupRoleServerData:
     def get_role_lookup(self):
         return self.role_lookup
 
-    def get_matching_roles(self, role_name):
-        option = process.extractOne(role_name, self.role_lookup.keys(), score_cutoff=80)
+    def get_matching_roles(self, role_name, official_roles):
+        all_roles = set()
+        all_roles.update(self.role_lookup.keys())
+        all_roles.update(official_roles.keys())
+        option = process.extractOne(role_name, all_roles, score_cutoff=80)
         if option != None:
-            return self.role_lookup[option[0]]
+            return self.get_roles_with_name(option[0], official_roles)
         return None
+
+    def get_roles_with_name(self, name, official_roles):
+        ret = []
+        if name in official_roles:
+            ret.extend(official_roles[name])
+        if name in self.role_lookup:
+            ret.extend(self.role_lookup[name])
+        return ret
 
 
 class ILookupRoleDatabase:
@@ -186,23 +202,27 @@ class LookupImpl:
     def __init__(self, db, downloader):
         self.data = LookupRoleData(db)
         self.downloader = downloader
+        self.last_official_refresh_time = None
+        self.official_roles = None
+        self.official_role_urls = ['https://raw.githubusercontent.com/bra1n/townsquare/develop/src/roles.json']
 
     async def refresh_roles_for_server(self, server_token):
         urls = self.data.get_server_urls(server_token)
         #TODO: exception(?) leading to message if roles empty - it can be returned
-        roles = await self.downloader.collect_roles_from_urls(urls)
+        roles = await self.downloader.collect_roles_from_urls(urls, False)
         self.data.update_server_role_data(server_token, roles)
 
     async def refresh_roles_for_server_if_needed(self, server_token):
         if self.data.server_roles_need_update(server_token):
             await self.refresh_roles_for_server(server_token)
-            return True
-        return False
 
     async def role_lookup(self, server_token, role_to_check):
+        if self.official_roles_need_refresh():
+            await self.refresh_official_roles()
+
         await self.refresh_roles_for_server_if_needed(server_token)
         role_data = self.data.get_server_role_data(server_token)
-        role_found = role_data.get_matching_roles(role_to_check)
+        role_found = role_data.get_matching_roles(role_to_check, self.official_roles)
         return role_found
 
     async def add_script(self, server_token, url):
@@ -212,6 +232,13 @@ class LookupImpl:
     async def remove_script(self, server_token, url):
         self.data.remove_script(server_token, url)
         return await self.refresh_roles_for_server(server_token)
+
+    def official_roles_need_refresh(self):
+        return not self.official_roles or not self.last_official_refresh_time or (datetime.datetime.now() - self.last_official_refresh_time) > datetime.timedelta(days=1)
+
+    async def refresh_official_roles(self):
+        self.last_official_refresh_time = datetime.datetime.now()
+        self.official_roles = await self.downloader.collect_roles_from_urls(self.official_role_urls, True)
 
 
 # Concrete class for use by the Cog
@@ -259,7 +286,7 @@ class Lookup:
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
-            if role.scriptInfo != None:
+            if role.scriptInfo != None and not role.scriptInfo.is_official:
                 footer += f' - {role.scriptInfo.name} by {role.scriptInfo.author}'
             embed.set_footer(text=footer)
             if role.image != None:
