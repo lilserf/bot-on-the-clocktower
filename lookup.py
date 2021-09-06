@@ -66,10 +66,13 @@ class LookupRoleParser:
                 scriptInfo = ScriptInfo(json["name"], json["author"], json["logo"], is_official)
                 break
 
-        if not scriptInfo and is_official:
-            scriptInfo = ScriptInfo(None, None, None, True)
 
         for json in script:
+            if not scriptInfo and is_official:
+                lookup = { "tb" : "Trouble Brewing (Official)", "bmr": "Bad Moon Rising (Official)", "snv": "Sects & Violets (Official)", "": "Experimental/Unreleased"}
+                setname = lookup[json["edition"]]
+                scriptInfo = ScriptInfo(setname, "Pandemonium Institute", None, True)
+
             role = self.create_role_from_json(json, scriptInfo)
             if role != None:
                  self.add_role(role, roles)
@@ -289,7 +292,7 @@ class Lookup:
 
             embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             footer = f'{role.team.capitalize()}'
-            if role.scriptInfo != None and not role.scriptInfo.is_official:
+            if role.scriptInfo != None:
                 footer += f' - {role.scriptInfo.name} by {role.scriptInfo.author}'
             embed.set_footer(text=footer)
             if role.image != None:
