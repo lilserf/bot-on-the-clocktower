@@ -1,0 +1,21 @@
+﻿import discord
+
+class IVersionProvider:
+	def get_versions_and_embeds(self):
+		pass
+
+class VersionProviderImpl(IVersionProvider):
+	def __init__(self):
+		self.map = {};
+
+		# Version 2.0.0
+		v2 = discord.Embed(title="New features in v 2.0.0!")
+		
+		v2.add_field(inline=False, name="Vote Timer", value="You can now use `!votetimer 5m30s` to start a timer for the requested time. Villagers will be warned as the timer gets close, and when it expires, villagers will be pulled to the Town Square channel for a vote as if `!vote` was run.\nYou'll need to run `!setChatChannel` to see the warning messages.")
+		v2.add_field(inline=False, name="Character Lookup", value="The new `!character <name>` command fetches information about a given character from the official sets. You can also use `!addscript <json url>` to tell the bot about JSON script files for your own custom sets. If you're using [Bloodstar Clocktica](bloodstar.xyz) to manage your scripts, you'll even get links to the almanac!")
+		v2.add_field(inline=False, name="Release Announcements", value="If you'd like to opt out of these announcements, use the `!noannounce` command (TODO)")
+		v2.add_field(inline=False, name="Need More?", value="See the `!help` menu, [README](https://github.com/lilserf/bot-on-the-clocktower/blob/release/README.md), and [CHANGELOG](https://github.com/lilserf/bot-on-the-clocktower/blob/release/CHANGELOG.md) for all the details!")
+		self.map[(2,0,0)] = v2
+
+	def get_versions_and_embeds(self):
+		return self.map

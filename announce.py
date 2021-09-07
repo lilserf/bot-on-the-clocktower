@@ -1,4 +1,4 @@
-﻿
+﻿import version
 
 class IAnnouncerDb:
 	def has_guild_seen_version(self, guild, version):
@@ -8,21 +8,85 @@ class IAnnouncerGuildDb:
 	def get_guilds():
 		pass
 
-class IAnnouncerVersionProvider:
-	def get_version_message(self, version):
+class IAnnouncerMessageSender:
+	def send_embed(self, guild, embed):
 		pass
 
-	def get_latest_version(self):
-		pass
+class AnnouncerDbImpl(IAnnouncerDb):
+	def __init__(self, mongo):
+		self.collection = mongo['GuildVersionAnnouncements']
 
-	def get_latest_version_message(self):
-		return self.get_version_message(self.get_latest_version())
+	def has_guild_seen_version(self, guild, version):
+		query = { "guild" : guild }
+		doc = self.collection.find_one(query)
+		if doc:
+			vers = tuple(doc['version'])
+			return (version <= vers)
+		else:
+			return False
 
-class Announcer:
+	def record_guild_seen_version(self, guild, version):
+		query = {"guild" : guild }
+		doc = self.collection.find_one(query)
+		if doc:
+			doc['version'] = list(version)
+		else:
+			doc = {"guild" : guild, "version" : list(version)}
+		self.collection.replace_one(query, doc, True)
 
-	def __init__(self, db, guildDb, provider):
+
+class AnnouncerGuildDbImpl(IAnnouncerGuildDb):
+	def __init__(self, mongo):
+		self.collection = mongo['GuildInfo']
+
+	def get_guilds(self):
+		x = self.collection.find(projection={'guild':True, '_id':False}).distinct('guild')
+		return x
+
+class AnnouncerMessageSenderImpl(IAnnouncerMessageSender):
+	def __init__(self, bot, mongo):
+		self.bot = bot
+		self.collection = mongo['GuildInfo']
+
+	async def send_embed(self, guild, embed):
+		query = {"guild": guild}
+		result = self.collection.find(query)
+		for x in result:
+			townInfo = self.bot.getTownInfoByIds(guild, x['controlChannelId'])
+			await townInfo.controlChannel.send(embed=embed)
+
+class AnnouncerImpl:
+	def __init__(self, db, guildDb, provider, sender):
 		self.db = db
 		self.guildDb = guildDb
 		self.provider = provider
+		self.sender = sender
 
+	async def announce_latest_version(self):
+		guilds = self.guildDb.get_guilds()
+		numSent = 0
 
+		if len(guilds) > 0:
+			versions = self.provider.get_versions_and_embeds()
+
+			for g in guilds:
+				for (v, embed) in versions.items():
+					if not self.db.has_guild_seen_version(g, v):
+						self.db.record_guild_seen_version(g, v)
+						numSent += 1
+						await self.sender.send_embed(g, embed)
+
+		return numSent;
+
+# Concrete class for use by the bot
+class Announcer:
+	def __init__(self, bot, mongo):
+		db = AnnouncerDbImpl(mongo)
+		guildDb = AnnouncerGuildDbImpl(mongo)
+		provider = version.VersionProviderImpl()
+		sender = AnnouncerMessageSenderImpl(bot, mongo)
+
+		self.announcer = AnnouncerImpl(db, guildDb, provider, sender)
+
+	async def announce_latest_version(self):
+		return await self.announcer.announce_latest_version()

@@ -14,6 +14,7 @@ import shlex
 import traceback
 
 import votetimer
+import announce
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -166,6 +167,22 @@ class botcBot(commands.Bot):
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
+        print('Sending version announcements...')
+        announcer = self.get_cog('Version Announcements')
+        num_sent = await announcer.announce_latest_version()
+        print(f'Sent announcements to {num_sent} towns.')
+
+# Announcer cog
+class AnnouncerCog(commands.Cog, name='Version Announcements'):
+    def __init__(self, bot):
+        self.bot = bot;
+        self.announcer = announce.Announcer(bot, db)
+
+    async def announce_latest_version(self):
+        return await self.announcer.announce_latest_version()
+    
+    #TODO: commands
+
 
 # Setup cog
 class SetupCog(commands.Cog, name='Setup'):
@@ -1261,4 +1278,5 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
+bot.add_cog(AnnouncerCog(bot))
 bot.run(TOKEN)
