@@ -86,7 +86,7 @@ class AnnouncerImpl:
 
 		return numSent;
 
-# Concrete class for use by the bot
+# Concrete class for use by the cog
 class Announcer:
 	def __init__(self, bot, mongo):
 		db = AnnouncerDbImpl(mongo)
@@ -94,10 +94,10 @@ class Announcer:
 		provider = version.VersionProviderImpl()
 		sender = AnnouncerMessageSenderImpl(bot, mongo)
 
-		self.announcer = AnnouncerImpl(db, guildDb, provider, sender)
+		self.impl = AnnouncerImpl(db, guildDb, provider, sender)
 
 	def guild_no_announce(self, guild):
-		self.announcer.guild_no_announce(guild)
+		self.impl.guild_no_announce(guild)
 
 	async def announce_latest_version(self):
-		return await self.announcer.announce_latest_version()
+		return await self.impl.announce_latest_version()
