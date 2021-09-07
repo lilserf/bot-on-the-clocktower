@@ -45,9 +45,12 @@ class MockAnnouncerGuildDb(announce.IAnnouncerGuildDb):
 class MockAnnouncerMessageSender(announce.IAnnouncerMessageSender):
 	def __init__(self):
 		self.called = 0
+		self.throw_exception = False
 
 	async def send_embed(self, guild, embed):
 		self.called += 1
+		if self.throw_exception:
+			raise Exception('fake', 'fake')
 		pass
 
 class TestAnnounce(unittest.IsolatedAsyncioTestCase):
@@ -162,4 +165,21 @@ class TestAnnounce(unittest.IsolatedAsyncioTestCase):
 		# message is sent since version is newer
 		self.assertEqual(3, self.ts.called)
 		self.assertEqual(3, self.tdb.record_called)
+
+	async def test_twoguild_sendembedexception(self):
+
+		self.tgdb.guilds = [ "100" ]
+		self.tp.version_embed_map = { (1,0) : v1embed, (2,0) : v2embed }
+		self.tdb.guild_version_map = { "100" : (1,0) }
+		self.ts.throw_exception = True
+
+		await self.a.announce_latest_version()
+
+		self.assertEqual(1, self.tgdb.called)
+		self.assertEqual(1, self.tp.called)
+		self.assertEqual(2, self.tdb.called)
+		# message is sent since version is newer, and should throw exception
+		self.assertEqual(1, self.ts.called)
+		# should have recorded this version despite the exception
+		self.assertEqual(1, self.tdb.record_called)
 

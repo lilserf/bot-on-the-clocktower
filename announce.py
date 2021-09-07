@@ -78,7 +78,11 @@ class AnnouncerImpl:
 					if not self.db.has_guild_seen_version(g, v):
 						self.db.record_guild_seen_version(g, v)
 						numSent += 1
-						await self.sender.send_embed(g, embed)
+						try:
+							await self.sender.send_embed(g, embed)
+						except Exception:
+							# If sending embed fails, do nothing
+							pass
 
 		return numSent;
 
