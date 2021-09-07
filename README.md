@@ -77,7 +77,7 @@ At this point, the Storyteller can visit Cottages as dictated by the night order
 
 Once the night phase is complete, the Storyteller uses the `!day` command to bring the players back to the Town Square and begin the day.
 
-Players can switch to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations. The Storyteller may use the `!vote` command to drag all the players back to the Town Square.
+Players can switch to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations. The Storyteller may use the `!vote` or `!voteTimer` commands to drag all the players back to the Town Square.
 
 This cycle of night & day continues until there's a winner!
 
