@@ -37,17 +37,21 @@ class LookupRole:
     def get_formatted_script_list(self):
         scripts = list()
         for rsi in self.roles_in_script_infos:
-            val = f'{rsi.script_info.tostring()}'
-            (label, link) = rsi.get_role_link(self.name)
-            if link != None:
-                if len(val) > 0:
-                    val += ' - '
-                val += f'[{label}]({link})'
-            scripts.append(val)
+            if rsi.script_info:
+                val = f'{rsi.script_info.tostring()}'
+                (label, link) = rsi.get_role_link(self.name)
+                if link != None:
+                    if len(val) > 0:
+                        val += ' - '
+                    val += f'[{label}]({link})'
+                scripts.append(val)
         return "\n".join(scripts)
 
     def has_script_info(self):
-        return len(self.roles_in_script_infos) > 0
+        for rsi in self.roles_in_script_infos:
+            if rsi.script_info:
+                return True
+        return False
 
     def merge_script_infos(self, other):
         self.roles_in_script_infos.extend(other.roles_in_script_infos)
