@@ -1290,14 +1290,25 @@ class LookupCog(commands.Cog, name='Lookup'):
     async def list_scripts(self, ctx):
         await self.perform_control_channel_action_reporting_errors(self.lookup.list_scripts, ctx)
         
+    async def verify_validity_or_send_error(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel):
+            await ctx.send(f"Whoops, you probably meant to send that in a text channel instead of a DM! Sorry, mate.")
+            return False
+        return True
+
     async def perform_control_channel_action_reporting_errors(self, action, ctx):
-        town_info = self.bot.getTownInfo(ctx)
-        if town_info:
-            await  self.perform_action_reporting_errors(action, ctx)
-        else:
-            await ctx.send('This action can only be performed from a town control channel.')
+        if await self.verify_validity_or_send_error(ctx):
+            town_info = self.bot.getTownInfo(ctx)
+            if town_info:
+                await  self.perform_action_reporting_errors_internal(action, ctx)
+            else:
+                await ctx.send('This action can only be performed from a town control channel.')
 
     async def perform_action_reporting_errors(self, action, ctx):
+        if await self.verify_validity_or_send_error(ctx):
+            await self.perform_action_reporting_errors_internal(action, ctx)
+
+    async def perform_action_reporting_errors_internal(self, action, ctx):
         try:
             message = await action(ctx)
             if message != None:
@@ -1305,6 +1316,7 @@ class LookupCog(commands.Cog, name='Lookup'):
 
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
+
 
 
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
