@@ -205,15 +205,17 @@ class LookupRoleDownloader(ILookupRoleDownloader):
 
 
 class LookupRoleServerData:
-    def __init__(self, role_lookup):
+    def __init__(self, role_lookup, official_provider):
         self.role_lookup = role_lookup
+        self.official_provider = official_provider
         self.last_refresh_time = datetime.datetime.now()
         self.merger = LookupRoleMerger()
 
     def get_role_lookup(self):
         return self.role_lookup
 
-    def get_matching_roles(self, role_name, official_roles):
+    def get_matching_roles(self, role_name):
+        official_roles = self.official_provider.get_official_roles()
         all_roles = set()
         all_roles.update(self.role_lookup.keys())
         all_roles.update(official_roles.keys())
@@ -275,9 +277,10 @@ class LookupRoleDatabase(ILookupRoleDatabase):
         self.update_doc_internal(server_token, doc)
 
 class LookupRoleData:
-    def __init__(self, db):
+    def __init__(self, db, official_provider):
         self.server_role_data = {}
         self.db = db
+        self.official_provider = official_provider
 
     def add_script(self, server_token, url):
         self.db.add_server_url(server_token, url)
@@ -295,15 +298,24 @@ class LookupRoleData:
         return server_token in self.server_role_data and self.server_role_data[server_token] or {}
 
     def update_server_role_data(self, server_token, role_lookup):
-        self.server_role_data[server_token] = LookupRoleServerData(role_lookup)
+        self.server_role_data[server_token] = LookupRoleServerData(role_lookup, self.official_provider)
 
     def server_roles_need_update(self, server_token):
         return (not server_token in self.server_role_data) or self.server_role_data[server_token].last_refresh_time == None or (datetime.datetime.now() - self.server_role_data[server_token].last_refresh_time) > datetime.timedelta(days=1)
 
+class IOfficialEditionProvider:
+    async def refresh_official_roles_if_needed(self):
+        pass
 
-class LookupImpl:
-    def __init__(self, db, downloader):
-        self.data = LookupRoleData(db)
+    def get_official_roles(self):
+        return {}
+
+    def official_roles_need_refresh(self):
+        return False
+
+
+class OfficialEditionProvider:
+    def __init__(self, downloader):
         self.downloader = downloader
         self.last_official_refresh_time = None
         self.official_editions = None
@@ -314,38 +326,12 @@ class LookupImpl:
             'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/fabled.json',
             ]
 
-    async def refresh_roles_for_server(self, server_token):
-        urls = self.data.get_script_urls(server_token)
-        #TODO: exception(?) leading to message if roles empty - it can be returned
-        roles = await self.downloader.collect_roles_from_urls(urls, False)
-        self.data.update_server_role_data(server_token, roles)
-
-    async def refresh_roles_for_server_if_needed(self, server_token):
-        if self.data.server_roles_need_update(server_token):
-            await self.refresh_roles_for_server(server_token)
-
-    async def role_lookup(self, server_token, role_to_check):
+    async def refresh_official_roles_if_needed(self):
         if self.official_roles_need_refresh():
             await self.refresh_official_roles()
 
-        await self.refresh_roles_for_server_if_needed(server_token)
-        role_data = self.data.get_server_role_data(server_token)
-        role_found = role_data.get_matching_roles(role_to_check, self.official_roles)
-        return role_found
-
-    async def add_script(self, server_token, url):
-        self.data.add_script(server_token, url)
-        return await self.refresh_roles_for_server(server_token) # could just add the new one instead of a full refresh
-
-    async def remove_script(self, server_token, url):
-        self.data.remove_script(server_token, url)
-        return await self.refresh_roles_for_server(server_token)
-
-    def get_script_count(self, server_token):
-        return self.data.get_script_count(server_token)
-
-    def get_script_urls(self, server_token):
-        return self.data.get_script_urls(server_token)
+    def get_official_roles(self):
+        return self.official_roles
 
     def official_roles_need_refresh(self):
         return not self.official_editions or not self.official_roles or not self.last_official_refresh_time or (datetime.datetime.now() - self.last_official_refresh_time) > datetime.timedelta(days=1)
@@ -377,10 +363,53 @@ class LookupImpl:
             self.official_editions[id] = ScriptInfo(name, author, None, almanac_link, is_official)
 
 
+class LookupImpl:
+    def __init__(self, lookup_role_data, official_provider, downloader):
+        self.data = lookup_role_data
+        self.official_provider = official_provider
+        self.downloader = downloader
+
+    async def refresh_roles_for_server(self, server_token):
+        urls = self.data.get_script_urls(server_token)
+        #TODO: exception(?) leading to message if roles empty - it can be returned
+        roles = await self.downloader.collect_roles_from_urls(urls, False)
+        self.data.update_server_role_data(server_token, roles)
+
+    async def refresh_roles_for_server_if_needed(self, server_token):
+        if self.data.server_roles_need_update(server_token):
+            await self.refresh_roles_for_server(server_token)
+
+    async def role_lookup(self, server_token, role_to_check):
+        await self.official_provider.refresh_official_roles_if_needed()
+
+        await self.refresh_roles_for_server_if_needed(server_token)
+        role_data = self.data.get_server_role_data(server_token)
+        role_found = role_data.get_matching_roles(role_to_check)
+        return role_found
+
+    async def add_script(self, server_token, url):
+        self.data.add_script(server_token, url)
+        return await self.refresh_roles_for_server(server_token) # could just add the new one instead of a full refresh
+
+    async def remove_script(self, server_token, url):
+        self.data.remove_script(server_token, url)
+        return await self.refresh_roles_for_server(server_token)
+
+    def get_script_count(self, server_token):
+        return self.data.get_script_count(server_token)
+
+    def get_script_urls(self, server_token):
+        return self.data.get_script_urls(server_token)
+
+
 # Concrete class for use by the Cog
 class Lookup:
     def __init__(self, db):
-        self.impl = LookupImpl(LookupRoleDatabase(db), LookupRoleDownloader())
+        downloader = LookupRoleDownloader()
+        op = OfficialEditionProvider(downloader)
+        lrdb = LookupRoleDatabase(db)
+        lrd = LookupRoleData(lrdb, op)
+        self.impl = LookupImpl(lrd, op, downloader)
 
     def find_role_from_message_content(self, content):
         sanitized = content.replace('\'', '').replace('"', '')
