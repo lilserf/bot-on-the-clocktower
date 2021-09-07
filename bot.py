@@ -1261,7 +1261,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await ctx.bot.sendErrorToAuthor(ctx)
 
 class LookupCog(commands.Cog, name='Lookup'):
-    def __init__(self, db):
+    def __init__(self, bot, db):
+        self.bot = bot
         self.lookup = lookup.Lookup(db)
 
     # Perform a role lookup
@@ -1272,12 +1273,12 @@ class LookupCog(commands.Cog, name='Lookup'):
     # Add a script url
     @commands.command(name='addScript', aliases=['addscript'], help=f'Add a script by its json.\n\nUsage: {COMMAND_PREFIX}addScript <url to json>')
     async def add_script(self, ctx):
-        await self.perform_action_reporting_errors(self.lookup.add_script, ctx)
+        await self.perform_control_channel_action_reporting_errors(self.lookup.add_script, ctx)
 
     # Remove a script url
     @commands.command(name='removeScript', aliases=['removescript'], help=f'Remove a script by its json.\n\nUsage: {COMMAND_PREFIX}removeScript <url to json>')
     async def remove_script(self, ctx):
-        await self.perform_action_reporting_errors(self.lookup.remove_script, ctx)
+        await self.perform_control_channel_action_reporting_errors(self.lookup.remove_script, ctx)
 
     # Refresh the list of scripts
     @commands.command(name='refreshScripts', aliases=['refreshscripts'], help=f'Refresh all scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}refreshScripts')
@@ -1287,7 +1288,14 @@ class LookupCog(commands.Cog, name='Lookup'):
     # List all known scripts
     @commands.command(name='listScripts', aliases=['listscripts'], help=f'List all the scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}listScripts')
     async def list_scripts(self, ctx):
-        await self.perform_action_reporting_errors(self.lookup.list_scripts, ctx)
+        await self.perform_control_channel_action_reporting_errors(self.lookup.list_scripts, ctx)
+        
+    async def perform_control_channel_action_reporting_errors(self, action, ctx):
+        town_info = self.bot.getTownInfo(ctx)
+        if town_info:
+            await  self.perform_action_reporting_errors(action, ctx)
+        else:
+            await ctx.send('This action can only be performed from a town control channel.')
 
     async def perform_action_reporting_errors(self, action, ctx):
         try:
@@ -1302,5 +1310,5 @@ class LookupCog(commands.Cog, name='Lookup'):
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
-bot.add_cog(LookupCog(db))
+bot.add_cog(LookupCog(bot, db))
 bot.run(TOKEN)
