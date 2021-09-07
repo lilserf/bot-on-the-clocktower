@@ -27,13 +27,14 @@ class LookupRole:
         return c
 
     def get_formatted_script_list(self):
-
         scripts = list()
         for si in self.scriptInfos:
-            (label, link) = si.get_almanac_or_wiki_link(self.name)
             val = f'{si.tostring()}'
+            (label, link) = si.get_almanac_or_wiki_link(self.name)
             if link != None:
-                val += f' - [{label}]({link})'
+                if len(val) > 0:
+                    val += ' - '
+                val += f'[{label}]({link})'
             scripts.append(val)
         return "\n".join(scripts)
 
@@ -52,7 +53,14 @@ class ScriptInfo:
         self.is_official = is_official
 
     def tostring(self):
-        return f'{self.name} by {self.author}'
+        str = ''
+        if self.name:
+            str += self.name
+            if self.author:
+                str += ' '
+        if self.author:
+            str += f'by {self.author}'
+        return str
 
     def get_almanac_or_wiki_link(self, roleName):
         if self.is_official:
@@ -117,10 +125,14 @@ class LookupRoleParser:
 
         for json in script:
             thisScriptInfo = scriptInfo
-            if not thisScriptInfo and is_official and 'edition' in json:
-                edition = json['edition']
-                if official_editions and edition in official_editions:
-                    thisScriptInfo = official_editions[edition]
+            if not thisScriptInfo and is_official:
+               if 'edition' in json:
+                    edition = json['edition']
+                    if official_editions and edition in official_editions:
+                        thisScriptInfo = official_editions[edition]
+               else:
+                   # not sure where this is from, stub official script info
+                   thisScriptInfo = ScriptInfo(None, None, None, True)
 
             role = self.create_role_from_json(json, thisScriptInfo)
             if role != None:
@@ -267,7 +279,10 @@ class LookupImpl:
         self.official_editions = None
         self.official_edition_urls = ['https://raw.githubusercontent.com/bra1n/townsquare/develop/src/editions.json']
         self.official_roles = None
-        self.official_role_urls = ['https://raw.githubusercontent.com/bra1n/townsquare/develop/src/roles.json']
+        self.official_role_urls = [
+            'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/roles.json',
+            'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/fabled.json',
+            ]
 
     async def refresh_roles_for_server(self, server_token):
         urls = self.data.get_script_urls(server_token)
@@ -389,12 +404,14 @@ class Lookup:
             color = discord.Color.from_rgb(32, 100, 252)
             if role.team == 'outsider':
                 color = discord.Color.from_rgb(69, 209, 251)
-            if role.team == 'minion':
+            elif role.team == 'minion':
                 color = discord.Color.from_rgb(251, 103, 0)
-            if role.team == 'demon':
+            elif role.team == 'demon':
                 color = discord.Color.from_rgb(203, 1, 0)
-            if role.team == 'traveler':
+            elif role.team == 'traveler':
                 color = discord.Color.purple()
+            elif role.team == 'fabled':
+                color = discord.Color.from_rgb(248, 227, 30)
 
             team = f'{role.team.capitalize()}'
             embed = discord.Embed(title=f'{role.name}', description=team, color=color)
