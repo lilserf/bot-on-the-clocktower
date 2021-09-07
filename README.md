@@ -236,6 +236,40 @@ The opposite of `!addTown` - when run in the control channel for a town, removes
 
 Informs the bot about what your chat channel is. This is needed to use the `!voteTimer` command, as the bot periodically informs villagers how much time they have before the vote.
 
+
+---
+
+## Lookup Command Details
+
+### `!character <character name>`
+
+Looks up a character by name. Official characters provided by https://clocktower.online/ are supported.
+
+If custom characters are desired, see the `!addScript` command.
+
+### `!addScript <script json url>`
+
+Informs the bot about a custom script using its json, collecting any custom characters in it.
+The script is only used by your Discord server; other servers will not see your custom characters.
+
+Some extra features are available if they are provided your script json.
+* If `_meta` section has an `almanac` property, a link to the script almanac will be provided.
+* If the character json has a `flavor` property, this will be included.
+
+These features are all supported by script publishing from https://www.bloodstar.xyz/
+
+### `!removeScript <script json url>`
+
+Tells the bot to forget about a custom script url.
+
+### `listScripts`
+
+Lists all scripts the bot knows about for your server.
+
+### `refreshScripts`
+
+Forces a refresh on all the custom scripts known. This is useful if you publish a new script and want to see the changes immediately. Otherwise, the bot will automatically refresh daily. 
+
 ---
 
 ## Support

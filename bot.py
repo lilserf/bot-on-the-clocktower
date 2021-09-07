@@ -15,6 +15,7 @@ import traceback
 
 import votetimer
 import announce
+import lookup
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -1253,6 +1254,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         if g_dbActiveGames.count_documents({}) == 0:
             print("No remaining active games, stopping checks")
             self.cleanupInactiveGames.stop()
+
     
     @cleanupInactiveGames.before_loop
     async def beforecleanupInactiveGames(self):
@@ -1277,8 +1279,48 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
 
+class LookupCog(commands.Cog, name='Lookup'):
+    def __init__(self, db):
+        self.lookup = lookup.Lookup(db)
+
+    # Perform a role lookup
+    @commands.command(name='character', aliases=['role', 'char'], help=f'Look up a character by name.\n\nUsage: {COMMAND_PREFIX}character <character name>')
+    async def role_lookup(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.role_lookup, ctx)
+
+    # Add a script url
+    @commands.command(name='addScript', aliases=['addscript'], help=f'Add a script by its json.\n\nUsage: {COMMAND_PREFIX}addScript <url to json>')
+    async def add_script(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.add_script, ctx)
+
+    # Remove a script url
+    @commands.command(name='removeScript', aliases=['removescript'], help=f'Remove a script by its json.\n\nUsage: {COMMAND_PREFIX}removeScript <url to json>')
+    async def remove_script(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.remove_script, ctx)
+
+    # Refresh the list of scripts
+    @commands.command(name='refreshScripts', aliases=['refreshscripts'], help=f'Refresh all scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}refreshScripts')
+    async def refresh_scripts(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.refresh_scripts, ctx)
+
+    # List all known scripts
+    @commands.command(name='listScripts', aliases=['listscripts'], help=f'List all the scripts added via {COMMAND_PREFIX}addScript.\n\nUsage: {COMMAND_PREFIX}listScripts')
+    async def list_scripts(self, ctx):
+        await self.perform_action_reporting_errors(self.lookup.list_scripts, ctx)
+
+    async def perform_action_reporting_errors(self, action, ctx):
+        try:
+            message = await action(ctx)
+            if message != None:
+                await ctx.send(message)
+
+        except Exception as ex:
+            await ctx.bot.sendErrorToAuthor(ctx)
+
+
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
 bot.add_cog(AnnouncerCog(bot))
+bot.add_cog(LookupCog(db))
 bot.run(TOKEN)
