@@ -383,7 +383,8 @@ class Lookup:
         self.impl = LookupImpl(LookupRoleDatabase(db), LookupRoleDownloader())
 
     def find_role_from_message_content(self, content):
-        return " ".join(shlex.split(content)[1:])
+        sanitized = content.replace('\'', '').replace('"', '')
+        return ' '.join(shlex.split(sanitized)[1:])
 
     async def role_lookup(self, ctx):
         server_token = ctx.guild.id
@@ -454,7 +455,7 @@ class Lookup:
 
             if role.has_script_info():
                 scripts = role.get_formatted_script_list()
-                embed.add_field(name='Scripts', value=scripts, inline=False)
+                embed.add_field(name='Found In', value=scripts, inline=False)
             
             if role.image != None:
                 embed.set_thumbnail(url=role.image)
