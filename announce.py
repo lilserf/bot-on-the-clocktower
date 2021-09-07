@@ -63,8 +63,8 @@ class AnnouncerImpl:
 		self.sender = sender
 
 	def guild_no_announce(self, guild):
-		hugeCrazyVersion = (999,0,0)
-		self.db.record_guild_seen_version(guild, hugeCrazyVersion)
+		impossiblyLargeVersion = (999999,0,0)
+		self.db.record_guild_seen_version(guild, impossiblyLargeVersion)
 
 	async def announce_latest_version(self):
 		guilds = self.guildDb.get_guilds()
