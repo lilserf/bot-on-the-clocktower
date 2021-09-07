@@ -109,8 +109,8 @@ class TestLookups(unittest.TestCase):
     def test_lookuprole_merging(self):
         merger = lookup.LookupRoleMerger()
 
-        role1 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image1', 'flavor1', lookup.ScriptInfo('script1', 'author1', 'scriptimage1', False))
-        role2 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image2', 'flavor2', lookup.ScriptInfo('script2', 'author2', 'scriptimage2', False))
+        role1 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image1', 'flavor1', lookup.ScriptInfo('script1', 'author1', 'scriptimage1', None, False))
+        role2 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image2', 'flavor2', lookup.ScriptInfo('script2', 'author2', 'scriptimage2', None, False))
 
         merged = {}
         merger.add_to_merged_dict(role1, merged)
@@ -126,12 +126,12 @@ class TestLookups(unittest.TestCase):
         merger = lookup.LookupRoleMerger()
 
         off_merged = {}
-        role_official = lookup.LookupRole('somename', 'ability', 'townsfolk', 'official_role_image', 'flavor', lookup.ScriptInfo('official', 'official_author', 'official_image', True))
+        role_official = lookup.LookupRole('somename', 'ability', 'townsfolk', 'official_role_image', 'flavor', lookup.ScriptInfo('official', 'official_author', 'official_image', None, True))
         merger.add_to_merged_dict(role_official, off_merged)
 
         unoff_merged = {}
-        role_unofficial_1 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_1', 'flavor1', lookup.ScriptInfo('unofficial_1', 'unofficial_author_1', 'unofficial_image_1', False))
-        role_unofficial_2 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_2', 'flavor2', lookup.ScriptInfo('unofficial_2', 'unofficial_author_2', 'unofficial_image_2', False))
+        role_unofficial_1 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_1', 'flavor1', lookup.ScriptInfo('unofficial_1', 'unofficial_author_1', 'unofficial_image_1', None, False))
+        role_unofficial_2 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_2', 'flavor2', lookup.ScriptInfo('unofficial_2', 'unofficial_author_2', 'unofficial_image_2', None, False))
         merger.add_to_merged_dict(role_unofficial_1, unoff_merged)
         merger.add_to_merged_dict(role_unofficial_2, unoff_merged)
 

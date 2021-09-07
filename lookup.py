@@ -7,6 +7,14 @@ import shlex
 import discord
 import urllib
 
+class BotcWiki:
+    def create_wiki_url(name):
+        words = name.split(' ')
+        map(lambda x: x.capitalize(), words)
+        final = "_".join(words)
+        final = urllib.parse.quote(final)
+        return f'https://bloodontheclocktower.com/wiki/{final}'
+
 class LookupRole:
     def matches_other(self, other):
         return self.name == other.name and self.team == other.team and self.ability == other.ability
@@ -30,7 +38,7 @@ class LookupRole:
         scripts = list()
         for si in self.scriptInfos:
             val = f'{si.tostring()}'
-            (label, link) = si.get_almanac_or_wiki_link(self.name)
+            (label, link) = si.get_role_link(self.name)
             if link != None:
                 if len(val) > 0:
                     val += ' - '
@@ -46,29 +54,37 @@ class LookupRole:
         
 
 class ScriptInfo:
-    def __init__(self, name, author, img, is_official):
+    def __init__(self, name, author, img, almanac_link, is_official):
         self.name = name
         self.author = author
         self.image = img
+        self.almanac_link = almanac_link
         self.is_official = is_official
 
     def tostring(self):
         str = ''
         if self.name:
-            str += self.name
+            (label, link) = self.get_almanac_link()
+            if link:
+                str += f'[{label}]({link})'
+            else:
+                str += self.name
             if self.author:
                 str += ' '
         if self.author:
             str += f'by {self.author}'
         return str
 
-    def get_almanac_or_wiki_link(self, roleName):
+    def get_almanac_link(self):
+        if self.almanac_link:
+            return (self.name, self.almanac_link)
+        else:
+            return (None, None)
+
+    def get_role_link(self, roleName):
         if self.is_official:
-            words = roleName.split(' ')
-            map(lambda x: x.capitalize(), words)
-            final = "_".join(words)
-            final = urllib.parse.quote(final)
-            return ('Wiki', f'https://bloodontheclocktower.com/wiki/{final}')
+            url = BotcWiki.create_wiki_url(roleName)
+            return ('Wiki', url)
         else:
             #TODO resolve almanacs from Bloodstar json
             return (None, None)
@@ -120,7 +136,12 @@ class LookupRoleParser:
 
         for json in script:
             if json["id"] == "_meta":
-                scriptInfo = ScriptInfo('name' in json and json["name"] or None, 'author' in json and json["author"] or None, 'logo' in json and json["logo"] or None, is_official)
+                scriptInfo = ScriptInfo(
+                    'name' in json and json['name'] or None,
+                    'author' in json and json['author'] or None,
+                    'logo' in json and json['logo'] or None,
+                    'almanac' in json and json['almanac'] or None,
+                    is_official)
                 break
 
         for json in script:
@@ -132,7 +153,7 @@ class LookupRoleParser:
                         thisScriptInfo = official_editions[edition]
                else:
                    # not sure where this is from, stub official script info
-                   thisScriptInfo = ScriptInfo(None, None, None, True)
+                   thisScriptInfo = ScriptInfo(None, None, None, None, True)
 
             role = self.create_role_from_json(json, thisScriptInfo)
             if role != None:
@@ -343,7 +364,8 @@ class LookupImpl:
             name = ed_json['name']
             author = ed_json['author']
             is_official = ed_json['isOfficial']
-            self.official_editions[id] = ScriptInfo(name, author, None, is_official)
+            almanac_link = BotcWiki.create_wiki_url(name)
+            self.official_editions[id] = ScriptInfo(name, author, None, almanac_link, is_official)
 
 
 # Concrete class for use by the Cog
