@@ -19,26 +19,26 @@ class LookupRole:
     def matches_other(self, other):
         return self.name == other.name and self.team == other.team and self.ability == other.ability
 
-    def __init__(self, name, ability, team, image, flavor, scriptInfo=None):
+    def __init__(self, name, ability, team, image, flavor, roles_in_script_info=None):
         self.name = name
         self.team = team
         self.ability = ability
         self.image = image
         self.flavor = flavor
-        self.scriptInfos = list()
-        if scriptInfo:
-            self.scriptInfos.append(scriptInfo)
+        self.roles_in_script_infos = list()
+        if roles_in_script_info:
+            self.roles_in_script_infos.append(roles_in_script_info)
             
     def clone(self):
         c = LookupRole(self.name, self.ability, self.team, self.image, self.flavor)
-        c.scriptInfos.extend(self.scriptInfos)
+        c.roles_in_script_infos.extend(self.roles_in_script_infos)
         return c
 
     def get_formatted_script_list(self):
         scripts = list()
-        for si in self.scriptInfos:
-            val = f'{si.tostring()}'
-            (label, link) = si.get_role_link(self.name)
+        for rsi in self.roles_in_script_infos:
+            val = f'{rsi.script_info.tostring()}'
+            (label, link) = rsi.get_role_link(self.name)
             if link != None:
                 if len(val) > 0:
                     val += ' - '
@@ -47,11 +47,26 @@ class LookupRole:
         return "\n".join(scripts)
 
     def has_script_info(self):
-        return len(self.scriptInfos) > 0
+        return len(self.roles_in_script_infos) > 0
 
     def merge_script_infos(self, other):
-        self.scriptInfos.extend(other.scriptInfos)
-        
+        self.roles_in_script_infos.extend(other.roles_in_script_infos)
+
+class RoleInScriptInfo:
+    def __init__(self, id, script_info):
+        self.id = id
+        self.script_info = script_info
+
+    def get_role_link(self, role_name):
+        if self.script_info.is_official:
+            url = BotcWiki.create_wiki_url(role_name)
+            return ('Wiki', url)
+        elif self.script_info.almanac_link:
+            # Bloodstar Clocktica Almanac - put #roleid after almanac link
+            if self.script_info.almanac_link.startswith('https://www.bloodstar.xyz/'):
+                return ('Almanac', f'{self.script_info.almanac_link}#{self.id}')
+        return (None, None)
+
 
 class ScriptInfo:
     def __init__(self, name, author, img, almanac_link, is_official):
@@ -79,14 +94,6 @@ class ScriptInfo:
         if self.almanac_link:
             return (self.name, self.almanac_link)
         else:
-            return (None, None)
-
-    def get_role_link(self, roleName):
-        if self.is_official:
-            url = BotcWiki.create_wiki_url(roleName)
-            return ('Wiki', url)
-        else:
-            #TODO resolve almanacs from Bloodstar json
             return (None, None)
 
 
@@ -123,11 +130,13 @@ class LookupRoleParser:
             ability = 'ability' in json and json['ability'] or None
             flavor = 'flavor' in json and json['flavor'] or None
             image = 'image' in json and urllib.parse.quote(json['image'], safe='/:') or None
+            id = 'id' in json and json['id'] or None
             if not image and scriptInfo and scriptInfo.is_official:
-                id = 'id' in json and json['id']
                 if id:
                     image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{id}.png'
-            return LookupRole(name, ability, team, image, flavor, scriptInfo)
+            
+            role_in_script_info = RoleInScriptInfo(id, scriptInfo)
+            return LookupRole(name, ability, team, image, flavor, role_in_script_info)
         return None
 
     def collect_roles_for_script_json(self, script, roles, is_official, official_editions):

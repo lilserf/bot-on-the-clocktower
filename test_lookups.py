@@ -109,8 +109,8 @@ class TestLookups(unittest.TestCase):
     def test_lookuprole_merging(self):
         merger = lookup.LookupRoleMerger()
 
-        role1 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image1', 'flavor1', lookup.ScriptInfo('script1', 'author1', 'scriptimage1', None, False))
-        role2 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image2', 'flavor2', lookup.ScriptInfo('script2', 'author2', 'scriptimage2', None, False))
+        role1 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image1', 'flavor1', lookup.RoleInScriptInfo('id1', lookup.ScriptInfo('script1', 'author1', 'scriptimage1', None, False)))
+        role2 = lookup.LookupRole('somename', 'ability1', 'townsfolk', 'image2', 'flavor2', lookup.RoleInScriptInfo('id2', lookup.ScriptInfo('script2', 'author2', 'scriptimage2', None, False)))
 
         merged = {}
         merger.add_to_merged_dict(role1, merged)
@@ -118,7 +118,7 @@ class TestLookups(unittest.TestCase):
 
         self.assertEqual(1, len(merged.keys()))
         self.assertEqual(1, len(merged[role1.name]))
-        self.assertEqual(2, len(merged[role1.name][0].scriptInfos))
+        self.assertEqual(2, len(merged[role1.name][0].roles_in_script_infos))
         self.assertNotEqual(role1, merged[role1.name][0], 'after merging, LookupRole should be unique object to not pollute main data')
         self.assertNotEqual(role2, merged[role1.name][0], 'after merging, LookupRole should be unique object to not pollute main data')
         
@@ -126,12 +126,12 @@ class TestLookups(unittest.TestCase):
         merger = lookup.LookupRoleMerger()
 
         off_merged = {}
-        role_official = lookup.LookupRole('somename', 'ability', 'townsfolk', 'official_role_image', 'flavor', lookup.ScriptInfo('official', 'official_author', 'official_image', None, True))
+        role_official = lookup.LookupRole('somename', 'ability', 'townsfolk', 'official_role_image', 'flavor', lookup.RoleInScriptInfo('ido', lookup.ScriptInfo('official', 'official_author', 'official_image', None, True)))
         merger.add_to_merged_dict(role_official, off_merged)
 
         unoff_merged = {}
-        role_unofficial_1 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_1', 'flavor1', lookup.ScriptInfo('unofficial_1', 'unofficial_author_1', 'unofficial_image_1', None, False))
-        role_unofficial_2 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_2', 'flavor2', lookup.ScriptInfo('unofficial_2', 'unofficial_author_2', 'unofficial_image_2', None, False))
+        role_unofficial_1 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_1', 'flavor1', lookup.RoleInScriptInfo('idu1', lookup.ScriptInfo('unofficial_1', 'unofficial_author_1', 'unofficial_image_1', None, False)))
+        role_unofficial_2 = lookup.LookupRole('somename', 'ability', 'townsfolk', 'unofficial_role_image_2', 'flavor2', lookup.RoleInScriptInfo('idu2', lookup.ScriptInfo('unofficial_2', 'unofficial_author_2', 'unofficial_image_2', None, False)))
         merger.add_to_merged_dict(role_unofficial_1, unoff_merged)
         merger.add_to_merged_dict(role_unofficial_2, unoff_merged)
 
@@ -140,14 +140,23 @@ class TestLookups(unittest.TestCase):
 
         self.assertEqual(1, len(ret))
         found_main_role = ret[0]
-        self.assertEqual(3, len(found_main_role.scriptInfos))
+        self.assertEqual(3, len(found_main_role.roles_in_script_infos))
         self.assertEqual('somename', found_main_role.name)
         self.assertEqual('ability', found_main_role.ability)
         self.assertEqual('townsfolk', found_main_role.team)
         self.assertEqual('official_role_image', found_main_role.image)
-        self.assertEqual('official', found_main_role.scriptInfos[0].name)
-        self.assertEqual('official_author', found_main_role.scriptInfos[0].author)
-        self.assertEqual('official_image', found_main_role.scriptInfos[0].image)
+        self.assertEqual('ido', found_main_role.roles_in_script_infos[0].id)
+        self.assertEqual('official', found_main_role.roles_in_script_infos[0].script_info.name)
+        self.assertEqual('official_author', found_main_role.roles_in_script_infos[0].script_info.author)
+        self.assertEqual('official_image', found_main_role.roles_in_script_infos[0].script_info.image)
+        self.assertEqual('idu1', found_main_role.roles_in_script_infos[1].id)
+        self.assertEqual('unofficial_1', found_main_role.roles_in_script_infos[1].script_info.name)
+        self.assertEqual('unofficial_author_1', found_main_role.roles_in_script_infos[1].script_info.author)
+        self.assertEqual('unofficial_image_1', found_main_role.roles_in_script_infos[1].script_info.image)
+        self.assertEqual('idu2', found_main_role.roles_in_script_infos[2].id)
+        self.assertEqual('unofficial_2', found_main_role.roles_in_script_infos[2].script_info.name)
+        self.assertEqual('unofficial_author_2', found_main_role.roles_in_script_infos[2].script_info.author)
+        self.assertEqual('unofficial_image_2', found_main_role.roles_in_script_infos[2].script_info.image)
 
 
 class TestLookupImpl(unittest.IsolatedAsyncioTestCase):
