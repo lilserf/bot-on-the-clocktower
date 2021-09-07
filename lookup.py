@@ -506,8 +506,8 @@ class Lookup:
         server_token = ctx.guild.id
         scripts = self.impl.get_script_urls(server_token)
         if scripts and len(scripts) > 0:
-            scripts_str = "\n * ".join(scripts)
-            return f'The following scripts are known for this server:\n * {scripts_str}'
+            scripts_str = "\n \u2022 ".join(scripts)
+            return f'The following scripts are known for this server:\n \u2022 {scripts_str}'
         return 'No scripts are known. Try adding some!'
 
     async def send_role(self, ctx, roles):
