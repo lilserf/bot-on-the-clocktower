@@ -165,11 +165,13 @@ class botcBot(commands.Bot):
             traceback.print_exc()
         await ctx.author.send(f"Alas, an error has occurred:\n{formatted}\n(from message `{ctx.message.content}`)")
 
+    def get_announce_cog(self):
+        return self.get_cog('Version Announcements')
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
         print('Sending version announcements...')
-        announcer = self.get_cog('Version Announcements')
+        announcer = self.get_announce_cog()
         num_sent = await announcer.announce_latest_version()
         print(f'Sent announcements to {num_sent} towns.')
 
@@ -182,6 +184,9 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
     async def announce_latest_version(self):
         return await self.announcer.announce_latest_version()
     
+    def set_to_latest_version(self, guild_id):
+        self.announcer.set_to_latest_version(guild_id)
+
     @commands.command(name='noannounce', help='Opt out of new version announcement messages')
     async def optOut(self, ctx):
         try:
@@ -195,6 +200,9 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
 class SetupCog(commands.Cog, name='Setup'):
     def __init__(self, bot):
         self.bot = bot
+
+    def setToLatestVersion(self, guild):
+        self.bot.get_announce_cog().set_to_latest_version(guild)
 
     @commands.command(name='townInfo', aliases=['towninfo'], help='Show the stored info about the channels and roles that make up this town')
     async def townInfo(self, ctx):
@@ -210,6 +218,8 @@ class SetupCog(commands.Cog, name='Setup'):
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
         guild = ctx.guild
         
+        self.setToLatestVersion(guild.id)
+
         # Check if a town already exists
         query = { 
             "guild" : post["guild"],

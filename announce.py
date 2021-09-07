@@ -66,6 +66,11 @@ class AnnouncerImpl:
 		impossiblyLargeVersion = (999999,0,0)
 		self.db.record_guild_seen_version(guild, impossiblyLargeVersion)
 
+	def set_to_latest_version(self, guild):
+		versions = self.provider.get_versions_and_embeds()
+		(latest_version, _) = list(versions.items())[-1]
+		self.db.record_guild_seen_version(guild, latest_version)
+
 	async def announce_latest_version(self):
 		guilds = self.guildDb.get_guilds()
 		numSent = 0
@@ -95,6 +100,9 @@ class Announcer:
 		sender = AnnouncerMessageSenderImpl(bot, mongo)
 
 		self.impl = AnnouncerImpl(db, guildDb, provider, sender)
+
+	def set_to_latest_version(self, guild):
+		self.impl.set_to_latest_version(guild)
 
 	def guild_no_announce(self, guild):
 		self.impl.guild_no_announce(guild)
