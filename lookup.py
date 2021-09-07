@@ -11,17 +11,18 @@ class LookupRole:
     def matches_other(self, other):
         return self.name == other.name and self.team == other.team and self.ability == other.ability
 
-    def __init__(self, name, ability, team, image, scriptInfo=None):
+    def __init__(self, name, ability, team, image, flavor, scriptInfo=None):
         self.name = name
         self.team = team
         self.ability = ability
         self.image = image
+        self.flavor = flavor
         self.scriptInfos = list()
         if scriptInfo:
             self.scriptInfos.append(scriptInfo)
             
     def clone(self):
-        c = LookupRole(self.name, self.ability, self.team, self.image)
+        c = LookupRole(self.name, self.ability, self.team, self.image, self.flavor)
         c.scriptInfos.extend(self.scriptInfos)
         return c
 
@@ -96,12 +97,13 @@ class LookupRoleParser:
             name = 'name' in json and json['name'] or None
             team = 'team' in json and json['team'] or None
             ability = 'ability' in json and json['ability'] or None
+            flavor = 'flavor' in json and json['flavor'] or None
             image = 'image' in json and urllib.parse.quote(json['image'], safe='/:') or None
             if not image and scriptInfo and scriptInfo.is_official:
                 id = 'id' in json and json['id']
                 if id:
                     image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{id}.png'
-            return LookupRole(name, ability, team, image, scriptInfo)
+            return LookupRole(name, ability, team, image, flavor, scriptInfo)
         return None
 
     def collect_roles_for_script_json(self, script, roles, is_official, official_editions):
@@ -394,9 +396,13 @@ class Lookup:
             if role.team == 'traveler':
                 color = discord.Color.purple()
 
-            embed = discord.Embed(title=f'{role.name}', description=f'{role.ability}', color=color)
             team = f'{role.team.capitalize()}'
-            embed.set_footer(text=team)
+            embed = discord.Embed(title=f'{role.name}', description=team, color=color)
+
+            embed.add_field(name='Ability', value=role.ability, inline=False)
+
+            if role.flavor:
+                embed.set_footer(text=role.flavor)
 
             if role.has_script_info():
                 scripts = role.get_formatted_script_list()
