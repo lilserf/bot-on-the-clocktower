@@ -62,6 +62,10 @@ class AnnouncerImpl:
 		self.provider = provider
 		self.sender = sender
 
+	def guild_no_announce(self, guild):
+		hugeCrazyVersion = (999,0,0)
+		self.db.record_guild_seen_version(guild, hugeCrazyVersion)
+
 	async def announce_latest_version(self):
 		guilds = self.guildDb.get_guilds()
 		numSent = 0
@@ -87,6 +91,9 @@ class Announcer:
 		sender = AnnouncerMessageSenderImpl(bot, mongo)
 
 		self.announcer = AnnouncerImpl(db, guildDb, provider, sender)
+
+	def guild_no_announce(self, guild):
+		self.announcer.guild_no_announce(guild)
 
 	async def announce_latest_version(self):
 		return await self.announcer.announce_latest_version()
