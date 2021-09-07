@@ -262,11 +262,11 @@ These features are all supported by script publishing from https://www.bloodstar
 
 Tells the bot to forget about a custom script url.
 
-### `listScripts`
+### `!listScripts`
 
 Lists all scripts the bot knows about for your server.
 
-### `refreshScripts`
+### `!refreshScripts`
 
 Forces a refresh on all the custom scripts known. This is useful if you publish a new script and want to see the changes immediately. Otherwise, the bot will automatically refresh daily. 
 
