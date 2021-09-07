@@ -184,8 +184,12 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
     
     @commands.command(name='noannounce', help='Opt out of new version announcement messages')
     async def optOut(self, ctx):
-        self.announcer.guild_no_announce(ctx.guild.id)
-        await ctx.send('This server should no longer receive new version announcement messages.')
+        try:
+            self.announcer.guild_no_announce(ctx.guild.id)
+            await ctx.send('This server should no longer receive new version announcement messages.')
+        except Exception as ex:
+            await ctx.bot.sendErrorToAuthor(ctx)
+
 
 # Setup cog
 class SetupCog(commands.Cog, name='Setup'):
