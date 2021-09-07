@@ -127,7 +127,7 @@ class LookupRoleParser:
     def is_valid_role_json(self, json):
         return json != None and isinstance(json, dict) and 'id' in json and json['id'] != '_meta' and 'name' in json and 'team' in json and 'ability' in json
 
-    def create_role_from_json(self, json, scriptInfo):
+    def create_role_from_json(self, json, script_infos):
         if self.is_valid_role_json(json):
             name = 'name' in json and json['name'] or None
             team = 'team' in json and json['team'] or None
@@ -135,20 +135,30 @@ class LookupRoleParser:
             flavor = 'flavor' in json and json['flavor'] or None
             image = 'image' in json and urllib.parse.quote(json['image'], safe='/:') or None
             id = 'id' in json and json['id'] or None
-            if not image and scriptInfo and scriptInfo.is_official:
+
+            if not image and script_infos and len(script_infos) > 0 and script_infos[0].is_official:
                 if id:
                     image = f'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/assets/icons/{id}.png'
             
-            role_in_script_info = RoleInScriptInfo(id, scriptInfo)
-            return LookupRole(name, ability, team, image, flavor, role_in_script_info)
+            ret = None
+            if script_infos and len(script_infos) > 0:
+                for si in script_infos:
+                    this_role = LookupRole(name, ability, team, image, flavor, RoleInScriptInfo(id, si))
+                    if ret:
+                        ret.merge_script_infos(this_role)
+                    else:
+                        ret = this_role
+            else:
+                ret = LookupRole(name, ability, team, image, flavor, RoleInScriptInfo(id, None))
+            return ret
         return None
 
-    def collect_roles_for_script_json(self, script, roles, is_official, official_editions):
+    def collect_roles_for_script_json(self, script, roles, is_official, official_provider):
         
         scriptInfo = None
 
         for json in script:
-            if json["id"] == "_meta":
+            if 'id' in json and json['id'] == "_meta":
                 scriptInfo = ScriptInfo(
                     'name' in json and json['name'] or None,
                     'author' in json and json['author'] or None,
@@ -158,33 +168,45 @@ class LookupRoleParser:
                 break
 
         for json in script:
-            thisScriptInfo = scriptInfo
-            if not thisScriptInfo and is_official:
-               if 'edition' in json:
+            all_script_infos = []
+            if scriptInfo:
+                all_script_infos = [scriptInfo]
+            if not scriptInfo and is_official:
+                official_editions = official_provider.get_official_editions()
+                if 'edition' in json and len(json['edition']) > 0:
                     edition = json['edition']
                     if official_editions and edition in official_editions:
-                        thisScriptInfo = official_editions[edition]
-               else:
-                   # not sure where this is from, stub official script info
-                   thisScriptInfo = ScriptInfo(None, None, None, None, True)
+                        all_script_infos = [official_editions[edition]]
+                else:
+                    if 'id' in json:
+                        id = json['id']
+                        all_script_infos = official_provider.get_script_infos_for_role_id(id)
+                    if not all_script_infos:
+                        all_script_infos = [ScriptInfo(None, None, None, None, True)]
 
-            role = self.create_role_from_json(json, thisScriptInfo)
+            role = None
+            if len(all_script_infos) > 0:
+                role = self.create_role_from_json(json, all_script_infos)
+            else:
+                role = self.create_role_from_json(json, None)
             if role != None:
                  self.merger.add_to_merged_dict(role, roles)
 
-    def merge_roles_from_json(self, json, roles, are_official, official_editions):
+    def merge_roles_from_json(self, json, roles, are_official, official_provider):
         for script in json:
             if isinstance(script, list):
-                self.collect_roles_for_script_json(script, roles, are_official, official_editions)
+                self.collect_roles_for_script_json(script, roles, are_official, official_provider)
 
-    def collect_roles_from_json(self, json, are_official, official_editions=None):
+    # TODO: There is a gross circular dependency here between the collection and the offical provider.
+    # Gotta figure out the right way to fix that up.
+    def collect_roles_from_json(self, json, are_official, official_provider):
         roles = {}
-        self.merge_roles_from_json(json, roles, are_official, official_editions)
+        self.merge_roles_from_json(json, roles, are_official, official_provider)
         return roles
 
 
 class ILookupRoleDownloader:
-    async def collect_roles_from_urls(self, urls, are_official, official_editions=None):
+    async def fetch_urls(self, urls):
         pass
 
 class LookupRoleDownloader(ILookupRoleDownloader):
@@ -201,11 +223,6 @@ class LookupRoleDownloader(ILookupRoleDownloader):
         async with aiohttp.ClientSession() as session:
             tasks = [loop.create_task(self.fetch_url(url, session)) for url in urls]
             return await asyncio.gather(*tasks)
-
-    async def collect_roles_from_urls(self, urls, are_official, official_editions=None):
-        results = await self.fetch_urls(urls)
-        parser = LookupRoleParser()
-        return parser.collect_roles_from_json(results, are_official, official_editions)
 
 
 class LookupRoleServerData:
@@ -314,13 +331,20 @@ class IOfficialEditionProvider:
     def get_official_roles(self):
         return {}
 
+    def get_official_editions(self):
+        return {}
+
     def official_roles_need_refresh(self):
         return False
 
+    def get_script_infos_for_role_id(self, role_id):
+        return []
+
 
 class OfficialEditionProvider:
-    def __init__(self, downloader):
+    def __init__(self, downloader, role_parser):
         self.downloader = downloader
+        self.role_parser = role_parser
         self.last_official_refresh_time = None
         self.official_editions = None
         self.official_edition_urls = ['https://raw.githubusercontent.com/bra1n/townsquare/develop/src/editions.json']
@@ -329,6 +353,7 @@ class OfficialEditionProvider:
             'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/roles.json',
             'https://raw.githubusercontent.com/bra1n/townsquare/develop/src/fabled.json',
             ]
+        self.role_to_script_info_dict = {}
 
     async def refresh_official_roles_if_needed(self):
         if self.official_roles_need_refresh():
@@ -337,17 +362,28 @@ class OfficialEditionProvider:
     def get_official_roles(self):
         return self.official_roles
 
+    def get_official_editions(self):
+        return self.official_editions
+
+    def get_script_infos_for_role_id(self, role_id):
+        if role_id in self.role_to_script_info_dict:
+            return self.role_to_script_info_dict[role_id]
+        return []
+
     def official_roles_need_refresh(self):
         return not self.official_editions or not self.official_roles or not self.last_official_refresh_time or (datetime.datetime.now() - self.last_official_refresh_time) > datetime.timedelta(days=1)
 
     async def refresh_official_roles(self):
         self.last_official_refresh_time = datetime.datetime.now()
         await self.refresh_official_editions()
-        self.official_roles = await self.downloader.collect_roles_from_urls(self.official_role_urls, True, self.official_editions)
+        download_results = await self.downloader.fetch_urls(self.official_role_urls)
+        self.official_roles = self.role_parser.collect_roles_from_json(download_results, True, self)
 
     async def refresh_official_editions(self):
         edition_jsons = await self.downloader.fetch_urls(self.official_edition_urls)
         self.official_editions = {}
+        self.official_roles = {}
+        self.role_to_script_info_dict = {}
         for json in edition_jsons:
             if isinstance(json, list):
                 self.add_list_to_official_editions(json)
@@ -364,19 +400,32 @@ class OfficialEditionProvider:
             author = ed_json['author']
             is_official = ed_json['isOfficial']
             almanac_link = BotcWiki.create_wiki_url(name)
-            self.official_editions[id] = ScriptInfo(name, author, None, almanac_link, is_official)
+            script_info = ScriptInfo(name, author, None, almanac_link, is_official)
+            self.official_editions[id] = script_info
+
+            if 'roles' in ed_json:
+                roles = ed_json['roles']
+                for role_id in roles:
+                    if role_id in self.role_to_script_info_dict:
+                        self.role_to_script_info_dict[role_id].append(script_info)
+                    else:
+                        self.role_to_script_info_dict[role_id] = [script_info]
 
 
 class LookupImpl:
-    def __init__(self, lookup_role_data, official_provider, downloader):
+    def __init__(self, lookup_role_data, official_provider, downloader, role_parser):
         self.data = lookup_role_data
         self.official_provider = official_provider
         self.downloader = downloader
+        self.role_parser = role_parser
 
     async def refresh_roles_for_server(self, server_token):
         urls = self.data.get_script_urls(server_token)
         #TODO: exception(?) leading to message if roles empty - it can be returned
-        roles = await self.downloader.collect_roles_from_urls(urls, False)
+        download_results = await self.downloader.fetch_urls(urls)
+        roles = None
+        if download_results:
+            roles = self.role_parser.collect_roles_from_json(download_results, False, self.official_provider)
         self.data.update_server_role_data(server_token, roles)
 
     async def refresh_roles_for_server_if_needed(self, server_token):
@@ -409,11 +458,12 @@ class LookupImpl:
 # Concrete class for use by the Cog
 class Lookup:
     def __init__(self, db):
+        role_parser = LookupRoleParser()
         downloader = LookupRoleDownloader()
-        op = OfficialEditionProvider(downloader)
+        op = OfficialEditionProvider(downloader, role_parser)
         lrdb = LookupRoleDatabase(db)
         lrd = LookupRoleData(lrdb, op)
-        self.impl = LookupImpl(lrd, op, downloader)
+        self.impl = LookupImpl(lrd, op, downloader, role_parser)
 
     def find_role_from_message_content(self, content):
         sanitized = content.replace('\'', '').replace('"', '')

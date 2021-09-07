@@ -40,7 +40,7 @@ class TestLookups(unittest.TestCase):
         parser = lookup.LookupRoleParser()
 
         results_json = [[]]
-        roles = parser.collect_roles_from_json(results_json, False)
+        roles = parser.collect_roles_from_json(results_json, False, None)
 
         self.assertEqual(len(roles), 0, 'Expected 0 roles')
 
@@ -49,7 +49,7 @@ class TestLookups(unittest.TestCase):
         parser = lookup.LookupRoleParser()
 
         results_json = [[{'id':'role-id', 'name':'Has Name', 'ability':'has no team', 'image':'some image'}]]
-        roles = parser.collect_roles_from_json(results_json, False)
+        roles = parser.collect_roles_from_json(results_json, False, None)
 
         self.assertEqual(len(roles), 0, 'Expected 0 roles')
 
@@ -58,7 +58,7 @@ class TestLookups(unittest.TestCase):
         parser = lookup.LookupRoleParser()
 
         results_json = [[{'id':'role-id', 'name':'Has Name', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'}]]
-        roles = parser.collect_roles_from_json(results_json, False)
+        roles = parser.collect_roles_from_json(results_json, False, None)
 
         self.assertEqual(len(roles), 1, 'Expected 1 role')
 
@@ -71,7 +71,7 @@ class TestLookups(unittest.TestCase):
             {'id':'role-id-2', 'name':'Name 2', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             {'id':'role-id-3', 'name':'Name 3', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             ]]
-        roles = parser.collect_roles_from_json(results_json, False)
+        roles = parser.collect_roles_from_json(results_json, False, None)
 
         self.assertEqual(len(roles), 3, 'Expected 3 roles')
 
@@ -84,7 +84,7 @@ class TestLookups(unittest.TestCase):
             {'id':'role-id', 'name':'Name', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             {'id':'role-id', 'name':'Name', 'ability':'some ability', 'team':'Townsfolk', 'image':'some image'},
             ]]
-        roles = parser.collect_roles_from_json(results_json, False)
+        roles = parser.collect_roles_from_json(results_json, False, None)
 
         self.assertEqual(len(roles), 1, 'Expected 1 role')
 
@@ -202,10 +202,11 @@ class TestLookupImpl(unittest.IsolatedAsyncioTestCase):
         tdl = MockDownloader()
         top = MockOfficialProvider()
         lrd = lookup.LookupRoleData(MockDb(), top)
+        rp = lookup.LookupRoleParser()
 
         token = "thistokenisfake"
 
-        looker = lookup.LookupImpl(lrd, top, tdl)
+        looker = lookup.LookupImpl(lrd, top, tdl, rp)
         await looker.refresh_roles_for_server(token)
 
 
