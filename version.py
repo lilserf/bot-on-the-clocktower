@@ -1,6 +1,7 @@
 ﻿import discord
 
 class IVersionProvider:
+	# Should return a map where the keys are tuples like (2,0,0) for version 2.0.0 and the values are discord Embeds to display for those versions
 	def get_versions_and_embeds(self):
 		pass
 
