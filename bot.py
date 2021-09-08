@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import botctypes
 import datetime
 import discord
-import discordutil
+import discordhelper
 from discord.ext import commands, tasks
 import json
 from operator import itemgetter, attrgetter
@@ -166,7 +166,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='townInfo', aliases=['towninfo'], help='Show the stored info about the channels and roles that make up this town')
     async def townInfo(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             info = self.bot.getTownInfo(ctx)
 
             if info is not None:
@@ -176,7 +176,7 @@ class SetupCog(commands.Cog, name='Setup'):
     
     
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
         
             # Check if a town already exists
@@ -199,7 +199,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role> [chat channel]\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> [nightCategory=<night category>] stRole=<storyteller role> villagerRole=<villager role> [chatChannel=<chat channel>]')
     async def addTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             (post, info) = await self.resolveTownInfoParams(ctx, params)
@@ -212,7 +212,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='removeTown', aliases=['removetown'], help='Remove a game on this server')
     async def removeTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
 
             params = shlex.split(ctx.message.content)
@@ -239,7 +239,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='setChatChannel', help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
     async def set_chat_channel(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
         
             if len(params) != 2:
@@ -413,7 +413,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='createTown', aliases=['createtown'], help=f'Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: {COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]')
     async def createTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
@@ -576,12 +576,12 @@ class SetupCog(commands.Cog, name='Setup'):
                 await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
             except Exception as ex:
-                await discordutil.send_error_to_author(ctx)
+                await discordhelper.send_error_to_author(ctx)
 
     
     @commands.command(name='destroyTown', aliases=['destroytown'], help='Destroy everything created from the \'createTown\' command')
     async def destroyTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
@@ -723,7 +723,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
             
             except Exception as ex:
-                await discordutil.send_error_to_author(ctx)
+                await discordhelper.send_error_to_author(ctx)
 
 
     async def sendEmbed(self, ctx, townInfo):
@@ -832,7 +832,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             self.removeActiveGame(guild, ctx.channel)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Set the current storytellers
     @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
@@ -942,7 +942,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 self.cleanupInactiveGames.start()
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     def getUserName(self, user):
         name = user.display_name
@@ -977,7 +977,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         minions = params[2:]
 
         if len(minions) == 0:
-            await discordutil.send_error_to_author(ctx, f"It seems you forgot to specify any minions!")
+            await discordhelper.send_error_to_author(ctx, f"It seems you forgot to specify any minions!")
             return (False, None, None)
 
         # Get the users from the names
@@ -992,12 +992,12 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         # Error messages for users not found
         if demonUser is None:
-            await discordutil.send_error_to_author(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
+            await discordhelper.send_error_to_author(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
             return (False, None, None)
 
         for (i, m) in enumerate(minionUsers):
             if m is None:
-                await discordutil.send_error_to_author(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
+                await discordhelper.send_error_to_author(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
                 return (False, None, None)
 
         return (True, demonUser, minionUsers)
@@ -1027,7 +1027,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await self.sendDemonMessage(demonUser, minionUsers)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Command to send demon/minion info to the Demon and Minions
     @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
@@ -1061,7 +1061,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await ctx.send("The Evil team has been informed...")
                 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
@@ -1108,7 +1108,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await user.move_to(cottage)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move players from Cottages back to Town Square')
@@ -1141,7 +1141,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await user.move_to(info.townSquare)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     async def move_users_for_vote(self, town_info):
         # get users in day channels other than Town Square
@@ -1168,7 +1168,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await self.move_users_for_vote(info)
         
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     def recordGameActivity(self, guild, controlChan):
         post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
@@ -1255,7 +1255,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await ctx.send(message)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
 class LookupCog(commands.Cog, name='Lookup'):
     def __init__(self, bot, db):
@@ -1288,7 +1288,7 @@ class LookupCog(commands.Cog, name='Lookup'):
         await self.perform_control_channel_action_reporting_errors(self.lookup.list_scripts, ctx)
 
     async def perform_control_channel_action_reporting_errors(self, action, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             town_info = self.bot.getTownInfo(ctx)
             if town_info:
                 await  self.perform_action_reporting_errors_internal(action, ctx)
@@ -1296,7 +1296,7 @@ class LookupCog(commands.Cog, name='Lookup'):
                 await ctx.send('This action can only be performed from a town control channel.')
 
     async def perform_action_reporting_errors(self, action, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             await self.perform_action_reporting_errors_internal(action, ctx)
 
     async def perform_action_reporting_errors_internal(self, action, ctx):
@@ -1306,7 +1306,7 @@ class LookupCog(commands.Cog, name='Lookup'):
                 await ctx.send(message)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
 
 
