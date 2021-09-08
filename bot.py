@@ -155,16 +155,6 @@ class botcBot(commands.Bot):
             return TownInfo(guild, doc)
         else:
             return None
-    
-    # Helper to send a message to the author of the command about what they did wrong
-    async def sendErrorToAuthor(self, ctx, error=None):
-        if error is not None:
-            formatted = error
-        else:
-            formatted = '```\n' + traceback.format_exc(3) + '\n```'
-            traceback.print_exc()
-        await ctx.author.send(f"Alas, an error has occurred:\n{formatted}\n(from message `{ctx.message.content}`)")
-
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
@@ -586,7 +576,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
             except Exception as ex:
-                await self.bot.sendErrorToAuthor(ctx)
+                await discordutil.send_error_to_author(ctx)
 
     
     @commands.command(name='destroyTown', aliases=['destroytown'], help='Destroy everything created from the \'createTown\' command')
@@ -733,7 +723,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
             
             except Exception as ex:
-                await self.bot.sendErrorToAuthor(ctx)
+                await discordutil.send_error_to_author(ctx)
 
 
     async def sendEmbed(self, ctx, townInfo):
@@ -842,7 +832,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             self.removeActiveGame(guild, ctx.channel)
 
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     # Set the current storytellers
     @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
@@ -952,7 +942,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 self.cleanupInactiveGames.start()
 
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     def getUserName(self, user):
         name = user.display_name
@@ -987,7 +977,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         minions = params[2:]
 
         if len(minions) == 0:
-            await self.bot.sendErrorToAuthor(ctx, f"It seems you forgot to specify any minions!")
+            await discordutil.send_error_to_author(ctx, f"It seems you forgot to specify any minions!")
             return (False, None, None)
 
         # Get the users from the names
@@ -1002,12 +992,12 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         # Error messages for users not found
         if demonUser is None:
-            await self.bot.sendErrorToAuthor(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
+            await discordutil.send_error_to_author(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
             return (False, None, None)
 
         for (i, m) in enumerate(minionUsers):
             if m is None:
-                await self.bot.sendErrorToAuthor(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
+                await discordutil.send_error_to_author(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
                 return (False, None, None)
 
         return (True, demonUser, minionUsers)
@@ -1037,7 +1027,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await self.sendDemonMessage(demonUser, minionUsers)
 
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     # Command to send demon/minion info to the Demon and Minions
     @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
@@ -1071,7 +1061,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await ctx.send("The Evil team has been informed...")
                 
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
@@ -1118,7 +1108,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await user.move_to(cottage)
 
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move players from Cottages back to Town Square')
@@ -1151,7 +1141,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await user.move_to(info.townSquare)
 
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     async def move_users_for_vote(self, town_info):
         # get users in day channels other than Town Square
@@ -1178,7 +1168,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await self.move_users_for_vote(info)
         
         except Exception as ex:
-            await self.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
     def recordGameActivity(self, guild, controlChan):
         post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
@@ -1265,7 +1255,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await ctx.send(message)
 
         except Exception as ex:
-            await ctx.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
 class LookupCog(commands.Cog, name='Lookup'):
     def __init__(self, bot, db):
@@ -1316,7 +1306,7 @@ class LookupCog(commands.Cog, name='Lookup'):
                 await ctx.send(message)
 
         except Exception as ex:
-            await ctx.bot.sendErrorToAuthor(ctx)
+            await discordutil.send_error_to_author(ctx)
 
 
 
