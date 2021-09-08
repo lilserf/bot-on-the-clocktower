@@ -15,6 +15,7 @@ import shlex
 import traceback
 
 import votetimer
+import announce
 import lookup
 
 load_dotenv()
@@ -130,14 +131,61 @@ class botcBot(commands.Bot):
             return TownInfo(guild, doc)
         else:
             return None
+    def get_announce_cog(self):
+        return self.get_cog('Version Announcements')
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
+        print('Sending version announcements...')
+        announcer = self.get_announce_cog()
+        num_sent = await announcer.announce_latest_version()
+        print(f'Sent announcements to {num_sent} towns.')
+
+# Announcer cog
+class AnnouncerCog(commands.Cog, name='Version Announcements'):
+    def __init__(self, bot):
+        self.bot = bot;
+        self.announcer = announce.Announcer(bot, db)
+
+    async def announce_latest_version(self):
+        return await self.announcer.announce_latest_version()
+    
+    def set_to_latest_version(self, guild_id):
+        self.announcer.set_to_latest_version(guild_id)
+
+    @commands.command(name='announce', help='Opt into new version announcement messages')
+    async def optIn(self, ctx):
+        await self.perform_action_reporting_errors(self.optInInternal, ctx)
+
+    @commands.command(name='noannounce', help='Opt out of new version announcement messages')
+    async def optOut(self, ctx):
+        await self.perform_action_reporting_errors(self.optOutInternal, ctx)
+
+    async def optInInternal(self, ctx):
+        self.announcer.guild_yes_announce(ctx.guild.id)
+        return 'This server will now receive new version announcement messages.'
+
+    async def optOutInternal(self, ctx):
+        self.announcer.guild_no_announce(ctx.guild.id)
+        return 'This server should no longer receive new version announcement messages.'
+
+    async def perform_action_reporting_errors(self, action, ctx):
+        try:
+            message = await action(ctx)
+            if message != None:
+                await ctx.send(message)
+
+        except Exception as ex:
+            await discordutil.send_error_to_author(ctx)
+
 
 # Setup cog
 class SetupCog(commands.Cog, name='Setup'):
     def __init__(self, bot):
         self.bot = bot
+
+    def setToLatestVersion(self, guild):
+        self.bot.get_announce_cog().set_to_latest_version(guild)
 
     @commands.command(name='townInfo', aliases=['towninfo'], help='Show the stored info about the channels and roles that make up this town')
     async def townInfo(self, ctx):
@@ -154,6 +202,8 @@ class SetupCog(commands.Cog, name='Setup'):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
         
+        	self.setToLatestVersion(guild.id)
+
             # Check if a town already exists
             query = { 
                 "guild" : post["guild"],
@@ -1288,5 +1338,6 @@ class LookupCog(commands.Cog, name='Lookup'):
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
+bot.add_cog(AnnouncerCog(bot))
 bot.add_cog(LookupCog(bot, db))
 bot.run(TOKEN)

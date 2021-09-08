@@ -272,6 +272,21 @@ Forces a refresh on all the custom scripts known. This is useful if you publish 
 
 ---
 
+## Announcement Command Details
+
+By default, the bot will announce significant new features into the control channel for each town. It will only announce a new release once.
+You can control whether your server gets these messages:
+
+### `!noannounce`
+
+Tells the bot not to send new feature announcements for any towns on your server.
+
+### `!announce`
+
+Tells the bot you do wish to receive feature announcements for towns on your server.
+
+---
+
 ## Support
 
 Please file a Github issue with lots of details if you run into problems.
