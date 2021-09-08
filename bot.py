@@ -201,8 +201,8 @@ class SetupCog(commands.Cog, name='Setup'):
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
-        
-        	self.setToLatestVersion(guild.id)
+            
+            self.setToLatestVersion(guild.id)
 
             # Check if a town already exists
             query = { 
