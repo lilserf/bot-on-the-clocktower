@@ -490,7 +490,6 @@ class Lookup:
         params = shlex.split(ctx.message.content)
         if len(params) == 2:
             message = await self.impl.remove_script(server_token, params[1])
-            message = await self.impl.add_script(server_token, params[1])
             if message:
                 return message
             return f'Removed script at URL: {params[1]}\nI now know about {self.impl.get_script_count(server_token)} scripts.'
