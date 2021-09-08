@@ -25,13 +25,18 @@ class AnnouncerDbImpl(IAnnouncerDb):
 		else:
 			return False
 
-	def record_guild_seen_version(self, guild, version):
+	def record_guild_seen_version(self, guild, version, force=False):
 		query = {"guild" : guild }
 		doc = self.collection.find_one(query)
-		if doc:
+		# Create new record if needed
+		doc = doc or {"guild" : guild, "version" : list(version)}
+		
+		currVer = tuple(doc['version'])
+		update = force or version > currVer
+
+		if update:
 			doc['version'] = list(version)
-		else:
-			doc = {"guild" : guild, "version" : list(version)}
+
 		self.collection.replace_one(query, doc, True)
 
 
@@ -64,12 +69,13 @@ class AnnouncerImpl:
 
 	def guild_no_announce(self, guild):
 		impossiblyLargeVersion = (999999,0,0)
-		self.db.record_guild_seen_version(guild, impossiblyLargeVersion)
+		# Record this version and force it
+		self.db.record_guild_seen_version(guild, impossiblyLargeVersion, True)
 
-	def set_to_latest_version(self, guild):
+	def set_to_latest_version(self, guild, force=False):
 		versions = self.provider.get_versions_and_embeds()
 		(latest_version, _) = list(versions.items())[-1]
-		self.db.record_guild_seen_version(guild, latest_version)
+		self.db.record_guild_seen_version(guild, latest_version, force)
 
 	async def announce_latest_version(self):
 		guilds = self.guildDb.get_guilds()
@@ -106,6 +112,9 @@ class Announcer:
 
 	def guild_no_announce(self, guild):
 		self.impl.guild_no_announce(guild)
+
+	def guild_yes_announce(self, guild):
+		self.impl.set_to_latest_version(guild, True)
 
 	async def announce_latest_version(self):
 		return await self.impl.announce_latest_version()

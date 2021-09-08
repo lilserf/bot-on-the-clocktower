@@ -187,11 +187,28 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
     def set_to_latest_version(self, guild_id):
         self.announcer.set_to_latest_version(guild_id)
 
+    @commands.command(name='announce', help='Opt into new version announcement messages')
+    async def optIn(self, ctx):
+        await self.perform_action_reporting_errors(self.optInInternal, ctx)
+
     @commands.command(name='noannounce', help='Opt out of new version announcement messages')
     async def optOut(self, ctx):
+        await self.perform_action_reporting_errors(self.optOutInternal, ctx)
+
+    async def optInInternal(self, ctx):
+        self.announcer.guild_yes_announce(ctx.guild.id)
+        return 'This server will now receive new version announcement messages.'
+
+    async def optOutInternal(self, ctx):
+        self.announcer.guild_no_announce(ctx.guild.id)
+        return 'This server should no longer receive new version announcement messages.'
+
+    async def perform_action_reporting_errors(self, action, ctx):
         try:
-            self.announcer.guild_no_announce(ctx.guild.id)
-            await ctx.send('This server should no longer receive new version announcement messages.')
+            message = await action(ctx)
+            if message != None:
+                await ctx.send(message)
+
         except Exception as ex:
             await ctx.bot.sendErrorToAuthor(ctx)
 
