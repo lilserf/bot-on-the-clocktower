@@ -46,50 +46,25 @@ COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 g_dbGuildInfo = db['GuildInfo']
 g_dbActiveGames = db['ActiveGames']
 
-# Helpers
-def getChannelFromCategoryByName(category, name):
-    return discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
-
-def getCategoryByName(guild, name):
-    return discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
-
-def getRoleByName(guild, name):
-    return discord.utils.find(lambda r: r.name==name, guild.roles)
-
-# Get a category by ID or name, preferring ID
-def getCategory(guild, name, catId):
-    catById = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.id == catId, guild.channels)
-    return catById or discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
-
-# Get a channel by ID or name, preferring ID
-def getChannelFromCategory(category, name, chanId):
-    chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
-    return chanById or discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
-
-# Get a role by ID or name, preferring ID
-def getRole(guild, name, roleId):
-    roleById = discord.utils.find(lambda r: r.id == roleId, guild.roles)
-    return roleById or discord.utils.find(lambda r: r.name==name, guild.roles)
-
 # Do some sanity checking of a DB document and see if a valid town can even be found on a guild with these params
 def isTownValid(guild, doc):
-    dayCat = getCategory(guild, doc["dayCategory"], doc["dayCategoryId"])
+    dayCat = discordhelper.get_category(guild, doc["dayCategory"], doc["dayCategoryId"])
     if dayCat is None:
         return (False, "missing day category " + doc["dayCategory"])
 
-    townSquare = getChannelFromCategory(dayCat, doc["townSquare"], doc["townSquareId"])
+    townSquare = discordhelper.get_channel_from_category(dayCat, doc["townSquare"], doc["townSquareId"])
     if townSquare is None:
         return (False, "missing Town Square " + doc["townSquare"])
 
-    control = getChannelFromCategory(dayCat, doc["controlChannel"], doc["controlChannelId"])
+    control = discordhelper.get_channel_from_category(dayCat, doc["controlChannel"], doc["controlChannelId"])
     if control is None:
         return (False, "missing control channel " + doc["controlChannel"])
 
-    stRole = getRole(guild, doc["storyTellerRole"], doc["storyTellerRoleId"])
+    stRole = discordhelper.get_role(guild, doc["storyTellerRole"], doc["storyTellerRoleId"])
     if stRole is None:
         return (False, "missing Storyteller role " + doc["storyTellerRole"])
 
-    villagerRole = getRole(guild, doc["villagerRole"], doc["villagerRoleId"])
+    villagerRole = discordhelper.get_role(guild, doc["villagerRole"], doc["villagerRoleId"])
     if villagerRole is None:
         return (False, "missing Villager role " + doc["villagerRole"])
 
@@ -100,21 +75,21 @@ class TownInfo:
     def __init__(self, guild, document):
 
         if document:
-            self.dayCategory = getCategory(guild, document["dayCategory"], document["dayCategoryId"])
-            self.nightCategory = document["nightCategory"] and getCategory(guild, document["nightCategory"], document["nightCategoryId"]) or None
+            self.dayCategory = discordhelper.get_category(guild, document["dayCategory"], document["dayCategoryId"])
+            self.nightCategory = document["nightCategory"] and discordhelper.get_category(guild, document["nightCategory"], document["nightCategoryId"]) or None
 
-            self.townSquare = getChannelFromCategory(self.dayCategory, document["townSquare"], document["townSquareId"])
-            self.controlChannel = getChannelFromCategory(self.dayCategory, document["controlChannel"], document["controlChannelId"])
+            self.townSquare = discordhelper.get_channel_from_category(self.dayCategory, document["townSquare"], document["townSquareId"])
+            self.controlChannel = discordhelper.get_channel_from_category(self.dayCategory, document["controlChannel"], document["controlChannelId"])
 
             self.dayChannels = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.dayCategory.id)
             self.nightChannels = self.nightCategory and list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.nightCategory.id) or []
 
-            self.storyTellerRole = getRole(guild, document["storyTellerRole"], document["storyTellerRoleId"])
-            self.villagerRole = getRole(guild, document["villagerRole"], document["villagerRoleId"])
+            self.storyTellerRole = discordhelper.get_role(guild, document["storyTellerRole"], document["storyTellerRoleId"])
+            self.villagerRole = discordhelper.get_role(guild, document["villagerRole"], document["villagerRoleId"])
 
             self.chatChannel = None
             if 'chatChannel' in document and 'chatChannelId' in document:
-                self.chatChannel = getChannelFromCategory(self.dayCategory, document['chatChannel'], document['chatChannelId'])
+                self.chatChannel = discordhelper.get_channel_from_category(self.dayCategory, document['chatChannel'], document['chatChannelId'])
 
             activePlayers = set()
             for c in self.dayChannels:
@@ -254,12 +229,12 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send(f'Could not find a town! Are you running this command from the town control channel?')
                 return None
 
-            day_category = getCategory(ctx.guild, doc['dayCategory'], doc['dayCategory'])
+            day_category = discordhelper.get_category(ctx.guild, doc['dayCategory'], doc['dayCategory'])
             if not day_category:
                 await ctx.send(f'Could not find the category {doc["dayCategory"]}!')
                 return None
 
-            chat_channel = getChannelFromCategoryByName(day_category, chat_channel_name)
+            chat_channel = discordhelper.get_channel_from_category_by_name(day_category, chat_channel_name)
             if not chat_channel:
                 await ctx.send(f'Could not find the channel {chat_channel_name} in the category {doc["dayCategory"]}!')
                 return None
@@ -336,18 +311,18 @@ class SetupCog(commands.Cog, name='Setup'):
     async def resolveTownInfo(self, ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName):
         guild = ctx.guild
         
-        dayCat = getCategoryByName(guild, dayCatName)
-        nightCat = nightCatName and getCategoryByName(guild, nightCatName) or None
+        dayCat = discordhelper.get_category_by_name(guild, dayCatName)
+        nightCat = nightCatName and discordhelper.get_category_by_name(guild, nightCatName) or None
         
-        controlChan = getChannelFromCategoryByName(dayCat, controlName)
-        townSquare = getChannelFromCategoryByName(dayCat, townSquareName)
+        controlChan = discordhelper.get_channel_from_category_by_name(dayCat, controlName)
+        townSquare = discordhelper.get_channel_from_category_by_name(dayCat, townSquareName)
 
-        stRole = getRoleByName(guild, stRoleName)
-        villagerRole = getRoleByName(guild, villagerName)
+        stRole = discordhelper.get_role_by_name(guild, stRoleName)
+        villagerRole = discordhelper.get_role_by_name(guild, villagerName)
 
         chatChannel = None
         if chatChannelName:
-            chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+            chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
 
         # TODO: more checks
         # does the night category contain some channels to distribute people to?
@@ -430,7 +405,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 return None
         
             # Ensure all the roles exist
-            botRole = getRoleByName(guild, self.bot.user.name)
+            botRole = discordhelper.get_role_by_name(guild, self.bot.user.name)
             if not botRole:
                 await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
                 return None
@@ -448,12 +423,12 @@ class SetupCog(commands.Cog, name='Setup'):
                     allowNightCategory = False
                 else:
                     if additionalParamCount == 0:
-                        guildStRole = getRoleByName(guild, p)
+                        guildStRole = discordhelper.get_role_by_name(guild, p)
                         if not guildStRole:
                             await ctx.send("Provided Storyteller Role **" + p + "** not found.")
                             return None
                     elif additionalParamCount == 1:
-                        guildPlayerRole = getRoleByName(guild, p)
+                        guildPlayerRole = discordhelper.get_role_by_name(guild, p)
                         if not guildPlayerRole:
                             await ctx.send("Provided Player Role **" + p + "** not found.")
                             return None
@@ -480,22 +455,22 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send("Please hold, creating **" + townName + "** ...")
             
                 # Roles
-                everyoneRole = getRoleByName(guild, "@everyone")
+                everyoneRole = discordhelper.get_role_by_name(guild, "@everyone")
                 if not everyoneRole:
                     await ctx.send("Could not find the **@everyone** role. Why not?")
                     return None
         
-                gameVillagerRole = getRoleByName(guild, gameVillagerRoleName)
+                gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
                 if not gameVillagerRole:
                     gameVillagerRole = await guild.create_role(name=gameVillagerRoleName, color=discord.Color.magenta())
                 
-                gameStRole = getRoleByName(guild, gameStRoleName)
+                gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
                 if not gameStRole:
                     gameStRole = await guild.create_role(name=gameStRoleName, color=discord.Color.dark_magenta()) 
 
 
                 # Day category
-                dayCat = getCategoryByName(guild, dayCatName)
+                dayCat = discordhelper.get_category_by_name(guild, dayCatName)
                 if not dayCat:
                     dayCat = await guild.create_category(dayCatName)
             
@@ -505,7 +480,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
                 # Night category
                 if allowNightCategory:
-                    nightCat = getCategoryByName(guild, nightCatName)
+                    nightCat = discordhelper.get_category_by_name(guild, nightCatName)
                     if not nightCat:
                         nightCat = await guild.create_category(nightCatName)
 
@@ -515,7 +490,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Mover channel
-                moverChannel = getChannelFromCategoryByName(dayCat, moverChannelName)
+                moverChannel = discordhelper.get_channel_from_category_by_name(dayCat, moverChannelName)
                 if not moverChannel:
                     moverChannel = await dayCat.create_text_channel(moverChannelName)
                 await moverChannel.set_permissions(botRole, view_channel=True)
@@ -527,7 +502,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Chat channel
-                chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+                chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
                 if not chatChannel:
                     chatChannel = await dayCat.create_text_channel(chatChannelName)
                 await chatChannel.set_permissions(botRole, view_channel=True)
@@ -536,7 +511,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Town Square 
-                townSquareChannel = getChannelFromCategoryByName(dayCat, townSquareChannelName)
+                townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
                 if not townSquareChannel:
                     townSquareChannel = await dayCat.create_voice_channel(townSquareChannelName)
 
@@ -547,7 +522,7 @@ class SetupCog(commands.Cog, name='Setup'):
             
                 # Extra day channels
                 for extraChannelName in extraChannelNames:
-                    extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
+                    extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
                     if not extraChannel:
                         extraChannel = await dayCat.create_voice_channel(extraChannelName)
                     if not guildPlayerRole:
@@ -615,7 +590,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 
 
                 # Night category
-                nightCat = getCategoryByName(guild, nightCatName)
+                nightCat = discordhelper.get_category_by_name(guild, nightCatName)
                 if nightCat:
                     channelsToDestroy = []
                     for c in nightCat.channels:
@@ -637,25 +612,25 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Day category
-                dayCat = getCategoryByName(guild, dayCatName)
+                dayCat = discordhelper.get_category_by_name(guild, dayCatName)
                 if dayCat:
-                    chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+                    chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
                     if chatChannel and chatChannel.type == discord.ChannelType.text:
                         #print("I want to delete: " + chatChannel.name)
                         await chatChannel.delete()
                     
-                    townSquareChannel = getChannelFromCategoryByName(dayCat, townSquareChannelName)
+                    townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
                     if townSquareChannel and townSquareChannel.type == discord.ChannelType.voice:
                         #print("I want to delete: " + townSquareChannel.name)
                         await townSquareChannel.delete()
 
                     for extraChannelName in extraChannelNames:
-                        extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
+                        extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
                         if extraChannel and extraChannel.type == discord.ChannelType.voice:
                             #print("I want to delete: " + extraChannel.name)
                             await extraChannel.delete()
 
-                    moverChannel = getChannelFromCategoryByName(dayCat, moverChannelName)
+                    moverChannel = discordhelper.get_channel_from_category_by_name(dayCat, moverChannelName)
                     if moverChannel and moverChannel.type == discord.ChannelType.text:
                         #print("I want to delete: " + moverChannel.name)
                         # Do not delete the mover channel if there's a problem - you might
@@ -678,7 +653,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
                 # We want to leave the roles in place if there were any problems - the roles may be needed to see the channels
                 # that need cleanup!
-                gameVillagerRole = getRoleByName(guild, gameVillagerRoleName)
+                gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
                 if gameVillagerRole:
                     if success:
                         #print("I want to delete: " + gameVillagerRole.name)
@@ -686,7 +661,7 @@ class SetupCog(commands.Cog, name='Setup'):
                     else:
                         notDeleted.append("**" + gameVillagerRole.name + "** (role)")
                 
-                gameStRole = getRoleByName(guild, gameStRoleName)
+                gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
                 if gameStRole:
                     if success:
                         #print("I want to delete: " + gameStRole.name)

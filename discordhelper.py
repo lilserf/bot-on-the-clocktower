@@ -14,3 +14,27 @@ async def send_error_to_author(ctx, error=None):
         formatted = '```\n' + traceback.format_exc(3) + '\n```'
         traceback.print_exc()
     await ctx.author.send(f"Alas, an error has occurred:\n{formatted}\n(from message `{ctx.message.content}`)")
+ 
+def get_channel_from_category_by_name(category, name):
+    return discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
+
+def get_category_by_name(guild, name):
+    return discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
+
+def get_role_by_name(guild, name):
+    return discord.utils.find(lambda r: r.name==name, guild.roles)
+
+# Get a category by ID or name, preferring ID
+def get_category(guild, name, catId):
+    catById = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.id == catId, guild.channels)
+    return catById or discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
+
+# Get a channel by ID or name, preferring ID
+def get_channel_from_category(category, name, chanId):
+    chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
+    return chanById or discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
+
+# Get a role by ID or name, preferring ID
+def get_role(guild, name, roleId):
+    roleById = discord.utils.find(lambda r: r.id == roleId, guild.roles)
+    return roleById or discord.utils.find(lambda r: r.name==name, guild.roles)
