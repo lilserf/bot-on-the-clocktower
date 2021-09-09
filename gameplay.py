@@ -1,4 +1,5 @@
 ﻿'''Abstraction of Bot on the Clocktower gameplay into a module with minimal bot-specific dependencies'''
+import random
 import discord
 import discordhelper
 from botctypes import TownInfo
@@ -44,8 +45,8 @@ class GameplayImpl():
         name_list = ", ".join(discordhelper.user_names(prev_players))
         msg += f"Removed **{info.villagerRole.name}** role from: **{name_list}**"
         # remove game role from players
-        for m in prev_players:
-            await m.remove_roles(info.villagerRole)
+        for mem in prev_players:
+            await mem.remove_roles(info.villagerRole)
 
         # remove cottage permissions
         for chan in info.nightChannels:
@@ -93,7 +94,7 @@ class GameplayImpl():
 
             valid_sts.append(discordhelper.get_user_name(story_teller))
             await story_teller.add_roles(info.storyTellerRole)
-            
+
             # add (ST) to the start of the current storyteller
             if not story_teller.display_name.startswith('(ST) '):
                 try:
@@ -156,12 +157,83 @@ class GameplayImpl():
 
         return "\n".join(messages)
 
-    async def phase_night(self, info:TownInfo) -> str:
+    async def phase_night(self, info:TownInfo, author:discord.Member) -> str:
         '''Transition to night (move players to Cottages)'''
+        # do role switching for active game
+        await self.current_game(info, author)
+
+        if not info.nightCategory:
+            return f'This town does not have a Night category and therefore does not support the `{self.command_prefix}day` or `{self.command_prefix}night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!'
+
+        messages = []
+
+        # get list of users in town square
+        users = list(info.villagers)
+        users.sort(key=lambda x: x.display_name.lower())
+        cottages = list(info.nightChannels)
+        cottages.sort(key=lambda x: x.position)
+
+        messages.append(f'Moving {len(info.storyTellers)} storytellers and {len(users)} villagers to Cottages!')
+
+        # Put all storytellers in the first cottage
+        first_cottage = cottages[0]
+        for steller in info.storyTellers:
+            await steller.move_to(first_cottage)
+
+        # And everybody else in the rest
+        cottages = cottages[1:]
+
+        # pair up users with cottages
+        pairs = list(map(lambda x, y: (x,y), users, cottages))
+        # randomize the order people are moved
+        random.shuffle(pairs)
+
+        # move each user to a cottage
+        for (user, cottage) in pairs:
+            # grant the user permissions for their own cottage so they can see streams (if they're the Spy, for example)
+            await cottage.set_permissions(user, view_channel=True)
+            await user.move_to(cottage)
+
+        return '\n'.join(messages)
 
     async def phase_day(self, info:TownInfo) -> str:
         '''Transition to day (move players to Town Square)'''
+        if not info.nightCategory:
+            return f'This town does not have a Night category and therefore does not support the `{self.command_prefix}day` or `{self.command_prefix}night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!'
+
+        # get users in night channels
+        users = []
+        for chan in info.nightChannels:
+            users.extend(chan.members)
+            # Take away permission overwrites for their cottage
+            for mem in chan.members:
+                await chan.set_permissions(mem, overwrite=None)
+
+        msg = f'Moving {len(users)} players from Cottages to **{info.townSquare.name}**.'
+
+        # randomize the order we bring people back
+        random.shuffle(users)
+
+        # move them to Town Square
+        for user in users:
+            await user.move_to(info.townSquare)
+
+        return msg
 
     async def phase_vote(self, info:TownInfo) -> str:
         '''Transition to voting (move players to Town Square)'''
+
+        # get users in day channels other than Town Square
+        users = []
+        for chan in info.dayChannels:
+            if chan != info.townSquare:
+                users.extend(chan.members)
+
+        msg = f'Moving {len(users)} players from daytime channels to **{info.townSquare.name}**.'
+
+        # move them to Town Square
+        for user in users:
+            await user.move_to(info.townSquare)
+
+        return msg
 

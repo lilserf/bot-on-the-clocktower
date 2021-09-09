@@ -734,16 +734,17 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
     def __init__(self, bot):
         self.bot = bot
-        self.votetimer = votetimer.VoteTimer(bot, self.move_users_for_vote)
-
-        # Start the timer if we have active games
-        if g_dbActiveGames.count_documents({}) > 0:
-            self.cleanupInactiveGames.start() 
 
         # TODO this is a hack
         rec = gameplay.IActivityRecorder()
         clean = gameplay.ICleanup()
         self.game = gameplay.GameplayImpl(rec, clean, COMMAND_PREFIX)
+
+        self.votetimer = votetimer.VoteTimer(bot, self.game.phase_vote)
+
+        # Start the timer if we have active games
+        if g_dbActiveGames.count_documents({}) > 0:
+            self.cleanupInactiveGames.start() 
 
     def cog_unload(self):
         self.cleanupInactiveGames.cancel()
@@ -937,42 +938,9 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             return
 
         try:
-            # do role switching for active game
-            await self.onCurrGame(ctx)
-
-            # get channels we care about
             info = self.bot.getTownInfo(ctx)
-            
-            if not info.nightCategory:
-                await ctx.send(f'This town does not have a Night category and therefore does not support the `{COMMAND_PREFIX}day` or `{COMMAND_PREFIX}night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
-                return
-
-            # get list of users in town square   
-            users = list(info.villagers)
-            users.sort(key=lambda x: x.display_name.lower())
-            cottages = list(info.nightChannels)
-            cottages.sort(key=lambda x: x.position)
-
-            await ctx.send(f'Moving {len(info.storyTellers)} storytellers and {len(users)} villagers to Cottages!')
-            
-            # Put all storytellers in the first cottage
-            firstCottage = cottages[0]
-            for st in info.storyTellers:
-                await st.move_to(firstCottage)
-
-            # And everybody else in the rest
-            cottages = cottages[1:]
-
-            # pair up users with cottages
-            pairs = list(map(lambda x, y: (x,y), users, cottages))
-            # randomize the order people are moved
-            random.shuffle(pairs)
-
-            # move each user to a cottage
-            for (user, cottage) in pairs:
-                # grant the user permissions for their own cottage so they can see streams (if they're the Spy, for example)
-                await cottage.set_permissions(user, view_channel=True)
-                await user.move_to(cottage)
+            msg = await self.game.phase_night(info, ctx.author)
+            await ctx.send(msg)
 
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
@@ -985,43 +953,11 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         try:
             info = self.bot.getTownInfo(ctx)
-
-            if not info.nightCategory:
-                await ctx.send(f'This town does not have a Night category and therefore does not support the `{COMMAND_PREFIX}day` or `{COMMAND_PREFIX}night` commands. If you want to change this, please add a Night category and use the `!addTown` command to update the town info!')
-                return
-
-            # get users in night channels
-            users = list()
-            for c in info.nightChannels:
-                users.extend(c.members)
-                # Take away permission overwrites for their cottage
-                for m in c.members:
-                    await c.set_permissions(m, overwrite=None)
-
-            await ctx.send(f'Moving {len(users)} players from Cottages to **{info.townSquare.name}**.')
-
-            # randomize the order we bring people back
-            random.shuffle(users)
-
-            # move them to Town Square
-            for user in users:
-                await user.move_to(info.townSquare)
+            msg = await self.game.phase_day(info)
+            await ctx.send(msg)
 
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
-
-    async def move_users_for_vote(self, town_info):
-        # get users in day channels other than Town Square
-        users = list()
-        for c in town_info.dayChannels:
-            if c != town_info.townSquare:
-                users.extend(c.members)
-
-        await town_info.controlChannel.send(f'Moving {len(users)} players from daytime channels to **{town_info.townSquare.name}**.')
-
-        # move them to Town Square
-        for user in users:
-            await user.move_to(town_info.townSquare)
 
 
     # Move users from other daytime channels back to Town Square
@@ -1032,7 +968,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         try:
             info = self.bot.getTownInfo(ctx)
-            await self.move_users_for_vote(info)
+            msg = await self.game.phase_vote(info)
+            await ctx.send(msg)
         
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
