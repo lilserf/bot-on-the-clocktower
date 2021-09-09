@@ -29,6 +29,47 @@ class GameplayImpl():
 
     async def end_game(self, info:TownInfo) -> str:
         '''End a game'''
+        guild = info.guild
+        msg = ""
+
+        # find all guild members with the Current Game role
+        prev_players = set()
+        prev_sts = set()
+        for mem in guild.members:
+            if info.villagerRole in mem.roles:
+                prev_players.add(mem)
+            if info.storyTellerRole in mem.roles:
+                prev_sts.add(mem)
+
+        name_list = ", ".join(discordhelper.user_names(prev_players))
+        msg += f"Removed **{info.villagerRole.name}** role from: **{name_list}**"
+        # remove game role from players
+        for m in prev_players:
+            await m.remove_roles(info.villagerRole)
+
+        # remove cottage permissions
+        for chan in info.nightChannels:
+            # Take away permission overwrites for this cottage
+            for mem in prev_players:
+                await chan.set_permissions(mem, overwrite=None)
+            for prev_st in prev_sts:
+                await chan.set_permissions(prev_st, overwrite=None)
+
+        name_list = ", ".join(discordhelper.user_names(prev_sts))
+        msg += f"\nRemoved **{info.storyTellerRole.name}** role from: **{name_list}**"
+
+        for prev_st in prev_sts:
+            # remove storyteller role and name from storyteller
+            await prev_st.remove_roles(info.storyTellerRole)
+            if prev_st.display_name.startswith('(ST) '):
+                newnick = prev_st.display_name[5:]
+                try:
+                    await prev_st.edit(nick=newnick)
+                except:
+                    pass
+
+        return msg
+
 
     async def set_storytellers(self, info:TownInfo, sts:list[discord.Member]) -> str:
         '''Set the storytellers'''
@@ -66,7 +107,7 @@ class GameplayImpl():
             message += ', '.join(valid_sts)
             message += "**"
         else:
-            message = f'No valid storytellers found!'
+            message = 'No valid storytellers found!'
         return message
 
     async def current_game(self, info:TownInfo, author:discord.Member) -> str:

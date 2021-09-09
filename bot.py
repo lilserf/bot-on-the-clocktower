@@ -767,45 +767,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
     async def onEndGameInternal(self, guild, info):
 
-        msg = ""
-
-        # find all guild members with the Current Game role
-        prevPlayers = set()
-        prevSts = set()
-        for m in guild.members:
-            if info.villagerRole in m.roles:
-                prevPlayers.add(m)
-            if info.storyTellerRole in m.roles:
-                prevSts.add(m)
-
-        nameList = ", ".join(discordhelper.user_names(prevPlayers))
-        msg += f"Removed **{info.villagerRole.name}** role from: **{nameList}**"
-        # remove game role from players
-        for m in prevPlayers:
-            await m.remove_roles(info.villagerRole)
-
-        # remove cottage permissions
-        for c in info.nightChannels:
-            # Take away permission overwrites for this cottage
-            for m in prevPlayers:
-                await c.set_permissions(m, overwrite=None)
-            for prevSt in prevSts:
-                await c.set_permissions(prevSt, overwrite=None)
-
-        nameList = ", ".join(discordhelper.user_names(prevSts))
-        msg += f"\nRemoved **{info.storyTellerRole.name}** role from: **{nameList}**"
-
-        for prevSt in prevSts:
-            # remove storyteller role and name from storyteller
-            await prevSt.remove_roles(info.storyTellerRole)
-            if prevSt.display_name.startswith('(ST) '):
-                newnick = prevSt.display_name[5:]
-                try:
-                    await prevSt.edit(nick=newnick)
-                except:
-                    pass
-
-        return msg
+        return await self.game.end_game(info)
 
 
     # End the game and remove all the roles, permissions, etc
