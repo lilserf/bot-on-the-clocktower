@@ -1,3 +1,4 @@
 [MASTER]
 
 disable=line-too-long,
+		too-many-instance-attributes

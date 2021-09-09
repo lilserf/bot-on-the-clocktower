@@ -1,7 +1,10 @@
-﻿import datetime
+﻿'''Module containing various utility types for Bot on the Clocktower'''
+import datetime
 import discord
+import discordhelper
 
 class TownId:
+    '''Typed class for a guild ID and channel ID together'''
     def __init__(self, guild_id, channel_id):
         self.guild_id = guild_id
         self.channel_id = channel_id
@@ -11,9 +14,10 @@ class TownId:
 
     def __hash__(self):
         return hash(tuple((self.channel_id, self.guild_id)))
-    
+
 # Nicer than a dict for storing info about the town
 class TownInfo:
+    '''Utility class encapsulating all the Stuff that is important to a Town'''
     guild:discord.Guild
     dayCategory:discord.CategoryChannel
     nightCategory:discord.CategoryChannel
@@ -35,21 +39,21 @@ class TownInfo:
         if document:
             self.guild = guild
 
-            self.dayCategory = getCategory(guild, document["dayCategory"], document["dayCategoryId"])
-            self.nightCategory = document["nightCategory"] and getCategory(guild, document["nightCategory"], document["nightCategoryId"]) or None
+            self.dayCategory = discordhelper.get_category(guild, document["dayCategory"], document["dayCategoryId"])
+            self.nightCategory = document["nightCategory"] and discordhelper.get_category(guild, document["nightCategory"], document["nightCategoryId"]) or None
 
-            self.townSquare = getChannelFromCategory(self.dayCategory, document["townSquare"], document["townSquareId"])
-            self.controlChannel = getChannelFromCategory(self.dayCategory, document["controlChannel"], document["controlChannelId"])
+            self.townSquare = discordhelper.get_channel_from_category(self.dayCategory, document["townSquare"], document["townSquareId"])
+            self.controlChannel = discordhelper.get_channel_from_category(self.dayCategory, document["controlChannel"], document["controlChannelId"])
 
             self.dayChannels = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.dayCategory.id)
             self.nightChannels = self.nightCategory and list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.nightCategory.id) or []
 
-            self.storyTellerRole = getRole(guild, document["storyTellerRole"], document["storyTellerRoleId"])
-            self.villagerRole = getRole(guild, document["villagerRole"], document["villagerRoleId"])
+            self.storyTellerRole = discordhelper.get_role(guild, document["storyTellerRole"], document["storyTellerRoleId"])
+            self.villagerRole = discordhelper.get_role(guild, document["villagerRole"], document["villagerRoleId"])
 
             self.chatChannel = None
             if 'chatChannel' in document and 'chatChannelId' in document:
-                self.chatChannel = getChannelFromCategory(self.dayCategory, document['chatChannel'], document['chatChannelId'])
+                self.chatChannel = discordhelper.get_channel_from_category(self.dayCategory, document['chatChannel'], document['chatChannelId'])
 
             activePlayers = set()
             for c in self.dayChannels:
