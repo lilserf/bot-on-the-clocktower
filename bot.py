@@ -765,10 +765,6 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         return False
 
-    async def onEndGameInternal(self, guild, info):
-
-        return await self.game.end_game(info)
-
 
     # End the game and remove all the roles, permissions, etc
     @commands.command(name='endGame', aliases=['endgame'], help='End the current game and reset all permissions, roles, names, etc.')
@@ -781,7 +777,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
             info = self.bot.getTownInfo(ctx)
 
-            msg = await self.onEndGameInternal(guild, info)
+            msg = await self.game.end_game(info)
             await ctx.send(msg)
 
             self.removeActiveGame(guild, ctx.channel)
@@ -1087,7 +1083,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                     if townValid:
                         info = TownInfo(guild, doc)
                         try:
-                            await self.onEndGameInternal(guild, info)
+                            await self.game.end_game(info)
                             numEnded = numEnded + 1
                             print(f"Ended game in guild {guildId}")
                             g_dbActiveGames.delete_one(lookupQuery)
