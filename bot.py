@@ -17,6 +17,7 @@ import traceback
 import votetimer
 import announce
 import lookup
+import gameplay
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -57,11 +58,6 @@ def getCategoryByName(guild, name):
 def getRoleByName(guild, name):
     return discord.utils.find(lambda r: r.name==name, guild.roles)
 
-# Get a category by ID or name, preferring ID
-def getCategory(guild, name, catId):
-    catById = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.id == catId, guild.channels)
-    return catById or discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
-
 # Get a channel by ID or name, preferring ID
 def getChannelFromCategory(category, name, chanId):
     chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
@@ -96,44 +92,6 @@ def isTownValid(guild, doc):
 
     return (True, "Valid")
 
-# Nicer than a dict for storing info about the town
-class TownInfo:
-    def __init__(self, guild, document):
-
-        if document:
-            self.dayCategory = getCategory(guild, document["dayCategory"], document["dayCategoryId"])
-            self.nightCategory = document["nightCategory"] and getCategory(guild, document["nightCategory"], document["nightCategoryId"]) or None
-
-            self.townSquare = getChannelFromCategory(self.dayCategory, document["townSquare"], document["townSquareId"])
-            self.controlChannel = getChannelFromCategory(self.dayCategory, document["controlChannel"], document["controlChannelId"])
-
-            self.dayChannels = list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.dayCategory.id)
-            self.nightChannels = self.nightCategory and list(c for c in guild.channels if c.type == discord.ChannelType.voice and c.category_id ==  self.nightCategory.id) or []
-
-            self.storyTellerRole = getRole(guild, document["storyTellerRole"], document["storyTellerRoleId"])
-            self.villagerRole = getRole(guild, document["villagerRole"], document["villagerRoleId"])
-
-            self.chatChannel = None
-            if 'chatChannel' in document and 'chatChannelId' in document:
-                self.chatChannel = getChannelFromCategory(self.dayCategory, document['chatChannel'], document['chatChannelId'])
-
-            activePlayers = set()
-            for c in self.dayChannels:
-                activePlayers.update(c.members)
-            for c in self.nightChannels:
-                activePlayers.update(c.members)
-            self.activePlayers = activePlayers
-
-            self.storyTellers = set()
-            self.villagers = set()
-            for p in self.activePlayers:
-                if self.storyTellerRole in p.roles:
-                    self.storyTellers.add(p)
-                else:
-                    self.villagers.add(p)
-
-            self.authorName = document["authorName"]
-            self.timestamp = document["timestamp"]
 
 # Bot subclass
 class botcBot(commands.Bot):
@@ -790,6 +748,8 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
 class GameplayCog(commands.Cog, name='Gameplay'):
+    game:GameplayImpl
+
     def __init__(self, bot):
         self.bot = bot
         self.votetimer = votetimer.VoteTimer(bot, self.move_users_for_vote)
@@ -797,6 +757,11 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
             self.cleanupInactiveGames.start() 
+
+        # TODO this is a hack
+        rec = IActivityRecorder()
+        clean = ICleanup()
+        self.game = GameplayImpl(rec, clean)
 
     def cog_unload(self):
         self.cleanupInactiveGames.cancel()
