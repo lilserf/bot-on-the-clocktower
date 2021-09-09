@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import botctypes
 import datetime
 import discord
-import discordutil
+import discordhelper
 from discord.ext import commands, tasks
 import json
 from operator import itemgetter, attrgetter
@@ -48,45 +48,25 @@ COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 g_dbGuildInfo = db['GuildInfo']
 g_dbActiveGames = db['ActiveGames']
 
-# Helpers
-def getChannelFromCategoryByName(category, name):
-    return discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
-
-def getCategoryByName(guild, name):
-    return discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
-
-def getRoleByName(guild, name):
-    return discord.utils.find(lambda r: r.name==name, guild.roles)
-
-# Get a channel by ID or name, preferring ID
-def getChannelFromCategory(category, name, chanId):
-    chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
-    return chanById or discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
-
-# Get a role by ID or name, preferring ID
-def getRole(guild, name, roleId):
-    roleById = discord.utils.find(lambda r: r.id == roleId, guild.roles)
-    return roleById or discord.utils.find(lambda r: r.name==name, guild.roles)
-
 # Do some sanity checking of a DB document and see if a valid town can even be found on a guild with these params
 def isTownValid(guild, doc):
-    dayCat = getCategory(guild, doc["dayCategory"], doc["dayCategoryId"])
+    dayCat = discordhelper.get_category(guild, doc["dayCategory"], doc["dayCategoryId"])
     if dayCat is None:
         return (False, "missing day category " + doc["dayCategory"])
 
-    townSquare = getChannelFromCategory(dayCat, doc["townSquare"], doc["townSquareId"])
+    townSquare = discordhelper.get_channel_from_category(dayCat, doc["townSquare"], doc["townSquareId"])
     if townSquare is None:
         return (False, "missing Town Square " + doc["townSquare"])
 
-    control = getChannelFromCategory(dayCat, doc["controlChannel"], doc["controlChannelId"])
+    control = discordhelper.get_channel_from_category(dayCat, doc["controlChannel"], doc["controlChannelId"])
     if control is None:
         return (False, "missing control channel " + doc["controlChannel"])
 
-    stRole = getRole(guild, doc["storyTellerRole"], doc["storyTellerRoleId"])
+    stRole = discordhelper.get_role(guild, doc["storyTellerRole"], doc["storyTellerRoleId"])
     if stRole is None:
         return (False, "missing Storyteller role " + doc["storyTellerRole"])
 
-    villagerRole = getRole(guild, doc["villagerRole"], doc["villagerRoleId"])
+    villagerRole = discordhelper.get_role(guild, doc["villagerRole"], doc["villagerRoleId"])
     if villagerRole is None:
         return (False, "missing Villager role " + doc["villagerRole"])
 
@@ -172,7 +152,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='townInfo', aliases=['towninfo'], help='Show the stored info about the channels and roles that make up this town')
     async def townInfo(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             info = self.bot.getTownInfo(ctx)
 
             if info is not None:
@@ -182,7 +162,7 @@ class SetupCog(commands.Cog, name='Setup'):
     
     
     async def addTownInternal(self, ctx, post, info, message_if_exists=True):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
             
             self.setToLatestVersion(guild.id)
@@ -207,7 +187,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role> [chat channel]\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> [nightCategory=<night category>] stRole=<storyteller role> villagerRole=<villager role> [chatChannel=<chat channel>]')
     async def addTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             (post, info) = await self.resolveTownInfoParams(ctx, params)
@@ -220,7 +200,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='removeTown', aliases=['removetown'], help='Remove a game on this server')
     async def removeTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
 
             params = shlex.split(ctx.message.content)
@@ -247,7 +227,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='setChatChannel', help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
     async def set_chat_channel(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
         
             if len(params) != 2:
@@ -262,12 +242,12 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send(f'Could not find a town! Are you running this command from the town control channel?')
                 return None
 
-            day_category = getCategory(ctx.guild, doc['dayCategory'], doc['dayCategory'])
+            day_category = discordhelper.get_category(ctx.guild, doc['dayCategory'], doc['dayCategory'])
             if not day_category:
                 await ctx.send(f'Could not find the category {doc["dayCategory"]}!')
                 return None
 
-            chat_channel = getChannelFromCategoryByName(day_category, chat_channel_name)
+            chat_channel = discordhelper.get_channel_from_category_by_name(day_category, chat_channel_name)
             if not chat_channel:
                 await ctx.send(f'Could not find the channel {chat_channel_name} in the category {doc["dayCategory"]}!')
                 return None
@@ -344,18 +324,18 @@ class SetupCog(commands.Cog, name='Setup'):
     async def resolveTownInfo(self, ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName):
         guild = ctx.guild
         
-        dayCat = getCategoryByName(guild, dayCatName)
-        nightCat = nightCatName and getCategoryByName(guild, nightCatName) or None
+        dayCat = discordhelper.get_category_by_name(guild, dayCatName)
+        nightCat = nightCatName and discordhelper.get_category_by_name(guild, nightCatName) or None
         
-        controlChan = getChannelFromCategoryByName(dayCat, controlName)
-        townSquare = getChannelFromCategoryByName(dayCat, townSquareName)
+        controlChan = discordhelper.get_channel_from_category_by_name(dayCat, controlName)
+        townSquare = discordhelper.get_channel_from_category_by_name(dayCat, townSquareName)
 
-        stRole = getRoleByName(guild, stRoleName)
-        villagerRole = getRoleByName(guild, villagerName)
+        stRole = discordhelper.get_role_by_name(guild, stRoleName)
+        villagerRole = discordhelper.get_role_by_name(guild, villagerName)
 
         chatChannel = None
         if chatChannelName:
-            chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+            chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
 
         # TODO: more checks
         # does the night category contain some channels to distribute people to?
@@ -421,7 +401,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
     @commands.command(name='createTown', aliases=['createtown'], help=f'Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: {COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]')
     async def createTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
@@ -438,7 +418,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 return None
         
             # Ensure all the roles exist
-            botRole = getRoleByName(guild, self.bot.user.name)
+            botRole = discordhelper.get_role_by_name(guild, self.bot.user.name)
             if not botRole:
                 await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
                 return None
@@ -456,12 +436,12 @@ class SetupCog(commands.Cog, name='Setup'):
                     allowNightCategory = False
                 else:
                     if additionalParamCount == 0:
-                        guildStRole = getRoleByName(guild, p)
+                        guildStRole = discordhelper.get_role_by_name(guild, p)
                         if not guildStRole:
                             await ctx.send("Provided Storyteller Role **" + p + "** not found.")
                             return None
                     elif additionalParamCount == 1:
-                        guildPlayerRole = getRoleByName(guild, p)
+                        guildPlayerRole = discordhelper.get_role_by_name(guild, p)
                         if not guildPlayerRole:
                             await ctx.send("Provided Player Role **" + p + "** not found.")
                             return None
@@ -488,22 +468,22 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send("Please hold, creating **" + townName + "** ...")
             
                 # Roles
-                everyoneRole = getRoleByName(guild, "@everyone")
+                everyoneRole = discordhelper.get_role_by_name(guild, "@everyone")
                 if not everyoneRole:
                     await ctx.send("Could not find the **@everyone** role. Why not?")
                     return None
         
-                gameVillagerRole = getRoleByName(guild, gameVillagerRoleName)
+                gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
                 if not gameVillagerRole:
                     gameVillagerRole = await guild.create_role(name=gameVillagerRoleName, color=discord.Color.magenta())
                 
-                gameStRole = getRoleByName(guild, gameStRoleName)
+                gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
                 if not gameStRole:
                     gameStRole = await guild.create_role(name=gameStRoleName, color=discord.Color.dark_magenta()) 
 
 
                 # Day category
-                dayCat = getCategoryByName(guild, dayCatName)
+                dayCat = discordhelper.get_category_by_name(guild, dayCatName)
                 if not dayCat:
                     dayCat = await guild.create_category(dayCatName)
             
@@ -513,7 +493,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
                 # Night category
                 if allowNightCategory:
-                    nightCat = getCategoryByName(guild, nightCatName)
+                    nightCat = discordhelper.get_category_by_name(guild, nightCatName)
                     if not nightCat:
                         nightCat = await guild.create_category(nightCatName)
 
@@ -523,7 +503,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Mover channel
-                moverChannel = getChannelFromCategoryByName(dayCat, moverChannelName)
+                moverChannel = discordhelper.get_channel_from_category_by_name(dayCat, moverChannelName)
                 if not moverChannel:
                     moverChannel = await dayCat.create_text_channel(moverChannelName)
                 await moverChannel.set_permissions(botRole, view_channel=True)
@@ -535,7 +515,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Chat channel
-                chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+                chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
                 if not chatChannel:
                     chatChannel = await dayCat.create_text_channel(chatChannelName)
                 await chatChannel.set_permissions(botRole, view_channel=True)
@@ -544,7 +524,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Town Square 
-                townSquareChannel = getChannelFromCategoryByName(dayCat, townSquareChannelName)
+                townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
                 if not townSquareChannel:
                     townSquareChannel = await dayCat.create_voice_channel(townSquareChannelName)
 
@@ -555,7 +535,7 @@ class SetupCog(commands.Cog, name='Setup'):
             
                 # Extra day channels
                 for extraChannelName in extraChannelNames:
-                    extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
+                    extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
                     if not extraChannel:
                         extraChannel = await dayCat.create_voice_channel(extraChannelName)
                     if not guildPlayerRole:
@@ -584,12 +564,12 @@ class SetupCog(commands.Cog, name='Setup'):
                 await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
             except Exception as ex:
-                await discordutil.send_error_to_author(ctx)
+                await discordhelper.send_error_to_author(ctx)
 
     
     @commands.command(name='destroyTown', aliases=['destroytown'], help='Destroy everything created from the \'createTown\' command')
     async def destroyTown(self, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
@@ -623,7 +603,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 
 
                 # Night category
-                nightCat = getCategoryByName(guild, nightCatName)
+                nightCat = discordhelper.get_category_by_name(guild, nightCatName)
                 if nightCat:
                     channelsToDestroy = []
                     for c in nightCat.channels:
@@ -645,25 +625,25 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
                 # Day category
-                dayCat = getCategoryByName(guild, dayCatName)
+                dayCat = discordhelper.get_category_by_name(guild, dayCatName)
                 if dayCat:
-                    chatChannel = getChannelFromCategoryByName(dayCat, chatChannelName)
+                    chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
                     if chatChannel and chatChannel.type == discord.ChannelType.text:
                         #print("I want to delete: " + chatChannel.name)
                         await chatChannel.delete()
                     
-                    townSquareChannel = getChannelFromCategoryByName(dayCat, townSquareChannelName)
+                    townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
                     if townSquareChannel and townSquareChannel.type == discord.ChannelType.voice:
                         #print("I want to delete: " + townSquareChannel.name)
                         await townSquareChannel.delete()
 
                     for extraChannelName in extraChannelNames:
-                        extraChannel = getChannelFromCategoryByName(dayCat, extraChannelName)
+                        extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
                         if extraChannel and extraChannel.type == discord.ChannelType.voice:
                             #print("I want to delete: " + extraChannel.name)
                             await extraChannel.delete()
 
-                    moverChannel = getChannelFromCategoryByName(dayCat, moverChannelName)
+                    moverChannel = discordhelper.get_channel_from_category_by_name(dayCat, moverChannelName)
                     if moverChannel and moverChannel.type == discord.ChannelType.text:
                         #print("I want to delete: " + moverChannel.name)
                         # Do not delete the mover channel if there's a problem - you might
@@ -686,7 +666,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
                 # We want to leave the roles in place if there were any problems - the roles may be needed to see the channels
                 # that need cleanup!
-                gameVillagerRole = getRoleByName(guild, gameVillagerRoleName)
+                gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
                 if gameVillagerRole:
                     if success:
                         #print("I want to delete: " + gameVillagerRole.name)
@@ -694,7 +674,7 @@ class SetupCog(commands.Cog, name='Setup'):
                     else:
                         notDeleted.append("**" + gameVillagerRole.name + "** (role)")
                 
-                gameStRole = getRoleByName(guild, gameStRoleName)
+                gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
                 if gameStRole:
                     if success:
                         #print("I want to delete: " + gameStRole.name)
@@ -731,7 +711,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
             
             except Exception as ex:
-                await discordutil.send_error_to_author(ctx)
+                await discordhelper.send_error_to_author(ctx)
 
 
     async def sendEmbed(self, ctx, townInfo):
@@ -847,7 +827,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             self.removeActiveGame(guild, ctx.channel)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Set the current storytellers
     @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
@@ -957,7 +937,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 self.cleanupInactiveGames.start()
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     def getUserName(self, user):
         name = user.display_name
@@ -992,7 +972,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         minions = params[2:]
 
         if len(minions) == 0:
-            await discordutil.send_error_to_author(ctx, f"It seems you forgot to specify any minions!")
+            await discordhelper.send_error_to_author(ctx, f"It seems you forgot to specify any minions!")
             return (False, None, None)
 
         # Get the users from the names
@@ -1007,12 +987,12 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         # Error messages for users not found
         if demonUser is None:
-            await discordutil.send_error_to_author(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
+            await discordhelper.send_error_to_author(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
             return (False, None, None)
 
         for (i, m) in enumerate(minionUsers):
             if m is None:
-                await discordutil.send_error_to_author(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
+                await discordhelper.send_error_to_author(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
                 return (False, None, None)
 
         return (True, demonUser, minionUsers)
@@ -1042,7 +1022,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await self.sendDemonMessage(demonUser, minionUsers)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Command to send demon/minion info to the Demon and Minions
     @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
@@ -1076,7 +1056,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await ctx.send("The Evil team has been informed...")
                 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
@@ -1123,7 +1103,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await user.move_to(cottage)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move players from Cottages back to Town Square')
@@ -1156,7 +1136,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await user.move_to(info.townSquare)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     async def move_users_for_vote(self, town_info):
         # get users in day channels other than Town Square
@@ -1183,7 +1163,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await self.move_users_for_vote(info)
         
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
     def recordGameActivity(self, guild, controlChan):
         post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
@@ -1270,7 +1250,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 await ctx.send(message)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
 class LookupCog(commands.Cog, name='Lookup'):
     def __init__(self, bot, db):
@@ -1303,7 +1283,7 @@ class LookupCog(commands.Cog, name='Lookup'):
         await self.perform_control_channel_action_reporting_errors(self.lookup.list_scripts, ctx)
 
     async def perform_control_channel_action_reporting_errors(self, action, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             town_info = self.bot.getTownInfo(ctx)
             if town_info:
                 await  self.perform_action_reporting_errors_internal(action, ctx)
@@ -1311,7 +1291,7 @@ class LookupCog(commands.Cog, name='Lookup'):
                 await ctx.send('This action can only be performed from a town control channel.')
 
     async def perform_action_reporting_errors(self, action, ctx):
-        if await discordutil.verify_not_dm_or_send_error(ctx):
+        if await discordhelper.verify_not_dm_or_send_error(ctx):
             await self.perform_action_reporting_errors_internal(action, ctx)
 
     async def perform_action_reporting_errors_internal(self, action, ctx):
@@ -1321,7 +1301,7 @@ class LookupCog(commands.Cog, name='Lookup'):
                 await ctx.send(message)
 
         except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+            await discordhelper.send_error_to_author(ctx)
 
 
 
