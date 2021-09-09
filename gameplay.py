@@ -44,11 +44,13 @@ class GameplayImpl():
                 except:
                     pass
 
+        valid_sts = []
         # set up the new storytellers
         for story_teller in sts:
             if story_teller is None:
                 continue
 
+            valid_sts.append(discordhelper.get_user_name(story_teller))
             await story_teller.add_roles(info.storyTellerRole)
             
             # add (ST) to the start of the current storyteller
@@ -58,9 +60,13 @@ class GameplayImpl():
                 except:
                     pass
 
-        message = f"Set **{info.storyTellerRole.name}** role for: **"
-        message += ', '.join(map(discordhelper.get_user_name, sts))
-        message += "**"
+        message:str = ""
+        if len(valid_sts) > 0:
+            message = f"Set **{info.storyTellerRole.name}** role for: **"
+            message += ', '.join(valid_sts)
+            message += "**"
+        else:
+            message = f'No valid storytellers found!'
         return message
 
     async def current_game(self, info:TownInfo, author:discord.Member) -> str:
@@ -87,7 +93,7 @@ class GameplayImpl():
 
         # remove any stale players
         if len(remove) > 0:
-            remove_msg = f"Removed **{info.villagerRole.name} role from: **"
+            remove_msg = f"Removed **{info.villagerRole.name}** role from: **"
             remove_msg += ', '.join(discordhelper.user_names(remove))
             remove_msg += "**"
             for mem in remove:

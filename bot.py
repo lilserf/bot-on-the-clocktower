@@ -839,10 +839,6 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         
         sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
 
-        foundNames = map(lambda x: discordhelper.get_user_name(x), sts)
-        nameMsg = ", ".join(foundNames)
-        await ctx.send(f"Setting storytellers to **{nameMsg}**...")
-
         await self.setStorytellersInternal(ctx, sts)
         
 
@@ -852,7 +848,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         info = self.bot.getTownInfo(ctx)
 
-        msg = self.game.set_storytellers(info, sts)
+        msg = await self.game.set_storytellers(info, sts)
 
         await ctx.send(msg)
 
