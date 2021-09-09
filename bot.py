@@ -780,6 +780,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             msg = await self.game.end_game(info)
             await ctx.send(msg)
 
+            # TODO move removeActiveGame logic into end_game
             self.removeActiveGame(guild, ctx.channel)
 
         except Exception as ex:
@@ -797,18 +798,10 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         
         sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
 
-        await self.setStorytellersInternal(ctx, sts)
-        
-
-
-    # Helper for setting a list of users as the current storytellers
-    async def setStorytellersInternal(self, ctx, sts):
-
-        info = self.bot.getTownInfo(ctx)
-
         msg = await self.game.set_storytellers(info, sts)
 
         await ctx.send(msg)
+
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
