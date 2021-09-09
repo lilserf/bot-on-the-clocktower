@@ -1,13 +1,13 @@
 import discord
 import traceback
 
-async def verify_not_dm_or_send_error(ctx):
+async def verify_not_dm_or_send_error(ctx) -> bool:
     if isinstance(ctx.channel, discord.DMChannel):
         await ctx.send(f"Whoops, you probably meant to send that in a text channel instead of a DM!")
         return False
     return True
 
-async def send_error_to_author(ctx, error=None):
+async def send_error_to_author(ctx, error=None) -> None:
     if error:
         formatted = error
     else:
@@ -15,26 +15,26 @@ async def send_error_to_author(ctx, error=None):
         traceback.print_exc()
     await ctx.author.send(f"Alas, an error has occurred:\n{formatted}\n(from message `{ctx.message.content}`)")
  
-def get_channel_from_category_by_name(category, name):
+def get_channel_from_category_by_name(category:discord.CategoryChannel, name:str) -> discord.abc.GuildChannel:
     return discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
 
-def get_category_by_name(guild, name):
+def get_category_by_name(guild:discord.Guild, name:str) -> discord.CategoryChannel:
     return discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
 
-def get_role_by_name(guild, name):
+def get_role_by_name(guild:discord.Guild, name:str) -> discord.Role:
     return discord.utils.find(lambda r: r.name==name, guild.roles)
 
 # Get a category by ID or name, preferring ID
-def get_category(guild, name, catId):
+def get_category(guild:discord.Guild, name:str, catId:int) -> discord.CategoryChannel:
     catById = discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.id == catId, guild.channels)
     return catById or discord.utils.find(lambda c: c.type == discord.ChannelType.category and c.name == name, guild.channels)
 
 # Get a channel by ID or name, preferring ID
-def get_channel_from_category(category, name, chanId):
+def get_channel_from_category(category:discord.CategoryChannel, name:str, chanId:int) -> discord.abc.GuildChannel:
     chanById = discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.id == chanId, category.channels)
     return chanById or discord.utils.find(lambda c: (c.type == discord.ChannelType.voice or c.type == discord.ChannelType.text) and c.name == name, category.channels)
 
 # Get a role by ID or name, preferring ID
-def get_role(guild, name, roleId):
+def get_role(guild:discord.Guild, name:str, roleId:int) -> discord.Role:
     roleById = discord.utils.find(lambda r: r.id == roleId, guild.roles)
     return roleById or discord.utils.find(lambda r: r.name==name, guild.roles)
