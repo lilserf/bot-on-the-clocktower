@@ -811,7 +811,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             return
 
         try:
-            info:botctypes.TownInfo = self.bot.getTownInfo(ctx)
+            info:TownInfo = self.bot.getTownInfo(ctx)
 
             message:str = await self.game.current_game(info, ctx.author)
 
