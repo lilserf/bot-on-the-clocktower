@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 import botctypes
+from botctypes import TownInfo
 import datetime
 import discord
 import discordhelper
@@ -728,7 +729,8 @@ class SetupCog(commands.Cog, name='Setup'):
 
 
 class GameplayCog(commands.Cog, name='Gameplay'):
-    game:GameplayImpl
+    
+    game:gameplay.GameplayImpl
 
     def __init__(self, bot):
         self.bot = bot
@@ -739,9 +741,9 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             self.cleanupInactiveGames.start() 
 
         # TODO this is a hack
-        rec = IActivityRecorder()
-        clean = ICleanup()
-        self.game = GameplayImpl(rec, clean)
+        rec = gameplay.IActivityRecorder()
+        clean = gameplay.ICleanup()
+        self.game = gameplay.GameplayImpl(rec, clean, COMMAND_PREFIX)
 
     def cog_unload(self):
         self.cleanupInactiveGames.cancel()
@@ -880,7 +882,6 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         addMsg += "**"
         await ctx.send(addMsg)
 
-
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
     async def onCurrGame(self, ctx):
@@ -888,49 +889,11 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             return
 
         try:
-            guild = ctx.guild
+            info:botctypes.TownInfo = self.bot.getTownInfo(ctx)
 
-            info = self.bot.getTownInfo(ctx)
+            message:str = await self.game.current_game(info, ctx.author)
 
-            # find all guild members with the Current Game role
-            prevPlayers = set()
-            for m in guild.members:
-                if info.villagerRole in m.roles:
-                    prevPlayers.add(m)
-
-            # grant the storyteller the Current Storyteller role if necessary
-            storyTeller = ctx.message.author
-            if storyTeller not in info.storyTellers:
-                await ctx.send(f"New storyteller: **{discordhelper.get_user_name(storyTeller)}**. (Use `{COMMAND_PREFIX}setStorytellers` for 2+ storytellers)")
-                await self.setStorytellersInternal(ctx, [storyTeller])
-
-            # find additions and deletions by diffing the sets
-            remove = prevPlayers - info.activePlayers
-            add = info.activePlayers - prevPlayers
-
-            # remove any stale players
-            if len(remove) > 0:
-                removeMsg = f"Removed **{info.villagerRole.name} role from: **"
-                removeMsg += ', '.join(discordhelper.user_names(remove))
-                removeMsg += "**"
-                for m in remove:
-                    await m.remove_roles(info.villagerRole)
-                await ctx.send(removeMsg)
-
-            # add any new players
-            if len(add) > 0:
-                addMsg = f"Added **{info.villagerRole.name}** role to: **"
-                addMsg += ', '.join(discordhelper.user_names(add))
-                addMsg += "**"
-                for m in add:
-                    await m.add_roles(info.villagerRole)
-                await ctx.send(addMsg)
-
-            self.recordGameActivity(guild, ctx.channel)
-
-            # Set a timer to clean up active games eventually
-            if not self.cleanupInactiveGames.is_running():
-                self.cleanupInactiveGames.start()
+            await ctx.send(message)
 
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)

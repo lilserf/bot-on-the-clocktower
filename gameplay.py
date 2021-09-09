@@ -6,7 +6,7 @@ from botctypes import TownInfo
 # TODO
 class IActivityRecorder():
     '''Interface for a class to record game activity'''
-    def record_activity(self, guild:discord.Guild, channel:discord.Channel) -> None:
+    def record_activity(self, guild:discord.Guild, channel:discord.abc.GuildChannel) -> None:
         '''Record that activity has happen on a given guild and channel'''
 
 # TODO
