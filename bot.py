@@ -852,35 +852,9 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         info = self.bot.getTownInfo(ctx)
 
-        # take any (ST) off of old storytellers
-        for o in info.storyTellers:
-            if o not in sts:
-                await o.remove_roles(info.storyTellerRole)
-            if o not in sts and o.display_name.startswith('(ST) '):
-                newnick = o.display_name[5:]
-                try:
-                    await o.edit(nick=newnick)
-                except:
-                    pass
+        msg = self.game.set_storytellers(info, sts)
 
-        # set up the new storytellers
-        for storyTeller in sts:
-            if storyTeller is None:
-                continue
-
-            await storyTeller.add_roles(info.storyTellerRole)
-            
-            # add (ST) to the start of the current storyteller
-            if not storyTeller.display_name.startswith('(ST) '):
-                try:
-                    await storyTeller.edit(nick=f"(ST) {storyTeller.display_name}")
-                except:
-                    pass
-
-        addMsg = f"Set **{info.storyTellerRole.name}** role for: **"
-        addMsg += ', '.join(map(lambda x: discordhelper.get_user_name(x), sts))
-        addMsg += "**"
-        await ctx.send(addMsg)
+        await ctx.send(msg)
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')

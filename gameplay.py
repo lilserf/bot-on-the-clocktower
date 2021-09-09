@@ -33,6 +33,36 @@ class GameplayImpl():
     async def set_storytellers(self, info:TownInfo, sts:list[discord.Member]) -> str:
         '''Set the storytellers'''
 
+        # take any (ST) off of old storytellers
+        for old in info.storyTellers:
+            if old not in sts:
+                await old.remove_roles(info.storyTellerRole)
+            if old not in sts and old.display_name.startswith('(ST) '):
+                new_nick = old.display_name[5:]
+                try:
+                    await old.edit(nick=new_nick)
+                except:
+                    pass
+
+        # set up the new storytellers
+        for story_teller in sts:
+            if story_teller is None:
+                continue
+
+            await story_teller.add_roles(info.storyTellerRole)
+            
+            # add (ST) to the start of the current storyteller
+            if not story_teller.display_name.startswith('(ST) '):
+                try:
+                    await story_teller.edit(nick=f"(ST) {story_teller.display_name}")
+                except:
+                    pass
+
+        message = f"Set **{info.storyTellerRole.name}** role for: **"
+        message += ', '.join(map(discordhelper.get_user_name, sts))
+        message += "**"
+        return message
+
     async def current_game(self, info:TownInfo, author:discord.Member) -> str:
         '''Initiate a game in this town'''
         messages = []

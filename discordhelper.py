@@ -2,15 +2,16 @@
 import traceback
 
 import discord
+from discord.ext import commands
 
-async def verify_not_dm_or_send_error(ctx) -> bool:
+async def verify_not_dm_or_send_error(ctx:discord.ext.commands.Context) -> bool:
     '''Verify that a message is not a DM; send an error if it is'''
     if isinstance(ctx.channel, discord.DMChannel):
         await ctx.send("Whoops, you probably meant to send that in a text channel instead of a DM!")
         return False
     return True
 
-async def send_error_to_author(ctx, error=None) -> None:
+async def send_error_to_author(ctx:discord.ext.commands.Context, error=None) -> None:
     '''Send an error message to the author of the message in the context'''
     if error:
         formatted = error
