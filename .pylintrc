@@ -1,4 +1,6 @@
 [MASTER]
 
 disable=line-too-long,
-		too-many-instance-attributes
+		too-many-instance-attributes,
+		trailing-newlines,
+		too-few-public-methods,

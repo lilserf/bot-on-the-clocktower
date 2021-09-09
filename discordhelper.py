@@ -48,3 +48,18 @@ def get_role(guild:discord.Guild, name:str, role_id:int) -> discord.Role:
     '''Get a role by ID or name, preferring ID, given a Guild'''
     role_by_id = discord.utils.find(lambda r: r.id == role_id, guild.roles)
     return role_by_id or discord.utils.find(lambda r: r.name==name, guild.roles)
+
+
+def get_user_name(user:discord.User) -> str:
+    '''Get a nice-looking name for a discord user, ignoring any (ST) prefix'''
+    name = user.display_name
+    # But ignore the starting (ST) for storytellers
+    if name.startswith('(ST) '):
+        name = name[5:]
+
+    return name
+
+# Given a list of users, return a list of their names
+def user_names(users:list[discord.User]) -> list[str]:
+    '''Get a list of nice-looking names from a list of users'''
+    return list(map(get_user_name, users))

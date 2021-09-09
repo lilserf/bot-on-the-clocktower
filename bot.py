@@ -746,10 +746,6 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     def cog_unload(self):
         self.cleanupInactiveGames.cancel()
 
-    # Given a list of users, return a list of their names
-    def userNames(self, users):
-        return list(map(lambda x: self.getUserName(x), users))
-
     # Helper to see if a command context is in a valid channel etc - used by all the commands
     async def isValid(self, ctx):
 
@@ -780,7 +776,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             if info.storyTellerRole in m.roles:
                 prevSts.add(m)
 
-        nameList = ", ".join(self.userNames(prevPlayers))
+        nameList = ", ".join(discordhelper.user_names(prevPlayers))
         msg += f"Removed **{info.villagerRole.name}** role from: **{nameList}**"
         # remove game role from players
         for m in prevPlayers:
@@ -794,7 +790,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             for prevSt in prevSts:
                 await c.set_permissions(prevSt, overwrite=None)
 
-        nameList = ", ".join(self.userNames(prevSts))
+        nameList = ", ".join(discordhelper.user_names(prevSts))
         msg += f"\nRemoved **{info.storyTellerRole.name}** role from: **{nameList}**"
 
         for prevSt in prevSts:
@@ -841,7 +837,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         
         sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
 
-        foundNames = map(lambda x: self.getUserName(x), sts)
+        foundNames = map(lambda x: discordhelper.get_user_name(x), sts)
         nameMsg = ", ".join(foundNames)
         await ctx.send(f"Setting storytellers to **{nameMsg}**...")
 
@@ -880,7 +876,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                     pass
 
         addMsg = f"Set **{info.storyTellerRole.name}** role for: **"
-        addMsg += ', '.join(map(lambda x: self.getUserName(x), sts))
+        addMsg += ', '.join(map(lambda x: discordhelper.get_user_name(x), sts))
         addMsg += "**"
         await ctx.send(addMsg)
 
@@ -905,7 +901,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             # grant the storyteller the Current Storyteller role if necessary
             storyTeller = ctx.message.author
             if storyTeller not in info.storyTellers:
-                await ctx.send(f"New storyteller: **{self.getUserName(storyTeller)}**. (Use `{COMMAND_PREFIX}setStorytellers` for 2+ storytellers)")
+                await ctx.send(f"New storyteller: **{discordhelper.get_user_name(storyTeller)}**. (Use `{COMMAND_PREFIX}setStorytellers` for 2+ storytellers)")
                 await self.setStorytellersInternal(ctx, [storyTeller])
 
             # find additions and deletions by diffing the sets
@@ -915,7 +911,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             # remove any stale players
             if len(remove) > 0:
                 removeMsg = f"Removed **{info.villagerRole.name} role from: **"
-                removeMsg += ', '.join(self.userNames(remove))
+                removeMsg += ', '.join(discordhelper.user_names(remove))
                 removeMsg += "**"
                 for m in remove:
                     await m.remove_roles(info.villagerRole)
@@ -924,7 +920,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             # add any new players
             if len(add) > 0:
                 addMsg = f"Added **{info.villagerRole.name}** role to: **"
-                addMsg += ', '.join(self.userNames(add))
+                addMsg += ', '.join(discordhelper.user_names(add))
                 addMsg += "**"
                 for m in add:
                     await m.add_roles(info.villagerRole)
@@ -939,20 +935,12 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
 
-    def getUserName(self, user):
-        name = user.display_name
-        # But ignore the starting (ST) for storytellers
-        if name.startswith('(ST) '):
-            name = name[5:]
-
-        return name
-
 
     # Given a list of users and a name string, find the user with the closest name
     def getClosestUser(self, userlist, name):
         for u in userlist:
             # See if anybody's name starts with what was sent
-            uname = self.getUserName(u).lower()
+            uname = discordhelper.get_user_name(u).lower()
 
             if uname.startswith(name.lower()):
                 return u
@@ -999,8 +987,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
     # Send a message to the demon
     async def sendDemonMessage(self, demonUser, minionUsers):
-        demonMsg = f"{self.getUserName(demonUser)}: You are the **demon**. Your minions are: "
-        minionNames = self.userNames(minionUsers)
+        demonMsg = f"{discordhelper.get_user_name(demonUser)}: You are the **demon**. Your minions are: "
+        minionNames = discordhelper.user_names(minionUsers)
         demonMsg += ', '.join(minionNames)
         await demonUser.send(demonMsg)
 
@@ -1046,11 +1034,11 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                 minionMsg += " Your fellow minions are: {}."
 
             for m in minionUsers:
-                otherMinions = self.userNames(minionUsers)
-                otherMinions.remove(self.getUserName(m))
+                otherMinions = discordhelper.user_names(minionUsers)
+                otherMinions.remove(discordhelper.get_user_name(m))
 
                 otherMinionsMsg = ', '.join(otherMinions)
-                formattedMsg = minionMsg.format(self.getUserName(m), self.getUserName(demonUser), otherMinionsMsg)
+                formattedMsg = minionMsg.format(discordhelper.get_user_name(m), discordhelper.get_user_name(demonUser), otherMinionsMsg)
                 await m.send(formattedMsg)
 
             await ctx.send("The Evil team has been informed...")
