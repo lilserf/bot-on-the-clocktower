@@ -5,9 +5,9 @@ import discordhelper
 
 class TownId:
     '''Typed class for a guild ID and channel ID together'''
-    def __init__(self, guild_id, channel_id):
-        self.guild_id = guild_id
-        self.channel_id = channel_id
+    def __init__(self, guild_id:int, channel_id:int):
+        self.guild_id : int = guild_id
+        self.channel_id : int = channel_id
 
     def __eq__(self, other):
         return other.guild_id == self.guild_id and other.channel_id == self.channel_id
