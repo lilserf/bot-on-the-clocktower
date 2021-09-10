@@ -1221,6 +1221,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await discordutil.send_error_to_author(ctx)
 
     def recordGameActivity(self, guild, controlChan, storytellers, active_players):
+        # TODO: Needs to get diff of storytellers and active players to properly update the player --> town entries (don't want to have to query the DB a zillion times)
         st_ids = list(map(lambda m: m.id, storytellers))
         player_ids = list(map(lambda m: m.id, active_players))
 
