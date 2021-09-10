@@ -985,7 +985,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
                     await m.add_roles(info.villagerRole)
                 await ctx.send(addMsg)
 
-            self.recordGameActivity(guild, ctx.channel)
+            self.recordGameActivity(guild, ctx.channel, info.storyTellers, info.activePlayers)
 
             # Set a timer to clean up active games eventually
             if not self.cleanupInactiveGames.is_running():
@@ -1220,9 +1220,21 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         except Exception as ex:
             await discordutil.send_error_to_author(ctx)
 
-    def recordGameActivity(self, guild, controlChan):
-        post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
-        query = { "guild" : guild.id, "channel" : controlChan.id }
+    def recordGameActivity(self, guild, controlChan, storytellers, active_players):
+        st_ids = list(map(lambda m: m.id, storytellers))
+        player_ids = list(map(lambda m: m.id, active_players))
+
+        post = {
+            'guild' : guild.id,
+            'channel' : controlChan.id,
+            'storytellerIds' : st_ids,
+            'playerIds' : player_ids,
+            'lastActivity' : datetime.datetime.now(),
+            }
+        query = {
+            'guild' : guild.id,
+            'channel' : controlChan.id
+            }
         # Upsert this record
         g_dbActiveGames.replace_one(query, post, True)
 
