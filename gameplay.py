@@ -191,7 +191,11 @@ class GameplayImpl():
         # move each user to a cottage
         for (user, cottage) in pairs:
             # grant the user permissions for their own cottage so they can see streams (if they're the Spy, for example)
-            await cottage.set_permissions(user, view_channel=True)
+            try:
+                await cottage.set_permissions(user, view_channel=True)
+            except Exception:
+                # Well, we can still move people even if the permission changes fail
+                pass
             await user.move_to(cottage)
 
         return '\n'.join(messages)
