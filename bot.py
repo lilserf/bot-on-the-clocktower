@@ -743,17 +743,31 @@ class GameActivityCog(commands.Cog, gameplay.IGameActivity, name='GameActivity')
     def __init__(self, bot):
         self.bot = bot
 
-    def record_activity(self, guild, controlChan):
-        post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
-        query = { "guild" : guild.id, "channel" : controlChan.id }
+    def record_activity(self, guild:discord.Guild, channel:discord.abc.GuildChannel, storytellers:list[discord.Member], active_players:list[discord.Member]):
+        # TODO: Needs to get diff of storytellers and active players to properly update the player --> town entries (don't want to have to query the DB a zillion times)
+        st_ids = list(map(lambda m: m.id, storytellers))
+        player_ids = list(map(lambda m: m.id, active_players))
+
+        post = {
+            'guild' : guild.id,
+            'channel' : channel.id,
+            'storytellerIds' : st_ids,
+            'playerIds' : player_ids,
+            'lastActivity' : datetime.datetime.now(),
+            }
+        query = {
+            'guild' : guild.id,
+            'channel' : channel.id
+            }
+
         # Upsert this record
         g_dbActiveGames.replace_one(query, post, True)
 
         self.bot.get_cleanup_cog().start()
 
-    def remove_active_game(self, guild, controlChan):
+    def remove_active_game(self, guild:discord.Guild, channel:discord.abc.GuildChannel):
         # Delete this game's record
-        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": controlChan.id })
+        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": channel.id })
 
 
 class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):

@@ -7,7 +7,7 @@ from botctypes import TownInfo
 class IGameActivity():
     '''Interface for a class to manage game activity'''
 
-    def record_activity(self, guild:discord.Guild, channel:discord.abc.GuildChannel) -> None:
+    def record_activity(self, guild:discord.Guild, channel:discord.abc.GuildChannel, storytellers:list[discord.Member], active_players:list[discord.Member]) -> None:
         '''Record that activity has happen on a given guild and channel'''
 
     def remove_active_game(self, guild:discord.Guild, channel:discord.abc.GuildChannel) -> None:
@@ -156,7 +156,8 @@ class GameplayImpl():
                 await mem.add_roles(info.villagerRole)
             messages.append(add_msg)
 
-        self.activity.record_activity(info.guild, info.controlChannel)
+        # TODO: need list of storytellers and activePlayers here, maybe should send a diff of what was in the DB before though
+        self.activity.record_activity(info.guild, info.controlChannel, [], [])
 
         return "\n".join(messages)
 
