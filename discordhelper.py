@@ -4,7 +4,7 @@ import traceback
 import discord
 from discord.ext import commands
 
-async def verify_not_dm_or_send_error(ctx:discord.ext.commands.Context) -> bool:
+async def verify_not_dm_or_send_error(ctx:commands.Context) -> bool:
     '''Verify that a message is not a DM; send an error if it is'''
     if isinstance(ctx.channel, discord.DMChannel):
         await ctx.send("Whoops, you probably meant to send that in a text channel instead of a DM!")
@@ -64,3 +64,15 @@ def get_user_name(user:discord.User) -> str:
 def user_names(users:list[discord.User]) -> list[str]:
     '''Get a list of nice-looking names from a list of users'''
     return list(map(get_user_name, users))
+
+# Given a list of users and a name string, find the user with the closest name
+def get_closest_user(user_list:list[discord.User], name:str) -> discord.User:
+    '''Get anybody whose name starts with what was sent'''
+    for user in user_list:
+        # See if anybody's name starts with what was sent
+        uname = get_user_name(user).lower()
+
+        if uname.startswith(name.lower()):
+            return user
+
+    return None

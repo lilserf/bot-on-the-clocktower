@@ -19,6 +19,7 @@ import votetimer
 import announce
 import lookup
 import gameplay
+import messaging
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -731,6 +732,7 @@ class SetupCog(commands.Cog, name='Setup'):
 class GameplayCog(commands.Cog, name='Gameplay'):
     
     game:gameplay.GameplayImpl
+    role_messager:messaging.RoleMessagerImpl
 
     def __init__(self, bot):
         self.bot = bot
@@ -739,6 +741,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         rec = gameplay.IActivityRecorder()
         clean = gameplay.ICleanup()
         self.game = gameplay.GameplayImpl(rec, clean, COMMAND_PREFIX)
+
+        self.role_messager = messaging.RoleMessagerImpl()
 
         self.votetimer = votetimer.VoteTimer(bot, self.game.phase_vote)
 
@@ -797,7 +801,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         names = shlex.split(ctx.message.content)
         
-        sts = list(map(lambda x: self.getClosestUser(info.activePlayers, x), names[1:]))
+        sts = list(map(lambda x: discordhelper.get_closest_user(info.activePlayers, x), names[1:]))
 
         msg = await self.game.set_storytellers(info, sts)
 
@@ -820,62 +824,17 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
 
+    @commands.command(name='legion', help=f'Send info to all Legion players. Format is `{COMMAND_PREFIX}legion <Legion> <Legion> <Legion> etc`')
+    async def on_legion(self, ctx):
+        if not await self.isValid(ctx):
+            return
 
-    # Given a list of users and a name string, find the user with the closest name
-    def getClosestUser(self, userlist, name):
-        for u in userlist:
-            # See if anybody's name starts with what was sent
-            uname = discordhelper.get_user_name(u).lower()
-
-            if uname.startswith(name.lower()):
-                return u
-        
-        return None
-
-    # Common code for parsing evil and lunatic commands
-    async def processMinionMessage(self, ctx, users):
-
-        # Split the message allowing quoted substrings
-        params = shlex.split(ctx.message.content)
-        # Delete the input message
-        await ctx.message.delete()
-
-        # Grab the demon and list of minions
-        demon = params[1]
-        minions = params[2:]
-
-        if len(minions) == 0:
-            await discordhelper.send_error_to_author(ctx, f"It seems you forgot to specify any minions!")
-            return (False, None, None)
-
-        # Get the users from the names
-        demonUser = self.getClosestUser(users, demon)
-        minionUsers = list(map(lambda x: self.getClosestUser(users, x), minions))
-
-        info = self.bot.getTownInfo(ctx)
-        categories = [info.dayCategory.name]
-        if info.nightCategory:
-            categories.append(info.nightCategory.name)
-        catString = ', '.join(categories)
-
-        # Error messages for users not found
-        if demonUser is None:
-            await discordhelper.send_error_to_author(ctx, f"Couldn't find user **{demon}** in these categories: {catString}.")
-            return (False, None, None)
-
-        for (i, m) in enumerate(minionUsers):
-            if m is None:
-                await discordhelper.send_error_to_author(ctx, f"Couldn't find user **{minions[i]}** in these categories: {catString}.")
-                return (False, None, None)
-
-        return (True, demonUser, minionUsers)
-
-    # Send a message to the demon
-    async def sendDemonMessage(self, demonUser, minionUsers):
-        demonMsg = f"{discordhelper.get_user_name(demonUser)}: You are the **demon**. Your minions are: "
-        minionNames = discordhelper.user_names(minionUsers)
-        demonMsg += ', '.join(minionNames)
-        await demonUser.send(demonMsg)
+        try:
+            info = self.bot.getTownInfo(ctx)
+            await self.role_messager.inform_legion(info, ctx.message, ctx)
+            await ctx.send("The Evil team has been informed...")
+        except Exception as ex:
+            await discordhelper.send_error_to_author(ctx)
 
     # Command to send fake evil info to the Lunatic
     # Works the same as evil, but doesn't message the minions
@@ -886,14 +845,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         try:
             info = self.bot.getTownInfo(ctx)
-            users = info.activePlayers
-            (success, demonUser, minionUsers) = await self.processMinionMessage(ctx, users)
-
-            if not success:
-                return
-
-            await self.sendDemonMessage(demonUser, minionUsers)
-
+            await self.role_messager.inform_lunatic(info, ctx.message, ctx)
+            await ctx.send("The Evil team has been informed...")
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
 
@@ -905,29 +858,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         try:
             info = self.bot.getTownInfo(ctx)
-            users = info.activePlayers
-            (success, demonUser, minionUsers) = await self.processMinionMessage(ctx, users)
-
-            if not success:
-                return
-
-            await self.sendDemonMessage(demonUser, minionUsers)
-
-            minionMsg = "{}: You are a **minion**. Your demon is: {}."
-            
-            if len(minionUsers) > 1:
-                minionMsg += " Your fellow minions are: {}."
-
-            for m in minionUsers:
-                otherMinions = discordhelper.user_names(minionUsers)
-                otherMinions.remove(discordhelper.get_user_name(m))
-
-                otherMinionsMsg = ', '.join(otherMinions)
-                formattedMsg = minionMsg.format(discordhelper.get_user_name(m), discordhelper.get_user_name(demonUser), otherMinionsMsg)
-                await m.send(formattedMsg)
-
+            await self.role_messager.inform_evil(info, ctx.message, ctx) 
             await ctx.send("The Evil team has been informed...")
-                
         except Exception as ex:
             await discordhelper.send_error_to_author(ctx)
 
