@@ -96,8 +96,18 @@ class botcBot(commands.Bot):
             return TownInfo(guild, doc)
         else:
             return None
+    
     def get_announce_cog(self):
         return self.get_cog('Version Announcements')
+
+    def get_cleanup_cog(self):
+        return self.get_cog('GameCleanup')
+
+    def get_activity_cog(self):
+        return self.get_cog('GameActivity')
+
+    def get_gameplay_cog(self):
+        return self.get_cog('Gameplay')
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord! Command prefix: {COMMAND_PREFIX}')
@@ -728,6 +738,91 @@ class SetupCog(commands.Cog, name='Setup'):
         embed.add_field(name="Villager Role", value=townInfo.villagerRole.name, inline=False)
         await ctx.send(embed=embed)
 
+class GameActivityCog(commands.Cog, gameplay.IGameActivity, name='GameActivity'):
+    
+    def __init__(self, bot):
+        self.bot = bot
+
+    def record_activity(self, guild, controlChan):
+        post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
+        query = { "guild" : guild.id, "channel" : controlChan.id }
+        # Upsert this record
+        g_dbActiveGames.replace_one(query, post, True)
+
+        self.bot.get_cleanup_cog().start()
+
+    def remove_active_game(self, guild, controlChan):
+        # Delete this game's record
+        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": controlChan.id })
+
+
+class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    def start(self) -> None:
+        self.cleanup_inactive_games.start()
+
+    def stop(self) -> None:
+        self.cleanup_inactive_games.stop()
+
+    # Called periodically to try and clean up old games that aren't in progress anymore
+    # This is 8 hours, with inactivity at 3, as the expectation is that 3-4 hours is probably
+    # at the the common upper limit for a town to be active, so 5 hours should catch most games.
+    # For debugging, use the 3-second loop and the 10-second delta below
+    #@tasks.loop(seconds=3)
+    @tasks.loop(hours=8)
+    async def cleanup_inactive_games(self) -> None:
+        print("Checking for inactive games")
+        # Inactive games are ones that haven't had any activity in the last 3 hours
+        inactiveTime = datetime.datetime.now() - datetime.timedelta(hours=3)
+        #inactiveTime = datetime.datetime.now() - datetime.timedelta(seconds=10)
+
+        numEnded = 0
+
+        # "Range query" that gives us all documents with a timestamp less than our inactive time
+        inactiveQuery = {"lastActivity" : {"$lt": inactiveTime}}
+        
+        for rec in g_dbActiveGames.find(inactiveQuery):
+            guildId = rec["guild"]
+            # Fetch the full info for this guild/channel combo
+            lookupQuery = { "guild" : guildId, "controlChannelId" : rec["channel"] }
+            doc = g_dbGuildInfo.find_one(lookupQuery)
+            if doc:
+                guild = self.bot.get_guild(guildId)
+                if guild:
+                    (townValid, townError) = isTownValid(guild, doc)
+                    if townValid:
+                        info = TownInfo(guild, doc)
+                        try:
+                            await self.bot.get_gameplay_cog().end_game(info)
+                            numEnded = numEnded + 1
+                            print(f"Ended game in guild {guildId}")
+                            g_dbActiveGames.delete_one(lookupQuery)
+                        except Exception:
+                            pass
+                    else:
+                        print(f"Couldn't end game in guild {guildId} due to {townError}")
+                        g_dbActiveGames.delete_one(lookupQuery)
+                else:
+                    print(f"Couldn't find guild with id {guildId}, may have been deleted")
+                    g_dbActiveGames.delete_one(lookupQuery)
+
+        if numEnded > 0:
+            print(f'Ended {numEnded} inactive game(s)')
+
+        # Remove all the inactive towns from our list just in case any fell through
+        result = g_dbActiveGames.delete_many(inactiveQuery)
+
+        # If nothing is left active at all, stop the timer
+        if g_dbActiveGames.count_documents({}) == 0:
+            print("No remaining active games, stopping checks")
+            self.cleanup_inactive_games.stop()
+    
+    @cleanup_inactive_games.before_loop
+    async def beforecleanupInactiveGames(self):
+        await self.bot.wait_until_ready()
 
 class GameplayCog(commands.Cog, name='Gameplay'):
     
@@ -737,10 +832,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     def __init__(self, bot):
         self.bot = bot
 
-        # TODO this is a hack
-        rec = gameplay.IActivityRecorder()
-        clean = gameplay.ICleanup()
-        self.game = gameplay.GameplayImpl(rec, clean, COMMAND_PREFIX)
+        self.game = gameplay.GameplayImpl(bot.get_activity_cog(), COMMAND_PREFIX)
 
         self.role_messager = messaging.RoleMessagerImpl()
 
@@ -748,10 +840,10 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
-            self.cleanupInactiveGames.start() 
+            self.bot.get_cleanup_cog().start() 
 
     def cog_unload(self):
-        self.cleanupInactiveGames.cancel()
+        self.bot.get_cleanup_cog().stop()
 
     # Helper to see if a command context is in a valid channel etc - used by all the commands
     async def isValid(self, ctx):
@@ -770,20 +862,15 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         return False
 
+    # Exposed for use by other cogs
+    async def end_game(self, info:TownInfo):
+        await self.game.end_game(info)
+
     # End the game and remove all the roles, permissions, etc
     @commands.command(name='endGame', aliases=['endgame'], help='End the current game and reset all permissions, roles, names, etc.')
     async def onEndGame(self, ctx):
         '''Command handler to end the game'''
-        await self.perform_action_reporting_errors(self.end_game_internal, ctx)
-
-    async def end_game_internal(self, ctx):
-        '''Actually end the game'''
-        guild = ctx.guild
-        info = self.bot.getTownInfo(ctx)
-        msg = await self.game.end_game(info)
-        # TODO move removeActiveGame logic into end_game
-        self.removeActiveGame(guild, ctx.channel)
-        return msg
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.end_game(self.bot.getTownInfo(inner_ctx)), ctx)
 
     # Set the current storytellers
     @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
@@ -833,76 +920,6 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
     async def on_evil(self, ctx):
         await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_evil(self.bot.getTownInfo(inner_ctx), inner_ctx.message, inner_ctx), ctx)
-
-######################## Game Activity
-
-    def recordGameActivity(self, guild, controlChan):
-        post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
-        query = { "guild" : guild.id, "channel" : controlChan.id }
-        # Upsert this record
-        g_dbActiveGames.replace_one(query, post, True)
-
-    def removeActiveGame(self, guild, controlChan):
-        # Delete this game's record
-        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": controlChan.id })
-
-    # Called periodically to try and clean up old games that aren't in progress anymore
-    # This is 8 hours, with inactivity at 3, as the expectation is that 3-4 hours is probably
-    # at the the common upper limit for a town to be active, so 5 hours should catch most games.
-    # For debugging, use the 3-second loop and the 10-second delta below
-    #@tasks.loop(seconds=3)
-    @tasks.loop(hours=8)
-    async def cleanupInactiveGames(self):
-        print("Checking for inactive games")
-        # Inactive games are ones that haven't had any activity in the last 3 hours
-        inactiveTime = datetime.datetime.now() - datetime.timedelta(hours=3)
-        #inactiveTime = datetime.datetime.now() - datetime.timedelta(seconds=10)
-
-        numEnded = 0
-
-        # "Range query" that gives us all documents with a timestamp less than our inactive time
-        inactiveQuery = {"lastActivity" : {"$lt": inactiveTime}}
-        
-        for rec in g_dbActiveGames.find(inactiveQuery):
-            guildId = rec["guild"]
-            # Fetch the full info for this guild/channel combo
-            lookupQuery = { "guild" : guildId, "controlChannelId" : rec["channel"] }
-            doc = g_dbGuildInfo.find_one(lookupQuery)
-            if doc:
-                guild = self.bot.get_guild(guildId)
-                if guild:
-                    (townValid, townError) = isTownValid(guild, doc)
-                    if townValid:
-                        info = TownInfo(guild, doc)
-                        try:
-                            await self.game.end_game(info)
-                            numEnded = numEnded + 1
-                            print(f"Ended game in guild {guildId}")
-                            g_dbActiveGames.delete_one(lookupQuery)
-                        except Exception:
-                            pass
-                    else:
-                        print(f"Couldn't end game in guild {guildId} due to {townError}")
-                        g_dbActiveGames.delete_one(lookupQuery)
-                else:
-                    print(f"Couldn't find guild with id {guildId}, may have been deleted")
-                    g_dbActiveGames.delete_one(lookupQuery)
-
-        if numEnded > 0:
-            print(f'Ended {numEnded} inactive game(s)')
-
-        # Remove all the inactive towns from our list just in case any fell through
-        result = g_dbActiveGames.delete_many(inactiveQuery)
-
-        # If nothing is left active at all, stop the timer
-        if g_dbActiveGames.count_documents({}) == 0:
-            print("No remaining active games, stopping checks")
-            self.cleanupInactiveGames.stop()
-
-    
-    @cleanupInactiveGames.before_loop
-    async def beforecleanupInactiveGames(self):
-        await self.bot.wait_until_ready()
 
     # Start the vote timer
     @commands.command(name='voteTimer', aliases=['vt', 'votetimer'], help=f'Start a countdown to voting time.\n\nUsage: {COMMAND_PREFIX}votetimer <time string>\n\nTime string can look like: "5 minutes 30 seconds" or "5:30" or "5m30s"')
@@ -977,6 +994,8 @@ class LookupCog(commands.Cog, name='Lookup'):
 
 
 bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
+bot.add_cog(GameActivityCog(bot))
+bot.add_cog(GameCleanupCog(bot))
 bot.add_cog(SetupCog(bot))
 bot.add_cog(GameplayCog(bot))
 bot.add_cog(AnnouncerCog(bot))

@@ -4,28 +4,32 @@ import discord
 import discordhelper
 from botctypes import TownInfo
 
-# TODO
-class IActivityRecorder():
-    '''Interface for a class to record game activity'''
+class IGameActivity():
+    '''Interface for a class to manage game activity'''
+
     def record_activity(self, guild:discord.Guild, channel:discord.abc.GuildChannel) -> None:
         '''Record that activity has happen on a given guild and channel'''
 
-# TODO
-class ICleanup():
-    '''Interface for a class to manage game cleanup'''
-    def game_active(self) -> None:
-        '''Record that a game is active and cleanup should happen later'''
+    def remove_active_game(self, guild:discord.Guild, channel:discord.abc.GuildChannel) -> None:
+        '''Remove this game'''
+
+class IGameCleanup():
+    '''Interface for a class that has a timer that can be started and stopped to cleanup inactive games'''
+
+    def start(self) -> None:
+        '''start the timer'''
+
+    def stop(self) -> None:
+        ''' stop the timer'''
 
 class GameplayImpl():
     '''Implementation for a gameplay object'''
 
-    recorder:IActivityRecorder
-    cleanup:ICleanup
+    activity:IGameActivity
     command_prefix:str
 
-    def __init__(self, recorder:IActivityRecorder, cleanup:ICleanup, command_prefix:str):
-        self.recorder = recorder
-        self.cleanup = cleanup
+    def __init__(self, activity:IGameActivity, command_prefix:str):
+        self.activity = activity
         self.command_prefix = command_prefix
 
     async def end_game(self, info:TownInfo) -> str:
@@ -69,6 +73,7 @@ class GameplayImpl():
                 except:
                     pass
 
+        self.activity.remove_active_game(info.guild, info.controlChannel)
         return msg
 
 
@@ -151,9 +156,7 @@ class GameplayImpl():
                 await mem.add_roles(info.villagerRole)
             messages.append(add_msg)
 
-        self.recorder.record_activity(info.guild, info.controlChannel)
-
-        self.cleanup.game_active()
+        self.activity.record_activity(info.guild, info.controlChannel)
 
         return "\n".join(messages)
 
