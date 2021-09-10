@@ -921,6 +921,8 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     async def on_evil(self, ctx):
         await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_evil(self.bot.getTownInfo(inner_ctx), inner_ctx.message, inner_ctx), ctx)
 
+######################## Vote Timer
+
     # Start the vote timer
     @commands.command(name='voteTimer', aliases=['vt', 'votetimer'], help=f'Start a countdown to voting time.\n\nUsage: {COMMAND_PREFIX}votetimer <time string>\n\nTime string can look like: "5 minutes 30 seconds" or "5:30" or "5m30s"')
     async def start_timer(self, ctx):
