@@ -1,9 +1,10 @@
 ﻿import botctypes
-import datetime
+from datetime import timedelta
 from discord.ext import tasks
 import math
 import pytimeparse
 import shlex
+from pythonwrappers import *
 
 class VoteTownInfo:
     def __init__(self, chat_channel, villager_role):
@@ -86,7 +87,7 @@ class VoteTimerController(IVoteTimerController):
             advance_times = [300, 60, 15, 0]
             for x in advance_times:
                 if delta > x:
-                    next_time = end_time - datetime.timedelta(seconds=x)
+                    next_time = end_time - timedelta(seconds=x)
                     break
 
         self.town_storage.add_town(town_id, next_time)
@@ -117,14 +118,6 @@ class VoteTimerController(IVoteTimerController):
             message = message + 'Time to vote!'
 
         return message
-
-class IDateTimeProvider:
-    def now(self):
-        pass
-
-class DateTimeProvider(IDateTimeProvider):
-    def now(self):
-        return datetime.datetime.now()
 
 
 class IVoteTownTicker:
@@ -272,7 +265,7 @@ class VoteTimerImpl:
             return required_time_str
 
         now = self.datetime_provider.now()
-        end_time = now+datetime.timedelta(seconds=time_in_seconds)
+        end_time = now+timedelta(seconds=time_in_seconds)
         return await self.controller.add_town(town_id, end_time)
 
 
