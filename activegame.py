@@ -3,9 +3,10 @@ from datetime import datetime
 
 class ActiveGame:
     '''Class containing info about an in-progress game'''
+
     def __init__(self):
         self.town_id: TownId = None
-        self.last_activity: None
+        self.last_activity: datetime = None
         self.storyteller_ids: list[int] = []
         self.player_ids: list[int] = []
 
