@@ -770,141 +770,116 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         return False
 
+    async def safe_perform_action(self, ctx:commands.Context, action) -> None:
+        '''Wrapper for a common pattern when performing actions in this Cog'''
+        if not await self.isValid(ctx):
+            return
+
+        try:
+            await action(ctx)
+
+        except Exception as ex:
+            await discordhelper.send_error_to_author(ctx)
+
+    async def end_game_internal(self, ctx):
+        '''Actually end the game'''
+        guild = ctx.guild
+        info = self.bot.getTownInfo(ctx)
+        msg = await self.game.end_game(info)
+        await ctx.send(msg)
+        # TODO move removeActiveGame logic into end_game
+        self.removeActiveGame(guild, ctx.channel)
 
     # End the game and remove all the roles, permissions, etc
     @commands.command(name='endGame', aliases=['endgame'], help='End the current game and reset all permissions, roles, names, etc.')
     async def onEndGame(self, ctx):
-        if not await self.isValid(ctx):
-            return
+        '''Command handler to end the game'''
+        await self.safe_perform_action(ctx, self.end_game_internal)
 
-        try:
-            guild = ctx.guild
-
-            info = self.bot.getTownInfo(ctx)
-
-            msg = await self.game.end_game(info)
-            await ctx.send(msg)
-
-            # TODO move removeActiveGame logic into end_game
-            self.removeActiveGame(guild, ctx.channel)
-
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+    async def set_storytellers_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        names = shlex.split(ctx.message.content)
+        sts = list(map(lambda x: discordhelper.get_closest_user(info.activePlayers, x), names[1:]))
+        msg = await self.game.set_storytellers(info, sts)
+        await ctx.send(msg)
 
     # Set the current storytellers
     @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
-    async def onSetSTs(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_set_storytellers(self, ctx):
+        await self.safe_perform_action(ctx, self.set_storytellers_internal)
 
-        info = self.bot.getTownInfo(ctx)
-
-        names = shlex.split(ctx.message.content)
-        
-        sts = list(map(lambda x: discordhelper.get_closest_user(info.activePlayers, x), names[1:]))
-
-        msg = await self.game.set_storytellers(info, sts)
-
-        await ctx.send(msg)
-
+    async def curr_game_internal(self, ctx):
+        info:TownInfo = self.bot.getTownInfo(ctx)
+        message:str = await self.game.current_game(info, ctx.author)
+        if message:
+            await ctx.send(message)
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
-    async def onCurrGame(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_curr_game(self, ctx):
+        await self.safe_perform_action(ctx, self.curr_game_internal)
 
-        try:
-            info:TownInfo = self.bot.getTownInfo(ctx)
-
-            message:str = await self.game.current_game(info, ctx.author)
-
-            await ctx.send(message)
-
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+    async def on_legion_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        await self.role_messager.inform_legion(info, ctx.message, ctx)
+        await ctx.send("The Evil team has been informed...")
 
     @commands.command(name='legion', help=f'Send info to all Legion players. Format is `{COMMAND_PREFIX}legion <Legion> <Legion> <Legion> etc`')
     async def on_legion(self, ctx):
-        if not await self.isValid(ctx):
-            return
+        await self.safe_perform_action(ctx, self.on_legion_internal)
 
-        try:
-            info = self.bot.getTownInfo(ctx)
-            await self.role_messager.inform_legion(info, ctx.message, ctx)
-            await ctx.send("The Evil team has been informed...")
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+    async def on_lunatic_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        await self.role_messager.inform_lunatic(info, ctx.message, ctx)
+        await ctx.send("The Evil team has been informed...")
 
     # Command to send fake evil info to the Lunatic
     # Works the same as evil, but doesn't message the minions
     @commands.command(name='lunatic', help=f'Send fake evil info to the Lunatic. Format is `{COMMAND_PREFIX}lunatic <Lunatic> <fake minion> <fake minion> <fake minion>`')
-    async def onLunatic(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_lunatic(self, ctx):
+        await self.safe_perform_action(ctx, self.on_lunatic_internal)
 
-        try:
-            info = self.bot.getTownInfo(ctx)
-            await self.role_messager.inform_lunatic(info, ctx.message, ctx)
-            await ctx.send("The Evil team has been informed...")
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+    async def on_evil_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        await self.role_messager.inform_evil(info, ctx.message, ctx) 
+        await ctx.send("The Evil team has been informed...")
 
     # Command to send demon/minion info to the Demon and Minions
     @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
-    async def onEvil(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_evil(self, ctx):
+        await self.safe_perform_action(ctx, self.on_evil_internal)
 
-        try:
-            info = self.bot.getTownInfo(ctx)
-            await self.role_messager.inform_evil(info, ctx.message, ctx) 
-            await ctx.send("The Evil team has been informed...")
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+    async def on_night_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        msg = await self.game.phase_night(info, ctx.author)
+        await ctx.send(msg)
 
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
-    async def onNight(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_night(self, ctx):
+        await self.safe_perform_action(ctx, self.on_night_internal)
 
-        try:
-            info = self.bot.getTownInfo(ctx)
-            msg = await self.game.phase_night(info, ctx.author)
-            await ctx.send(msg)
-
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+    async def on_day_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        msg = await self.game.phase_day(info)
+        await ctx.send(msg)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move players from Cottages back to Town Square')
-    async def onDay(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_day(self, ctx):
+        await self.safe_perform_action(ctx, self.on_day_internal)
 
-        try:
-            info = self.bot.getTownInfo(ctx)
-            msg = await self.game.phase_day(info)
-            await ctx.send(msg)
-
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
-
+    async def on_vote_internal(self, ctx):
+        info = self.bot.getTownInfo(ctx)
+        msg = await self.game.phase_vote(info)
+        await ctx.send(msg)
 
     # Move users from other daytime channels back to Town Square
     @commands.command(name='vote', help='Move players from daytime channels back to Town Square')
-    async def onVote(self, ctx):
-        if not await self.isValid(ctx):
-            return
+    async def on_vote(self, ctx):
+        await self.safe_perform_action(ctx, self.on_vote_internal)
 
-        try:
-            info = self.bot.getTownInfo(ctx)
-            msg = await self.game.phase_vote(info)
-            await ctx.send(msg)
-        
-        except Exception as ex:
-            await discordhelper.send_error_to_author(ctx)
+########################
 
     def recordGameActivity(self, guild, controlChan):
         post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
