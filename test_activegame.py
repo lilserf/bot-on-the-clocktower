@@ -1,29 +1,92 @@
-﻿import activegame
+﻿from datetime import datetime, date, time
 import unittest
 
+from activegame import *
+from pythonwrappers import *
 
 class TestActiveGameSync(unittest.TestCase):
 
     def test_construct_active_game_no_games(self):
-        store = activegame.ActiveGameStore(MockActiveGameDb())
+        store = ActiveGameStore(MockActiveGameDb([]), MockDateTimeProvider())
 
-        self.assertEqual(0, store.get_active_game_count())
+        self.assertEqual(0, store.get_game_count())
 
     def test_construct_active_game_with_games(self):
-        store1 = activegame.ActiveGameStore(MockActiveGameDb([activegame.ActiveGame()]))
-        store2 = activegame.ActiveGameStore(MockActiveGameDb([activegame.ActiveGame(), activegame.ActiveGame()]))
+        store1 = ActiveGameStore(MockActiveGameDb([ActiveGame()]), MockDateTimeProvider())
+        store2 = ActiveGameStore(MockActiveGameDb([ActiveGame(), ActiveGame()]), MockDateTimeProvider())
 
-        self.assertEqual(1, store1.get_active_game_count())
-        self.assertEqual(2, store2.get_active_game_count())
+        self.assertEqual(1, store1.get_game_count())
+        self.assertEqual(2, store2.get_game_count())
+
+    def test_add_new_game_updates_stat_and_db(self):
+        db_mock:MockActiveGameDb = MockActiveGameDb([])
+        store:ActiveGameStore = ActiveGameStore(db_mock, MockDateTimeProvider())
+
+        town_id:TownId = TownId(6, 8)
+        storyteller_ids:list[int] = [1]
+        player_ids:list[int] = [1, 2, 3]
+
+        store.add_or_update_game(town_id, storyteller_ids, player_ids)
+
+        self.assertEqual(1, store.get_game_count())
+        self.assertEqual(1, db_mock.add_or_update_game_calls)
+        self.assertEqual(town_id, db_mock.add_or_update_game_param.town_id)
+        self.assertEqual(storyteller_ids, db_mock.add_or_update_game_param.storyteller_ids)
+        self.assertEqual(player_ids, db_mock.add_or_update_game_param.player_ids)
+        
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(1))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(2))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(3))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(4))
+
+    def test_construct_active_game_with_games_lookup_successful(self):
+
+        g1 = ActiveGame()
+        g1.player_ids = [1, 2]
+        g1.storyteller_ids = [3]
+        g1.town_id = TownId(10, 11)
+        
+        g2 = ActiveGame()
+        g2.player_ids = [2, 4]
+        g2.storyteller_ids = [4]
+        g2.town_id = TownId(14, 15)
+
+        store = ActiveGameStore(MockActiveGameDb([g1, g2]), MockDateTimeProvider())
+
+        self.assertEqual(2, store.get_game_count())
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
+        self.assertSetEqual(set([g1.town_id]), store.get_town_ids_for_member_id(1))
+        self.assertSetEqual(set([g1.town_id, g2.town_id]), store.get_town_ids_for_member_id(2))
+        self.assertSetEqual(set([g1.town_id]), store.get_town_ids_for_member_id(3))
+        self.assertSetEqual(set([g2.town_id]), store.get_town_ids_for_member_id(4))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(5))
+
+    # TODO: add game already in progress, should update existing
 
 
+class MockActiveGameDb(IActiveGameDb):   
 
-class MockActiveGameDb(activegame.IActiveGameDb):
-    def __init__(self, games:list[activegame.ActiveGame]=[]):
-        self.games: list[activegame.ActiveGame] = games
+    def __init__(self, games:list[ActiveGame]):
+        self.games: list[ActiveGame] = games
 
-    def retrieve_active_games(self) -> list[activegame.ActiveGame]:
+        self.add_or_update_game_calls:int = 0
+        self.add_or_update_game_param:ActiveGame = None
+
+    def retrieve_active_games(self) -> list[ActiveGame]:
         return self.games
+    
+    def add_or_update_game(self, game:ActiveGame) -> None:
+        self.add_or_update_game_calls += 1
+        self.add_or_update_game_param = game
+
+
+class MockDateTimeProvider(IDateTimeProvider):
+    def __init__(self):
+        self.time_now = datetime.combine(date(2021, 9, 4), time(18, 20, 0))
+
+    def now(self) -> datetime:
+        return self.time_now
 
 
 if __name__ == '__main__':
