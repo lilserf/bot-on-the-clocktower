@@ -83,6 +83,7 @@ class RoleMessagerImpl:
 
         await self.send_demon_message(demon_user, minion_users)
         await self.send_minion_message(demon_user, minion_users)
+        return "The Evil team has been informed..."
 
     async def inform_lunatic(self, info:TownInfo, message:discord.Message, ctx:commands.Context) -> None:
         '''Inform the Lunatic of their fake minions as if they were really a demon'''
@@ -94,6 +95,7 @@ class RoleMessagerImpl:
             return
 
         await self.send_demon_message(demon_user, minion_users)
+        return "The Evil team has been informed..."
 
     async def inform_legion(self, info:TownInfo, message:discord.Message, ctx:commands.Context) -> None:
         '''Inform all Legion players of the situation'''
@@ -106,4 +108,5 @@ class RoleMessagerImpl:
 
         minion_users.append(demon_user)
         await self.send_group_message(minion_users, '{}: You are **Legion**, along with {}.')
+        return "The Evil team has been informed..."
 
