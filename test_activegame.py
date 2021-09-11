@@ -1,4 +1,11 @@
-﻿from datetime import datetime, date, time
+﻿# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+# pylint: disable=invalid-name
+# pylint: disable=wildcard-import
+# pylint: disable=unused-wildcard-import
+
+from datetime import datetime, date, time
 import unittest
 
 from activegame import *
@@ -12,8 +19,13 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertEqual(0, store.get_game_count())
 
     def test_construct_active_game_with_games(self):
-        store1 = ActiveGameStore(MockActiveGameDb([ActiveGame()]), MockDateTimeProvider())
-        store2 = ActiveGameStore(MockActiveGameDb([ActiveGame(), ActiveGame()]), MockDateTimeProvider())
+        g1 = ActiveGame()
+        g1.town_id = TownId(1, 1)
+        g2 = ActiveGame()
+        g2.town_id = TownId(2, 2)
+
+        store1 = ActiveGameStore(MockActiveGameDb([g1]), MockDateTimeProvider())
+        store2 = ActiveGameStore(MockActiveGameDb([g1, g2]), MockDateTimeProvider())
 
         self.assertEqual(1, store1.get_game_count())
         self.assertEqual(2, store2.get_game_count())
@@ -33,7 +45,7 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertEqual(town_id, db_mock.add_or_update_game_param.town_id)
         self.assertEqual(storyteller_ids, db_mock.add_or_update_game_param.storyteller_ids)
         self.assertEqual(player_ids, db_mock.add_or_update_game_param.player_ids)
-        
+
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(1))
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(2))
@@ -46,7 +58,7 @@ class TestActiveGameSync(unittest.TestCase):
         g1.player_ids = [1, 2]
         g1.storyteller_ids = [3]
         g1.town_id = TownId(10, 11)
-        
+
         g2 = ActiveGame()
         g2.player_ids = [2, 4]
         g2.storyteller_ids = [4]
@@ -62,10 +74,42 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set([g2.town_id]), store.get_town_ids_for_member_id(4))
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(5))
 
-    # TODO: add game already in progress, should update existing
+    def test_set_difference_no_change(self):
+        set_diff = SetDifference(set(), set())
+        self.assertSetEqual(set(), set_diff.added)
+        self.assertSetEqual(set(), set_diff.removed)
 
 
-class MockActiveGameDb(IActiveGameDb):   
+    def test_existing_game_new_game_replaces(self):
+        
+        town_id = TownId(10, 11)
+
+        g1 = ActiveGame()
+        g1.player_ids = [1, 2]
+        g1.storyteller_ids = [1]
+        g1.town_id = town_id
+
+        store = ActiveGameStore(MockActiveGameDb([g1]), MockDateTimeProvider())
+        
+        self.assertEqual(1, store.get_game_count())
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(1))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(2))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(3))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(4))
+
+        store.add_or_update_game(TownId(10, 11), set([2, 3]), set([2]))
+        
+        self.assertEqual(1, store.get_game_count())
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(1))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(2))
+        self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(3))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(4))
+
+
+
+class MockActiveGameDb(IActiveGameDb):
 
     def __init__(self, games:list[ActiveGame]):
         self.games: list[ActiveGame] = games
@@ -75,7 +119,7 @@ class MockActiveGameDb(IActiveGameDb):
 
     def retrieve_active_games(self) -> list[ActiveGame]:
         return self.games
-    
+
     def add_or_update_game(self, game:ActiveGame) -> None:
         self.add_or_update_game_calls += 1
         self.add_or_update_game_param = game

@@ -1,5 +1,8 @@
-﻿from botctypes import TownId
+﻿'''Module for managing currently-active games the bot tracks'''
+
 from datetime import datetime
+
+from botctypes import TownId
 from pythonwrappers import IDateTimeProvider
 
 class ActiveGame:
@@ -32,16 +35,20 @@ class IActiveGameDb:
 
 
 class ActiveGameStore(IActiveGameStore):
+    '''Storage for holding all the currently-active games'''
+
     def __init__(self, active_game_db:IActiveGameDb, datetime_provider:IDateTimeProvider):
-        self.db: IActiveGameDb = active_game_db
+        self.active_game_db: IActiveGameDb = active_game_db
         self.datetime = datetime_provider
 
         self.town_ids_from_member_id_map: dict[int, set[TownId]] = {}
-        self.current_games:list[ActiveGame] = active_game_db.retrieve_active_games()
 
-        for g in self.current_games:
-            self.add_game_for_members(g)
-    
+        self.current_games:dict[TownId, ActiveGame] = {}
+        active_games:list[ActiveGame] = active_game_db.retrieve_active_games()
+        game:ActiveGame
+        for game in active_games:
+            self.on_game_added(game)
+
     def get_game_count(self) -> int:
         return len(self.current_games)
 
@@ -52,17 +59,22 @@ class ActiveGameStore(IActiveGameStore):
         game.player_ids = player_ids
         game.last_activity = self.datetime.now()
 
-        self.current_games.append(game)
-        self.add_game_for_members(game)
-
-        self.db.add_or_update_game(game)
+        self.on_game_added(game)
+        self.active_game_db.add_or_update_game(game)
 
     def get_town_ids_for_member_id(self, member_id:int) -> set[TownId]:
-        return member_id in self.town_ids_from_member_id_map and self.town_ids_from_member_id_map[member_id] or set()
+        return self.town_ids_from_member_id_map[member_id] if member_id in self.town_ids_from_member_id_map else set()
 
-    def add_game_for_members(self, game:ActiveGame) -> None:
+    def assign_game_to_members(self, game:ActiveGame) -> None:
+        '''Assigns a game to the members in that game'''
         unique_ids = set(game.storyteller_ids) | set(game.player_ids)
-        for id in unique_ids:
-            if id not in self.town_ids_from_member_id_map:
-                self.town_ids_from_member_id_map[id] = set()
-            self.town_ids_from_member_id_map[id].add(game.town_id)
+        for member_id in unique_ids:
+            if member_id not in self.town_ids_from_member_id_map:
+                self.town_ids_from_member_id_map[member_id] = set()
+            self.town_ids_from_member_id_map[member_id].add(game.town_id)
+
+    def on_game_added(self, game:ActiveGame) -> None:
+        '''To call whenever a game is added'''
+
+        self.current_games[game.town_id] = game
+        self.assign_game_to_members(game)
