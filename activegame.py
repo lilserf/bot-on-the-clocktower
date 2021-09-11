@@ -5,6 +5,12 @@ from datetime import datetime
 from botctypes import TownId
 from pythonwrappers import IDateTimeProvider
 
+class SetDifference:
+    '''Simple class for figuring what changed when moving from an old set to a new set'''
+    def __init__(self, old:set, new:set):
+        self.added:set = new-old
+        self.removed:set = old-new
+
 class ActiveGame:
     '''Class containing info about an in-progress game'''
 

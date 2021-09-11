@@ -79,9 +79,23 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set(), set_diff.added)
         self.assertSetEqual(set(), set_diff.removed)
 
+    def test_set_difference_only_adds(self):
+        set_diff = SetDifference(set(), set([1, 2, 3]))
+        self.assertSetEqual(set([1, 2, 3]), set_diff.added)
+        self.assertSetEqual(set(), set_diff.removed)
+
+    def test_set_difference_only_removes(self):
+        set_diff = SetDifference(set([1, 2, 3]), set())
+        self.assertSetEqual(set(), set_diff.added)
+        self.assertSetEqual(set([1, 2, 3]), set_diff.removed)
+
+    def test_set_difference_adds_and_removes(self):
+        set_diff = SetDifference(set([1, 2]), set([2, 3]))
+        self.assertSetEqual(set([3]), set_diff.added)
+        self.assertSetEqual(set([1]), set_diff.removed)
+
 
     def test_existing_game_new_game_replaces(self):
-        
         town_id = TownId(10, 11)
 
         g1 = ActiveGame()
@@ -90,7 +104,7 @@ class TestActiveGameSync(unittest.TestCase):
         g1.town_id = town_id
 
         store = ActiveGameStore(MockActiveGameDb([g1]), MockDateTimeProvider())
-        
+
         self.assertEqual(1, store.get_game_count())
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(1))
@@ -99,7 +113,7 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(4))
 
         store.add_or_update_game(TownId(10, 11), set([2, 3]), set([2]))
-        
+
         self.assertEqual(1, store.get_game_count())
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(1))
