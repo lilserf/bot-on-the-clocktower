@@ -17,6 +17,8 @@ class TownId:
 
 # Nicer than a dict for storing info about the town
 class TownInfo:
+    # pylint: disable=invalid-name
+    # TODO: Fix the non-snake-case names in here
     '''Utility class encapsulating all the Stuff that is important to a Town'''
     guild:discord.Guild
     dayCategory:discord.CategoryChannel
@@ -72,3 +74,18 @@ class TownInfo:
 
             self.authorName = document["authorName"]
             self.timestamp = document["timestamp"]
+
+    def make_embed(self) -> discord.Embed:
+
+        guild = self.guild
+        embed = discord.Embed(title=f'{guild.name} // {self.dayCategory.name}', description=f'Created {self.timestamp} by {self.authorName}', color=0xcc0000)
+        embed.add_field(name="Control Channel", value=self.controlChannel.name, inline=False)
+        embed.add_field(name="Town Square", value=self.townSquare.name, inline=False)
+        embed.add_field(name="Chat Channel", value=self.chatChannel and self.chatChannel.name or "<None>", inline=False)
+        embed.add_field(name="Day Category", value=self.dayCategory.name, inline=False)
+        embed.add_field(name="Night Category", value=self.nightCategory and self.nightCategory.name or "<None>", inline=False)
+        embed.add_field(name="Storyteller Role", value=self.storyTellerRole.name, inline=False)
+        embed.add_field(name="Villager Role", value=self.villagerRole.name, inline=False)
+        return embed
+
+
