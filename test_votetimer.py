@@ -20,7 +20,7 @@ class MockValidTownInfoProvider(votetimer.IVoteTownInfoProvider):
 class MockTownInfoProvider(votetimer.IVoteTownInfoProvider):
     def get_town_info(self, town_id):
         valid_channel = {'valid':True}
-        return votetimer.VoteTownInfo(valid_channel, MockValidRole())
+        return votetimer.VoteTownInfo(valid_channel, MockValidRole(), 'Ye Olde Towne Squarey')
 
 class MockDateTimeProvider(IDateTimeProvider):
     def __init__(self):
@@ -99,7 +99,7 @@ class MockVoteHandler(votetimer.IVoteHandler):
 
 class MockTownInfoProvider(votetimer.IVoteTownInfoProvider):
     def __init__(self):
-        self.town_info = votetimer.VoteTownInfo({'valid':True}, MockValidRole())
+        self.town_info = votetimer.VoteTownInfo({'valid':True}, MockValidRole(), 'Ye Olde Towne Squarey')
 
     def get_town_info(self, town_id):
         return self.town_info
@@ -204,7 +204,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
         class TestNoChatChannelProvider(votetimer.IVoteTownInfoProvider):
             def get_town_info(self, town_id):
-                return votetimer.VoteTownInfo(None, MockValidRole())
+                return votetimer.VoteTownInfo(None, MockValidRole(), 'Ye Olde Towne Squarey')
             
         impl2 = votetimer.VoteTimerImpl(MockDoNothingController(), MockDateTimeProvider(), TestNoChatChannelProvider())
         message = await impl2.start_timer(None, 60)
@@ -213,7 +213,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
         class TestNoVillagerRoleProvider(votetimer.IVoteTownInfoProvider):
             def get_town_info(self, town_id):
-                return votetimer.VoteTownInfo(valid_channel, None)
+                return votetimer.VoteTownInfo(valid_channel, None, 'Ye Olde Towne Squarey')
             
         impl3 = votetimer.VoteTimerImpl(MockDoNothingController(), MockDateTimeProvider(), TestNoVillagerRoleProvider())
         message = await impl3.start_timer(None, 60)
@@ -302,7 +302,8 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(0, tv.perform_vote_count)
         ts.tick_ret = [town1]
         ts.has_ret = False
-        self.assertEqual(0, tt.stop_count)
+        self.assertEqual(0, tt.stop_count)      
+        self.assertEqual(1, tb.send_count)
 
         await tt.set_callback_cb()
 
@@ -310,7 +311,9 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         
         self.assertEqual(1, tv.perform_vote_count)
         self.assertEqual(town1, tv.perform_vote_town_id)
-        self.assertEqual(1, tt.stop_count)
+        self.assertEqual(1, tt.stop_count)        
+        self.assertEqual(2, tb.send_count)
+        self.assertTrue('Returning to Ye Olde Towne Squarey to vote!' in tb.last_message)
 
 
         # Adds to storage with 15 seconds remaining
@@ -322,7 +325,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(town1, ts.add_town_town_info)
         self.assertEqual(town1_end_time-timedelta(seconds=15), ts.add_town_end_time)
 
-        self.assertEqual(2, tb.send_count)
+        self.assertEqual(3, tb.send_count)
         self.assertTrue('25 seconds' in tb.last_message)
         self.assertEqual(ti.town_info, tb.last_town_info)
         
@@ -336,7 +339,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(town1, ts.add_town_town_info)
         self.assertEqual(town1_end_time-timedelta(seconds=300), ts.add_town_end_time)
 
-        self.assertEqual(3, tb.send_count)
+        self.assertEqual(4, tb.send_count)
         self.assertTrue('5 minutes, 50 seconds' in tb.last_message)
         self.assertEqual(ti.town_info, tb.last_town_info)
 
@@ -347,7 +350,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         
         await tt.set_callback_cb()
 
-        self.assertEqual(4, tb.send_count)
+        self.assertEqual(5, tb.send_count)
         self.assertTrue('4 minutes, 50 seconds' in tb.last_message)
         self.assertEqual(ti.town_info, tb.last_town_info)
 

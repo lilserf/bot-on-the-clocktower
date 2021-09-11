@@ -7,9 +7,10 @@ import shlex
 from pythonwrappers import *
 
 class VoteTownInfo:
-    def __init__(self, chat_channel, villager_role):
+    def __init__(self, chat_channel, villager_role, town_square_name):
         self.chat_channel = chat_channel
         self.villager_role = villager_role
+        self.town_square_name = town_square_name
 
 class IVoteTimerController:
     async def add_town(self, town_id, end_time):
@@ -36,7 +37,7 @@ class VoteTimerController(IVoteTimerController):
         self.town_map[town_id] = end_time
         now = self.datetime_provider.now()
 
-        ret = await self.send_message(town_id, end_time, now)
+        ret = await self.send_time_remaining_message(town_id, end_time, now)
         self.queue_next_time(town_id, end_time, now)
         self.town_ticker.start_ticking()
         return ret
@@ -70,15 +71,20 @@ class VoteTimerController(IVoteTimerController):
             end_time = self.town_map[town_id]
             if (end_time < now):
                 self.town_map.pop(town_id)
+                await self.send_time_to_vote_message(town_id)
                 await self.vote_handler.perform_vote(town_id)
             else:
-                await self.send_message(town_id, end_time, now)
+                await self.send_time_remaining_message(town_id, end_time, now)
                 self.queue_next_time(town_id, end_time, now)
 
-    async def send_message(self, town_id, end_time, now):
+    async def send_time_remaining_message(self, town_id, end_time, now):
         town_info = self.town_info_provider.get_town_info(town_id)
         message = self.construct_message(town_info, end_time, now)
         return await self.message_broadcaster.send_message(town_info, message)
+
+    async def send_time_to_vote_message(self, town_id):
+        town_info = self.town_info_provider.get_town_info(town_id)
+        return await self.message_broadcaster.send_message(town_info, f'{town_info.villager_role.mention} - Returning to {town_info.town_square_name} to vote!')
 
     def queue_next_time(self, town_id, end_time, now):
         next_time = end_time
@@ -234,7 +240,7 @@ class VoteTownInfoProvider(IVoteTownInfoProvider):
         if not town_info:
             return None
 
-        return VoteTownInfo(town_info.chatChannel, town_info.villagerRole)
+        return VoteTownInfo(town_info.chatChannel, town_info.villagerRole, town_info.townSquare.name)
 
 
 class VoteTimerImpl:
