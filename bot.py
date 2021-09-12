@@ -487,7 +487,7 @@ class SetupCog(commands.Cog, name='Setup'):
 
                 # Calling addTown
                 (info, err) = TownInfo.create_from_params(guild=guild, control_name=moverChannelName, town_square_name=townSquareChannelName, day_category_name=dayCatName, \
-                    night_category_name=nightCatName, storyteller_role_name=gameStRoleName, villager_role_name=gameVillagerRoleName, chat_channel_name=chatChannelName)
+                    night_category_name=nightCatName, storyteller_role_name=gameStRoleName, villager_role_name=gameVillagerRoleName, chat_channel_name=chatChannelName, author=ctx.author)
 
                 if not info:
                     await ctx.send(f'There was a problem creating the town of **{townName}**:\n{err}')

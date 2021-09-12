@@ -44,7 +44,7 @@ class GameplayImpl():
         for mem in guild.members:
             if info.villager_role in mem.roles:
                 prev_players.add(mem)
-            if info.storyteller_tole in mem.roles:
+            if info.storyteller_role in mem.roles:
                 prev_sts.add(mem)
 
         name_list = ", ".join(discordhelper.user_names(prev_players))
