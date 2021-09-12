@@ -16,6 +16,7 @@ import announce
 import lookup
 import gameplay
 import messaging
+import setup
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -153,8 +154,9 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
 
 # Setup cog
 class SetupCog(commands.Cog, name='Setup'):
-    def __init__(self, bot):
+    def __init__(self, bot, db):
         self.bot = bot
+        self.impl = setup.SetupImpl(db=db, command_prefix=COMMAND_PREFIX)
 
     def setToLatestVersion(self, guild):
         self.bot.get_announce_cog().set_to_latest_version(guild)
@@ -169,39 +171,16 @@ class SetupCog(commands.Cog, name='Setup'):
             else:
                 await ctx.send("Sorry, I couldn't find a town registered to this channel.")
 
-    async def addTownInternal(self, ctx, info:TownInfo, message_if_exists=True):
-        if await discordhelper.verify_not_dm_or_send_error(ctx):
-            guild = ctx.guild
-
-            self.setToLatestVersion(guild.id)
-
-            # Check if a town already exists
-            query = {
-                "guild" : info.guild.id,
-                "dayCategoryId" : info.day_category.id
-            }
-
-            if message_if_exists:
-                existing = g_dbGuildInfo.find_one(query)
-                if existing:
-                    await ctx.send(f'Found an existing town on this server using daytime category `{info.day_category.name}`, modifying it!')
-
-            # Upsert the town into place
-            nightCatInfo = (f'night category [{info.night_category.id}]' if info.night_category else '<no night category>')
-            print(f'Adding a town to guild {guild.id} with control channel [{info.control_channel.id}], day category [{info.day_category.id}], {nightCatInfo}')
-
-            g_dbGuildInfo.replace_one(query, info.get_document(), True)
-
-            await ctx.send(embed=info.make_embed())
-
     @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role> [chat channel]\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> [nightCategory=<night category>] stRole=<storyteller role> villagerRole=<villager role> [chatChannel=<chat channel>]')
     async def addTown(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
-            info = await self.resolveTownInfoParams(ctx, params)
+            self.setToLatestVersion(ctx.guild)
+            # Slice off the !addTown bit
+            msg = self.impl.add_town_from_params(guild=ctx.guild, params=params[1:], author=ctx.author)
 
-            await self.addTownInternal(ctx, info)
+            await ctx.send(msg)
 
 
     @commands.command(name='removeTown', aliases=['removetown'], help='Remove a game on this server')
@@ -212,24 +191,24 @@ class SetupCog(commands.Cog, name='Setup'):
             params = shlex.split(ctx.message.content)
             usageStr = f'Usage: `{COMMAND_PREFIX}removeTown <day category name>` or `{COMMAND_PREFIX}removeTown` alone if run from the town\'s control channel'
 
+            control_channel=None
+            day_category_name=None
             if len(params) == 1:
-                post = {"guild" : guild.id, "controlChannelId" : ctx.channel.id }
-                print(f'Removing a game from guild {post["guild"]} with control channel [{post["controlChannelId"]}]')
+                control_channel = ctx.channel
+                day_category_name = control_channel.category.name
             elif len(params) == 2:
-                post = {"guild" : guild.id, "dayCategory" : params[1]}
-                print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
+                day_category_name = params[1]
             else:
                 await ctx.send(f'Unexpected parameters. {usageStr}')
                 return
 
-            info = g_dbGuildInfo.find_one(post)
-            result = g_dbGuildInfo.delete_one(post)
+            err = self.impl.remove_town(guild=guild, control_channel=control_channel, day_category_name=day_category_name)
 
-            if result.deleted_count > 0:
-                embed = discord.Embed(title=f'{guild.name} // {info["dayCategory"]}', description='This town is no longer registered.', color=0xcc0000)
+            if err is None:
+                embed = discord.Embed(title=f'{guild.name} // {day_category_name}', description='This town is no longer registered.', color=0xcc0000)
                 await ctx.send(embed=embed)
             else:
-                await ctx.send(f"Couldn't find a town to remove! {usageStr}")
+                await ctx.send(err)
 
     @commands.command(name='setChatChannel', help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
     async def set_chat_channel(self, ctx):
@@ -269,66 +248,6 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send(f'There was a problem adding {chat_channel_name} to the town.')
 
 
-    # Parse all the params for addTown, sanity check them, and return useful dicts
-    async def resolveTownInfoParams(self, ctx, params):
-        # pylint: disable=too-many-locals, too-many-branches
-        controlName = None
-        townSquareName = None
-        dayCatName = None
-        nightCatName = None
-        stRoleName = None
-        villagerName = None
-        chatChannelName = None
-
-        hasNamedArgs = False
-
-        for i in range(1, len(params)):
-            ar = params[i].split("=")
-            if len(ar) != 2:
-                hasNamedArgs = False
-                break
-
-            hasNamedArgs = True
-            p = ar[0].lower()
-            v = ar[1]
-
-            if p == "control":
-                controlName = v
-            elif p == "townsquare":
-                townSquareName = v
-            elif p == "daycategory":
-                dayCatName = v
-            elif p == "nightcategory":
-                nightCatName = v
-            elif p == "strole":
-                stRoleName = v
-            elif p == "villagerrole":
-                villagerName = v
-            elif p == "chatchannel":
-                chatChannelName = v
-            else:
-                await ctx.send(f'Unknown param to `{COMMAND_PREFIX}addTown`: \"{p}\". Valid params: control, townSquare, dayCategory, nightCategory, stRole, villagerRole, chatChannel')
-                return (None, None)
-
-        if not hasNamedArgs:
-            if len(params) < 7:
-                await ctx.send(f'Too few params to `{COMMAND_PREFIX}addTown`: should provide `<control channel> <townsquare channel> <day category> <night category> <storyteller role> <villager role> [chat channel]`')
-                return (None, None)
-
-            controlName = params[1]
-            townSquareName = params[2]
-            dayCatName = params[3]
-            nightCatName = params[4]
-            stRoleName = params[5]
-            villagerName = params[6]
-            if len(params) > 7:
-                chatChannelName = params[7]
-
-        (info, error) = TownInfo.create_from_params(guild=ctx.guild, control_name=controlName, town_square_name=townSquareName, day_category_name=dayCatName, night_category_name=nightCatName, \
-            storyteller_role_name=stRoleName, villager_role_name=villagerName, chat_channel_name=chatChannelName, author=ctx.author)
-        if not info:
-            await ctx.send(error)
-        return info
 
 
     @commands.command(name='createTown', aliases=['createtown'], help=f'Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: {COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]')
@@ -494,7 +413,8 @@ class SetupCog(commands.Cog, name='Setup'):
                     return
 
                 await ctx.send("The town of **" + townName + "** has been created!")
-                await self.addTownInternal(ctx, info, message_if_exists=False)
+                self.impl.add_town(info)
+                await ctx.send(embed=info.make_embed())
 
             except Exception:
                 await discordhelper.send_error_to_author(ctx)
