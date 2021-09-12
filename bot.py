@@ -1,20 +1,16 @@
+# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, invalid-name
+# pylint: disable=assigning-non-slot, broad-except
 import os
+import shlex
+import datetime
 
 from dotenv import load_dotenv
-import botctypes
-from botctypes import TownInfo
-import datetime
-import discord
-import discordhelper
-from discord.ext import commands, tasks
-import json
-from operator import itemgetter, attrgetter
-import pymongo
 from pymongo import MongoClient
-import random
-import shlex
-import traceback
+import discord
+from discord.ext import commands, tasks
 
+from botctypes import TownInfo
+import discordhelper
 import votetimer
 import announce
 import lookup
@@ -42,13 +38,13 @@ MONGO_CONNECT = os.getenv('MONGO_CONNECT')
 MONGO_DB = os.getenv('MONGO_DB') or 'botc'
 if MONGO_CONNECT is None:
     raise Exception("No MONGO_CONNECT string found. Be sure you have MONGO_CONNECT defined in your environment")
-cluster = MongoClient(MONGO_CONNECT)
-db = cluster[MONGO_DB]
+g_cluster = MongoClient(MONGO_CONNECT)
+g_db = g_cluster[MONGO_DB]
 
 COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 
-g_dbGuildInfo = db['GuildInfo']
-g_dbActiveGames = db['ActiveGames']
+g_dbGuildInfo = g_db['GuildInfo']
+g_dbActiveGames = g_db['ActiveGames']
 
 # Do some sanity checking of a DB document and see if a valid town can even be found on a guild with these params
 def isTownValid(guild, doc):
@@ -79,24 +75,23 @@ def isTownValid(guild, doc):
 class botcBot(commands.Bot):
 
     # Get a well-defined TownInfo based on the stored DB info for this guild
-    def getTownInfo(self, ctx):
+    def getTownInfo(self, ctx) -> TownInfo:
         return self.getTownInfoByIds(ctx.guild.id, ctx.channel.id, ctx.guild)
 
-    def getTownInfoByTownId(self, town_id, guild=None):
+    def getTownInfoByTownId(self, town_id, guild=None) -> TownInfo:
         return self.getTownInfoByIds(town_id.guild_id, town_id.channel_id, guild)
 
-    def getTownInfoByIds(self, guild_id, channel_id, guild=None):
+    def getTownInfoByIds(self, guild_id, channel_id, guild=None) -> TownInfo:
         query = { "guild" : guild_id, "controlChannelId" : channel_id }
         doc = g_dbGuildInfo.find_one(query)
-        
+
         if not guild:
             guild = self.get_guild(guild_id)
 
         if doc and guild:
-            return TownInfo(guild, doc)
-        else:
-            return None
-    
+            return TownInfo.create_from_document(guild=guild, document=doc)
+        return None
+
     def get_announce_cog(self):
         return self.get_cog('Version Announcements')
 
@@ -118,13 +113,15 @@ class botcBot(commands.Bot):
 
 # Announcer cog
 class AnnouncerCog(commands.Cog, name='Version Announcements'):
-    def __init__(self, bot):
-        self.bot = bot;
+    bot:botcBot
+
+    def __init__(self, bot, db):
+        self.bot = bot
         self.announcer = announce.Announcer(bot, db)
 
     async def announce_latest_version(self):
         return await self.announcer.announce_latest_version()
-    
+
     def set_to_latest_version(self, guild_id):
         self.announcer.set_to_latest_version(guild_id)
 
@@ -147,11 +144,11 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
     async def perform_action_reporting_errors(self, action, ctx):
         try:
             message = await action(ctx)
-            if message != None:
+            if message is not None:
                 await ctx.send(message)
 
-        except Exception as ex:
-            await discordutil.send_error_to_author(ctx)
+        except Exception:
+            await discordhelper.send_error_to_author(ctx)
 
 
 # Setup cog
@@ -168,46 +165,43 @@ class SetupCog(commands.Cog, name='Setup'):
             info = self.bot.getTownInfo(ctx)
 
             if info is not None:
-                await self.sendEmbed(ctx, info)
+                await ctx.send(embed=info.make_embed())
             else:
                 await ctx.send("Sorry, I couldn't find a town registered to this channel.")
-    
-    
-    async def addTownInternal(self, ctx, post, info, message_if_exists=True):
+
+    async def addTownInternal(self, ctx, info:TownInfo, message_if_exists=True):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             guild = ctx.guild
-            
+
             self.setToLatestVersion(guild.id)
 
             # Check if a town already exists
-            query = { 
-                "guild" : post["guild"],
-                "dayCategoryId" : post["dayCategoryId"],
+            query = {
+                "guild" : info.guild.id,
+                "dayCategoryId" : info.day_category.id
             }
 
             if message_if_exists:
                 existing = g_dbGuildInfo.find_one(query)
                 if existing:
-                    await ctx.send(f'Found an existing town on this server using daytime category `{post["dayCategory"]}`, modifying it!')
+                    await ctx.send(f'Found an existing town on this server using daytime category `{info.day_category.name}`, modifying it!')
 
             # Upsert the town into place
-            nightCatInfo = post["nightCategory"] and f'night category [{post["nightCategory"]}]' or '<no night category>'
-            print(f'Adding a town to guild {post["guild"]} with control channel [{post["controlChannel"]}], day category [{post["dayCategory"]}], {nightCatInfo}')
-            g_dbGuildInfo.replace_one(query, post, True)
+            nightCatInfo = (f'night category [{info.night_category.id}]' if info.night_category else '<no night category>')
+            print(f'Adding a town to guild {guild.id} with control channel [{info.control_channel.id}], day category [{info.day_category.id}], {nightCatInfo}')
 
-            await self.sendEmbed(ctx, info)
+            g_dbGuildInfo.replace_one(query, info.get_document(), True)
+
+            await ctx.send(embed=info.make_embed())
 
     @commands.command(name='addTown', aliases=['addtown'], help=f'Add a game on this server.\n\nUsage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role> [chat channel]\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> [nightCategory=<night category>] stRole=<storyteller role> villagerRole=<villager role> [chatChannel=<chat channel>]')
     async def addTown(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
-            (post, info) = await self.resolveTownInfoParams(ctx, params)
+            info = await self.resolveTownInfoParams(ctx, params)
 
-            if not post:
-                return
-
-            await self.addTownInternal(ctx, post, info)
+            await self.addTownInternal(ctx, info)
 
 
     @commands.command(name='removeTown', aliases=['removetown'], help='Remove a game on this server')
@@ -232,7 +226,7 @@ class SetupCog(commands.Cog, name='Setup'):
             result = g_dbGuildInfo.delete_one(post)
 
             if result.deleted_count > 0:
-                embed = discord.Embed(title=f'{guild.name} // {info["dayCategory"]}', description=f'This town is no longer registered.', color=0xcc0000)
+                embed = discord.Embed(title=f'{guild.name} // {info["dayCategory"]}', description='This town is no longer registered.', color=0xcc0000)
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(f"Couldn't find a town to remove! {usageStr}")
@@ -241,17 +235,17 @@ class SetupCog(commands.Cog, name='Setup'):
     async def set_chat_channel(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
-        
+
             if len(params) != 2:
                 await ctx.send(f'Incorrect usage for `{COMMAND_PREFIX}setChatChannel`: should provide `<chat channel>`')
                 return None
 
             chat_channel_name = params[1]
-        
+
             query = { "guild" : ctx.guild.id, "controlChannelId" : ctx.channel.id }
             doc = g_dbGuildInfo.find_one(query)
             if not doc:
-                await ctx.send(f'Could not find a town! Are you running this command from the town control channel?')
+                await ctx.send('Could not find a town! Are you running this command from the town control channel?')
                 return None
 
             day_category = discordhelper.get_category(ctx.guild, doc['dayCategory'], doc['dayCategory'])
@@ -270,13 +264,14 @@ class SetupCog(commands.Cog, name='Setup'):
 
             info = self.bot.getTownInfo(ctx)
             if info:
-                await self.sendEmbed(ctx, info)
+                await ctx.send(embed=info.make_embed())
             else:
                 await ctx.send(f'There was a problem adding {chat_channel_name} to the town.')
 
 
     # Parse all the params for addTown, sanity check them, and return useful dicts
     async def resolveTownInfoParams(self, ctx, params):
+        # pylint: disable=too-many-locals, too-many-branches
         controlName = None
         townSquareName = None
         dayCatName = None
@@ -328,96 +323,22 @@ class SetupCog(commands.Cog, name='Setup'):
             villagerName = params[6]
             if len(params) > 7:
                 chatChannelName = params[7]
-        
-        return await self.resolveTownInfo(ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName)
 
-
-    # Using passed-in name params, resolve town info and find all the stuff needed to post to DB
-    async def resolveTownInfo(self, ctx, controlName, townSquareName, dayCatName, nightCatName, stRoleName, villagerName, chatChannelName):
-        guild = ctx.guild
-        
-        dayCat = discordhelper.get_category_by_name(guild, dayCatName)
-        nightCat = nightCatName and discordhelper.get_category_by_name(guild, nightCatName) or None
-        
-        controlChan = discordhelper.get_channel_from_category_by_name(dayCat, controlName)
-        townSquare = discordhelper.get_channel_from_category_by_name(dayCat, townSquareName)
-
-        stRole = discordhelper.get_role_by_name(guild, stRoleName)
-        villagerRole = discordhelper.get_role_by_name(guild, villagerName)
-
-        chatChannel = None
-        if chatChannelName:
-            chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
-
-        # TODO: more checks
-        # does the night category contain some channels to distribute people to?
-        
-        # TODO: also specify the roles to set
-        # does the storyteller role have perms to see all the cottages?
-        # do the player roles NOT have perms to see the cottages
-
-        if not dayCat:
-            await ctx.send(f'Couldn\'t find a category named `{dayCatName}`!')
-            return None
-
-        if not controlChan:
-            await ctx.send(f'Couldn\'t find a channel named `{controlName}` in category `{dayCatName}`!')
-            return None
-
-        if chatChannelName and not chatChannel:
-            await ctx.send(f'Couldn\'t find a chat channel named `{chatChannelName}` in category `{dayCatName}`!')
-            return None
-
-        if not townSquare:
-            await ctx.send(f'Couldn\'t find a channel named `{townSquareName}` in category `{dayCatName}`!')
-            return None
-
-        if not stRole:
-            await ctx.send(f'Couldn\'t find a role named `{stRoleName}`!')
-            return None
-
-        if not villagerRole:
-            await ctx.send(f'Couldn\'t find a role named `{villagerName}`!')
-            return None
-
-        # Some categories/channels are optional
-        nightCatId = nightCat and nightCat.id or None
-        chatChannelId = chatChannel and chatChannel.id or None
-
-        # Object suitable for mongo
-        post = {   
-            "guild" : guild.id,
-            "controlChannel" : controlName,
-            "controlChannelId" : controlChan.id,
-            "chatChannel" : chatChannelName,
-            "chatChannelId" : chatChannelId,
-            "townSquare" : townSquareName,
-            "townSquareId" : townSquare.id,
-            "dayCategory" : dayCatName,
-            "dayCategoryId" : dayCat.id,
-            "nightCategory" : nightCatName,
-            "nightCategoryId" : nightCatId,
-            "storyTellerRole" : stRoleName,
-            "storyTellerRoleId" : stRole.id,
-            "villagerRole" : villagerName,
-            "villagerRoleId" : villagerRole.id,
-            "authorName" : ctx.author.display_name,
-            "author" : ctx.author.id,
-            "timestamp" : ctx.message.created_at
-        }
-
-        objs = TownInfo(guild, post)
-
-        return (post, objs)
+        (info, error) = TownInfo.create_from_params(guild=ctx.guild, control_name=controlName, town_square_name=townSquareName, day_category_name=dayCatName, night_category_name=nightCatName, \
+            storyteller_role_name=stRoleName, villager_role_name=villagerName, chat_channel_name=chatChannelName, author=ctx.author)
+        if not info:
+            await ctx.send(error)
+        return info
 
 
     @commands.command(name='createTown', aliases=['createtown'], help=f'Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: {COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]')
     async def createTown(self, ctx):
+        # pylint: disable=too-many-locals, too-many-return-statements, too-many-branches, too-many-statements
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
-        
+
             usageStr = f"Usage: `{COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]`"
 
             if len(params) < 2:
@@ -428,13 +349,13 @@ class SetupCog(commands.Cog, name='Setup'):
             if not townName:
                 await ctx.send("No town name provided. " + usageStr)
                 return None
-        
+
             # Ensure all the roles exist
             botRole = discordhelper.get_role_by_name(guild, self.bot.user.name)
             if not botRole:
                 await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
                 return None
-        
+
             allowNightCategory = True
             guildStRole = None
             guildPlayerRole = None
@@ -462,10 +383,10 @@ class SetupCog(commands.Cog, name='Setup'):
                         return None
 
                     additionalParamCount = additionalParamCount + 1
-        
+
             # These are in sync with those in destroyTown, could probably stand to abstract somehow
             dayCatName = townName
-            nightCatName = allowNightCategory and townName + " - Night" or None
+            nightCatName = townName + ' - Night' if allowNightCategory else None
             gameStRoleName = townName + " Storyteller"
             gameVillagerRoleName = townName + " Villager"
             moverChannelName = "botc_mover"
@@ -478,27 +399,27 @@ class SetupCog(commands.Cog, name='Setup'):
 
             try:
                 await ctx.send("Please hold, creating **" + townName + "** ...")
-            
+
                 # Roles
                 everyoneRole = discordhelper.get_role_by_name(guild, "@everyone")
                 if not everyoneRole:
                     await ctx.send("Could not find the **@everyone** role. Why not?")
                     return None
-        
+
                 gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
                 if not gameVillagerRole:
                     gameVillagerRole = await guild.create_role(name=gameVillagerRoleName, color=discord.Color.magenta())
-                
+
                 gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
                 if not gameStRole:
-                    gameStRole = await guild.create_role(name=gameStRoleName, color=discord.Color.dark_magenta()) 
+                    gameStRole = await guild.create_role(name=gameStRoleName, color=discord.Color.dark_magenta())
 
 
                 # Day category
                 dayCat = discordhelper.get_category_by_name(guild, dayCatName)
                 if not dayCat:
                     dayCat = await guild.create_category(dayCatName)
-            
+
                 await dayCat.set_permissions(gameVillagerRole, view_channel=True)
                 await dayCat.set_permissions(botRole, view_channel=True, move_members=True)
 
@@ -520,7 +441,7 @@ class SetupCog(commands.Cog, name='Setup'):
                     moverChannel = await dayCat.create_text_channel(moverChannelName)
                 await moverChannel.set_permissions(botRole, view_channel=True)
                 await moverChannel.set_permissions(gameVillagerRole, overwrite=None)
-            
+
                 if guildStRole:
                     await moverChannel.set_permissions(guildStRole, view_channel=True)
                     await moverChannel.set_permissions(everyoneRole, view_channel=False)
@@ -535,7 +456,7 @@ class SetupCog(commands.Cog, name='Setup'):
                     await chatChannel.set_permissions(everyoneRole, view_channel=False)
 
 
-                # Town Square 
+                # Town Square
                 townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
                 if not townSquareChannel:
                     townSquareChannel = await dayCat.create_voice_channel(townSquareChannelName)
@@ -543,8 +464,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 if guildPlayerRole:
                     await dayCat.set_permissions(everyoneRole, view_channel=False)
                     await townSquareChannel.set_permissions(guildPlayerRole, view_channel=True)
-            
-            
+
                 # Extra day channels
                 for extraChannelName in extraChannelNames:
                     extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
@@ -561,31 +481,32 @@ class SetupCog(commands.Cog, name='Setup'):
                             neededNightChannels = neededNightChannels - 1
 
                     if neededNightChannels > 0:
-                        for x in range(neededNightChannels):
+                        for _ in range(neededNightChannels):
                             await nightCat.create_voice_channel(nightChannelName)
 
 
                 # Calling addTown
-                (post, info) = await self.resolveTownInfo(ctx, moverChannelName, townSquareChannelName, dayCatName, nightCatName, gameStRoleName, gameVillagerRoleName, chatChannelName)
+                (info, err) = TownInfo.create_from_params(guild=guild, control_name=moverChannelName, town_square_name=townSquareChannelName, day_category_name=dayCatName, \
+                    night_category_name=nightCatName, storyteller_role_name=gameStRoleName, villager_role_name=gameVillagerRoleName, chat_channel_name=chatChannelName)
 
-                if not post:
-                    await ctx.send("There was a problem creating the town of **" + townName + "**.")
+                if not info:
+                    await ctx.send(f'There was a problem creating the town of **{townName}**:\n{err}')
                     return
-                
-                await ctx.send("The town of **" + townName + "** has been created!")
-                await self.addTownInternal(ctx, post, info, message_if_exists=False)
 
-            except Exception as ex:
+                await ctx.send("The town of **" + townName + "** has been created!")
+                await self.addTownInternal(ctx, info, message_if_exists=False)
+
+            except Exception:
                 await discordhelper.send_error_to_author(ctx)
 
-    
+
     @commands.command(name='destroyTown', aliases=['destroytown'], help='Destroy everything created from the \'createTown\' command')
     async def destroyTown(self, ctx):
+        # pylint: disable=too-many-locals, too-many-nested-blocks, too-many-branches, too-many-statements
         if await discordhelper.verify_not_dm_or_send_error(ctx):
             params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
-        
             usageStr = "Usage: `<town name>`"
 
             if len(params) < 2:
@@ -596,7 +517,7 @@ class SetupCog(commands.Cog, name='Setup'):
             if not townName:
                 await ctx.send("No town name provided. " + usageStr)
                 return None
-        
+
             # These are in sync with those in createTown, could probably stand to abstract somehow
             dayCatName = townName
             nightCatName = townName + " - Night"
@@ -612,7 +533,7 @@ class SetupCog(commands.Cog, name='Setup'):
                 notDeleted = []
                 notDeletedUnfamiliar = []
                 success = True
-                
+
 
                 # Night category
                 nightCat = discordhelper.get_category_by_name(guild, nightCatName)
@@ -621,11 +542,11 @@ class SetupCog(commands.Cog, name='Setup'):
                     for c in nightCat.channels:
                         if c.type == discord.ChannelType.voice and c.name == nightChannelName:
                             channelsToDestroy.append(c)
-                
+
                     for c in channelsToDestroy:
                         #print("I want to delete: " + c.name)
                         await c.delete()
-                    
+
                     if len(nightCat.channels) == 0:
                         #print("I want to delete: " + nightCat.name)
                         await nightCat.delete()
@@ -643,7 +564,7 @@ class SetupCog(commands.Cog, name='Setup'):
                     if chatChannel and chatChannel.type == discord.ChannelType.text:
                         #print("I want to delete: " + chatChannel.name)
                         await chatChannel.delete()
-                    
+
                     townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
                     if townSquareChannel and townSquareChannel.type == discord.ChannelType.voice:
                         #print("I want to delete: " + townSquareChannel.name)
@@ -664,7 +585,7 @@ class SetupCog(commands.Cog, name='Setup'):
                             await moverChannel.delete()
                         else:
                             notDeleted.append("**" + dayCat.name + "** / **" + moverChannel.name + "** (channel)")
-                        
+
                     if len(dayCat.channels) == 0:
                         #print("I want to delete: " + dayCat.name)
                         await dayCat.delete()
@@ -685,7 +606,7 @@ class SetupCog(commands.Cog, name='Setup'):
                         await gameVillagerRole.delete()
                     else:
                         notDeleted.append("**" + gameVillagerRole.name + "** (role)")
-                
+
                 gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
                 if gameStRole:
                     if success:
@@ -694,11 +615,11 @@ class SetupCog(commands.Cog, name='Setup'):
                     else:
                         notDeleted.append("**" + gameStRole.name + "** (role)")
 
-            
+
                 # Figure out a useful message to send to the user
                 message = "Town **" + townName + "** has been destroyed."
                 if not success:
-                    message = "I destroyed what I knew about for Town **" + townName + "**." 
+                    message = "I destroyed what I knew about for Town **" + townName + "**."
                     if len(notDeletedUnfamiliar) > 0:
                         message =  message + "\n\nI did not destroy some things I was unfamiliar with:"
                         for s in notDeletedUnfamiliar:
@@ -718,42 +639,30 @@ class SetupCog(commands.Cog, name='Setup'):
                 # Try to send to context, but it may have been a channel we deleted in which case send diretly to the author instead
                 try:
                     await ctx.send(message)
-                except Exception as ex:
+                except Exception:
                     await ctx.author.send(message)
 
-            
-            except Exception as ex:
+            except Exception:
                 await discordhelper.send_error_to_author(ctx)
 
 
-    async def sendEmbed(self, ctx, townInfo):
-        guild = ctx.guild
-        embed = discord.Embed(title=f'{guild.name} // {townInfo.dayCategory.name}', description=f'Created {townInfo.timestamp} by {townInfo.authorName}', color=0xcc0000)
-        embed.add_field(name="Control Channel", value=townInfo.controlChannel.name, inline=False)
-        embed.add_field(name="Town Square", value=townInfo.townSquare.name, inline=False)
-        embed.add_field(name="Chat Channel", value=townInfo.chatChannel and townInfo.chatChannel.name or "<None>", inline=False)
-        embed.add_field(name="Day Category", value=townInfo.dayCategory.name, inline=False)
-        embed.add_field(name="Night Category", value=townInfo.nightCategory and townInfo.nightCategory.name or "<None>", inline=False)
-        embed.add_field(name="Storyteller Role", value=townInfo.storyTellerRole.name, inline=False)
-        embed.add_field(name="Villager Role", value=townInfo.villagerRole.name, inline=False)
-        await ctx.send(embed=embed)
 
 class GameActivityCog(commands.Cog, gameplay.IGameActivity, name='GameActivity'):
-    
+
     def __init__(self, bot):
         self.bot = bot
 
-    def record_activity(self, guild, controlChan):
-        post = { "guild" : guild.id, "channel" : controlChan.id, "lastActivity" : datetime.datetime.now() }
-        query = { "guild" : guild.id, "channel" : controlChan.id }
+    def record_activity(self, guild, control_chan):
+        post = { "guild" : guild.id, "channel" : control_chan.id, "lastActivity" : datetime.datetime.now() }
+        query = { "guild" : guild.id, "channel" : control_chan.id }
         # Upsert this record
         g_dbActiveGames.replace_one(query, post, True)
 
         self.bot.get_cleanup_cog().start()
 
-    def remove_active_game(self, guild, controlChan):
+    def remove_active_game(self, guild, control_chan):
         # Delete this game's record
-        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": controlChan.id })
+        g_dbActiveGames.delete_one( {"guild" : guild.id, "channel": control_chan.id })
 
 
 class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
@@ -762,9 +671,14 @@ class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
         self.bot = bot
 
     def start(self) -> None:
-        self.cleanup_inactive_games.start()
+        # pylint doesn't understand the @tasks.loop decorator
+        # pylint: disable=no-member
+        if not self.cleanup_inactive_games.is_running():
+            self.cleanup_inactive_games.start()
 
     def stop(self) -> None:
+        # pylint doesn't understand the @tasks.loop decorator
+        # pylint: disable=no-member
         self.cleanup_inactive_games.stop()
 
     # Called periodically to try and clean up old games that aren't in progress anymore
@@ -783,7 +697,7 @@ class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
 
         # "Range query" that gives us all documents with a timestamp less than our inactive time
         inactiveQuery = {"lastActivity" : {"$lt": inactiveTime}}
-        
+
         for rec in g_dbActiveGames.find(inactiveQuery):
             guildId = rec["guild"]
             # Fetch the full info for this guild/channel combo
@@ -794,7 +708,7 @@ class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
                 if guild:
                     (townValid, townError) = isTownValid(guild, doc)
                     if townValid:
-                        info = TownInfo(guild, doc)
+                        info = TownInfo.create_from_document(guild=guild, document=doc)
                         try:
                             await self.bot.get_gameplay_cog().end_game(info)
                             numEnded = numEnded + 1
@@ -813,19 +727,21 @@ class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
             print(f'Ended {numEnded} inactive game(s)')
 
         # Remove all the inactive towns from our list just in case any fell through
-        result = g_dbActiveGames.delete_many(inactiveQuery)
+        g_dbActiveGames.delete_many(inactiveQuery)
 
         # If nothing is left active at all, stop the timer
         if g_dbActiveGames.count_documents({}) == 0:
+            # pylint doesn't understand the @tasks.loop decorator
+            # pylint: disable=no-member
             print("No remaining active games, stopping checks")
             self.cleanup_inactive_games.stop()
-    
+
     @cleanup_inactive_games.before_loop
     async def beforecleanupInactiveGames(self):
         await self.bot.wait_until_ready()
 
 class GameplayCog(commands.Cog, name='Gameplay'):
-    
+
     game:gameplay.GameplayImpl
     role_messager:messaging.RoleMessagerImpl
 
@@ -840,7 +756,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
-            self.bot.get_cleanup_cog().start() 
+            self.bot.get_cleanup_cog().start()
 
     def cog_unload(self):
         self.bot.get_cleanup_cog().stop()
@@ -849,9 +765,9 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     async def isValid(self, ctx):
 
         if isinstance(ctx.channel, discord.DMChannel):
-            await ctx.send(f"Whoops, you probably meant to send that in a text channel instead of a DM! Sorry, mate.")
+            await ctx.send("Whoops, you probably meant to send that in a text channel instead of a DM! Sorry, mate.")
             return False
-        
+
         query = { "guild" : ctx.guild.id }
         result = g_dbGuildInfo.find(query)
         chanIds = map(lambda x: x["controlChannelId"], result)
@@ -891,7 +807,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
     async def on_night(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_night(self.bot.getTownInfo(inner_ctx)), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_night(self.bot.getTownInfo(inner_ctx), inner_ctx.author), ctx)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move players from Cottages back to Town Square')
@@ -939,7 +855,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             if message:
                 await ctx.send(message)
 
-        except Exception as ex:
+        except Exception:
             await discordhelper.send_error_to_author(ctx)
 
 class LookupCog(commands.Cog, name='Lookup'):
@@ -987,19 +903,17 @@ class LookupCog(commands.Cog, name='Lookup'):
     async def perform_action_reporting_errors_internal(self, action, ctx):
         try:
             message = await action(ctx)
-            if message != None:
+            if message is not None:
                 await ctx.send(message)
 
-        except Exception as ex:
+        except Exception:
             await discordhelper.send_error_to_author(ctx)
 
-
-
-bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
-bot.add_cog(GameActivityCog(bot))
-bot.add_cog(GameCleanupCog(bot))
-bot.add_cog(SetupCog(bot))
-bot.add_cog(GameplayCog(bot))
-bot.add_cog(AnnouncerCog(bot))
-bot.add_cog(LookupCog(bot, db))
-bot.run(TOKEN)
+g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
+g_bot.add_cog(GameActivityCog(g_bot))
+g_bot.add_cog(GameCleanupCog(g_bot))
+g_bot.add_cog(SetupCog(g_bot))
+g_bot.add_cog(GameplayCog(g_bot))
+g_bot.add_cog(AnnouncerCog(g_bot, g_db))
+g_bot.add_cog(LookupCog(g_bot, g_db))
+g_bot.run(TOKEN)

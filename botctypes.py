@@ -85,7 +85,7 @@ class TownInfo:
             "storyTellerRoleId" : self.storyteller_role.id,
             "villagerRole" : self.villager_role.name,
             "villagerRoleId" : self.villager_role.id,
-            "authorName" : self.author.name if self.author else None,
+            "authorName" : self.author.display_name if self.author else None,
             "author" : self.author.id if self.author else None,
             "timestamp" : self.timestamp
         }
@@ -93,7 +93,7 @@ class TownInfo:
         return doc
 
     @staticmethod
-    def create_from_document(*, guild:discord.Guild, document):
+    def create_from_document(*, guild:discord.Guild, document) -> 'TownInfo':
         '''Create a TownInfo from a MongoDB-like document object'''
         if document:
 
@@ -111,8 +111,10 @@ class TownInfo:
                 chat_channel = discordhelper.get_channel_from_category(day_category, document['chatChannel'], document['chatChannelId'])
 
             author:discord.User = None
-            if 'authorName' in document:
-                author = discordhelper.get_closest_user(guild.users, document["authorName"])
+            if 'author' in document:
+                author = discordhelper.get_user_by_id(guild.members, document["author"])
+            elif 'authorName' in document:
+                author = discordhelper.get_closest_user(guild.members, document["authorName"])
 
             timestamp = document["timestamp"]
 
@@ -125,7 +127,7 @@ class TownInfo:
 
     @staticmethod
     def create_from_params(*, guild:discord.Guild, control_name:str, town_square_name:str, day_category_name:str, night_category_name:str, \
-        storyteller_role_name:str, villager_role_name:str, chat_channel_name:str) -> (TownInfo, str):
+        storyteller_role_name:str, villager_role_name:str, chat_channel_name:str, author:discord.User=None) -> ('TownInfo', str):
         # pylint: disable=too-many-locals, too-many-return-statements
         '''Create a TownInfo from a set of strings naming channels and roles'''
 
@@ -168,7 +170,7 @@ class TownInfo:
             return (None, f'Couldn\'t find a role named `{villager_role_name}`!')
 
         info = TownInfo(guild=guild, day_category=day_cat, night_category=night_cat, town_square_channel=town_square_channel, control_channel=control_chan, \
-            chat_channel=chat_channel, storyteller_role=storyteller_role, villager_role=villager_role)
+            chat_channel=chat_channel, storyteller_role=storyteller_role, villager_role=villager_role, author=author)
 
         return (info, '')
 
@@ -176,7 +178,7 @@ class TownInfo:
     def make_embed(self) -> discord.Embed:
         '''Return a discord.Embed describing this Town'''
         guild = self.guild
-        embed = discord.Embed(title=f'{guild.name} // {self.day_category.name}', description=f'Created {self.timestamp} by {self.author.name}', color=0xcc0000)
+        embed = discord.Embed(title=f'{guild.name} // {self.day_category.name}', description=f'Created {self.timestamp} by {self.author.display_name if self.author else "Unknown"}', color=0xcc0000)
         embed.add_field(name="Control Channel", value=self.control_channel.name, inline=False)
         embed.add_field(name="Town Square", value=self.town_square_channel.name, inline=False)
         embed.add_field(name="Chat Channel", value=self.chat_channel and self.chat_channel.name or "<None>", inline=False)
