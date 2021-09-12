@@ -37,6 +37,7 @@ class TownInfo:
     def __init__(self, *, guild:discord.Guild, day_category:discord.CategoryChannel, night_category:discord.CategoryChannel, town_square_channel:discord.VoiceChannel, \
         control_channel:discord.TextChannel, chat_channel:discord.TextChannel=None, storyteller_role:discord.Role, villager_role:discord.Role, author:discord.Member=None, \
         timestamp:datetime.datetime=datetime.datetime.now()):
+        '''Constructor which takes incoming discord objects and derives the other fields it should have'''
         # pylint: disable=consider-using-ternary, invalid-name
 
         self.guild = guild
