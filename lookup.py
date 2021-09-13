@@ -235,8 +235,7 @@ class LookupRoleServerData:
     def get_matching_roles(self, role_name):
         official_roles = self.official_provider.get_official_roles()
         all_roles = set()
-        if self.role_lookup:
-            all_roles.update(self.role_lookup.keys())
+        all_roles.update(self.role_lookup.keys())
         all_roles.update(official_roles.keys())
         option = process.extractOne(role_name, all_roles, score_cutoff=80)
         if option != None:
@@ -248,7 +247,7 @@ class LookupRoleServerData:
         if name in official_roles:
             for r in official_roles[name]:
                 self.merger.add_to_merged_list(r, ret)
-        if self.role_lookup and name in self.role_lookup:
+        if name in self.role_lookup:
             for r in self.role_lookup[name]:
                 self.merger.add_to_merged_list(r, ret)
         return ret
@@ -422,7 +421,7 @@ class LookupImpl:
         #TODO: exception(?) leading to message if roles empty - it can be returned
         download_results = await self.downloader.fetch_urls(urls)
         roles = None
-        if download_results:
+        if download_results is not None:
             roles = self.role_parser.collect_roles_from_json(download_results, False, self.official_provider)
         self.data.update_server_role_data(server_token, roles)
 
