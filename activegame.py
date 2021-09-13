@@ -7,7 +7,8 @@ from pythonwrappers import IDateTimeProvider
 
 class SetDifference:
     '''Simple class for figuring what changed when moving from an old set to a new set'''
-    def __init__(self, old:set, new:set):
+    def __init__(self, new:set, old:set=None):
+        old = set() if old is None else old
         self.added:set = new-old
         self.removed:set = old-new
 
@@ -53,34 +54,45 @@ class ActiveGameStore(IActiveGameStore):
         active_games:list[ActiveGame] = active_game_db.retrieve_active_games()
         game:ActiveGame
         for game in active_games:
-            self.on_game_added(game)
+            self.on_game_added(game, SetDifference(game.storyteller_ids | game.player_ids))
 
     def get_game_count(self) -> int:
         return len(self.current_games)
 
     def add_or_update_game(self, town_id:TownId, storyteller_ids:set[int], player_ids:set[int]) -> None:
-        game:ActiveGame = ActiveGame()
-        game.town_id = town_id
-        game.storyteller_ids = storyteller_ids
-        game.player_ids = player_ids
-        game.last_activity = self.datetime.now()
+        old_game = self.current_games[town_id] if town_id in self.current_games else ActiveGame()
+        all_old_members = old_game.storyteller_ids | old_game.player_ids
 
-        self.on_game_added(game)
-        self.active_game_db.add_or_update_game(game)
+        new_game:ActiveGame = ActiveGame()
+        new_game.town_id = town_id
+        new_game.storyteller_ids = set(storyteller_ids)
+        new_game.player_ids = set(player_ids)
+        new_game.last_activity = self.datetime.now()
+
+        all_new_members = set(storyteller_ids) | set(player_ids)
+        member_diff = SetDifference(all_new_members, all_old_members)
+
+        self.on_game_added(new_game, member_diff)
+        self.active_game_db.add_or_update_game(new_game)
 
     def get_town_ids_for_member_id(self, member_id:int) -> set[TownId]:
         return self.town_ids_from_member_id_map[member_id] if member_id in self.town_ids_from_member_id_map else set()
 
-    def assign_game_to_members(self, game:ActiveGame) -> None:
-        '''Assigns a game to the members in that game'''
-        unique_ids = set(game.storyteller_ids) | set(game.player_ids)
-        for member_id in unique_ids:
+    def assign_or_unassign_town_id_for_members(self, town_id:TownId, member_diff:SetDifference) -> None:
+        '''Assigns a game to the new members in a game, unassigns it from the old ones'''
+        for member_id in member_diff.removed:
+            if member_id in self.town_ids_from_member_id_map:
+                self.town_ids_from_member_id_map[member_id].remove(town_id)
+                if len(self.town_ids_from_member_id_map[member_id]) == 0:
+                    self.town_ids_from_member_id_map.pop(member_id)
+
+        for member_id in member_diff.added:
             if member_id not in self.town_ids_from_member_id_map:
                 self.town_ids_from_member_id_map[member_id] = set()
-            self.town_ids_from_member_id_map[member_id].add(game.town_id)
+            self.town_ids_from_member_id_map[member_id].add(town_id)
 
-    def on_game_added(self, game:ActiveGame) -> None:
+
+    def on_game_added(self, game:ActiveGame, member_diff:SetDifference) -> None:
         '''To call whenever a game is added'''
-
         self.current_games[game.town_id] = game
-        self.assign_game_to_members(game)
+        self.assign_or_unassign_town_id_for_members(game.town_id, member_diff)

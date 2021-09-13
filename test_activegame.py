@@ -43,8 +43,8 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertEqual(1, store.get_game_count())
         self.assertEqual(1, db_mock.add_or_update_game_calls)
         self.assertEqual(town_id, db_mock.add_or_update_game_param.town_id)
-        self.assertEqual(storyteller_ids, db_mock.add_or_update_game_param.storyteller_ids)
-        self.assertEqual(player_ids, db_mock.add_or_update_game_param.player_ids)
+        self.assertSetEqual(set(storyteller_ids), db_mock.add_or_update_game_param.storyteller_ids)
+        self.assertSetEqual(set(player_ids), db_mock.add_or_update_game_param.player_ids)
 
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(1))
@@ -55,13 +55,13 @@ class TestActiveGameSync(unittest.TestCase):
     def test_construct_active_game_with_games_lookup_successful(self):
 
         g1 = ActiveGame()
-        g1.player_ids = [1, 2]
-        g1.storyteller_ids = [3]
+        g1.player_ids = set([1, 2])
+        g1.storyteller_ids = set([3])
         g1.town_id = TownId(10, 11)
 
         g2 = ActiveGame()
-        g2.player_ids = [2, 4]
-        g2.storyteller_ids = [4]
+        g2.player_ids = set([2, 4])
+        g2.storyteller_ids = set([4])
         g2.town_id = TownId(14, 15)
 
         store = ActiveGameStore(MockActiveGameDb([g1, g2]), MockDateTimeProvider())
@@ -80,17 +80,17 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set(), set_diff.removed)
 
     def test_set_difference_only_adds(self):
-        set_diff = SetDifference(set(), set([1, 2, 3]))
+        set_diff = SetDifference(set([1, 2, 3]), set())
         self.assertSetEqual(set([1, 2, 3]), set_diff.added)
         self.assertSetEqual(set(), set_diff.removed)
 
     def test_set_difference_only_removes(self):
-        set_diff = SetDifference(set([1, 2, 3]), set())
+        set_diff = SetDifference(set(), set([1, 2, 3]))
         self.assertSetEqual(set(), set_diff.added)
         self.assertSetEqual(set([1, 2, 3]), set_diff.removed)
 
     def test_set_difference_adds_and_removes(self):
-        set_diff = SetDifference(set([1, 2]), set([2, 3]))
+        set_diff = SetDifference(set([2, 3]), set([1, 2]))
         self.assertSetEqual(set([3]), set_diff.added)
         self.assertSetEqual(set([1]), set_diff.removed)
 
@@ -99,8 +99,8 @@ class TestActiveGameSync(unittest.TestCase):
         town_id = TownId(10, 11)
 
         g1 = ActiveGame()
-        g1.player_ids = [1, 2]
-        g1.storyteller_ids = [1]
+        g1.player_ids = set([1, 2])
+        g1.storyteller_ids = set([1])
         g1.town_id = town_id
 
         store = ActiveGameStore(MockActiveGameDb([g1]), MockDateTimeProvider())
