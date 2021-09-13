@@ -141,7 +141,7 @@ class SetupImpl:
     FMT_ST_ROLE = '{town_name} Storyteller'
     FMT_VILLAGER_ROLE = '{town_name} Villager'
 
-    CONTROL_CHAN = 'botc_control'
+    CONTROL_CHAN = 'botc_mover'
     CHAT_CHAN = 'chat'
     TOWN_SQUARE_CHAN = 'Town Square'
     EXTRA_DAY_CHANS = ["Dark Alley", "Library", "Graveyard"]
@@ -254,4 +254,115 @@ class SetupImpl:
 
         self.add_town(info)
         return (info, None)
+
+
+    async def destroy_town(self, *, guild:discord.Guild, town_name:str) -> str:
+        # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        game_villager_role_name = self.FMT_VILLAGER_ROLE.format(town_name=town_name)
+        game_st_role_name = self.FMT_ST_ROLE.format(town_name=town_name)
+        day_cat_name = self.FMT_DAY_CAT.format(town_name=town_name)
+        night_cat_name = self.FMT_NIGHT_CAT.format(town_name=town_name)
+        control_channel_name = self.CONTROL_CHAN
+        chat_channel_name = self.CHAT_CHAN
+        town_square_channel_name = self.TOWN_SQUARE_CHAN
+        extra_channel_names = self.EXTRA_DAY_CHANS
+        night_channel_name = self.NIGHT_CHAN
+
+        not_deleted = []
+        not_deleted_unfamiliar = []
+        success = True
+
+        # Night category
+        night_cat = discordhelper.get_category_by_name(guild, night_cat_name)
+        if night_cat:
+            channels_to_destroy = []
+            for chan in night_cat.channels:
+                if chan.type == discord.ChannelType.voice and chan.name == night_channel_name:
+                    channels_to_destroy.append(chan)
+
+            for chan in channels_to_destroy:
+                await chan.delete()
+
+            if len(night_cat.channels) == 0:
+                await night_cat.delete()
+            else:
+                for chan in night_cat.channels:
+                    not_deleted_unfamiliar.append("**" + night_cat.name + "** / **" + chan.name + "** (channel)")
+                not_deleted.append("**" + night_cat.name + "** (category)")
+                success = False
+
+        # Day category
+        day_cat = discordhelper.get_category_by_name(guild, day_cat_name)
+        if day_cat:
+            chat_channel = discordhelper.get_channel_from_category_by_name(day_cat, chat_channel_name)
+            if chat_channel and chat_channel.type == discord.ChannelType.text:
+                await chat_channel.delete()
+
+            town_square_channel = discordhelper.get_channel_from_category_by_name(day_cat, town_square_channel_name)
+            if town_square_channel and town_square_channel.type == discord.ChannelType.voice:
+                await town_square_channel.delete()
+
+            for extra_channel_name in extra_channel_names:
+                extra_channel = discordhelper.get_channel_from_category_by_name(day_cat, extra_channel_name)
+                if extra_channel and extra_channel.type == discord.ChannelType.voice:
+                    await extra_channel.delete()
+
+            control_channel = discordhelper.get_channel_from_category_by_name(day_cat, control_channel_name)
+            if control_channel and control_channel.type == discord.ChannelType.text:
+                # Do not delete the mover channel if there's a problem - you might
+                # still need it to send this very command!
+                if success and len(day_cat.channels) == 1:
+                    await control_channel.delete()
+                else:
+                    not_deleted.append("**" + day_cat.name + "** / **" + control_channel.name + "** (channel)")
+
+            if len(day_cat.channels) == 0:
+                #print("I want to delete: " + day_cat.name)
+                await day_cat.delete()
+            else:
+                for chan in day_cat.channels:
+                    if chan != control_channel:
+                        not_deleted_unfamiliar.append("**" + day_cat.name + "** / **" + chan.name + "** (channel)")
+                not_deleted.append("**" + day_cat.name + "** (category)")
+                success = False
+
+        # We want to leave the roles in place if there were any problems - the roles may be needed to see the channels
+        # that need cleanup!
+        game_villager_role = discordhelper.get_role_by_name(guild, game_villager_role_name)
+        if game_villager_role:
+            if success:
+                #print("I want to delete: " + game_villager_role.name)
+                await game_villager_role.delete()
+            else:
+                not_deleted.append("**" + game_villager_role.name + "** (role)")
+
+        game_st_role = discordhelper.get_role_by_name(guild, game_st_role_name)
+        if game_st_role:
+            if success:
+                #print("I want to delete: " + game_st_role.name)
+                await game_st_role.delete()
+            else:
+                not_deleted.append("**" + game_st_role.name + "** (role)")
+
+
+        # Figure out a useful message to send to the user
+        message = "Town **" + town_name + "** has been destroyed."
+        if not success:
+            message = "I destroyed what I knew about for Town **" + town_name + "**."
+            if len(not_deleted_unfamiliar) > 0:
+                message =  message + "\n\nI did not destroy some things I was unfamiliar with:"
+                for thing in not_deleted_unfamiliar:
+                    message = message + "\n * " + thing
+                message = message + "\n\nYou can destroy them and run this command again.\n"
+            if len(not_deleted) > 0:
+                message =  message + "\nI did not destroy these things yet, just in case you still need them:"
+                for thing in not_deleted:
+                    message = message + "\n * " + thing
+
+        # Remove the town from the guild
+        if success:
+            post = {"guild" : guild.id, "dayCategory" : day_cat_name}
+            self.collection.delete_one(post)
+
+        return message
 

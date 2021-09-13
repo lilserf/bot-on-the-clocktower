@@ -251,8 +251,8 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send(f"Too few params to `{COMMAND_PREFIX}createTown`. " + usageStr)
                 return None
 
-            townName = params[1]
-            if not townName:
+            town_name = params[1]
+            if not town_name:
                 await ctx.send("No town name provided. " + usageStr)
                 return None
 
@@ -283,12 +283,12 @@ class SetupCog(commands.Cog, name='Setup'):
 
                     additional_param_count = additional_param_count + 1
 
-            await ctx.send(f"Please hold, creating **{townName}** ...")
+            await ctx.send(f"Please hold, creating **{town_name}** ...")
             info:TownInfo = None
             msg:str = None
 
             try:
-                (info, msg) = self.impl.create_town(guild=guild, town_name=townName, allow_night_category=allow_night_category, guild_st_role=guild_st_role, \
+                (info, msg) = self.impl.create_town(guild=guild, town_name=town_name, allow_night_category=allow_night_category, guild_st_role=guild_st_role, \
                     guild_player_role=guild_player_role, bot_role=bot_role, author=ctx.author)
             except Exception:
                 await discordhelper.send_error_to_author(ctx)
@@ -297,7 +297,7 @@ class SetupCog(commands.Cog, name='Setup'):
             if msg:
                 await ctx.send(msg)
             else:
-                await ctx.send("The town of **" + townName + "** has been created!")
+                await ctx.send("The town of **" + town_name + "** has been created!")
                 await ctx.send(embed=info.make_embed())
 
 
@@ -312,131 +312,15 @@ class SetupCog(commands.Cog, name='Setup'):
 
             if len(params) < 2:
                 await ctx.send(f"Too few params to `{COMMAND_PREFIX}destroyTown`. " + usageStr)
-                return None
+                return
 
-            townName = params[1]
-            if not townName:
+            town_name = params[1]
+            if not town_name:
                 await ctx.send("No town name provided. " + usageStr)
-                return None
-
-            # These are in sync with those in createTown, could probably stand to abstract somehow
-            dayCatName = townName
-            nightCatName = townName + " - Night"
-            gameStRoleName = townName + " Storyteller"
-            gameVillagerRoleName = townName + " Villager"
-            moverChannelName = "botc_mover"
-            chatChannelName = "chat"
-            townSquareChannelName = "Town Square"
-            extraChannelNames = ["Dark Alley", "Library", "Graveyard"]
-            nightChannelName = "Cottage"
+                return
 
             try:
-                notDeleted = []
-                notDeletedUnfamiliar = []
-                success = True
-
-
-                # Night category
-                nightCat = discordhelper.get_category_by_name(guild, nightCatName)
-                if nightCat:
-                    channelsToDestroy = []
-                    for c in nightCat.channels:
-                        if c.type == discord.ChannelType.voice and c.name == nightChannelName:
-                            channelsToDestroy.append(c)
-
-                    for c in channelsToDestroy:
-                        #print("I want to delete: " + c.name)
-                        await c.delete()
-
-                    if len(nightCat.channels) == 0:
-                        #print("I want to delete: " + nightCat.name)
-                        await nightCat.delete()
-                    else:
-                        for c in nightCat.channels:
-                            notDeletedUnfamiliar.append("**" + nightCat.name + "** / **" + c.name + "** (channel)")
-                        notDeleted.append("**" + nightCat.name + "** (category)")
-                        success = False
-
-
-                # Day category
-                dayCat = discordhelper.get_category_by_name(guild, dayCatName)
-                if dayCat:
-                    chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
-                    if chatChannel and chatChannel.type == discord.ChannelType.text:
-                        #print("I want to delete: " + chatChannel.name)
-                        await chatChannel.delete()
-
-                    townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
-                    if townSquareChannel and townSquareChannel.type == discord.ChannelType.voice:
-                        #print("I want to delete: " + townSquareChannel.name)
-                        await townSquareChannel.delete()
-
-                    for extraChannelName in extraChannelNames:
-                        extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
-                        if extraChannel and extraChannel.type == discord.ChannelType.voice:
-                            #print("I want to delete: " + extraChannel.name)
-                            await extraChannel.delete()
-
-                    moverChannel = discordhelper.get_channel_from_category_by_name(dayCat, moverChannelName)
-                    if moverChannel and moverChannel.type == discord.ChannelType.text:
-                        #print("I want to delete: " + moverChannel.name)
-                        # Do not delete the mover channel if there's a problem - you might
-                        # still need it to send this very command!
-                        if success and len(dayCat.channels) == 1:
-                            await moverChannel.delete()
-                        else:
-                            notDeleted.append("**" + dayCat.name + "** / **" + moverChannel.name + "** (channel)")
-
-                    if len(dayCat.channels) == 0:
-                        #print("I want to delete: " + dayCat.name)
-                        await dayCat.delete()
-                    else:
-                        for c in dayCat.channels:
-                            if c != moverChannel:
-                                notDeletedUnfamiliar.append("**" + dayCat.name + "** / **" + c.name + "** (channel)")
-                        notDeleted.append("**" + dayCat.name + "** (category)")
-                        success = False
-
-
-                # We want to leave the roles in place if there were any problems - the roles may be needed to see the channels
-                # that need cleanup!
-                gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
-                if gameVillagerRole:
-                    if success:
-                        #print("I want to delete: " + gameVillagerRole.name)
-                        await gameVillagerRole.delete()
-                    else:
-                        notDeleted.append("**" + gameVillagerRole.name + "** (role)")
-
-                gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
-                if gameStRole:
-                    if success:
-                        #print("I want to delete: " + gameStRole.name)
-                        await gameStRole.delete()
-                    else:
-                        notDeleted.append("**" + gameStRole.name + "** (role)")
-
-
-                # Figure out a useful message to send to the user
-                message = "Town **" + townName + "** has been destroyed."
-                if not success:
-                    message = "I destroyed what I knew about for Town **" + townName + "**."
-                    if len(notDeletedUnfamiliar) > 0:
-                        message =  message + "\n\nI did not destroy some things I was unfamiliar with:"
-                        for s in notDeletedUnfamiliar:
-                            message = message + "\n * " + s
-                        message = message + "\n\nYou can destroy them and run this command again.\n"
-                    if len(notDeleted) > 0:
-                        message =  message + "\nI did not destroy these things yet, just in case you still need them:"
-                        for s in notDeleted:
-                            message = message + "\n * " + s
-
-
-                # Remove the town from the guild
-                if success:
-                    post = {"guild" : guild.id, "dayCategory" : dayCatName}
-                    g_dbGuildInfo.delete_one(post)
-
+                message = self.impl.destroy_town(guild=guild, town_name=town_name)
                 # Try to send to context, but it may have been a channel we deleted in which case send diretly to the author instead
                 try:
                     await ctx.send(message)
