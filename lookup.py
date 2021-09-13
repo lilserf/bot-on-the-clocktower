@@ -232,13 +232,11 @@ class LookupRoleServerData:
         self.last_refresh_time = datetime.datetime.now()
         self.merger = LookupRoleMerger()
 
-    def get_role_lookup(self):
-        return self.role_lookup
-
     def get_matching_roles(self, role_name):
         official_roles = self.official_provider.get_official_roles()
         all_roles = set()
-        all_roles.update(self.role_lookup.keys())
+        if self.role_lookup:
+            all_roles.update(self.role_lookup.keys())
         all_roles.update(official_roles.keys())
         option = process.extractOne(role_name, all_roles, score_cutoff=80)
         if option != None:
@@ -250,7 +248,7 @@ class LookupRoleServerData:
         if name in official_roles:
             for r in official_roles[name]:
                 self.merger.add_to_merged_list(r, ret)
-        if name in self.role_lookup:
+        if self.role_lookup and name in self.role_lookup:
             for r in self.role_lookup[name]:
                 self.merger.add_to_merged_list(r, ret)
         return ret
