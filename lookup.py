@@ -420,9 +420,7 @@ class LookupImpl:
         urls = self.data.get_script_urls(server_token)
         #TODO: exception(?) leading to message if roles empty - it can be returned
         download_results = await self.downloader.fetch_urls(urls)
-        roles = None
-        if download_results is not None:
-            roles = self.role_parser.collect_roles_from_json(download_results, False, self.official_provider)
+        roles = self.role_parser.collect_roles_from_json(download_results or [], False, self.official_provider)
         self.data.update_server_role_data(server_token, roles)
 
     async def refresh_roles_for_server_if_needed(self, server_token):
