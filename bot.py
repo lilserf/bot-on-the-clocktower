@@ -17,6 +17,7 @@ import lookup
 import gameplay
 import messaging
 import setup
+from towndb import TownDb
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -74,24 +75,6 @@ def isTownValid(guild, doc):
 
 # Bot subclass
 class botcBot(commands.Bot):
-
-    # Get a well-defined TownInfo based on the stored DB info for this guild
-    def getTownInfo(self, ctx) -> TownInfo:
-        return self.getTownInfoByIds(ctx.guild.id, ctx.channel.id, ctx.guild)
-
-    def getTownInfoByTownId(self, town_id, guild=None) -> TownInfo:
-        return self.getTownInfoByIds(town_id.guild_id, town_id.channel_id, guild)
-
-    def getTownInfoByIds(self, guild_id, channel_id, guild=None) -> TownInfo:
-        query = { "guild" : guild_id, "controlChannelId" : channel_id }
-        doc = g_dbGuildInfo.find_one(query)
-
-        if not guild:
-            guild = self.get_guild(guild_id)
-
-        if doc and guild:
-            return TownInfo.create_from_document(guild=guild, document=doc)
-        return None
 
     def get_announce_cog(self):
         return self.get_cog('Version Announcements')
@@ -154,8 +137,9 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
 
 # Setup cog
 class SetupCog(commands.Cog, name='Setup'):
-    def __init__(self, bot, db):
+    def __init__(self, *, bot, db, town_db:TownDb):
         self.bot = bot
+        self.town_db = town_db
         self.impl = setup.SetupImpl(db=db, command_prefix=COMMAND_PREFIX)
 
     def setToLatestVersion(self, guild):
@@ -164,7 +148,7 @@ class SetupCog(commands.Cog, name='Setup'):
     @commands.command(name='townInfo', aliases=['towninfo'], help='Show the stored info about the channels and roles that make up this town')
     async def townInfo(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
-            info = self.bot.getTownInfo(ctx)
+            info = self.town_db.get_town_info(ctx)
 
             if info is not None:
                 await ctx.send(embed=info.make_embed())
@@ -214,7 +198,7 @@ class SetupCog(commands.Cog, name='Setup'):
     async def set_chat_channel(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
 
-            info = self.bot.getTownInfo(ctx)
+            info = self.town_db.get_town_info(ctx)
             if not info:
                 await ctx.send('Could not find a town! Are you running this command from the town control channel?')
 
@@ -430,9 +414,11 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
     game:gameplay.GameplayImpl
     role_messager:messaging.RoleMessagerImpl
+    town_db:TownDb
 
-    def __init__(self, bot):
+    def __init__(self, *, bot, town_db:TownDb):
         self.bot = bot
+        self.town_db = town_db
 
         self.game = gameplay.GameplayImpl(bot.get_activity_cog(), COMMAND_PREFIX)
 
@@ -472,7 +458,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     @commands.command(name='endGame', aliases=['endgame'], help='End the current game and reset all permissions, roles, names, etc.')
     async def onEndGame(self, ctx):
         '''Command handler to end the game'''
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.end_game(self.bot.getTownInfo(inner_ctx)), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.end_game(self.town_db.get_town_info(inner_ctx)), ctx)
 
     # Set the current storytellers
     @commands.command(name='setStorytellers', aliases=['setstorytellers', 'setStoryTellers', 'storytellers', 'storyTellers', 'setsts', 'setSts', 'setSTs', 'setST', 'setSt', 'setst', 'sts', 'STs', 'Sts'], help='Set a list of users to be Storytellers.')
@@ -480,48 +466,48 @@ class GameplayCog(commands.Cog, name='Gameplay'):
         await self.perform_action_reporting_errors(self.set_storytellers_internal, ctx)
 
     async def set_storytellers_internal(self, ctx):
-        info = self.bot.getTownInfo(ctx)
+        info:TownInfo = self.town_db.get_town_info(ctx)
         names = shlex.split(ctx.message.content)
-        sts = list(map(lambda x: discordhelper.get_closest_user(info.activePlayers, x), names[1:]))
+        sts = list(map(lambda x: discordhelper.get_closest_user(info.active_players, x), names[1:]))
         return await self.game.set_storytellers(info, sts)
 
     # Set the players in the normal voice channels to have the 'Current Game' role, granting them access to whatever that entails
     @commands.command(name='currGame', aliases=['currgame', 'curgame', 'curGame'], help='Set the current users in all standard BotC voice channels as players in a current game, granting them roles to see channels associated with the game.')
     async def on_curr_game(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.current_game(self.bot.getTownInfo(inner_ctx), inner_ctx.author), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.current_game(self.town_db.get_town_info(inner_ctx), inner_ctx.author), ctx)
 
     # Move users to the night cottages
     @commands.command(name='night', help='Move users to Cottages in the BotC - Nighttime category')
     async def on_night(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_night(self.bot.getTownInfo(inner_ctx), inner_ctx.author), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_night(self.town_db.get_town_info(inner_ctx), inner_ctx.author), ctx)
 
     # Move users from night Cottages back to Town Square
     @commands.command(name='day', help='Move players from Cottages back to Town Square')
     async def on_day(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_day(self.bot.getTownInfo(inner_ctx)), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_day(self.town_db.get_town_info(inner_ctx)), ctx)
 
     # Move users from other daytime channels back to Town Square
     @commands.command(name='vote', help='Move players from daytime channels back to Town Square')
     async def on_vote(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_vote(self.bot.getTownInfo(inner_ctx)), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.game.phase_vote(self.town_db.get_town_info(inner_ctx)), ctx)
 
 ######################## Messaging Commands
 
     # Send all Legion players a message
     @commands.command(name='legion', help=f'Send info to all Legion players. Format is `{COMMAND_PREFIX}legion <Legion> <Legion> <Legion> etc`')
     async def on_legion(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_legion(self.bot.getTownInfo(inner_ctx), inner_ctx.message, inner_ctx), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_legion(self.town_db.get_town_info(inner_ctx), inner_ctx.message, inner_ctx), ctx)
 
     # Command to send fake evil info to the Lunatic
     # Works the same as evil, but doesn't message the minions
     @commands.command(name='lunatic', help=f'Send fake evil info to the Lunatic. Format is `{COMMAND_PREFIX}lunatic <Lunatic> <fake minion> <fake minion> <fake minion>`')
     async def on_lunatic(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_lunatic(self.bot.getTownInfo(inner_ctx), inner_ctx.message, inner_ctx), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_lunatic(self.town_db.get_town_info(inner_ctx), inner_ctx.message, inner_ctx), ctx)
 
     # Command to send demon/minion info to the Demon and Minions
     @commands.command(name='evil', help=f'Send evil info to evil team. Format is `{COMMAND_PREFIX}evil <demon> <minion> <minion> <minion>`')
     async def on_evil(self, ctx):
-        await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_evil(self.bot.getTownInfo(inner_ctx), inner_ctx.message, inner_ctx), ctx)
+        await self.perform_action_reporting_errors(lambda inner_ctx: self.role_messager.inform_evil(self.town_db.get_town_info(inner_ctx), inner_ctx.message, inner_ctx), ctx)
 
 ######################## Vote Timer
 
@@ -545,8 +531,9 @@ class GameplayCog(commands.Cog, name='Gameplay'):
             await discordhelper.send_error_to_author(ctx)
 
 class LookupCog(commands.Cog, name='Lookup'):
-    def __init__(self, bot, db):
+    def __init__(self, *, bot, db, town_db:TownDb):
         self.bot = bot
+        self.town_db = town_db
         self.lookup = lookup.Lookup(db)
 
     # Perform a role lookup
@@ -576,7 +563,7 @@ class LookupCog(commands.Cog, name='Lookup'):
 
     async def perform_control_channel_action_reporting_errors(self, action, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
-            town_info = self.bot.getTownInfo(ctx)
+            town_info = self.town_db.get_town_info(ctx)
             if town_info:
                 await  self.perform_action_reporting_errors_internal(action, ctx)
             else:
@@ -595,11 +582,13 @@ class LookupCog(commands.Cog, name='Lookup'):
         except Exception:
             await discordhelper.send_error_to_author(ctx)
 
+g_town_db = TownDb(g_db)
+
 g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 g_bot.add_cog(GameActivityCog(g_bot))
 g_bot.add_cog(GameCleanupCog(g_bot))
-g_bot.add_cog(SetupCog(g_bot, g_db))
-g_bot.add_cog(GameplayCog(g_bot))
+g_bot.add_cog(SetupCog(bot=g_bot, db=g_db, town_db=g_town_db))
+g_bot.add_cog(GameplayCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(AnnouncerCog(g_bot, g_db))
-g_bot.add_cog(LookupCog(g_bot, g_db))
+g_bot.add_cog(LookupCog(bot=g_bot, db=g_db, town_db=g_town_db))
 g_bot.run(TOKEN)
