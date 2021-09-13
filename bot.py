@@ -288,7 +288,7 @@ class SetupCog(commands.Cog, name='Setup'):
             msg:str = None
 
             try:
-                (info, msg) = self.impl.create_town(guild=guild, town_name=town_name, allow_night_category=allow_night_category, guild_st_role=guild_st_role, \
+                (info, msg) = await self.impl.create_town(guild=guild, town_name=town_name, allow_night_category=allow_night_category, guild_st_role=guild_st_role, \
                     guild_player_role=guild_player_role, bot_role=bot_role, author=ctx.author)
             except Exception:
                 await discordhelper.send_error_to_author(ctx)
@@ -320,7 +320,8 @@ class SetupCog(commands.Cog, name='Setup'):
                 return
 
             try:
-                message = self.impl.destroy_town(guild=guild, town_name=town_name)
+                await ctx.send(f"Please hold, destroying **{town_name}** ...")
+                message = await self.impl.destroy_town(guild=guild, town_name=town_name)
                 # Try to send to context, but it may have been a channel we deleted in which case send diretly to the author instead
                 try:
                     await ctx.send(message)
@@ -597,7 +598,7 @@ class LookupCog(commands.Cog, name='Lookup'):
 g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 g_bot.add_cog(GameActivityCog(g_bot))
 g_bot.add_cog(GameCleanupCog(g_bot))
-g_bot.add_cog(SetupCog(g_bot))
+g_bot.add_cog(SetupCog(g_bot, g_db))
 g_bot.add_cog(GameplayCog(g_bot))
 g_bot.add_cog(AnnouncerCog(g_bot, g_db))
 g_bot.add_cog(LookupCog(g_bot, g_db))
