@@ -136,6 +136,9 @@ class SetupImpl:
 
         return None
 
+    ######################### STANDARD NAMING ############################
+    # These format strings and other constants are used by both !createTown and !destroyTown to name channels, categories, and roles
+
     FMT_DAY_CAT = '{town_name}'
     FMT_NIGHT_CAT = '{town_name} - Night'
     FMT_ST_ROLE = '{town_name} Storyteller'
