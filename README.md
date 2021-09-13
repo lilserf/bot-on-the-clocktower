@@ -24,7 +24,7 @@ For these setup examples, we will use a town named "Ravenswood Bluff", but you c
 
 First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=bot) **\<\<**
 
-For more information on the permissions it requests, see [link](#2-permission-details).
+For more information on the permissions it requests, see [Permission Details](#permission-details).
 
 It is recommended (but optional) that your server has the following roles:
 * A role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
