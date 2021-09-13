@@ -3,9 +3,12 @@ async-timeout==3.0.1
 attrs==20.3.0
 chardet==3.0.4
 discord.py==1.5.1
-idna==3.0
-multidict==4.7.6
-python-dotenv==0.15.0
-yarl==1.5.1
-pymongo==3.11.3
 dnspython==1.16.0
+idna==3.0
+fuzzywuzzy==0.18.0
+multidict==4.7.6
+pymongo==3.11.3
+python-dotenv==0.15.0
+python-Levenshtein==0.12.1
+pytimeparse==1.1.8
+yarl==1.5.1

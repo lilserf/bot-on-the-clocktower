@@ -24,19 +24,9 @@ For these setup examples, we will use a town named "Ravenswood Bluff", but you c
 
 First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=bot) **\<\<**
 
-This bot requests the following permissions:
+For more information on the permissions it requests, see [Permission Details](#permission-details).
 
-| Permission | Why? |
-| ---------- | ---- |
-| Manage Channels | To create/destroy channels and categories with `!createTown` and `!destroyTown` commands |
-| Manage Roles | To grant/remove Storyteller and Villager roles<br/>To create/destroy roles with `!createTown` and `!destroyTown` commands |
-| Manage Nicknames | To add/remove **(ST)** for the Storyteller's nickname |
-| Move Members | To move players to nighttime rooms or back to the Town Square |
-| Manage Messages | To delete `!evil` command messages so players can't see who's evil |
-| View Channels | Required for many operations |
-| Send Messages | Required for many operations |
-
-In addition, it is recommended (but optional) that your server has the following roles:
+It is recommended (but optional) that your server has the following roles:
 * A role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
 * A role for server members who play the game. Example role name: **BotC Player**
   * If your server is entirely based around playing Blood on the Clocktower, this is unnecessary.
@@ -45,7 +35,7 @@ You should grant this role to appropriate server members, as the bot will not gr
 
 #### A note on Server Administrators
 
-Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators (including the server owner) can always see all channels. In addition, the bot cannot change the nickname of Administrators. For these reasons, if an Administrator wants to play too, it is recommended that they create a separate Discord account to act as the actual Administrator / server owner, and use a non-Administrator account to play instead.
+Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators or Owners can always see all channels and cannot have their nicknames changes. For these reasons, if a server Administrator/Owner wants to play too, it is recommended that they create a separate non-Admininstrator/Owner Discord account for playing with the bot.
 
 ### Quick Setup: `!createTown`
 
@@ -77,7 +67,7 @@ At this point, the Storyteller can visit Cottages as dictated by the night order
 
 Once the night phase is complete, the Storyteller uses the `!day` command to bring the players back to the Town Square and begin the day.
 
-Players can switch to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations. The Storyteller may use the `!vote` command to drag all the players back to the Town Square.
+Players can switch to other Daytime channels to have semi-private conversations until the Storyteller is ready to open nominations. The Storyteller may use the `!vote` or `!voteTimer` commands to drag all the players back to the Town Square.
 
 This cycle of night & day continues until there's a winner!
 
@@ -116,6 +106,14 @@ Brings all members from the Nighttime category channels back to the Town Square.
 ### `!vote`
 
 Brings all members from other Daytime category channels back to the Town Square for nominations to begin.
+
+### `!voteTimer <time>`
+
+Runs `!vote` after the specified amount of time. Valid times range from 15 seconds to 20 minutes.
+
+### `!stopVoteTimer`
+
+Cancels an existing timer created by `!voteTimer`.
 
 ### `!currGame`
 
@@ -223,6 +221,75 @@ If that command works, you're ready to run a game!
 ### `!removeTown`
 
 The opposite of `!addTown` - when run in the control channel for a town, removes registration of this town from the bot. The channels and roles will still exist and are not touched.
+
+### `!setChatChannel <chat channel name>`
+
+Informs the bot about what your chat channel is. This is needed to use the `!voteTimer` command, as the bot periodically informs villagers how much time they have before the vote.
+
+
+---
+
+## Lookup Command Details
+
+### `!character <character name>`
+
+Looks up a character by name. Official characters provided by https://clocktower.online/ are supported.
+
+If custom characters are desired, see the `!addScript` command.
+
+### `!addScript <script json url>`
+
+Informs the bot about a custom script using its json, collecting any custom characters in it.
+The script is only used by your Discord server; other servers will not see your custom characters.
+
+Some extra features are available if they are provided your script json.
+* If `_meta` section has an `almanac` property, a link to the script almanac will be provided.
+* If the character json has a `flavor` property, this will be included.
+
+These features are all supported by script publishing from https://www.bloodstar.xyz/
+
+### `!removeScript <script json url>`
+
+Tells the bot to forget about a custom script url.
+
+### `!listScripts`
+
+Lists all scripts the bot knows about for your server.
+
+### `!refreshScripts`
+
+Forces a refresh on all the custom scripts known. This is useful if you publish a new script and want to see the changes immediately. Otherwise, the bot will automatically refresh daily. 
+
+---
+
+## Announcement Command Details
+
+By default, the bot will announce significant new features into the control channel for each town. It will only announce a new release once.
+You can control whether your server gets these messages:
+
+### `!noannounce`
+
+Tells the bot not to send new feature announcements for any towns on your server.
+
+### `!announce`
+
+Tells the bot you do wish to receive feature announcements for towns on your server.
+
+---
+
+## Permission Details
+
+The bot requests the following permissions:
+
+| Permission | Why? |
+| ---------- | ---- |
+| Manage Channels | To create/destroy channels and categories with `!createTown` and `!destroyTown` commands |
+| Manage Roles | To grant/remove Storyteller and Villager roles<br/>To create/destroy roles with `!createTown` and `!destroyTown` commands |
+| Manage Nicknames | To add/remove **(ST)** for the Storyteller's nickname |
+| Move Members | To move players to nighttime rooms or back to the Town Square |
+| Manage Messages | To delete `!evil` command messages so players can't see who's evil |
+| View Channels | Required for many operations |
+| Send Messages | Required for many operations |
 
 ---
 
