@@ -2,12 +2,13 @@
 import discord
 
 from botctypes import TownInfo
+from towndb import TownDb
 import discordhelper
 
 class SetupImpl:
 
-    def __init__(self, *, db, command_prefix:str): # pylint: disable=invalid-name
-        self.collection = db['GuildInfo']
+    def __init__(self, *, command_prefix:str, town_db:TownDb): # pylint: disable=invalid-name
+        self.town_db = town_db
         self.command_prefix = command_prefix
 
     # Add a town from an ordered list of params, NOT including any !addTown command or similar
@@ -76,12 +77,7 @@ class SetupImpl:
 
         msg = None
         # Check if a town already exists
-        query = {
-            "guild" : info.guild.id,
-            "dayCategoryId" : info.day_category.id
-        }
-
-        existing = self.collection.find_one(query)
+        existing = self.town_db.exists(info)
         if existing:
             msg = f'Found an existing town on this server using daytime category `{info.day_category.name}`, modifying it!'
 
@@ -89,7 +85,7 @@ class SetupImpl:
         night_cat_info = (f'night category [{info.night_category.id}]' if info.night_category else '<no night category>')
         print(f'Adding a town to guild {info.guild.id} with control channel [{info.control_channel.id}], day category [{info.day_category.id}], {night_cat_info}')
 
-        self.collection.replace_one(query, info.get_document(), True)
+        self.town_db.update_one(info)
 
         return msg
 
@@ -98,41 +94,33 @@ class SetupImpl:
 
         post = {}
         msg = None
+        success = None
         if control_channel is not None:
-            post = {"guild" : guild.id, "controlChannelId" : control_channel.id }
+            success = self.town_db.delete_one_by_control(guild, control_channel)
             msg = f'control channel "{control_channel.name}"'
             print(f'Removing a game from guild {post["guild"]} with control channel [{post["controlChannelId"]}]')
         elif day_category_name is not None:
-            post = {"guild" : guild.id, "dayCategory" : day_category_name}
+            success = self.town_db.delete_one_by_day_name(guild, day_category_name)
             msg = f'day category "{day_category_name}"'
             print(f'Removing a game from guild {post["guild"]} with day category [{post["dayCategory"]}]')
         else:
             return 'Must provide either a control channel or day category to remove a town.'
 
-        result = self.collection.delete_one(post)
-
-        if result.deleted_count > 0:
+        if success:
             return None
         return f"Couldn't find a town to remove with {msg}!"
 
     def set_chat_channel(self, info:TownInfo, chat_channel_name:str) -> str:
 
-        query = { "guild" : info.guild.id, "controlChannelId" : info.control_channel.id }
-        doc = self.collection.find_one(query)
-        if not doc:
-            return 'Could not find a town! Are you running this command from the town control channel?'
+        if not info.day_category:
+            return 'Could not find the day category for this town!'
 
-        day_category:discord.CategoryChannel = discordhelper.get_category(info.guild, doc['dayCategory'], doc['dayCategoryId'])
-        if not day_category:
-            return f'Could not find the category {doc["dayCategory"]}!'
-
-        chat_channel:discord.TextChannel = discordhelper.get_channel_from_category_by_name(day_category, chat_channel_name)
+        chat_channel:discord.TextChannel = discordhelper.get_channel_from_category_by_name(info.day_category, chat_channel_name)
         if not chat_channel:
-            return f'Could not find the channel {chat_channel_name} in the category {doc["dayCategory"]}!'
+            return f'Could not find the channel **{chat_channel_name}** in the category **{info.day_category.name}**!'
 
-        doc['chat_channel'] = chat_channel.name
-        doc['chatChannelId'] = chat_channel.id
-        self.collection.replace_one(query, doc, True)
+        info.chat_channel = chat_channel
+        self.town_db.update_one(info)
 
         return None
 
@@ -364,8 +352,7 @@ class SetupImpl:
 
         # Remove the town from the guild
         if success:
-            post = {"guild" : guild.id, "dayCategory" : day_cat_name}
-            self.collection.delete_one(post)
+            self.town_db.delete_one_by_day_name(guild, day_cat_name)
 
         return message
 

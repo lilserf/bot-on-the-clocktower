@@ -45,7 +45,6 @@ g_db = g_cluster[MONGO_DB]
 
 COMMAND_PREFIX = os.getenv('COMMAND_PREFIX') or '!'
 
-g_dbGuildInfo = g_db['GuildInfo']
 g_dbActiveGames = g_db['ActiveGames']
 
 # Do some sanity checking of a DB document and see if a valid town can even be found on a guild with these params
@@ -137,10 +136,10 @@ class AnnouncerCog(commands.Cog, name='Version Announcements'):
 
 # Setup cog
 class SetupCog(commands.Cog, name='Setup'):
-    def __init__(self, *, bot, db, town_db:TownDb):
+    def __init__(self, *, bot, town_db:TownDb):
         self.bot = bot
         self.town_db = town_db
-        self.impl = setup.SetupImpl(db=db, command_prefix=COMMAND_PREFIX)
+        self.impl = setup.SetupImpl(town_db=town_db, command_prefix=COMMAND_PREFIX)
 
     def setToLatestVersion(self, guild):
         self.bot.get_announce_cog().set_to_latest_version(guild)
@@ -194,7 +193,7 @@ class SetupCog(commands.Cog, name='Setup'):
             else:
                 await ctx.send(err)
 
-    @commands.command(name='setChatChannel', help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
+    @commands.command(name='setChatChannel', aliases=['setchatchannel', 'setchatchan', 'setchat'], help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
     async def set_chat_channel(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
 
@@ -337,8 +336,9 @@ class GameActivityCog(commands.Cog, gameplay.IGameActivity, name='GameActivity')
 
 class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
 
-    def __init__(self, bot):
+    def __init__(self, *, bot, town_db:TownDb):
         self.bot = bot
+        self.town_db = town_db
 
     def start(self) -> None:
         # pylint doesn't understand the @tasks.loop decorator
@@ -370,28 +370,18 @@ class GameCleanupCog(commands.Cog, gameplay.IGameCleanup, name='GameCleanup'):
 
         for rec in g_dbActiveGames.find(inactiveQuery):
             guildId = rec["guild"]
-            # Fetch the full info for this guild/channel combo
             lookupQuery = { "guild" : guildId, "controlChannelId" : rec["channel"] }
-            doc = g_dbGuildInfo.find_one(lookupQuery)
-            if doc:
-                guild = self.bot.get_guild(guildId)
-                if guild:
-                    (townValid, townError) = isTownValid(guild, doc)
-                    if townValid:
-                        info = TownInfo.create_from_document(guild=guild, document=doc)
-                        try:
-                            await self.bot.get_gameplay_cog().end_game(info)
-                            numEnded = numEnded + 1
-                            print(f"Ended game in guild {guildId}")
-                            g_dbActiveGames.delete_one(lookupQuery)
-                        except Exception:
-                            pass
-                    else:
-                        print(f"Couldn't end game in guild {guildId} due to {townError}")
-                        g_dbActiveGames.delete_one(lookupQuery)
-                else:
-                    print(f"Couldn't find guild with id {guildId}, may have been deleted")
-                    g_dbActiveGames.delete_one(lookupQuery)
+            guild:discord.Guild = self.bot.get_guild(guildId)
+            info = self.town_db.find_one_by_control_id(guild, rec["channel"])
+
+            try:
+                msg = await self.bot.get_gameplay_cog().end_game(info)
+                numEnded = numEnded + 1
+                print(f"Ended game in guild {guildId}")
+                g_dbActiveGames.delete_one(lookupQuery)
+            except Exception:
+                print(f"Couldn't end game in guild {guildId}:\n{msg}")
+                g_dbActiveGames.delete_one(lookupQuery)
 
         if numEnded > 0:
             print(f'Ended {numEnded} inactive game(s)')
@@ -432,23 +422,6 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
     def cog_unload(self):
         self.bot.get_cleanup_cog().stop()
-
-    # Helper to see if a command context is in a valid channel etc - used by all the commands
-    async def isValid(self, ctx):
-
-        if isinstance(ctx.channel, discord.DMChannel):
-            await ctx.send("Whoops, you probably meant to send that in a text channel instead of a DM! Sorry, mate.")
-            return False
-
-        query = { "guild" : ctx.guild.id }
-        result = g_dbGuildInfo.find(query)
-        chanIds = map(lambda x: x["controlChannelId"], result)
-
-        if isinstance(ctx.channel, discord.TextChannel):
-            if ctx.channel.id in chanIds:
-                return True
-
-        return False
 
     # Exposed for use by other cogs
     async def end_game(self, info:TownInfo):
@@ -586,8 +559,8 @@ g_town_db = TownDb(g_db)
 
 g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 g_bot.add_cog(GameActivityCog(g_bot))
-g_bot.add_cog(GameCleanupCog(g_bot))
-g_bot.add_cog(SetupCog(bot=g_bot, db=g_db, town_db=g_town_db))
+g_bot.add_cog(GameCleanupCog(bot=g_bot, town_db=g_town_db))
+g_bot.add_cog(SetupCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(GameplayCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(AnnouncerCog(g_bot, g_db))
 g_bot.add_cog(LookupCog(bot=g_bot, db=g_db, town_db=g_town_db))
