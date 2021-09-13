@@ -213,41 +213,24 @@ class SetupCog(commands.Cog, name='Setup'):
     @commands.command(name='setChatChannel', help=f'Set the chat channel associated with this town.\n\nUsage: {COMMAND_PREFIX}setChatChannel <chat channel>')
     async def set_chat_channel(self, ctx):
         if await discordhelper.verify_not_dm_or_send_error(ctx):
-            params = shlex.split(ctx.message.content)
 
+            info = self.bot.getTownInfo(ctx)
+            if not info:
+                await ctx.send('Could not find a town! Are you running this command from the town control channel?')
+
+            params = shlex.split(ctx.message.content)
             if len(params) != 2:
                 await ctx.send(f'Incorrect usage for `{COMMAND_PREFIX}setChatChannel`: should provide `<chat channel>`')
                 return None
 
             chat_channel_name = params[1]
 
-            query = { "guild" : ctx.guild.id, "controlChannelId" : ctx.channel.id }
-            doc = g_dbGuildInfo.find_one(query)
-            if not doc:
-                await ctx.send('Could not find a town! Are you running this command from the town control channel?')
-                return None
+            msg = self.impl.set_chat_channel(info, chat_channel_name)
 
-            day_category = discordhelper.get_category(ctx.guild, doc['dayCategory'], doc['dayCategory'])
-            if not day_category:
-                await ctx.send(f'Could not find the category {doc["dayCategory"]}!')
-                return None
-
-            chat_channel = discordhelper.get_channel_from_category_by_name(day_category, chat_channel_name)
-            if not chat_channel:
-                await ctx.send(f'Could not find the channel {chat_channel_name} in the category {doc["dayCategory"]}!')
-                return None
-
-            doc['chatChannel'] = chat_channel.name
-            doc['chatChannelId'] = chat_channel.id
-            g_dbGuildInfo.replace_one(query, doc, True)
-
-            info = self.bot.getTownInfo(ctx)
-            if info:
-                await ctx.send(embed=info.make_embed())
+            if msg:
+                await ctx.send(msg)
             else:
-                await ctx.send(f'There was a problem adding {chat_channel_name} to the town.')
-
-
+                await ctx.send(embed=info.make_embed())
 
 
     @commands.command(name='createTown', aliases=['createtown'], help=f'Create an entire town on this server, including categories, roles, channels, and permissions.\n\nUsage: {COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]')

@@ -1,6 +1,8 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 import discord
+
 from botctypes import TownInfo
+import discordhelper
 
 class SetupImpl:
 
@@ -69,6 +71,7 @@ class SetupImpl:
 
         return self.add_town(info)
 
+    # Add a town from a TownInfo
     def add_town(self, info:TownInfo) -> str:
 
         msg = None
@@ -90,10 +93,11 @@ class SetupImpl:
 
         return msg
 
+    # Remove a town given a guild and either a control channel or day category name
     def remove_town(self, *, guild:discord.Guild, control_channel:discord.TextChannel=None, day_category_name:str=None) -> str:
 
         post = {}
-        msg = ""
+        msg = None
         if control_channel is not None:
             post = {"guild" : guild.id, "controlChannelId" : control_channel.id }
             msg = f'control channel "{control_channel.name}"'
@@ -111,4 +115,23 @@ class SetupImpl:
             return None
         return f"Couldn't find a town to remove with {msg}!"
 
+    def set_chat_channel(self, info:TownInfo, chat_channel_name:str) -> str:
 
+        query = { "guild" : info.guild.id, "controlChannelId" : info.control_channel.id }
+        doc = self.collection.find_one(query)
+        if not doc:
+            return 'Could not find a town! Are you running this command from the town control channel?'
+
+        day_category:discord.CategoryChannel = discordhelper.get_category(info.guild, doc['dayCategory'], doc['dayCategoryId'])
+        if not day_category:
+            return f'Could not find the category {doc["dayCategory"]}!'
+
+        chat_channel:discord.TextChannel = discordhelper.get_channel_from_category_by_name(day_category, chat_channel_name)
+        if not chat_channel:
+            return f'Could not find the channel {chat_channel_name} in the category {doc["dayCategory"]}!'
+
+        doc['chatChannel'] = chat_channel.name
+        doc['chatChannelId'] = chat_channel.id
+        self.collection.replace_one(query, doc, True)
+
+        return None
