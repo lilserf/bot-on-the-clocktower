@@ -237,12 +237,16 @@ class SetupCog(commands.Cog, name='Setup'):
     async def createTown(self, ctx):
         # pylint: disable=too-many-locals, too-many-return-statements, too-many-branches, too-many-statements
         if await discordhelper.verify_not_dm_or_send_error(ctx):
-            params = shlex.split(ctx.message.content)
 
             guild = ctx.guild
+            bot_role = discordhelper.get_role_by_name(guild, self.bot.user.name)
+            if not bot_role:
+                await ctx.send(f"Could not find role for **{self.bot.user.name}**. Cannot proceed! Where did the role go?")
+                return
 
             usageStr = f"Usage: `{COMMAND_PREFIX}createTown <town name> [server storyteller role] [server player role] [noNight]`"
 
+            params = shlex.split(ctx.message.content)
             if len(params) < 2:
                 await ctx.send(f"Too few params to `{COMMAND_PREFIX}createTown`. " + usageStr)
                 return None
@@ -252,155 +256,49 @@ class SetupCog(commands.Cog, name='Setup'):
                 await ctx.send("No town name provided. " + usageStr)
                 return None
 
-            # Ensure all the roles exist
-            botRole = discordhelper.get_role_by_name(guild, self.bot.user.name)
-            if not botRole:
-                await ctx.send("Could not find role for **" + self.bot.user.name + "**. Cannot proceed! Where did the role go?")
-                return None
-
-            allowNightCategory = True
-            guildStRole = None
-            guildPlayerRole = None
-
             # Check for additional params beyond the required ones
-            additionalParamCount = 0
+            additional_param_count = 0
+            guild_st_role = None
+            guild_player_role = None
+            allow_night_category = True
 
             for i in range(2, len(params)):
                 p = params[i]
                 if p.lower() == "nonight":
-                    allowNightCategory = False
+                    allow_night_category = False
                 else:
-                    if additionalParamCount == 0:
-                        guildStRole = discordhelper.get_role_by_name(guild, p)
-                        if not guildStRole:
+                    if additional_param_count == 0:
+                        guild_st_role = discordhelper.get_role_by_name(guild, p)
+                        if not guild_st_role:
                             await ctx.send("Provided Storyteller Role **" + p + "** not found.")
                             return None
-                    elif additionalParamCount == 1:
-                        guildPlayerRole = discordhelper.get_role_by_name(guild, p)
-                        if not guildPlayerRole:
+                    elif additional_param_count == 1:
+                        guild_player_role = discordhelper.get_role_by_name(guild, p)
+                        if not guild_player_role:
                             await ctx.send("Provided Player Role **" + p + "** not found.")
                             return None
                     else:
                         await ctx.send(f"Unknown parameter: {p}")
                         return None
 
-                    additionalParamCount = additionalParamCount + 1
+                    additional_param_count = additional_param_count + 1
 
-            # These are in sync with those in destroyTown, could probably stand to abstract somehow
-            dayCatName = townName
-            nightCatName = townName + ' - Night' if allowNightCategory else None
-            gameStRoleName = townName + " Storyteller"
-            gameVillagerRoleName = townName + " Villager"
-            moverChannelName = "botc_mover"
-            chatChannelName = "chat"
-            townSquareChannelName = "Town Square"
-            extraChannelNames = ["Dark Alley", "Library", "Graveyard"]
-            nightChannelName = "Cottage"
-            neededNightChannels = 20
-
+            await ctx.send(f"Please hold, creating **{townName}** ...")
+            info:TownInfo = None
+            msg:str = None
 
             try:
-                await ctx.send("Please hold, creating **" + townName + "** ...")
-
-                # Roles
-                everyoneRole = discordhelper.get_role_by_name(guild, "@everyone")
-                if not everyoneRole:
-                    await ctx.send("Could not find the **@everyone** role. Why not?")
-                    return None
-
-                gameVillagerRole = discordhelper.get_role_by_name(guild, gameVillagerRoleName)
-                if not gameVillagerRole:
-                    gameVillagerRole = await guild.create_role(name=gameVillagerRoleName, color=discord.Color.magenta())
-
-                gameStRole = discordhelper.get_role_by_name(guild, gameStRoleName)
-                if not gameStRole:
-                    gameStRole = await guild.create_role(name=gameStRoleName, color=discord.Color.dark_magenta())
-
-
-                # Day category
-                dayCat = discordhelper.get_category_by_name(guild, dayCatName)
-                if not dayCat:
-                    dayCat = await guild.create_category(dayCatName)
-
-                await dayCat.set_permissions(gameVillagerRole, view_channel=True)
-                await dayCat.set_permissions(botRole, view_channel=True, move_members=True)
-
-
-                # Night category
-                if allowNightCategory:
-                    nightCat = discordhelper.get_category_by_name(guild, nightCatName)
-                    if not nightCat:
-                        nightCat = await guild.create_category(nightCatName)
-
-                    await nightCat.set_permissions(gameStRole, view_channel=True)
-                    await nightCat.set_permissions(botRole, view_channel=True, move_members=True)
-                    await nightCat.set_permissions(everyoneRole, view_channel=False)
-
-
-                # Mover channel
-                moverChannel = discordhelper.get_channel_from_category_by_name(dayCat, moverChannelName)
-                if not moverChannel:
-                    moverChannel = await dayCat.create_text_channel(moverChannelName)
-                await moverChannel.set_permissions(botRole, view_channel=True)
-                await moverChannel.set_permissions(gameVillagerRole, overwrite=None)
-
-                if guildStRole:
-                    await moverChannel.set_permissions(guildStRole, view_channel=True)
-                    await moverChannel.set_permissions(everyoneRole, view_channel=False)
-
-
-                # Chat channel
-                chatChannel = discordhelper.get_channel_from_category_by_name(dayCat, chatChannelName)
-                if not chatChannel:
-                    chatChannel = await dayCat.create_text_channel(chatChannelName)
-                await chatChannel.set_permissions(botRole, view_channel=True)
-                if not guildPlayerRole:
-                    await chatChannel.set_permissions(everyoneRole, view_channel=False)
-
-
-                # Town Square
-                townSquareChannel = discordhelper.get_channel_from_category_by_name(dayCat, townSquareChannelName)
-                if not townSquareChannel:
-                    townSquareChannel = await dayCat.create_voice_channel(townSquareChannelName)
-
-                if guildPlayerRole:
-                    await dayCat.set_permissions(everyoneRole, view_channel=False)
-                    await townSquareChannel.set_permissions(guildPlayerRole, view_channel=True)
-
-                # Extra day channels
-                for extraChannelName in extraChannelNames:
-                    extraChannel = discordhelper.get_channel_from_category_by_name(dayCat, extraChannelName)
-                    if not extraChannel:
-                        extraChannel = await dayCat.create_voice_channel(extraChannelName)
-                    if not guildPlayerRole:
-                        await extraChannel.set_permissions(everyoneRole, view_channel=False)
-
-
-                # Night channels
-                if allowNightCategory:
-                    for c in nightCat.channels:
-                        if c.type == discord.ChannelType.voice and c.name == nightChannelName:
-                            neededNightChannels = neededNightChannels - 1
-
-                    if neededNightChannels > 0:
-                        for _ in range(neededNightChannels):
-                            await nightCat.create_voice_channel(nightChannelName)
-
-
-                # Calling addTown
-                (info, err) = TownInfo.create_from_params(guild=guild, control_name=moverChannelName, town_square_name=townSquareChannelName, day_category_name=dayCatName, \
-                    night_category_name=nightCatName, storyteller_role_name=gameStRoleName, villager_role_name=gameVillagerRoleName, chat_channel_name=chatChannelName, author=ctx.author)
-
-                if not info:
-                    await ctx.send(f'There was a problem creating the town of **{townName}**:\n{err}')
-                    return
-
-                await ctx.send("The town of **" + townName + "** has been created!")
-                self.impl.add_town(info)
-                await ctx.send(embed=info.make_embed())
-
+                (info, msg) = self.impl.create_town(guild=guild, town_name=townName, allow_night_category=allow_night_category, guild_st_role=guild_st_role, \
+                    guild_player_role=guild_player_role, bot_role=bot_role, author=ctx.author)
             except Exception:
                 await discordhelper.send_error_to_author(ctx)
+                return
+
+            if msg:
+                await ctx.send(msg)
+            else:
+                await ctx.send("The town of **" + townName + "** has been created!")
+                await ctx.send(embed=info.make_embed())
 
 
     @commands.command(name='destroyTown', aliases=['destroytown'], help='Destroy everything created from the \'createTown\' command')
