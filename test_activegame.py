@@ -116,6 +116,8 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(3))
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(4))
 
+    #TODO: Removing active games
+
 
 
 class MockActiveGameDb(IActiveGameDb):
