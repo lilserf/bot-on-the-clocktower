@@ -1,5 +1,8 @@
-﻿import version
-'''Classes for dealing with new version announcements'''
+﻿'''Classes for dealing with new version announcements'''
+
+import version
+from towndb import TownDb
+
 # pylint: disable=missing-class-docstring, missing-function-docstring, invalid-name, broad-except
 
 class IAnnouncerDb:
@@ -11,7 +14,7 @@ class IAnnouncerGuildDb:
         pass
 
 class IAnnouncerMessageSender:
-    async def send_embed(self, guild, embed):
+    async def send_embed(self, guild_id, embed):
         pass
 
 class AnnouncerDbImpl(IAnnouncerDb):
@@ -42,23 +45,23 @@ class AnnouncerDbImpl(IAnnouncerDb):
 
 
 class AnnouncerGuildDbImpl(IAnnouncerGuildDb):
-    def __init__(self, mongo):
-        self.collection = mongo['GuildInfo']
+    town_db:TownDb
+
+    def __init__(self, town_db):
+        self.town_db = town_db
 
     def get_guilds(self):
-        x = self.collection.find(projection={'guild':True, '_id':False}).distinct('guild')
-        return x
+        return self.town_db.get_all_guilds()
 
 class AnnouncerMessageSenderImpl(IAnnouncerMessageSender):
-    def __init__(self, bot, mongo):
+    def __init__(self, bot, town_db):
         self.bot = bot
-        self.collection = mongo['GuildInfo']
+        self.town_db = town_db
 
-    async def send_embed(self, guild, embed):
-        query = {"guild": guild}
-        result = self.collection.find(query)
+    async def send_embed(self, guild_id, embed):
+        result = self.town_db.get_all_towns_for_guild_id(guild_id)
         for x in result:
-            town_info = self.bot.getTownInfoByIds(guild, x['controlChannelId'])
+            town_info = self.bot.getTownInfoByIds(guild_id, x['controlChannelId'])
             await town_info.control_channel.send(embed=embed)
 
 class AnnouncerImpl:
@@ -100,9 +103,9 @@ class AnnouncerImpl:
 
 # Concrete class for use by the cog
 class Announcer:
-    def __init__(self, bot, mongo):
+    def __init__(self, *, bot, mongo, town_db:TownDb):
         db = AnnouncerDbImpl(mongo)
-        guildDb = AnnouncerGuildDbImpl(mongo)
+        guildDb = AnnouncerGuildDbImpl(town_db)
         provider = version.VersionProviderImpl()
         sender = AnnouncerMessageSenderImpl(bot, mongo)
 
