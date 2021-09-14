@@ -18,7 +18,7 @@ class ITimedCallbackManagerFactory:
     '''Factory for creating ITimedCallbackManagers'''
 
     def get_timed_callback_manager(self, callback:Callable[[object], None], check_delta:timedelta) -> ITimedCallbackManager:
-        '''Returns an ITimedCallbackManager for calling callbacks and checking every timespan. The callback will take the time.'''
+        '''Returns an ITimedCallbackManager for calling callbacks and checking every timedelta.'''
 
 class ILoop():
     '''Interface for a loop, matches API of Loop class in discord.ext'''
