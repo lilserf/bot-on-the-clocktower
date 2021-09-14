@@ -40,6 +40,12 @@ class IActiveGameDb:
     def retrieve_active_games(self) -> list[ActiveGame]:
         '''Retrieves all active games from the DB'''
 
+    def add_or_update_game(self, game:ActiveGame) -> None:
+        '''Stores a game in the database'''
+
+    def remove_update_game(self, game:ActiveGame) -> None:
+        '''Removes a game from the database'''
+
 
 class ActiveGameStore(IActiveGameStore):
     '''Storage for holding all the currently-active games'''
