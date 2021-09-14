@@ -7,7 +7,7 @@ from discord.ext import tasks
 import pytimeparse
 
 import botctypes
-from pythonwrappers import *
+from pythonwrappers import DateTimeProvider
 
 class VoteTownInfo:
     def __init__(self, chat_channel, villager_role, town_square_name):
@@ -94,10 +94,10 @@ class VoteTimerController(IVoteTimerController):
         next_time = end_time
         delta = (end_time - now).total_seconds()
         if delta >= 0:
-            advance_times = [300, 60, 15, 0]
-            for x in advance_times:
-                if delta > x:
-                    next_time = end_time - timedelta(seconds=x)
+            advance_seconds = [300, 60, 15, 0]
+            for second in advance_seconds:
+                if delta > second:
+                    next_time = end_time - timedelta(seconds=second)
                     break
 
         self.town_storage.add_town(town_id, next_time)
@@ -131,7 +131,7 @@ class VoteTimerController(IVoteTimerController):
 
 
 class IVoteTownTicker:
-    def set_callback(self, cb):
+    def set_callback(self, callback):
         pass
 
     def start_ticking(self):
@@ -146,13 +146,13 @@ class VoteTownTicker(IVoteTownTicker):
     # pylint: disable=no-member
 
     def __init__(self):
-        self.cb = None
+        self.callback = None
 
     def __del__(self):
         self.tick.cancel()
 
-    def set_callback(self, cb):
-        self.cb = cb
+    def set_callback(self, callback):
+        self.callback = callback
 
     def start_ticking(self):
         if not self.tick.is_running():
@@ -164,7 +164,7 @@ class VoteTownTicker(IVoteTownTicker):
 
     @tasks.loop(seconds=1)
     async def tick(self):
-        await self.cb()
+        await self.callback()
 
 
 class IMessageBroadcaster:

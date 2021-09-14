@@ -1,9 +1,4 @@
-﻿# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-# pylint: disable=missing-module-docstring
-# pylint: disable=invalid-name
-# pylint: disable=wildcard-import
-# pylint: disable=unused-wildcard-import
+﻿# pylint: disable=missing-class-docstring, disable=missing-function-docstring, disable=missing-module-docstring, disable=invalid-name, disable=wildcard-import, disable=unused-wildcard-import
 
 from datetime import datetime, date, time
 import unittest
