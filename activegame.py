@@ -2,6 +2,10 @@
 
 from datetime import datetime
 
+from pymongo.collection import Collection
+from pymongo.database import Database
+
+import botcmongo
 from botctypes import TownId
 from pythonwrappers import IDateTimeProvider
 
@@ -43,7 +47,7 @@ class IActiveGameDb:
     def add_or_update_game(self, game:ActiveGame) -> None:
         '''Stores a game in the database'''
 
-    def remove_update_game(self, game:ActiveGame) -> None:
+    def remove_game(self, game:ActiveGame) -> None:
         '''Removes a game from the database'''
 
 
@@ -102,3 +106,44 @@ class ActiveGameStore(IActiveGameStore):
         '''To call whenever a game is added'''
         self.current_games[game.town_id] = game
         self.assign_or_unassign_town_id_for_members(game.town_id, member_diff)
+
+class ActiveGameDb(IActiveGameDb):
+    '''Mongo implementation of IActiveGameDb'''
+
+    def __init__(self, database:Database, datetime_provider:IDateTimeProvider) -> None:
+        self.collection:Collection = database['ActiveGames']
+        self.datetime_provider:IDateTimeProvider = datetime_provider
+
+    @staticmethod
+    def get_town_id_query_from_game(game:ActiveGame) -> dict:
+        return botcmongo.get_town_id_query(game.town_id)
+
+    @staticmethod
+    def get_post_from_game(game:ActiveGame, datetime_provider:IDateTimeProvider) -> dict:
+        post:dict = ActiveGameDb.get_town_id_query_from_game(game)
+        post['storytellerIds'] = list(game.storyteller_ids)
+        post['playerIds'] = list(game.player_ids)
+        post['lastActivity'] = datetime_provider.now()
+        return post
+
+    @staticmethod
+    def get_game_from_post(post:dict) -> ActiveGame:
+        game = ActiveGame()
+        game.town_id = botcmongo.get_town_id_from_post(post)
+        game.storyteller_ids = set(post['storytellerIds']) if 'storytellerIds' in post else set()
+        game.player_ids = set(post['playerIds']) if 'playerIds' in post else set()
+        game.last_activity = post['lastActivity']
+        return game
+
+    def retrieve_active_games(self) -> list[ActiveGame]:
+        games = self.collection.find()
+        return list(map(ActiveGameDb.get_game_from_post, games))
+
+    def add_or_update_game(self, game:ActiveGame) -> None:
+        query = ActiveGameDb.get_town_id_query_from_game(game)
+        post = ActiveGameDb.get_post_from_game(game, self.datetime_provider)
+        self.collection.replace_one(query, post, True)
+
+    def remove_game(self, game:ActiveGame) -> None:
+        query = ActiveGameDb.get_town_id_query_from_game(game)
+        self.collection.delete_one(query)
