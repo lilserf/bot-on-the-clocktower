@@ -37,9 +37,10 @@ class TestActiveGameSync(unittest.TestCase):
 
         self.assertEqual(1, store.get_game_count())
         self.assertEqual(1, db_mock.add_or_update_game_calls)
-        self.assertEqual(town_id, db_mock.add_or_update_game_param.town_id)
-        self.assertSetEqual(set(storyteller_ids), db_mock.add_or_update_game_param.storyteller_ids)
-        self.assertSetEqual(set(player_ids), db_mock.add_or_update_game_param.player_ids)
+        self.assertEqual(town_id, db_mock.add_or_update_game_town_id)
+        self.assertEqual(town_id, db_mock.add_or_update_game_game.town_id)
+        self.assertSetEqual(set(storyteller_ids), db_mock.add_or_update_game_game.storyteller_ids)
+        self.assertSetEqual(set(player_ids), db_mock.add_or_update_game_game.player_ids)
 
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(0))
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(1))
@@ -89,7 +90,6 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set([3]), set_diff.added)
         self.assertSetEqual(set([1]), set_diff.removed)
 
-
     def test_existing_game_new_game_replaces(self):
         town_id = TownId(10, 11)
 
@@ -116,7 +116,39 @@ class TestActiveGameSync(unittest.TestCase):
         self.assertSetEqual(set([town_id]), store.get_town_ids_for_member_id(3))
         self.assertSetEqual(set(), store.get_town_ids_for_member_id(4))
 
-    #TODO: Removing active games
+    def test_existing_game_remove_removes(self):
+        town_id_1 = TownId(1, 1)
+        town_id_2 = TownId(2, 2)
+
+        g1 = ActiveGame()
+        g1.player_ids = set([1, 2])
+        g1.storyteller_ids = set([3])
+        g1.town_id = town_id_1
+
+        g2 = ActiveGame()
+        g2.player_ids = set([1, 4])
+        g2.storyteller_ids = set([4])
+        g2.town_id = town_id_2
+        
+        mock_db:MockActiveGameDb = MockActiveGameDb([g1, g2])
+        store:ActiveGameStore = ActiveGameStore(mock_db, MockDateTimeProvider())
+
+        self.assertEqual(2, store.get_game_count())
+        self.assertSetEqual(set([g1.town_id, g2.town_id]), store.get_town_ids_for_member_id(1))
+        self.assertSetEqual(set([g1.town_id]), store.get_town_ids_for_member_id(2))
+        self.assertSetEqual(set([g1.town_id]), store.get_town_ids_for_member_id(3))
+        
+        self.assertEqual(0, mock_db.remove_game_calls)
+
+        store.remove_game(g1.town_id)
+
+        self.assertEqual(1, store.get_game_count())
+        self.assertSetEqual(set([g2.town_id]), store.get_town_ids_for_member_id(1))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(2))
+        self.assertSetEqual(set(), store.get_town_ids_for_member_id(3))
+
+        self.assertEqual(1, mock_db.remove_game_calls)
+        self.assertEqual(g1.town_id, mock_db.remove_game_town_id)
 
 
 
@@ -126,14 +158,23 @@ class MockActiveGameDb(IActiveGameDb):
         self.games: list[ActiveGame] = games
 
         self.add_or_update_game_calls:int = 0
-        self.add_or_update_game_param:ActiveGame = None
+        self.add_or_update_game_town_id:TownId = None
+        self.add_or_update_game_game:ActiveGame = None
+
+        self.remove_game_calls:int = 0
+        self.remove_game_town_id:TownId = None
 
     def retrieve_active_games(self) -> list[ActiveGame]:
         return self.games
 
-    def add_or_update_game(self, game:ActiveGame) -> None:
+    def add_or_update_game(self, town_id:TownId, game:ActiveGame) -> None:
         self.add_or_update_game_calls += 1
-        self.add_or_update_game_param = game
+        self.add_or_update_game_town_id = town_id
+        self.add_or_update_game_game = game
+
+    def remove_game(self, town_id:TownId) -> None:
+        self.remove_game_calls += 1
+        self.remove_game_town_id = town_id
 
 
 class MockDateTimeProvider(IDateTimeProvider):

@@ -34,6 +34,9 @@ class IActiveGameStore:
     def add_or_update_game(self, town_id:TownId, storyteller_ids:set[int], player_ids:set[int]) -> None:
         '''Adds or updates an active game'''
 
+    def remove_game(self, town_id:TownId) -> None:
+        '''Removes an active game'''
+
     def get_town_ids_for_member_id(self, member_id:int) -> set[TownId]:
         '''Returns the set of TownIds currently active for a member'''
 
@@ -44,10 +47,10 @@ class IActiveGameDb:
     def retrieve_active_games(self) -> list[ActiveGame]:
         '''Retrieves all active games from the DB'''
 
-    def add_or_update_game(self, game:ActiveGame) -> None:
+    def add_or_update_game(self, town_id:TownId, game:ActiveGame) -> None:
         '''Stores a game in the database'''
 
-    def remove_game(self, game:ActiveGame) -> None:
+    def remove_game(self, town_id:TownId) -> None:
         '''Removes a game from the database'''
 
 
@@ -83,7 +86,13 @@ class ActiveGameStore(IActiveGameStore):
         member_diff = SetDifference(all_new_members, all_old_members)
 
         self.on_game_added(new_game, member_diff)
-        self.active_game_db.add_or_update_game(new_game)
+        self.active_game_db.add_or_update_game(town_id, new_game)
+
+    def remove_game(self, town_id:TownId) -> None:
+        game:ActiveGame = self.current_games[town_id] if town_id in self.current_games else None
+        if game:
+            self.on_game_removed(game)
+            self.active_game_db.remove_game(town_id)
 
     def get_town_ids_for_member_id(self, member_id:int) -> set[TownId]:
         return self.town_ids_from_member_id_map[member_id] if member_id in self.town_ids_from_member_id_map else set()
@@ -101,11 +110,16 @@ class ActiveGameStore(IActiveGameStore):
                 self.town_ids_from_member_id_map[member_id] = set()
             self.town_ids_from_member_id_map[member_id].add(town_id)
 
-
     def on_game_added(self, game:ActiveGame, member_diff:SetDifference) -> None:
         '''To call whenever a game is added'''
         self.current_games[game.town_id] = game
         self.assign_or_unassign_town_id_for_members(game.town_id, member_diff)
+
+    def on_game_removed(self, game:ActiveGame) -> None:
+        '''To call whenever a game is removed'''
+        self.current_games.pop(game.town_id)
+        all_members:set[int] = game.storyteller_ids | game.player_ids
+        self.assign_or_unassign_town_id_for_members(game.town_id, SetDifference(set(), all_members))
 
 class ActiveGameDb(IActiveGameDb):
     '''Mongo implementation of IActiveGameDb'''
@@ -139,11 +153,11 @@ class ActiveGameDb(IActiveGameDb):
         games = self.collection.find()
         return list(map(ActiveGameDb.get_game_from_post, games))
 
-    def add_or_update_game(self, game:ActiveGame) -> None:
-        query = ActiveGameDb.get_town_id_query_from_game(game)
-        post = ActiveGameDb.get_post_from_game(game, self.datetime_provider)
+    def add_or_update_game(self, town_id:TownId, game:ActiveGame) -> None:
+        query:dict = botcmongo.get_town_id_query(town_id)
+        post:dict = ActiveGameDb.get_post_from_game(game, self.datetime_provider)
         self.collection.replace_one(query, post, True)
 
-    def remove_game(self, game:ActiveGame) -> None:
-        query = ActiveGameDb.get_town_id_query_from_game(game)
+    def remove_game(self, town_id:TownId) -> None:
+        query:dict = botcmongo.get_town_id_query(town_id)
         self.collection.delete_one(query)
