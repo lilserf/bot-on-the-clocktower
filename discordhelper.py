@@ -65,6 +65,13 @@ def user_names(users:list[discord.User]) -> list[str]:
     '''Get a list of nice-looking names from a list of users'''
     return list(map(get_user_name, users))
 
+def get_user_by_id(users:list[discord.User], id:int) -> discord.User:
+    '''Get a user by ID from a list'''
+    for check in users:
+        if check.id == id:
+            return check
+    return None
+
 # Given a list of users and a name string, find the user with the closest name
 def get_closest_user(user_list:list[discord.User], name:str) -> discord.User:
     '''Get anybody whose name starts with what was sent'''

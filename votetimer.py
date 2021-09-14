@@ -1,9 +1,12 @@
-﻿import botctypes
+﻿# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, broad-except
 from datetime import timedelta
-from discord.ext import tasks
 import math
-import pytimeparse
 import shlex
+
+from discord.ext import tasks
+import pytimeparse
+
+import botctypes
 from pythonwrappers import *
 
 class VoteTownInfo:
@@ -22,6 +25,7 @@ class IVoteTimerController:
 class VoteTimerController(IVoteTimerController):
 
     def __init__(self, datetime_provider, town_info_provider, town_storage, town_ticker, message_broadcaster, vote_handler):
+        # pylint: disable=too-many-arguments
         self.datetime_provider = datetime_provider
         self.town_info_provider = town_info_provider
         self.town_storage = town_storage
@@ -51,7 +55,7 @@ class VoteTimerController(IVoteTimerController):
 
         if not self.town_storage.has_towns_ticking():
             self.town_ticker.stop_ticking()
-        
+
         if had_town:
             town_info = self.town_info_provider.get_town_info(town_id)
             message = f'{town_info.villager_role.mention} - Vote countdown stopped!'
@@ -62,14 +66,14 @@ class VoteTimerController(IVoteTimerController):
 
         for town_id in finished:
             await self.advance_town(town_id, self.datetime_provider.now())
-        
+
         if not self.town_storage.has_towns_ticking():
             self.town_ticker.stop_ticking()
 
     async def advance_town(self, town_id, now):
-        if (town_id in self.town_map):
+        if town_id in self.town_map:
             end_time = self.town_map[town_id]
-            if (end_time < now):
+            if end_time < now:
                 self.town_map.pop(town_id)
                 await self.send_time_to_vote_message(town_id)
                 await self.vote_handler.perform_vote(town_id)
@@ -138,6 +142,12 @@ class IVoteTownTicker:
 
 
 class VoteTownTicker(IVoteTownTicker):
+    # pylint doesn't understand the @task decorator stuff
+    # pylint: disable=no-member
+
+    def __init__(self):
+        self.cb = None
+
     def __del__(self):
         self.tick.cancel()
 
@@ -171,7 +181,7 @@ class MessageBroadcaster:
                 await town_info.chat_channel.send(message)
             except Exception as ex:
                 return f'Unable to send chat message. Do I have permission to send messages to chat channel `{town_info.chat_channel.name}`?\n\n{ex}'
-    
+
 
 class IVoteTownStorage:
     def add_town(self, town_id, finish_time):
@@ -236,11 +246,11 @@ class VoteTownInfoProvider(IVoteTownInfoProvider):
         self.bot = bot
 
     def get_town_info(self, town_id):
-        town_info = self.bot.getTownInfoByTownId(town_id)
+        town_info:botctypes.TownInfo = self.bot.getTownInfoByTownId(town_id)
         if not town_info:
             return None
 
-        return VoteTownInfo(town_info.chatChannel, town_info.villagerRole, town_info.townSquare.name)
+        return VoteTownInfo(town_info.chat_channel, town_info.villager_role, town_info.town_square_channel.name)
 
 
 class VoteTimerImpl:
@@ -248,7 +258,6 @@ class VoteTimerImpl:
         self.controller = controller
         self.datetime_provider = datetime_provider
         self.town_info_provider = town_info_provider
-        pass
 
     async def start_timer(self, town_id, time_in_seconds):
         town_info = self.town_info_provider.get_town_info(town_id)
@@ -279,8 +288,8 @@ class VoteTimerImpl:
         await self.controller.remove_town(town_id)
 
 
-    def get_seconds_from_string(self, str):
-        return pytimeparse.parse(str)
+    def get_seconds_from_string(self, in_str):
+        return pytimeparse.parse(in_str)
 
 # Concrete class for use by the Cog
 class VoteTimer:
@@ -298,8 +307,8 @@ class VoteTimer:
 
     async def start_timer(self, ctx):
         params = shlex.split(ctx.message.content)
-        
-        usage = f'Must pass a time string, e.g. "5 minutes 30 seconds" or "5m30s"'
+
+        usage = 'Must pass a time string, e.g. "5 minutes 30 seconds" or "5m30s"'
 
         if len(params) < 2:
             return usage

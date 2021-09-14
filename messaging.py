@@ -41,7 +41,7 @@ class RoleMessagerImpl:
         '''Given a string of format <demon, minion, minion, etc> find the demon and minion users and return a tuple with them'''
         # Split the message allowing quoted substrings
         params = shlex.split(msg)
-        users = info.activePlayers
+        users = info.active_players
 
         # Grab the demon and list of minions
         demon = params[1]
@@ -55,9 +55,9 @@ class RoleMessagerImpl:
         demon_user = discordhelper.get_closest_user(users, demon)
         minion_users = list(map(lambda x: discordhelper.get_closest_user(users, x), minions))
 
-        categories = [info.dayCategory.name]
-        if info.nightCategory:
-            categories.append(info.nightCategory.name)
+        categories = [info.day_category.name]
+        if info.night_category:
+            categories.append(info.night_category.name)
         cat_string = ', '.join(categories)
 
         # Error messages for users not found
