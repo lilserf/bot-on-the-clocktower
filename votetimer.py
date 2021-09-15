@@ -7,6 +7,7 @@ import pytimeparse
 
 import botctypes
 from timedcallback import ITimedCallbackManager, ITimedCallbackManagerFactory
+from towndb import TownDb
 from pythonwrappers import DateTimeProvider
 
 class VoteTownInfo:
@@ -123,9 +124,6 @@ class IMessageBroadcaster:
         pass
 
 class MessageBroadcaster:
-    def __init__(self, bot):
-        self.bot = bot
-
     async def send_message(self, town_info, message):
         if town_info.chat_channel:
             try:
@@ -140,12 +138,12 @@ class IVoteHandler:
         pass
 
 class VoteHandler(IVoteHandler):
-    def __init__(self, bot, move_cb):
-        self.bot = bot
+    def __init__(self, town_db:TownDb, move_cb):
+        self.town_db:TownDb = town_db
         self.move_cb = move_cb
 
     async def perform_vote(self, town_id):
-        town_info = self.bot.getTownInfoByTownId(town_id)
+        town_info = self.town_db.get_town_info_by_town_id(town_id)
         await self.move_cb(town_info)
 
 
@@ -154,11 +152,11 @@ class IVoteTownInfoProvider:
         pass
 
 class VoteTownInfoProvider(IVoteTownInfoProvider):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, town_db:TownDb):
+        self.town_db:TownDb = town_db
 
     def get_town_info(self, town_id):
-        town_info:botctypes.TownInfo = self.bot.getTownInfoByTownId(town_id)
+        town_info:botctypes.TownInfo = self.town_db.get_town_info_by_town_id(town_id)
         if not town_info:
             return None
 
@@ -205,15 +203,14 @@ class VoteTimerImpl:
 
 # Concrete class for use by the Cog
 class VoteTimer:
-    def __init__(self, bot, timed_callback_factory:ITimedCallbackManagerFactory, move_cb):
-        info_provider = VoteTownInfoProvider(bot)
+    def __init__(self, timed_callback_factory:ITimedCallbackManagerFactory, town_db:TownDb, move_cb):
+        info_provider = VoteTownInfoProvider(town_db)
         dt_provider = DateTimeProvider()
-        broadcaster = MessageBroadcaster(bot)
-        vote_handler = VoteHandler(bot, move_cb)
+        broadcaster = MessageBroadcaster()
+        vote_handler = VoteHandler(town_db, move_cb)
         controller = VoteTimerController(dt_provider, info_provider, timed_callback_factory, broadcaster, vote_handler)
 
         self.impl = VoteTimerImpl(controller, dt_provider, info_provider)
-        self.bot = bot
 
     async def start_timer(self, ctx):
         params = shlex.split(ctx.message.content)
