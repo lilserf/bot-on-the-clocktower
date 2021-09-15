@@ -131,7 +131,16 @@ class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
     def get_timed_callback_manager(self, callback:Callable[[object], Awaitable], check_delta:timedelta) -> ITimedCallbackManager:
         delta_storage:TimedCallbackManagerFactory.DeltaStorage = self.delta_lookup[check_delta] if check_delta in self.delta_lookup else None
         if delta_storage is None:
-            delta_storage = TimedCallbackManagerFactory.DeltaStorage(self.loop_factory.create_loop(lambda: self.on_tick(check_delta), check_delta.total_seconds()))
+            # Was having trouble passing a callback function to the loop factory
+            class TickWrapper:
+                def __init__(self, time:timedelta, func:Callable[[timedelta], Awaitable[None]]):
+                    self.time = time
+                    self.func = func
+                async def tick(self):
+                    await self.func(self.time)
+            tick_wrapper = TickWrapper(check_delta, self.on_tick)
+            loop = self.loop_factory.create_loop(tick_wrapper.tick, check_delta.total_seconds())
+            delta_storage = TimedCallbackManagerFactory.DeltaStorage(loop)
             self.delta_lookup[check_delta] = delta_storage
 
         manager:TimedCallbackManager = TimedCallbackManager(self.datetime_provider, callback, delta_storage.check_for_loop_start, delta_storage.check_for_loop_stop)
