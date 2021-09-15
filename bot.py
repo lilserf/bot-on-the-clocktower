@@ -102,9 +102,9 @@ class botcBot(commands.Bot):
 class AnnouncerCog(commands.Cog, name='Version Announcements'):
     bot:botcBot
 
-    def __init__(self, bot, db):
+    def __init__(self, bot, mongo, town_db:TownDb):
         self.bot = bot
-        self.announcer = announce.Announcer(bot, db)
+        self.announcer = announce.Announcer(bot=bot, mongo=mongo, town_db=town_db)
 
     async def announce_latest_version(self):
         return await self.announcer.announce_latest_version()
@@ -585,6 +585,6 @@ g_bot.add_cog(GameActivityCog(g_bot))
 g_bot.add_cog(GameCleanupCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(SetupCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(GameplayCog(bot=g_bot, timed_callback_factory=g_timed_callback_factory, town_db=g_town_db))
-g_bot.add_cog(AnnouncerCog(g_bot, g_db))
+g_bot.add_cog(AnnouncerCog(g_bot, g_db, g_town_db))
 g_bot.add_cog(LookupCog(bot=g_bot, db=g_db, town_db=g_town_db))
 g_bot.run(TOKEN)

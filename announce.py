@@ -45,10 +45,8 @@ class AnnouncerDbImpl(IAnnouncerDb):
 
 
 class AnnouncerGuildDbImpl(IAnnouncerGuildDb):
-    town_db:TownDb
-
     def __init__(self, town_db):
-        self.town_db = town_db
+        self.town_db:TownDb = town_db
 
     def get_guilds(self):
         return self.town_db.get_all_guilds()
@@ -56,7 +54,7 @@ class AnnouncerGuildDbImpl(IAnnouncerGuildDb):
 class AnnouncerMessageSenderImpl(IAnnouncerMessageSender):
     def __init__(self, bot, town_db):
         self.bot = bot
-        self.town_db = town_db
+        self.town_db:TownDb = town_db
 
     async def send_embed(self, guild_id, embed):
         result = self.town_db.get_all_towns_for_guild_id(guild_id)
@@ -107,9 +105,9 @@ class Announcer:
         db = AnnouncerDbImpl(mongo)
         guildDb = AnnouncerGuildDbImpl(town_db)
         provider = version.VersionProviderImpl()
-        sender = AnnouncerMessageSenderImpl(bot, mongo)
+        sender = AnnouncerMessageSenderImpl(bot, town_db)
 
-        self.impl = AnnouncerImpl(db, guildDb, provider, sender)
+        self.impl:AnnouncerImpl = AnnouncerImpl(db, guildDb, provider, sender)
 
     def set_to_latest_version(self, guild):
         self.impl.set_to_latest_version(guild)
