@@ -1,39 +1,38 @@
 ﻿# pylint: disable=missing-class-docstring, disable=missing-function-docstring, disable=missing-module-docstring, disable=invalid-name, disable=wildcard-import, disable=unused-wildcard-import, disable=too-many-statements
 
-import asyncio
 import unittest
 from datetime import datetime, timedelta, date, time
 
-from timedcallback import *
+from callbackscheduler import *
 
-class TestTimedCallbacks(unittest.IsolatedAsyncioTestCase):
+class TestCallbackScheduler(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.mock_datetime = MockDateTimeProvider()
         self.mock_loop_factory:MockLoopFactory = MockLoopFactory()
-        self.factory:TimedCallbackManagerFactory = TimedCallbackManagerFactory(self.mock_datetime, self.mock_loop_factory)
+        self.factory:CallbackSchedulerFactory = CallbackSchedulerFactory(self.mock_datetime, self.mock_loop_factory)
 
     def test_construct_no_loops(self):
         self.assertEqual(0, self.mock_loop_factory.create_loop_count)
 
     def test_request_loop_creates(self):
-        manager = self.factory.get_timed_callback_manager(None, timedelta(hours=1))
+        manager = self.factory.get_scheduler(None, timedelta(hours=1))
 
         self.assertEqual(1, self.mock_loop_factory.create_loop_count)
         self.assertEqual(60*60, self.mock_loop_factory.create_loop_seconds)
-        self.assertIsInstance(manager, TimedCallbackManager)
+        self.assertIsInstance(manager, CallbackScheduler)
 
     def test_request_loop_twice_creates_two_managers(self):
-        manager1 = self.factory.get_timed_callback_manager(None, timedelta(hours=1))
-        manager2 = self.factory.get_timed_callback_manager(None, timedelta(seconds=1))
+        manager1 = self.factory.get_scheduler(None, timedelta(hours=1))
+        manager2 = self.factory.get_scheduler(None, timedelta(seconds=1))
 
         self.assertEqual(2, self.mock_loop_factory.create_loop_count)
         self.assertEqual(1, self.mock_loop_factory.create_loop_seconds)
-        self.assertIsInstance(manager2, TimedCallbackManager)
+        self.assertIsInstance(manager2, CallbackScheduler)
         self.assertNotEqual(manager1, manager2)
 
     def test_request_loop_same_time_creates_one_loop(self):
-        manager1 = self.factory.get_timed_callback_manager(None, timedelta(hours=1))
-        manager2 = self.factory.get_timed_callback_manager(None, timedelta(hours=1))
+        manager1 = self.factory.get_scheduler(None, timedelta(hours=1))
+        manager2 = self.factory.get_scheduler(None, timedelta(hours=1))
 
         self.assertNotEqual(manager1, manager2)
         self.assertEqual(1, len(self.mock_loop_factory.loops))
@@ -67,20 +66,20 @@ class TestTimedCallbacks(unittest.IsolatedAsyncioTestCase):
         calltester:CallTester = CallTester()
 
         self.assertEqual(0, len(self.mock_loop_factory.loops))
-        manager_1 = self.factory.get_timed_callback_manager(calltester.on_call_1, timedelta(hours=1))
+        manager_1 = self.factory.get_scheduler(calltester.on_call_1, timedelta(hours=1))
         self.assertEqual(1, len(self.mock_loop_factory.loops))
-        manager_2 = self.factory.get_timed_callback_manager(calltester.on_call_2, timedelta(hours=1))
+        manager_2 = self.factory.get_scheduler(calltester.on_call_2, timedelta(hours=1))
         self.assertEqual(1, len(self.mock_loop_factory.loops))
 
         self.assertEqual(0, calltester.times_called_1)
         self.assertEqual(0, calltester.times_called_2)
         self.assertEqual(0, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
-        manager_1.create_or_update_request(calltester.key_1, self.mock_datetime.now() + timedelta(hours=2))
+        manager_1.schedule_callback(calltester.key_1, self.mock_datetime.now() + timedelta(hours=2))
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
-        manager_2.create_or_update_request(calltester.key_2, self.mock_datetime.now() + timedelta(hours=3))
-        manager_2.create_or_update_request(calltester.key_3, self.mock_datetime.now() + timedelta(hours=4))
+        manager_2.schedule_callback(calltester.key_2, self.mock_datetime.now() + timedelta(hours=3))
+        manager_2.schedule_callback(calltester.key_3, self.mock_datetime.now() + timedelta(hours=4))
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
         self.assertEqual(0, calltester.times_called_1)
@@ -126,16 +125,16 @@ class TestTimedCallbacks(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1, len(self.mock_loop_factory.loops))
 
     def test_request_loop_cancel_request_loop_stopped(self):
-        manager = self.factory.get_timed_callback_manager(None, timedelta(hours=1))
+        manager = self.factory.get_scheduler(None, timedelta(hours=1))
         self.assertEqual(1, len(self.mock_loop_factory.loops))
         self.assertEqual(0, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
 
-        manager.create_or_update_request('key', self.mock_datetime.now() + timedelta(hours=2))
+        manager.schedule_callback('key', self.mock_datetime.now() + timedelta(hours=2))
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
 
-        manager.remove_request('key')
+        manager.cancel_callback('key')
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(1, self.mock_loop_factory.loops[0].stop_calls)
 
@@ -150,15 +149,15 @@ class TestTimedCallbacks(unittest.IsolatedAsyncioTestCase):
                     self.num_calls += 1
 
         calltester = CallTester()
-        manager = self.factory.get_timed_callback_manager(calltester.on_call, timedelta(seconds=5))
+        manager = self.factory.get_scheduler(calltester.on_call, timedelta(seconds=5))
         self.assertEqual(0, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
         self.assertEqual(0, calltester.num_calls)
-        manager.create_or_update_request(calltester.key, self.mock_datetime.now() + timedelta(seconds=2))
+        manager.schedule_callback(calltester.key, self.mock_datetime.now() + timedelta(seconds=2))
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
         self.assertEqual(0, calltester.num_calls)
-        manager.create_or_update_request(calltester.key, self.mock_datetime.now() + timedelta(seconds=7))
+        manager.schedule_callback(calltester.key, self.mock_datetime.now() + timedelta(seconds=7))
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
         self.assertEqual(0, calltester.num_calls)

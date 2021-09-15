@@ -8,20 +8,20 @@ from discord.ext.tasks import Loop
 
 from pythonwrappers import IDateTimeProvider
 
-class ITimedCallbackManager:
-    '''Object that checks for timeouts every so often and calls a callback when they hit'''
+class ICallbackScheduler:
+    '''Object to schedule callbacks at specific times'''
 
-    def create_or_update_request(self, key:object, calltime:datetime) -> None:
+    def schedule_callback(self, key:object, calltime:datetime) -> None:
         '''Creates or updates a callback request with a given key to be called at a particular time'''
 
-    def remove_request(self, key:object) -> None:
+    def cancel_callback(self, key:object) -> None:
         '''Removes a request for a callback at a particular time'''
 
-class ITimedCallbackManagerFactory:
-    '''Factory for creating ITimedCallbackManagers'''
+class ICallbackSchedulerFactory:
+    '''Factory for creating ICallbackSchedulers'''
 
-    def get_timed_callback_manager(self, callback:Callable[[object], Awaitable], check_delta:timedelta) -> ITimedCallbackManager:
-        '''Returns an ITimedCallbackManager for calling callbacks and checking every timedelta.'''
+    def get_scheduler(self, callback:Callable[[object], Awaitable], frequency:timedelta) -> ICallbackScheduler:
+        '''Returns an ICallbackScheduler that checks for timeouts at a given frequency.'''
 
 class ILoop():
     '''Interface for a loop'''
@@ -42,26 +42,26 @@ class ILoopFactory:
         '''Creates a Loop object with the given times'''
 
 
-class TimedCallbackManager(ITimedCallbackManager):
+class CallbackScheduler(ICallbackScheduler):
     def __init__(self, datetime_provider:IDateTimeProvider, callback:Callable[[object], Awaitable], on_has_requests:Callable[[], None], on_no_requests:Callable[[], None]):
         self.callback:Callable[[object], Awaitable] = callback
         self.datetime_provider:IDateTimeProvider = datetime_provider
-        self.expirations:dict[object, datetime] = {}
+        self.scheduled:dict[object, datetime] = {}
         self.on_has_requests:Callable[[], None] = on_has_requests
         self.on_no_requests:Callable[[], None] = on_no_requests
 
-    def create_or_update_request(self, key:object, calltime:datetime) -> None:
+    def schedule_callback(self, key:object, calltime:datetime) -> None:
         had_requests = self.has_requests()
-        self.expirations[key] = calltime
+        self.scheduled[key] = calltime
 
         if not had_requests and self.has_requests():
             self.on_has_requests()
 
-    def remove_request(self, key:object) -> None:
+    def cancel_callback(self, key:object) -> None:
         had_requests = self.has_requests()
 
-        if key in self.expirations:
-            self.expirations.pop(key)
+        if key in self.scheduled:
+            self.scheduled.pop(key)
 
         if had_requests and not self.has_requests():
             self.on_no_requests()
@@ -70,12 +70,12 @@ class TimedCallbackManager(ITimedCallbackManager):
         now = self.datetime_provider.now()
 
         to_remove:list[object] = []
-        for (key, value) in self.expirations.items():
+        for (key, value) in self.scheduled.items():
             if value <= now:
                 to_remove.append(key)
 
         for key in to_remove:
-            self.expirations.pop(key)
+            self.scheduled.pop(key)
 
         awaitables = [self.callback(key) for key in to_remove]
         await asyncio.gather(*[task for task in awaitables if task is not None])
@@ -83,12 +83,12 @@ class TimedCallbackManager(ITimedCallbackManager):
         # expected: if this removed all requests, the parent is already ticking and will take care of the on_no_requests() call for us
 
     def has_requests(self) -> bool:
-        return len(self.expirations) > 0
+        return len(self.scheduled) > 0
 
-class TimedCallbackLoopManager:
+class CallbackSchedulerLoopManager:
     def __init__(self, loop:ILoop):
         self.loop:ILoop = loop
-        self.managers:list[TimedCallbackManager] = []
+        self.managers:list[CallbackScheduler] = []
         self.is_ticking:bool = False
 
     async def tick(self) -> None:
@@ -120,14 +120,14 @@ class TimedCallbackLoopManager:
             if should_stop:
                 self.loop.stop()
 
-class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
+class CallbackSchedulerFactory(ICallbackSchedulerFactory):
     def __init__(self, datetime_provider:IDateTimeProvider, loop_factory:ILoopFactory):
         self.datetime_provider:IDateTimeProvider = datetime_provider
         self.loop_factory:ILoopFactory = loop_factory
-        self.loop_manager_lookup:dict[timedelta, TimedCallbackLoopManager] = {}
+        self.loop_manager_lookup:dict[timedelta, CallbackSchedulerLoopManager] = {}
 
-    def get_timed_callback_manager(self, callback:Callable[[object], Awaitable], check_delta:timedelta) -> ITimedCallbackManager:
-        loop_manager:TimedCallbackLoopManager = self.loop_manager_lookup[check_delta] if check_delta in self.loop_manager_lookup else None
+    def get_scheduler(self, callback:Callable[[object], Awaitable], frequency:timedelta) -> ICallbackScheduler:
+        loop_manager:CallbackSchedulerLoopManager = self.loop_manager_lookup[frequency] if frequency in self.loop_manager_lookup else None
         if loop_manager is None:
             # Was having trouble passing a callback function to the loop factory
             class TickWrapper:
@@ -136,24 +136,24 @@ class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
                     self.func = func
                 async def tick(self):
                     await self.func(self.time)
-            tick_wrapper = TickWrapper(check_delta, self.on_tick)
-            loop = self.loop_factory.create_loop(tick_wrapper.tick, check_delta.total_seconds())
-            loop_manager = TimedCallbackLoopManager(loop)
-            self.loop_manager_lookup[check_delta] = loop_manager
+            tick_wrapper = TickWrapper(frequency, self.on_tick)
+            loop = self.loop_factory.create_loop(tick_wrapper.tick, frequency.total_seconds())
+            loop_manager = CallbackSchedulerLoopManager(loop)
+            self.loop_manager_lookup[frequency] = loop_manager
 
-        manager:TimedCallbackManager = TimedCallbackManager(self.datetime_provider, callback, loop_manager.check_for_loop_start, loop_manager.check_for_loop_stop)
+        manager:CallbackScheduler = CallbackScheduler(self.datetime_provider, callback, loop_manager.check_for_loop_start, loop_manager.check_for_loop_stop)
         loop_manager.managers.append(manager)
         return manager
 
-    async def on_tick(self, check_delta:timedelta) -> None:
-        loop_manager:TimedCallbackLoopManager = self.loop_manager_lookup[check_delta]
+    async def on_tick(self, frequency:timedelta) -> None:
+        loop_manager:CallbackSchedulerLoopManager = self.loop_manager_lookup[frequency]
         await loop_manager.tick()
 
-    def on_check_loop_start(self, check_delta:timedelta) -> None:
-        self.loop_manager_lookup[check_delta].check_for_loop_start()
+    def on_check_loop_start(self, frequency:timedelta) -> None:
+        self.loop_manager_lookup[frequency].check_for_loop_start()
 
-    def on_check_loop_stop(self, check_delta:timedelta) -> None:
-        self.loop_manager_lookup[check_delta].check_for_loop_stop()
+    def on_check_loop_stop(self, frequency:timedelta) -> None:
+        self.loop_manager_lookup[frequency].check_for_loop_stop()
 
 
 

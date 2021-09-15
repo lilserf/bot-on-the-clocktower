@@ -18,7 +18,7 @@ import gameplay
 import messaging
 import setup
 
-from timedcallback import ITimedCallbackManagerFactory, TimedCallbackManagerFactory, DiscordExtLoopFactory
+from callbackscheduler import ICallbackSchedulerFactory, CallbackSchedulerFactory, DiscordExtLoopFactory
 from towndb import TownDb, GuildProvider
 from pythonwrappers import DateTimeProvider
 
@@ -424,7 +424,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     role_messager:messaging.RoleMessagerImpl
     town_db:TownDb
 
-    def __init__(self, *, bot, timed_callback_factory:ITimedCallbackManagerFactory, town_db:TownDb):
+    def __init__(self, *, bot, callback_scheduler_factory:ICallbackSchedulerFactory, town_db:TownDb):
         self.bot = bot
         self.town_db = town_db
 
@@ -432,7 +432,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         self.role_messager = messaging.RoleMessagerImpl()
 
-        self.votetimer = votetimer.VoteTimer(timed_callback_factory, town_db, self.game.phase_vote)
+        self.votetimer = votetimer.VoteTimer(callback_scheduler_factory, town_db, self.game.phase_vote)
 
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
@@ -579,12 +579,12 @@ g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot
 g_town_db = TownDb(g_db, GuildProvider(g_bot.get_guild))
 g_datetime_provider = DateTimeProvider()
 g_loop_factory = DiscordExtLoopFactory()
-g_timed_callback_factory = TimedCallbackManagerFactory(g_datetime_provider, g_loop_factory)
+g_callback_scheduler_factory = CallbackSchedulerFactory(g_datetime_provider, g_loop_factory)
 
 g_bot.add_cog(GameActivityCog(g_bot))
 g_bot.add_cog(GameCleanupCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(SetupCog(bot=g_bot, town_db=g_town_db))
-g_bot.add_cog(GameplayCog(bot=g_bot, timed_callback_factory=g_timed_callback_factory, town_db=g_town_db))
+g_bot.add_cog(GameplayCog(bot=g_bot, callback_scheduler_factory=g_callback_scheduler_factory, town_db=g_town_db))
 g_bot.add_cog(AnnouncerCog(g_bot, g_db, g_town_db))
 g_bot.add_cog(LookupCog(bot=g_bot, db=g_db, town_db=g_town_db))
 g_bot.run(TOKEN)

@@ -9,7 +9,7 @@ from pythonwrappers import IDateTimeProvider
 
 from botctypes import TownId
 from votetimer import *
-from timedcallback import ITimedCallbackManager, ITimedCallbackManagerFactory
+from callbackscheduler import ICallbackScheduler, ICallbackSchedulerFactory
 
 
 class MockValidRole:
@@ -33,27 +33,27 @@ class MockDateTimeProvider(IDateTimeProvider):
     def advance(self, delta:timedelta):
         self.time_now = self.time_now + delta
 
-class MockTimedCallbackManager(ITimedCallbackManager):
+class MockCallbackScheduler(ICallbackScheduler):
     def __init__(self, callback:Callable[[object], Awaitable]):
         self.callback:Callable[[object], Awaitable] = callback
         self.key_to_time:[object, datetime] = {}
 
-    def create_or_update_request(self, key:object, calltime:datetime) -> None:
+    def schedule_callback(self, key:object, calltime:datetime) -> None:
         self.key_to_time[key] = calltime
 
-    def remove_request(self, key:object) -> None:
+    def cancel_callback(self, key:object) -> None:
         self.key_to_time.pop(key)
 
     async def call_callback(self, key:object) -> None:
-        self.remove_request(key)
+        self.cancel_callback(key)
         await self.callback(key)
 
-class MockTimedCallbackManagerFactory(ITimedCallbackManagerFactory):
+class MockCallbackSchedulerFactory(ICallbackSchedulerFactory):
     def __init__(self):
-        self.managers:list[MockTimedCallbackManager] = []
+        self.managers:list[MockCallbackScheduler] = []
 
-    def get_timed_callback_manager(self, callback:Callable[[object], Awaitable], check_delta:timedelta) -> MockTimedCallbackManager:
-        manager:MockTimedCallbackManager = MockTimedCallbackManager(callback)
+    def get_scheduler(self, callback:Callable[[object], Awaitable], frequency:timedelta) -> MockCallbackScheduler:
+        manager:MockCallbackScheduler = MockCallbackScheduler(callback)
         self.managers.append(manager)
         return manager
 
@@ -166,7 +166,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
     async def test_controller(self):
 
-        tcmf = MockTimedCallbackManagerFactory()
+        tcmf = MockCallbackSchedulerFactory()
         tb = MockBroadcaster()
         td = MockDateTimeProvider()
         tv = MockVoteHandler()
@@ -259,7 +259,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
 
     async def test_broadcaster_returns_value_controller_returns_it(self):
 
-        tcmf = MockTimedCallbackManagerFactory()
+        tcmf = MockCallbackSchedulerFactory()
         tb = MockBroadcaster()
         td = MockDateTimeProvider()
         tv = MockVoteHandler()

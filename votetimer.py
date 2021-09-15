@@ -6,7 +6,7 @@ import shlex
 import pytimeparse
 
 import botctypes
-from timedcallback import ITimedCallbackManager, ITimedCallbackManagerFactory
+from callbackscheduler import ICallbackScheduler, ICallbackSchedulerFactory
 from towndb import TownDb
 from pythonwrappers import DateTimeProvider
 
@@ -25,13 +25,13 @@ class IVoteTimerController:
 
 class VoteTimerController(IVoteTimerController):
 
-    def __init__(self, datetime_provider, town_info_provider, timed_callback_factory:ITimedCallbackManagerFactory, message_broadcaster, vote_handler):
+    def __init__(self, datetime_provider, town_info_provider, callback_scheduler_factory:ICallbackSchedulerFactory, message_broadcaster, vote_handler):
         # pylint: disable=too-many-arguments
         self.datetime_provider = datetime_provider
         self.town_info_provider = town_info_provider
         self.message_broadcaster = message_broadcaster
         self.vote_handler = vote_handler
-        self.callback_manager:ITimedCallbackManager = timed_callback_factory.get_timed_callback_manager(self.town_finished, timedelta(seconds=1))
+        self.callback_scheduler:ICallbackScheduler = callback_scheduler_factory.get_scheduler(self.town_finished, timedelta(seconds=1))
 
         self.town_map = {}
 
@@ -48,7 +48,7 @@ class VoteTimerController(IVoteTimerController):
         if town_id in self.town_map:
             had_town = True
             self.town_map.pop(town_id)
-            self.callback_manager.remove_request(town_id)
+            self.callback_scheduler.cancel_callback(town_id)
 
         if had_town:
             town_info = self.town_info_provider.get_town_info(town_id)
@@ -116,7 +116,7 @@ class VoteTimerController(IVoteTimerController):
                     next_time = end_time - timedelta(seconds=second)
                     break
 
-        self.callback_manager.create_or_update_request(town_id, next_time)
+        self.callback_scheduler.schedule_callback(town_id, next_time)
 
 
 class IMessageBroadcaster:
@@ -203,12 +203,12 @@ class VoteTimerImpl:
 
 # Concrete class for use by the Cog
 class VoteTimer:
-    def __init__(self, timed_callback_factory:ITimedCallbackManagerFactory, town_db:TownDb, move_cb):
+    def __init__(self, callback_scheduler_factory:ICallbackSchedulerFactory, town_db:TownDb, move_cb):
         info_provider = VoteTownInfoProvider(town_db)
         dt_provider = DateTimeProvider()
         broadcaster = MessageBroadcaster()
         vote_handler = VoteHandler(town_db, move_cb)
-        controller = VoteTimerController(dt_provider, info_provider, timed_callback_factory, broadcaster, vote_handler)
+        controller = VoteTimerController(dt_provider, info_provider, callback_scheduler_factory, broadcaster, vote_handler)
 
         self.impl = VoteTimerImpl(controller, dt_provider, info_provider)
 
