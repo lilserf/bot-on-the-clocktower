@@ -17,7 +17,7 @@ import lookup
 import gameplay
 import messaging
 import setup
-from towndb import TownDb
+from towndb import TownDb, GuildProvider
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -555,9 +555,11 @@ class LookupCog(commands.Cog, name='Lookup'):
         except Exception:
             await discordhelper.send_error_to_author(ctx)
 
-g_town_db = TownDb(g_db)
 
 g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
+
+g_town_db = TownDb(g_db, GuildProvider(g_bot.get_guild))
+
 g_bot.add_cog(GameActivityCog(g_bot))
 g_bot.add_cog(GameCleanupCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(SetupCog(bot=g_bot, town_db=g_town_db))
