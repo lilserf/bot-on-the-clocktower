@@ -17,7 +17,11 @@ import lookup
 import gameplay
 import messaging
 import setup
+
+from timedcallback import ITimedCallbackManagerFactory, TimedCallbackManagerFactory, DiscordExtLoopFactory
 from towndb import TownDb
+from pythonwrappers import DateTimeProvider
+
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -420,7 +424,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
     role_messager:messaging.RoleMessagerImpl
     town_db:TownDb
 
-    def __init__(self, *, bot, town_db:TownDb):
+    def __init__(self, *, bot, timed_callback_factory:ITimedCallbackManagerFactory, town_db:TownDb):
         self.bot = bot
         self.town_db = town_db
 
@@ -428,7 +432,7 @@ class GameplayCog(commands.Cog, name='Gameplay'):
 
         self.role_messager = messaging.RoleMessagerImpl()
 
-        self.votetimer = votetimer.VoteTimer(bot, self.game.phase_vote)
+        self.votetimer = votetimer.VoteTimer(bot, timed_callback_factory, self.game.phase_vote)
 
         # Start the timer if we have active games
         if g_dbActiveGames.count_documents({}) > 0:
@@ -569,13 +573,18 @@ class LookupCog(commands.Cog, name='Lookup'):
         except Exception:
             await discordhelper.send_error_to_author(ctx)
 
+
+
 g_town_db = TownDb(g_db)
+g_datetime_provider = DateTimeProvider()
+g_loop_factory = DiscordExtLoopFactory()
+g_timed_callback_factory = TimedCallbackManagerFactory(g_datetime_provider, g_loop_factory)
 
 g_bot = botcBot(command_prefix=COMMAND_PREFIX, intents=intents, description='Bot to manage playing Blood on the Clocktower via Discord')
 g_bot.add_cog(GameActivityCog(g_bot))
 g_bot.add_cog(GameCleanupCog(bot=g_bot, town_db=g_town_db))
 g_bot.add_cog(SetupCog(bot=g_bot, town_db=g_town_db))
-g_bot.add_cog(GameplayCog(bot=g_bot, town_db=g_town_db))
+g_bot.add_cog(GameplayCog(bot=g_bot, timed_callback_factory=g_timed_callback_factory, town_db=g_town_db))
 g_bot.add_cog(AnnouncerCog(g_bot, g_db))
 g_bot.add_cog(LookupCog(bot=g_bot, db=g_db, town_db=g_town_db))
 g_bot.run(TOKEN)

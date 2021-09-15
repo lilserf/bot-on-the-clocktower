@@ -1,7 +1,8 @@
 ﻿'''Classes for creating callbacks that happen at particular times'''
 
+import asyncio
 from datetime import datetime, timedelta
-from typing import Callable
+from typing import Awaitable, Callable
 
 from discord.ext.tasks import Loop
 
@@ -19,7 +20,7 @@ class ITimedCallbackManager:
 class ITimedCallbackManagerFactory:
     '''Factory for creating ITimedCallbackManagers'''
 
-    def get_timed_callback_manager(self, callback:Callable[[object], None], check_delta:timedelta) -> ITimedCallbackManager:
+    def get_timed_callback_manager(self, callback:Callable[[object], Awaitable], check_delta:timedelta) -> ITimedCallbackManager:
         '''Returns an ITimedCallbackManager for calling callbacks and checking every timedelta.'''
 
 class ILoop():
@@ -42,8 +43,8 @@ class ILoopFactory:
 
 
 class TimedCallbackManager(ITimedCallbackManager):
-    def __init__(self, datetime_provider:IDateTimeProvider, callback:Callable[[object], None], on_has_requests:Callable[[], None], on_no_requests:Callable[[], None]):
-        self.callback:Callable[[object], None] = callback
+    def __init__(self, datetime_provider:IDateTimeProvider, callback:Callable[[object], Awaitable], on_has_requests:Callable[[], None], on_no_requests:Callable[[], None]):
+        self.callback:Callable[[object], Awaitable] = callback
         self.datetime_provider:IDateTimeProvider = datetime_provider
         self.expirations:dict[object, datetime] = {}
         self.on_has_requests:Callable[[], None] = on_has_requests
@@ -65,7 +66,7 @@ class TimedCallbackManager(ITimedCallbackManager):
         if had_requests and not self.has_requests():
             self.on_no_requests()
 
-    def tick(self) -> None:
+    async def tick(self) -> None:
         now = self.datetime_provider.now()
 
         to_remove:list[object] = []
@@ -75,8 +76,9 @@ class TimedCallbackManager(ITimedCallbackManager):
 
         for key in to_remove:
             self.expirations.pop(key)
-        for key in to_remove:
-            self.callback(key)
+
+        awaitables = [self.callback(key) for key in to_remove]
+        await asyncio.gather(*[task for task in awaitables if task is not None])
 
         # expected: if this removed all requests, the parent is already ticking and will take care of the on_no_requests() call for us
 
@@ -91,13 +93,14 @@ class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
             self.managers:list[TimedCallbackManager] = []
             self.is_ticking:bool = False
 
-        def tick(self) -> None:
-            self.is_ticking = True
-            for manager in self.managers:
-                if manager.has_requests():
-                    manager.tick()
-            self.is_ticking = False
-            self.check_for_loop_stop()
+        async def tick(self) -> None:
+            if not self.is_ticking:
+                self.is_ticking = True
+                awaitables = [manager.tick() for manager in self.managers if manager.has_requests()]
+                await asyncio.gather(*[task for task in awaitables if task is not None])
+                self.is_ticking = False
+
+                self.check_for_loop_stop()
 
         def check_for_loop_start(self) -> None:
             if not self.is_ticking and not self.loop.is_running():
@@ -125,7 +128,7 @@ class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
         self.loop_factory:ILoopFactory = loop_factory
         self.delta_lookup:dict[timedelta, TimedCallbackManagerFactory.DeltaStorage] = {}
 
-    def get_timed_callback_manager(self, callback:Callable[[object], None], check_delta:timedelta) -> ITimedCallbackManager:
+    def get_timed_callback_manager(self, callback:Callable[[object], Awaitable], check_delta:timedelta) -> ITimedCallbackManager:
         delta_storage:TimedCallbackManagerFactory.DeltaStorage = self.delta_lookup[check_delta] if check_delta in self.delta_lookup else None
         if delta_storage is None:
             delta_storage = TimedCallbackManagerFactory.DeltaStorage(self.loop_factory.create_loop(lambda: self.on_tick(check_delta), check_delta.total_seconds()))
@@ -135,10 +138,9 @@ class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
         delta_storage.managers.append(manager)
         return manager
 
-    def on_tick(self, check_delta:timedelta) -> None:
+    async def on_tick(self, check_delta:timedelta) -> None:
         delta_storage:TimedCallbackManagerFactory.DeltaStorage = self.delta_lookup[check_delta]
-        delta_storage.tick()
-        delta_storage.check_for_loop_start()
+        await delta_storage.tick()
 
     def on_check_loop_start(self, check_delta:timedelta) -> None:
         self.delta_lookup[check_delta].check_for_loop_start()
@@ -151,7 +153,7 @@ class TimedCallbackManagerFactory(ITimedCallbackManagerFactory):
 class DiscordExtLoopFactory(ILoopFactory):
     '''Implementation of ILoopFactory using the discord.ext Loop class'''
 
-    def create_loop(self, callback:Callable[[None], None], seconds:int) -> None:
+    def create_loop(self, callback:Callable[[None], Awaitable], seconds:int) -> None:
         return DiscordExtLoopWrapper(Loop(
             callback,
             seconds=seconds,

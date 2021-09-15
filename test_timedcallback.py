@@ -1,11 +1,12 @@
 ﻿# pylint: disable=missing-class-docstring, disable=missing-function-docstring, disable=missing-module-docstring, disable=invalid-name, disable=wildcard-import, disable=unused-wildcard-import, disable=too-many-statements
 
+import asyncio
 import unittest
 from datetime import datetime, timedelta, date, time
 
 from timedcallback import *
 
-class TestTimedCallbacks(unittest.TestCase):
+class TestTimedCallbacks(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.mock_datetime = MockDateTimeProvider()
         self.mock_loop_factory:MockLoopFactory = MockLoopFactory()
@@ -37,7 +38,7 @@ class TestTimedCallbacks(unittest.TestCase):
         self.assertNotEqual(manager1, manager2)
         self.assertEqual(1, len(self.mock_loop_factory.loops))
 
-    def test_add_request_callback_called_after_time(self):
+    async def test_add_request_callback_called_after_time(self):
 
         class CallTester:
             def __init__(self):
@@ -88,7 +89,7 @@ class TestTimedCallbacks(unittest.TestCase):
 
         # Advance 1 hour, nothing should trigger
         self.mock_datetime.advance(timedelta(seconds=1) + timedelta(hours=1))
-        self.mock_loop_factory.create_loop_callback()
+        await self.mock_loop_factory.create_loop_callback()
 
         self.assertEqual(0, calltester.times_called_1)
         self.assertEqual(0, calltester.times_called_2)
@@ -96,7 +97,7 @@ class TestTimedCallbacks(unittest.TestCase):
 
         # Advance another hour, just call 1 should trigger
         self.mock_datetime.advance(timedelta(hours=1))
-        self.mock_loop_factory.create_loop_callback()
+        await self.mock_loop_factory.create_loop_callback()
 
         self.assertEqual(1, calltester.times_called_1)
         self.assertEqual(0, calltester.times_called_2)
@@ -104,7 +105,7 @@ class TestTimedCallbacks(unittest.TestCase):
 
         # Advance another hour, just call 2 should trigger
         self.mock_datetime.advance(timedelta(hours=1))
-        self.mock_loop_factory.create_loop_callback()
+        await self.mock_loop_factory.create_loop_callback()
 
         self.assertEqual(1, calltester.times_called_1)
         self.assertEqual(1, calltester.times_called_2)
@@ -113,7 +114,7 @@ class TestTimedCallbacks(unittest.TestCase):
         # Advance another hour, just call for key 3 should trigger
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
         self.mock_datetime.advance(timedelta(hours=1))
-        self.mock_loop_factory.create_loop_callback()
+        await self.mock_loop_factory.create_loop_callback()
 
         self.assertEqual(1, calltester.times_called_1)
         self.assertEqual(1, calltester.times_called_2)
@@ -138,7 +139,7 @@ class TestTimedCallbacks(unittest.TestCase):
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(1, self.mock_loop_factory.loops[0].stop_calls)
 
-    def test_update_request_moves_forward(self):
+    async def test_update_request_moves_forward(self):
         class CallTester:
             def __init__(self):
                 self.num_calls = 0
@@ -163,14 +164,14 @@ class TestTimedCallbacks(unittest.TestCase):
         self.assertEqual(0, calltester.num_calls)
 
         self.mock_datetime.advance(timedelta(seconds=5))
-        self.mock_loop_factory.create_loop_callback()
+        await self.mock_loop_factory.create_loop_callback()
 
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(0, self.mock_loop_factory.loops[0].stop_calls)
         self.assertEqual(0, calltester.num_calls)
 
         self.mock_datetime.advance(timedelta(seconds=5))
-        self.mock_loop_factory.create_loop_callback()
+        await self.mock_loop_factory.create_loop_callback()
 
         self.assertEqual(1, self.mock_loop_factory.loops[0].start_calls)
         self.assertEqual(1, self.mock_loop_factory.loops[0].stop_calls)
@@ -195,11 +196,11 @@ class MockLoop(ILoop):
 class MockLoopFactory(ILoopFactory):
     def __init__(self):
         self.create_loop_count:int = 0
-        self.create_loop_callback:Callable[[None], None] = 0
+        self.create_loop_callback:Callable[[None], Awaitable] = None
         self.create_loop_seconds:int = 0
         self.loops:list[MockLoop] = []
 
-    def create_loop(self, callback:Callable[[None], None], seconds:int) -> ILoop:
+    def create_loop(self, callback:Callable[[None], Awaitable], seconds:int) -> ILoop:
         self.create_loop_count += 1
         self.create_loop_callback = callback
         self.create_loop_seconds = seconds

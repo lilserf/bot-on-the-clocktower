@@ -3,10 +3,10 @@ from datetime import timedelta
 import math
 import shlex
 
-from discord.ext import tasks
 import pytimeparse
 
 import botctypes
+from timedcallback import ITimedCallbackManager, ITimedCallbackManagerFactory
 from pythonwrappers import DateTimeProvider
 
 class VoteTownInfo:
@@ -24,16 +24,13 @@ class IVoteTimerController:
 
 class VoteTimerController(IVoteTimerController):
 
-    def __init__(self, datetime_provider, town_info_provider, town_storage, town_ticker, message_broadcaster, vote_handler):
+    def __init__(self, datetime_provider, town_info_provider, timed_callback_factory:ITimedCallbackManagerFactory, message_broadcaster, vote_handler):
         # pylint: disable=too-many-arguments
         self.datetime_provider = datetime_provider
         self.town_info_provider = town_info_provider
-        self.town_storage = town_storage
-        self.town_ticker = town_ticker
         self.message_broadcaster = message_broadcaster
         self.vote_handler = vote_handler
-
-        self.town_ticker.set_callback(self.tick)
+        self.callback_manager:ITimedCallbackManager = timed_callback_factory.get_timed_callback_manager(self.town_finished, timedelta(seconds=1))
 
         self.town_map = {}
 
@@ -43,7 +40,6 @@ class VoteTimerController(IVoteTimerController):
 
         ret = await self.send_time_remaining_message(town_id, end_time, now)
         self.queue_next_time(town_id, end_time, now)
-        self.town_ticker.start_ticking()
         return ret
 
     async def remove_town(self, town_id):
@@ -51,24 +47,15 @@ class VoteTimerController(IVoteTimerController):
         if town_id in self.town_map:
             had_town = True
             self.town_map.pop(town_id)
-            self.town_storage.remove_town(town_id)
-
-        if not self.town_storage.has_towns_ticking():
-            self.town_ticker.stop_ticking()
+            self.callback_manager.remove_request(town_id)
 
         if had_town:
             town_info = self.town_info_provider.get_town_info(town_id)
             message = f'{town_info.villager_role.mention} - Vote countdown stopped!'
             await self.message_broadcaster.send_message(town_info, message)
 
-    async def tick(self):
-        finished = self.town_storage.tick_and_return_finished_towns()
-
-        for town_id in finished:
-            await self.advance_town(town_id, self.datetime_provider.now())
-
-        if not self.town_storage.has_towns_ticking():
-            self.town_ticker.stop_ticking()
+    async def town_finished(self, town_id):
+        await self.advance_town(town_id, self.datetime_provider.now())
 
     async def advance_town(self, town_id, now):
         if town_id in self.town_map:
@@ -81,28 +68,8 @@ class VoteTimerController(IVoteTimerController):
                 await self.send_time_remaining_message(town_id, end_time, now)
                 self.queue_next_time(town_id, end_time, now)
 
-    async def send_time_remaining_message(self, town_id, end_time, now):
-        town_info = self.town_info_provider.get_town_info(town_id)
-        message = self.construct_message(town_info, end_time, now)
-        return await self.message_broadcaster.send_message(town_info, message)
-
-    async def send_time_to_vote_message(self, town_id):
-        town_info = self.town_info_provider.get_town_info(town_id)
-        return await self.message_broadcaster.send_message(town_info, f'{town_info.villager_role.mention} - Returning to {town_info.town_square_name} to vote!')
-
-    def queue_next_time(self, town_id, end_time, now):
-        next_time = end_time
-        delta = (end_time - now).total_seconds()
-        if delta >= 0:
-            advance_seconds = [300, 60, 15, 0]
-            for second in advance_seconds:
-                if delta > second:
-                    next_time = end_time - timedelta(seconds=second)
-                    break
-
-        self.town_storage.add_town(town_id, next_time)
-
-    def construct_message(self, town_info, end_time, now):
+    @staticmethod
+    def construct_message(town_info, end_time, now):
         delta_seconds = (end_time - now).total_seconds()
 
         rounded_seconds = round(delta_seconds/5)*5
@@ -129,42 +96,26 @@ class VoteTimerController(IVoteTimerController):
 
         return message
 
+    async def send_time_remaining_message(self, town_id, end_time, now):
+        town_info = self.town_info_provider.get_town_info(town_id)
+        message = VoteTimerController.construct_message(town_info, end_time, now)
+        return await self.message_broadcaster.send_message(town_info, message)
 
-class IVoteTownTicker:
-    def set_callback(self, callback):
-        pass
+    async def send_time_to_vote_message(self, town_id):
+        town_info = self.town_info_provider.get_town_info(town_id)
+        return await self.message_broadcaster.send_message(town_info, f'{town_info.villager_role.mention} - Returning to {town_info.town_square_name} to vote!')
 
-    def start_ticking(self):
-        pass
+    def queue_next_time(self, town_id, end_time, now):
+        next_time = end_time
+        delta = (end_time - now).total_seconds()
+        if delta >= 0:
+            advance_seconds = [300, 60, 15, 0]
+            for second in advance_seconds:
+                if delta > second:
+                    next_time = end_time - timedelta(seconds=second)
+                    break
 
-    def stop_ticking(self):
-        pass
-
-
-class VoteTownTicker(IVoteTownTicker):
-    # pylint doesn't understand the @task decorator stuff
-    # pylint: disable=no-member
-
-    def __init__(self):
-        self.callback = None
-
-    def __del__(self):
-        self.tick.cancel()
-
-    def set_callback(self, callback):
-        self.callback = callback
-
-    def start_ticking(self):
-        if not self.tick.is_running():
-            self.tick.start()
-
-    def stop_ticking(self):
-        if self.tick.is_running():
-            self.tick.stop()
-
-    @tasks.loop(seconds=1)
-    async def tick(self):
-        await self.callback()
+        self.callback_manager.create_or_update_request(town_id, next_time)
 
 
 class IMessageBroadcaster:
@@ -182,45 +133,6 @@ class MessageBroadcaster:
             except Exception as ex:
                 return f'Unable to send chat message. Do I have permission to send messages to chat channel `{town_info.chat_channel.name}`?\n\n{ex}'
 
-
-class IVoteTownStorage:
-    def add_town(self, town_id, finish_time):
-        pass
-
-    def remove_town(self, town_id):
-        pass
-
-    def tick_and_return_finished_towns(self):
-        pass
-
-    def has_towns_ticking(self):
-        pass
-
-class VoteTownStorage(IVoteTownStorage):
-    def __init__(self, datetime_provider):
-        self.ticking_towns = {}
-        self.datetime_provider = datetime_provider
-
-    def add_town(self, town_id, finish_time):
-        self.ticking_towns[town_id] = finish_time
-
-    def remove_town(self, town_id):
-        if town_id in self.ticking_towns:
-            self.ticking_towns.pop(town_id)
-
-    def tick_and_return_finished_towns(self):
-        ret = []
-        keys = self.ticking_towns.keys()
-        now = self.datetime_provider.now()
-        for key in keys:
-            if now >= self.ticking_towns[key]:
-                ret.append(key)
-        for key in ret:
-            self.ticking_towns.pop(key)
-        return ret
-
-    def has_towns_ticking(self):
-        return self.ticking_towns
 
 
 class IVoteHandler:
@@ -287,20 +199,18 @@ class VoteTimerImpl:
     async def stop_timer(self, town_id):
         await self.controller.remove_town(town_id)
 
-
-    def get_seconds_from_string(self, in_str):
+    @staticmethod
+    def get_seconds_from_string(in_str):
         return pytimeparse.parse(in_str)
 
 # Concrete class for use by the Cog
 class VoteTimer:
-    def __init__(self, bot, move_cb):
+    def __init__(self, bot, timed_callback_factory:ITimedCallbackManagerFactory, move_cb):
         info_provider = VoteTownInfoProvider(bot)
         dt_provider = DateTimeProvider()
-        storage = VoteTownStorage(dt_provider)
-        ticker = VoteTownTicker()
         broadcaster = MessageBroadcaster(bot)
         vote_handler = VoteHandler(bot, move_cb)
-        controller = VoteTimerController(dt_provider, info_provider, storage, ticker, broadcaster, vote_handler)
+        controller = VoteTimerController(dt_provider, info_provider, timed_callback_factory, broadcaster, vote_handler)
 
         self.impl = VoteTimerImpl(controller, dt_provider, info_provider)
         self.bot = bot
@@ -314,7 +224,7 @@ class VoteTimer:
             return usage
 
         time_string = ' '.join(params[1:])
-        time_seconds = self.impl.get_seconds_from_string(time_string)
+        time_seconds = VoteTimerImpl.get_seconds_from_string(time_string)
         if not time_seconds:
             return usage
 
