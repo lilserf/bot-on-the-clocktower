@@ -24,16 +24,27 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="activegame.py" />
     <Compile Include="alltests.py" />
     <Compile Include="announce.py" />
     <Compile Include="bot.py" />
+    <Compile Include="botcmongo.py" />
     <Compile Include="botctypes.py" />
-    <Compile Include="discordutil.py" />
+    <Compile Include="callbackscheduler.py" />
+    <Compile Include="discordhelper.py" />
+    <Compile Include="gameplay.py" />
     <Compile Include="lookup.py" />
+    <Compile Include="messaging.py" />
+    <Compile Include="pythonwrappers.py" />
+    <Compile Include="setup.py" />
+    <Compile Include="test_activegame.py" />
     <Compile Include="test_announce.py" />
     <Compile Include="test_botctypes.py" />
+    <Compile Include="test_callbackscheduler.py" />
+    <Compile Include="test_gameplay.py" />
     <Compile Include="test_lookups.py" />
     <Compile Include="test_votetimer.py" />
+    <Compile Include="towndb.py" />
     <Compile Include="version.py" />
     <Compile Include="votetimer.py" />
   </ItemGroup>
