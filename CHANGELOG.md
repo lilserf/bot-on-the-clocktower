@@ -1,5 +1,9 @@
 # Bot on the Clocktower Changelog
 
+## Version 2.0.1
+
+* Fix crash when doing the `!character` command with no custom scripts registered
+
 ## Version 2.0.0
 
 * **New feature:** `!voteTimer 5 minutes` to start a countdown timer that will perform the `!vote` command after 5 minutes.</br>Times can range from 15 seconds to 20 minutes.</br>Also has corresponding `!stopVoteTimer` command to cancel the timer, as well as shortcuts `!vt` and `!svt`.

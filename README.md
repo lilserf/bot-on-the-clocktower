@@ -24,19 +24,9 @@ For these setup examples, we will use a town named "Ravenswood Bluff", but you c
 
 First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=bot) **\<\<**
 
-This bot requests the following permissions:
+For more information on the permissions it requests, see [Permission Details](#permission-details).
 
-| Permission | Why? |
-| ---------- | ---- |
-| Manage Channels | To create/destroy channels and categories with `!createTown` and `!destroyTown` commands |
-| Manage Roles | To grant/remove Storyteller and Villager roles<br/>To create/destroy roles with `!createTown` and `!destroyTown` commands |
-| Manage Nicknames | To add/remove **(ST)** for the Storyteller's nickname |
-| Move Members | To move players to nighttime rooms or back to the Town Square |
-| Manage Messages | To delete `!evil` command messages so players can't see who's evil |
-| View Channels | Required for many operations |
-| Send Messages | Required for many operations |
-
-In addition, it is recommended (but optional) that your server has the following roles:
+It is recommended (but optional) that your server has the following roles:
 * A role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
 * A role for server members who play the game. Example role name: **BotC Player**
   * If your server is entirely based around playing Blood on the Clocktower, this is unnecessary.
@@ -45,7 +35,7 @@ You should grant this role to appropriate server members, as the bot will not gr
 
 #### A note on Server Administrators
 
-Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators (including the server owner) can always see all channels. In addition, the bot cannot change the nickname of Administrators. For these reasons, if an Administrator wants to play too, it is recommended that they create a separate Discord account to act as the actual Administrator / server owner, and use a non-Administrator account to play instead.
+Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators or Owners can always see all channels and cannot have their nicknames changes. For these reasons, if a server Administrator/Owner wants to play too, it is recommended that they create a separate non-Admininstrator/Owner Discord account for playing with the bot.
 
 ### Quick Setup: `!createTown`
 
@@ -287,7 +277,25 @@ Tells the bot you do wish to receive feature announcements for towns on your ser
 
 ---
 
+## Permission Details
+
+The bot requests the following permissions:
+
+| Permission | Why? |
+| ---------- | ---- |
+| Manage Channels | To create/destroy channels and categories with `!createTown` and `!destroyTown` commands |
+| Manage Roles | To grant/remove Storyteller and Villager roles<br/>To create/destroy roles with `!createTown` and `!destroyTown` commands |
+| Manage Nicknames | To add/remove **(ST)** for the Storyteller's nickname |
+| Move Members | To move players to nighttime rooms or back to the Town Square |
+| Manage Messages | To delete `!evil` command messages so players can't see who's evil |
+| View Channels | Required for many operations |
+| Send Messages | Required for many operations |
+
+---
+
 ## Support
 
-Please file a Github issue with lots of details if you run into problems.
+I can be contacted on Discord at lilserf#8712 with any issues or questions.
+In general, please file a Github issue with lots of details if you run into problems.
 Of course, we're just doing this in our spare time and the bot features have primarily been driven by what our local play group needs, so please be patient.
+
