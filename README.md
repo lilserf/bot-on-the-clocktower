@@ -295,5 +295,7 @@ The bot requests the following permissions:
 
 ## Support
 
-Please file a Github issue with lots of details if you run into problems.
+I can be contacted on Discord at lilserf#8712 with any issues or questions.
+In general, please file a Github issue with lots of details if you run into problems.
 Of course, we're just doing this in our spare time and the bot features have primarily been driven by what our local play group needs, so please be patient.
+
