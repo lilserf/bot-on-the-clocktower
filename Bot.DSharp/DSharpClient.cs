@@ -37,9 +37,9 @@ namespace Bot.DSharp
             var discord = new DiscordClient(config);
             var slash = discord.UseSlashCommands();
 
-            slash.RegisterCommands<SlashCommands>(128585855097896963);
+            slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
 
-            foreach (var com in slash.RegisteredCommands.OfType<ISlashCommandModuleWithClientContext>())
+            foreach (var com in slash.RegisteredCommands.OfType<IDSharpSlashCommandModuleWithClientContext>())
                 com.SetClientContext(this, m_serviceProvider);
 
             discord.Ready += Discord_Ready;
@@ -53,16 +53,6 @@ namespace Bot.DSharp
         }
 
         public IBotInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
-
-        private class SlashCommands : SlashCommandModuleWithClientContext
-        {
-            [SlashCommand("game", "Starts up a game of Blood on the Clocktower")]
-            public Task GameCommand(InteractionContext ctx)
-            {
-                var gs = Services.GetService<IBotGameService>();
-                return gs.RunGameAsync(Client, new DSharpInteractionContext(ctx));
-            }
-        }
 
         public class InvalidDiscordTokenException : Exception { }
     }

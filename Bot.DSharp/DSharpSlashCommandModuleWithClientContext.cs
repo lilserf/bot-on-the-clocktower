@@ -4,12 +4,12 @@ using System;
 
 namespace Bot.DSharp
 {
-    internal interface ISlashCommandModuleWithClientContext
+    internal interface IDSharpSlashCommandModuleWithClientContext
     {
         void SetClientContext(IBotClient client, IServiceProvider serviceProvider);
     }
 
-    internal class SlashCommandModuleWithClientContext : SlashCommandModule
+    internal class DSharpSlashCommandModuleWithClientContext : SlashCommandModule
     {
         protected IBotClient Client
         {
