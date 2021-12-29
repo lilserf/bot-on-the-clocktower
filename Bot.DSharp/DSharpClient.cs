@@ -39,7 +39,7 @@ namespace Bot.DSharp
 
             slash.RegisterCommands<SlashCommands>(128585855097896963);
 
-            foreach (var com in slash.RegisteredCommands.OfType<ICommandWithClientContext>())
+            foreach (var com in slash.RegisteredCommands.OfType<ISlashCommandModuleWithClientContext>())
                 com.SetClientContext(this, m_serviceProvider);
 
             discord.Ready += Discord_Ready;
@@ -54,7 +54,7 @@ namespace Bot.DSharp
 
         public IBotInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
 
-        private class SlashCommands : CommandWithClientContext
+        private class SlashCommands : SlashCommandModuleWithClientContext
         {
             [SlashCommand("game", "Starts up a game of Blood on the Clocktower")]
             public Task GameCommand(InteractionContext ctx)
@@ -62,41 +62,6 @@ namespace Bot.DSharp
                 var gs = Services.GetService<IBotGameService>();
                 return gs.RunGameAsync(Client, new DSharpInteractionContext(ctx));
             }
-        }
-
-        private class CommandWithClientContext : SlashCommandModule
-        {
-            protected IBotClient Client
-            {
-                get
-                {
-                    if (m_client == null) throw new InvalidOperationException("Must set up client context before accepting commands");
-                    return m_client!;
-                }
-            }
-
-            protected IServiceProvider Services
-            {
-                get
-                {
-                    if (m_services == null) throw new InvalidOperationException("Must set up client context before accepting commands");
-                    return m_services!;
-                }
-            }
-
-            private IBotClient? m_client = null;
-            private IServiceProvider? m_services = null;
-
-            public void SetClientContext(IBotClient client, IServiceProvider serviceProvider)
-            {
-                m_client = client;
-                m_services = serviceProvider;
-            }
-        }
-
-        private interface ICommandWithClientContext
-        {
-            void SetClientContext(IBotClient client, IServiceProvider serviceProvider);
         }
 
         public class InvalidDiscordTokenException : Exception { }
