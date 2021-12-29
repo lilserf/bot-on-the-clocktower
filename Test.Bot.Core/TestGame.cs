@@ -29,11 +29,8 @@ namespace Test.Bot.Core
         {
             Mock<IBotClient> clientMock = new();
             Mock<IBotInteractionContext> contextMock = new();
-
             Mock<IBotInteractionResponseBuilder> responseMock = new();
-
             clientMock.Setup(c => c.CreateInteractionResponseBuilder()).Returns(responseMock.Object);
-
             BotGameService gs = new();
 
             var t = gs.RunGameAsync(clientMock.Object, contextMock.Object);
