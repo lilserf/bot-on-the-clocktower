@@ -1,5 +1,6 @@
 ﻿using Bot.Core;
 using Bot.DSharp;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Bot.Main
@@ -14,7 +15,7 @@ namespace Bot.Main
             DSharpSystem dSharpSystem = new();
             BotSystemRunner botRunner = new(sp, dSharpSystem);
 
-            await botRunner.RunAsync();
+            await botRunner.RunAsync(CancellationToken.None);
         }
     }
 }

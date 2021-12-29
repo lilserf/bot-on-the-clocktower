@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -15,10 +16,19 @@ namespace Bot.Core
             mSystem = system;
         }
 
-        public Task RunAsync()
+        public async Task RunAsync(CancellationToken cancelToken)
         {
             var client = mSystem.CreateClient(mServiceProvider);
-            return client.ConnectAsync();
+
+            TaskCompletionSource tcs = new();
+
+            using (cancelToken.Register(tcs.SetCanceled))
+            {
+                await Task.WhenAny(tcs.Task, client.ConnectAsync());
+            }
+
+            // Wait forever or until canceled
+            await Task.Delay(-1, cancelToken);
         }
     }
 }
