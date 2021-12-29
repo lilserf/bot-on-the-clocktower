@@ -16,16 +16,36 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public void GiveRunnerSystem_CreatesClient()
+        public void GiveRunnerSystem_Run_CreatesClient()
         {
             Mock<IBotSystem> sysMock = new();
             BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
 
             sysMock.Verify(s => s.CreateClient(It.IsAny<IServiceProvider>()), Times.Never);
 
-            runner.RunAsync().Wait(100);
+            var t = runner.RunAsync();
+            t.Wait(100);
 
             sysMock.Verify(s => s.CreateClient(It.IsAny<IServiceProvider>()), Times.Once);
+            Assert.True(t.IsCompleted);
+        }
+
+        [Fact]
+        public void GiveRunnerSystem_Run_RunsClient()
+        {
+            Mock<IBotSystem> sysMock = new();
+            Mock<IBotClient> clientMock = new();
+            sysMock.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(clientMock.Object);
+
+            BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
+
+            clientMock.Verify(c => c.ConnectAsync(), Times.Never);
+
+            var t = runner.RunAsync();
+            t.Wait(100);
+
+            clientMock.Verify(c => c.ConnectAsync(), Times.Once);
+            Assert.True(t.IsCompleted);
         }
     }
 }

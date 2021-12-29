@@ -17,11 +17,8 @@ namespace Bot.Core
 
         public Task RunAsync()
         {
-            var _ = mSystem.CreateClient(mServiceProvider);
-
-            // TODO!
-
-            return Task.CompletedTask;
+            var client = mSystem.CreateClient(mServiceProvider);
+            return client.ConnectAsync();
         }
     }
 }
