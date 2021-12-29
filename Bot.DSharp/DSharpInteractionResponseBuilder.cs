@@ -6,18 +6,18 @@ namespace Bot.DSharp
 {
     public class DSharpInteractionResponseBuilder : IBotInteractionResponseBuilder
     {
-        public DiscordInteractionResponseBuilder Wrapped => mWrapped;
-        private readonly DiscordInteractionResponseBuilder mWrapped;
+        public DiscordInteractionResponseBuilder Wrapped => m_wrapped;
+        private readonly DiscordInteractionResponseBuilder m_wrapped;
 
         public DSharpInteractionResponseBuilder(DiscordInteractionResponseBuilder wrapped)
         {
-            mWrapped = wrapped;
+            m_wrapped = wrapped;
         }
 
         public IBotInteractionResponseBuilder WithContent(string content)
         {
-            var w2 = mWrapped.WithContent(content);
-            if (w2 != mWrapped) throw new ApplicationException("Unexpected chained call did not return itself");
+            var w2 = m_wrapped.WithContent(content);
+            if (w2 != m_wrapped) throw new ApplicationException("Unexpected chained call did not return itself");
             return this;
         }
     }

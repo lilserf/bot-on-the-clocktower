@@ -5,18 +5,18 @@ namespace Test.Bot.Base
 {
     public class TestBase
     {
-        private readonly MockServiceProvider mMockServiceProvider = new();
-        protected IServiceProvider GetServiceProvider() => mMockServiceProvider;
+        private readonly MockServiceProvider m_mockServiceProvider = new();
+        protected IServiceProvider GetServiceProvider() => m_mockServiceProvider;
 
         protected T RegisterService<T>(T service) where T : class
         {
-            mMockServiceProvider.RegisterService(service);
+            m_mockServiceProvider.RegisterService(service);
             return service;
         }
 
         protected Mock<T> RegisterMock<T>(Mock<T> mock) where T : class
         {
-            mMockServiceProvider.RegisterService(mock.Object);
+            m_mockServiceProvider.RegisterService(mock.Object);
             return mock;
         }
     }

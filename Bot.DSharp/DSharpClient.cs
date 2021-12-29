@@ -11,18 +11,18 @@ namespace Bot.DSharp
 {
     public class DSharpClient : IBotClient
     {
-        private readonly IServiceProvider mServiceProvider;
-        private readonly IEnvironment mEnvironment;
+        private readonly IServiceProvider m_serviceProvider;
+        private readonly IEnvironment m_environment;
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
-            mServiceProvider = serviceProvider;
-            mEnvironment = serviceProvider.GetService<IEnvironment>();
+            m_serviceProvider = serviceProvider;
+            m_environment = serviceProvider.GetService<IEnvironment>();
         }
 
         public Task ConnectAsync()
         {
-            var token = mEnvironment.GetEnvironmentVariable("DISCORD_TOKEN");
+            var token = m_environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
             if (string.IsNullOrWhiteSpace(token)) throw new InvalidDiscordTokenException();
 
@@ -40,7 +40,7 @@ namespace Bot.DSharp
             slash.RegisterCommands<SlashCommands>(128585855097896963);
 
             foreach (var com in slash.RegisteredCommands.OfType<ICommandWithClientContext>())
-                com.SetClientContext(this, mServiceProvider);
+                com.SetClientContext(this, m_serviceProvider);
 
             discord.Ready += Discord_Ready;
 
@@ -70,8 +70,8 @@ namespace Bot.DSharp
             {
                 get
                 {
-                    if (mClient == null) throw new InvalidOperationException("Must set up client context before accepting commands");
-                    return mClient!;
+                    if (m_client == null) throw new InvalidOperationException("Must set up client context before accepting commands");
+                    return m_client!;
                 }
             }
 
@@ -79,18 +79,18 @@ namespace Bot.DSharp
             {
                 get
                 {
-                    if (mServices == null) throw new InvalidOperationException("Must set up client context before accepting commands");
-                    return mServices!;
+                    if (m_services == null) throw new InvalidOperationException("Must set up client context before accepting commands");
+                    return m_services!;
                 }
             }
 
-            private IBotClient? mClient = null;
-            private IServiceProvider? mServices = null;
+            private IBotClient? m_client = null;
+            private IServiceProvider? m_services = null;
 
             public void SetClientContext(IBotClient client, IServiceProvider serviceProvider)
             {
-                mClient = client;
-                mServices = serviceProvider;
+                m_client = client;
+                m_services = serviceProvider;
             }
         }
 

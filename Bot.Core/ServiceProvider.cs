@@ -5,19 +5,19 @@ namespace Bot.Core
 {
     public class ServiceProvider : IServiceProvider
     {
-        private readonly Dictionary<Type, object> mServices = new();
+        private readonly Dictionary<Type, object> m_services = new();
 
         public object? GetService(Type serviceType)
         {
-            if (mServices.TryGetValue(serviceType, out var ret))
+            if (m_services.TryGetValue(serviceType, out var ret))
                 return ret;
             return null;
         }
 
         public void AddService<T>(T service) where T : class
         {
-            if (mServices.ContainsKey(typeof(T))) throw new ServiceAlreadyAddedException(typeof(T));
-            mServices.Add(typeof(T), service);
+            if (m_services.ContainsKey(typeof(T))) throw new ServiceAlreadyAddedException(typeof(T));
+            m_services.Add(typeof(T), service);
         }
 
         public class ServiceAlreadyAddedException : Exception

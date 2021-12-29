@@ -7,18 +7,18 @@ namespace Bot.Core
 {
     public class BotSystemRunner
     {
-        private readonly IBotSystem mSystem;
-        private readonly IServiceProvider mServiceProvider;
+        private readonly IBotSystem m_system;
+        private readonly IServiceProvider m_serviceProvider;
 
         public BotSystemRunner(IServiceProvider serviceProvider, IBotSystem system)
         {
-            mServiceProvider = serviceProvider;
-            mSystem = system;
+            m_serviceProvider = serviceProvider;
+            m_system = system;
         }
 
         public async Task RunAsync(CancellationToken cancelToken)
         {
-            var client = mSystem.CreateClient(mServiceProvider);
+            var client = m_system.CreateClient(m_serviceProvider);
 
             TaskCompletionSource tcs = new();
 

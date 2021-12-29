@@ -8,17 +8,17 @@ namespace Bot.DSharp
 {
     public class DSharpInteractionContext : IBotInteractionContext
     {
-        private readonly InteractionContext mWrapped;
+        private readonly InteractionContext m_wrapped;
 
         public DSharpInteractionContext(InteractionContext wrapped)
         {
-            mWrapped = wrapped;
+            m_wrapped = wrapped;
         }
 
         public Task CreateDeferredResponseMessage(IBotInteractionResponseBuilder response)
         {
             if (response is DSharpInteractionResponseBuilder irb)
-                return mWrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, irb.Wrapped);
+                return m_wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, irb.Wrapped);
             throw new InvalidOperationException("Passed an incorrect response type");
         }
     }
