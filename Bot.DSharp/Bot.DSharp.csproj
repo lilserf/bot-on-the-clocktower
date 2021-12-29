@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bot.Api\Bot.Api.csproj" />
+    <ProjectReference Include="..\Bot.Base\Bot.Base.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Bot.Core
+namespace Bot.Base
 {
     public class ServiceProvider : IServiceProvider
     {

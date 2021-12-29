@@ -5,19 +5,21 @@ VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "botc", "botc.pyproj", "{52540CB4-0923-440E-8C2C-23982EC6724E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.Api", "Bot.Api\Bot.Api.csproj", "{AB97009B-4FD1-4E95-AE5F-EA15955C7F6E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Api", "Bot.Api\Bot.Api.csproj", "{AB97009B-4FD1-4E95-AE5F-EA15955C7F6E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.Core", "Bot.Core\Bot.Core.csproj", "{8F3F3003-B0FF-41AC-884E-BE1DEEC86D61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Core", "Bot.Core\Bot.Core.csproj", "{8F3F3003-B0FF-41AC-884E-BE1DEEC86D61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.Main", "Bot.Main\Bot.Main.csproj", "{A85BC835-7721-4A8C-9DDA-7FBA93C0029B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Main", "Bot.Main\Bot.Main.csproj", "{A85BC835-7721-4A8C-9DDA-7FBA93C0029B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.DSharp", "Bot.DSharp\Bot.DSharp.csproj", "{385340DA-D633-4FF0-A395-CB636133160D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.DSharp", "Bot.DSharp\Bot.DSharp.csproj", "{385340DA-D633-4FF0-A395-CB636133160D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Bot.Base", "Test.Bot.Base\Test.Bot.Base.csproj", "{24FCAD57-1B90-466E-A8BC-C1100BE7084E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Bot.Base", "Test.Bot.Base\Test.Bot.Base.csproj", "{24FCAD57-1B90-466E-A8BC-C1100BE7084E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Bot.Core", "Test.Bot.Core\Test.Bot.Core.csproj", "{CEE45062-A62B-459F-B148-5CBD2E52222A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Bot.Core", "Test.Bot.Core\Test.Bot.Core.csproj", "{CEE45062-A62B-459F-B148-5CBD2E52222A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Bot.DSharp", "Test.Bot.DSharp\Test.Bot.DSharp.csproj", "{6E72B878-A56F-49FE-8A00-454613BB7E67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Bot.DSharp", "Test.Bot.DSharp\Test.Bot.DSharp.csproj", "{6E72B878-A56F-49FE-8A00-454613BB7E67}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.Base", "Bot.Base\Bot.Base.csproj", "{87566E40-5675-4F11-B942-C74A9B3D040B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,10 @@ Global
 		{6E72B878-A56F-49FE-8A00-454613BB7E67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6E72B878-A56F-49FE-8A00-454613BB7E67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6E72B878-A56F-49FE-8A00-454613BB7E67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87566E40-5675-4F11-B942-C74A9B3D040B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87566E40-5675-4F11-B942-C74A9B3D040B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87566E40-5675-4F11-B942-C74A9B3D040B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87566E40-5675-4F11-B942-C74A9B3D040B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

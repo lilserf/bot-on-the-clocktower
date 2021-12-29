@@ -15,6 +15,8 @@ namespace Bot.DSharp
             m_wrapped = wrapped;
         }
 
+        public IServiceProvider Services => m_wrapped.Services;
+
         public Task CreateDeferredResponseMessage(IBotInteractionResponseBuilder response)
         {
             if (response is DSharpInteractionResponseBuilder irb)

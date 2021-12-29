@@ -1,10 +1,8 @@
 ﻿using Bot.Api;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -35,12 +33,9 @@ namespace Bot.DSharp
             };
 
             var discord = new DiscordClient(config);
-            var slash = discord.UseSlashCommands();
+            var slash = discord.UseSlashCommands(new SlashCommandsConfiguration { Services = m_serviceProvider });
 
             slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
-
-            foreach (var com in slash.RegisteredCommands.OfType<IDSharpSlashCommandModuleWithClientContext>())
-                com.SetClientContext(this, m_serviceProvider);
 
             TaskCompletionSource readyTcs = new();
 
