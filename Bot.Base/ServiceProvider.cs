@@ -7,11 +7,22 @@ namespace Bot.Base
     {
         private readonly Dictionary<Type, object> m_services = new();
 
+        private readonly IServiceProvider? m_parent = null;
+
+        public ServiceProvider()
+            : this(null)
+        {}
+
+        public ServiceProvider(IServiceProvider parent)
+        {
+            m_parent = parent;
+        }
+
         public object? GetService(Type serviceType)
         {
             if (m_services.TryGetValue(serviceType, out var ret))
                 return ret;
-            return null;
+            return m_parent?.GetService(serviceType);
         }
 
         public void AddService<T>(T service) where T : class

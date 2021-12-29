@@ -51,6 +51,34 @@ namespace Test.Bot.Base
             Assert.Throws<ServiceProvider.ServiceAlreadyAddedException>(() => sp.AddService(mock2.Object));
         }
 
+        [Fact]
+        public static void ServiceProvider_IsChild_ReturnsParentService()
+        {
+            ServiceProvider sp1 = new();
+            ServiceProvider sp2 = new(sp1);
+            Mock<ITestInterface> mock1 = new();
+            sp1.AddService(mock1.Object);
+
+            var fromSp2 = sp2.GetService<ITestInterface>();
+
+            Assert.Equal(mock1.Object, fromSp2);
+        }
+
+        [Fact]
+        public static void ServiceProvider_ChildOverrides_ReturnsChildService()
+        {
+            ServiceProvider sp1 = new();
+            ServiceProvider sp2 = new(sp1);
+            Mock<ITestInterface> mock1 = new();
+            Mock<ITestInterface> mock2 = new();
+            sp1.AddService(mock1.Object);
+            sp2.AddService(mock2.Object);
+
+            var fromSp2 = sp2.GetService<ITestInterface>();
+
+            Assert.Equal(mock2.Object, fromSp2);
+        }
+
         public interface ITestInterface
         { }
     }
