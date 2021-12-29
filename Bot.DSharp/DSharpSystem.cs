@@ -14,6 +14,6 @@ namespace Bot.DSharp
             return new DSharpClient(sp);
         }
 
-        public IBotInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
+        public IBotWebhookBuilder CreateWebhookBuilder() => new DSharpWebhookBuilder(new DiscordWebhookBuilder());
     }
 }

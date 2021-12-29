@@ -6,6 +6,6 @@ namespace Bot.Api
     {
         IBotClient CreateClient(IServiceProvider serviceProvider);
 
-        IBotInteractionResponseBuilder CreateInteractionResponseBuilder();
+        IBotWebhookBuilder CreateWebhookBuilder();
     }
 }

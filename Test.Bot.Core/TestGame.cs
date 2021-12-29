@@ -29,16 +29,17 @@ namespace Test.Bot.Core
         {
             Mock<IBotSystem> systemMock = RegisterMock<IBotSystem>();
             Mock<IBotInteractionContext> contextMock = new();
-            Mock<IBotInteractionResponseBuilder> responseMock = new();
-            systemMock.Setup(c => c.CreateInteractionResponseBuilder()).Returns(responseMock.Object);
+            Mock<IBotWebhookBuilder> builderMock = new();
+            systemMock.Setup(c => c.CreateWebhookBuilder()).Returns(builderMock.Object);
             contextMock.SetupGet(c => c.Services).Returns(GetServiceProvider());
             BotGameService gs = new();
 
             var t = gs.RunGameAsync(contextMock.Object);
 
-            systemMock.Verify(c => c.CreateInteractionResponseBuilder(), Times.Once);
-            responseMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
-            contextMock.Verify(c => c.CreateDeferredResponseMessage(It.Is<IBotInteractionResponseBuilder>(irb => irb == responseMock.Object)), Times.Once);
+            systemMock.Verify(c => c.CreateWebhookBuilder(), Times.Once);
+            builderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
+            contextMock.Verify(c => c.CreateDeferredResponseMessageAsync(), Times.Once);
+            contextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == builderMock.Object)), Times.Once);
         }
     }
 }

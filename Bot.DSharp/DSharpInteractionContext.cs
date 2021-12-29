@@ -17,10 +17,13 @@ namespace Bot.DSharp
 
         public IServiceProvider Services => m_wrapped.Services;
 
-        public Task CreateDeferredResponseMessage(IBotInteractionResponseBuilder response)
+
+        public Task CreateDeferredResponseMessageAsync() => m_wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+        public Task EditResponseAsync(IBotWebhookBuilder webhookBuilder)
         {
-            if (response is DSharpInteractionResponseBuilder irb)
-                return m_wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, irb.Wrapped);
+            if (webhookBuilder is DSharpWebhookBuilder irb)
+                return m_wrapped.EditResponseAsync(irb.Wrapped);
             throw new InvalidOperationException("Passed an incorrect response type");
         }
     }
