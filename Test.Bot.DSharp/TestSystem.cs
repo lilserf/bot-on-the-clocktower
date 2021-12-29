@@ -31,7 +31,7 @@ namespace Test.Bot.DSharp
         }
 
         [Fact]
-        public void SystemInitialize_NoDiscordToken_NoException()
+        public void SystemInitialize_DiscordToken_NoException()
         {
             var mockEnv = RegisterMock(new Mock<IEnvironment>());
             mockEnv.Setup(env => env.GetEnvironmentVariable(It.Is<string>(s => s == "DISCORD_TOKEN"))).Returns("abcdefg");
