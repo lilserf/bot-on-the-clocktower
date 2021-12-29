@@ -16,6 +16,7 @@ namespace Bot.DSharp
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
+            mServiceProvider = serviceProvider;
             mEnvironment = serviceProvider.GetService<IEnvironment>();
         }
 
