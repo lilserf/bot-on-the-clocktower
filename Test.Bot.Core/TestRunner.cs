@@ -1,29 +1,31 @@
 ﻿using Bot.Api;
 using Bot.Core;
 using Moq;
+using System;
+using Test.Bot.Base;
 using Xunit;
 
 namespace Test.Bot.Core
 {
-    public static class TestRunner
+    public class TestRunner : TestBase
     {
         [Fact]
-        public static void ConstructRunner_NoExceptions()
+        public void ConstructRunner_NoExceptions()
         {
-            _ = new BotSystemRunner(new Mock<IBotSystem>().Object);
+            _ = new BotSystemRunner(GetServiceProvider(), new Mock<IBotSystem>().Object);
         }
 
         [Fact]
-        public static void GiveRunnerSystem_CallsInitialize()
+        public void GiveRunnerSystem_CreatesClient()
         {
             Mock<IBotSystem> sysMock = new();
-            BotSystemRunner runner = new(sysMock.Object);
+            BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
 
-            sysMock.Verify(s => s.InitializeAsync(), Times.Never);
+            sysMock.Verify(s => s.CreateClient(It.IsAny<IServiceProvider>()), Times.Never);
 
-            runner.InitializeAsync().Wait(100);
+            runner.RunAsync().Wait(100);
 
-            sysMock.Verify(s => s.InitializeAsync(), Times.Once);
+            sysMock.Verify(s => s.CreateClient(It.IsAny<IServiceProvider>()), Times.Once);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using System;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -6,15 +7,21 @@ namespace Bot.Core
     public class BotSystemRunner
     {
         private readonly IBotSystem mSystem;
+        private readonly IServiceProvider mServiceProvider;
 
-        public BotSystemRunner(IBotSystem system)
+        public BotSystemRunner(IServiceProvider serviceProvider, IBotSystem system)
         {
+            mServiceProvider = serviceProvider;
             mSystem = system;
         }
 
-        public Task InitializeAsync()
+        public Task RunAsync()
         {
-            return mSystem.InitializeAsync();
+            var _ = mSystem.CreateClient(mServiceProvider);
+
+            // TODO!
+
+            return Task.CompletedTask;
         }
     }
 }

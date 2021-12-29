@@ -11,7 +11,7 @@ namespace Test.Bot.DSharp
         [Fact]
         public void ConstructSystem_NoExceptions()
         {
-            _ = new DSharpSystem(GetServiceProvider());
+            _ = new DSharpSystem();
         }
 
         [Fact]
@@ -21,26 +21,14 @@ namespace Test.Bot.DSharp
         }
 
         [Fact]
-        public void SystemInitialize_NoDiscordToken_ThrowsException()
+        public void System_CreateCalled_CreatesDSharpClient()
         {
             var mockEnv = RegisterMock(new Mock<IEnvironment>());
-            DSharpSystem system = new(GetServiceProvider());
+            DSharpSystem system = new();
 
-            Assert.ThrowsAsync<DSharpSystem.InvalidDiscordTokenException>(system.InitializeAsync)
-                .Wait(100);
-        }
+            var result = system.CreateClient(GetServiceProvider());
 
-        [Fact]
-        public void SystemInitialize_DiscordToken_NoException()
-        {
-            var mockEnv = RegisterMock(new Mock<IEnvironment>());
-            mockEnv.Setup(env => env.GetEnvironmentVariable(It.Is<string>(s => s == "DISCORD_TOKEN"))).Returns("abcdefg");
-
-            DSharpSystem system = new(GetServiceProvider());
-
-            var t = system.InitializeAsync();
-            t.Wait(100);
-            Assert.True(t.IsCompleted);
+            Assert.IsType<DSharpClient>(result);
         }
     }
 }

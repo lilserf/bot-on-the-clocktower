@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
 
 namespace Bot.Api
 {
     public interface IBotSystem
     {
-        Task InitializeAsync();
+        IBotClient CreateClient(IServiceProvider serviceProvider);
     }
 }
