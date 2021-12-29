@@ -23,7 +23,7 @@ namespace Test.Bot.DSharp
         [Fact]
         public void System_CreateCalled_CreatesDSharpClient()
         {
-            var mockEnv = RegisterMock(new Mock<IEnvironment>());
+            RegisterMock(new Mock<IEnvironment>());
             DSharpSystem system = new();
 
             var result = system.CreateClient(GetServiceProvider());

@@ -68,7 +68,7 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public async Task GiveRunnerSystem_Cancelled_Complete()
+        public void GiveRunnerSystem_Cancelled_Complete()
         {
             Mock<IBotSystem> sysMock = new();
             Mock<IBotClient> clientMock = new();
