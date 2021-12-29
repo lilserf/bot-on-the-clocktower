@@ -27,19 +27,18 @@ namespace Test.Bot.Core
         [Fact]
         public void RunGame_SendsMessageToContext()
         {
-            /*
-            Mock<IBotClient> clientMock = new();
+            Mock<IBotSystem> systemMock = RegisterMock<IBotSystem>();
             Mock<IBotInteractionContext> contextMock = new();
             Mock<IBotInteractionResponseBuilder> responseMock = new();
-            clientMock.Setup(c => c.CreateInteractionResponseBuilder()).Returns(responseMock.Object);
+            systemMock.Setup(c => c.CreateInteractionResponseBuilder()).Returns(responseMock.Object);
+            contextMock.SetupGet(c => c.Services).Returns(GetServiceProvider());
             BotGameService gs = new();
 
             var t = gs.RunGameAsync(contextMock.Object);
 
-            clientMock.Verify(c => c.CreateInteractionResponseBuilder(), Times.Once);
+            systemMock.Verify(c => c.CreateInteractionResponseBuilder(), Times.Once);
             responseMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
             contextMock.Verify(c => c.CreateDeferredResponseMessage(It.Is<IBotInteractionResponseBuilder>(irb => irb == responseMock.Object)), Times.Once);
-            */
         }
     }
 }

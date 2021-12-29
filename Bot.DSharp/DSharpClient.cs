@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Base;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -14,7 +15,10 @@ namespace Bot.DSharp
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
-            m_serviceProvider = serviceProvider;
+            ServiceProvider sp = new(serviceProvider);
+            sp.AddService<IBotClient>(this);
+            m_serviceProvider = sp;
+
             m_environment = serviceProvider.GetService<IEnvironment>();
         }
 
@@ -49,8 +53,6 @@ namespace Bot.DSharp
 
             await readyTcs.Task;
         }
-
-        public IBotInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
 
         public class InvalidDiscordTokenException : Exception { }
     }

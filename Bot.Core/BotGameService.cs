@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using System;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -7,12 +8,10 @@ namespace Bot.Core
     {
         public Task RunGameAsync(IBotInteractionContext context)
         {
-            /*
-            var response = client.CreateInteractionResponseBuilder();
+            var system = context.Services.GetService<IBotSystem>();
+            var response = system.CreateInteractionResponseBuilder();
             response.WithContent("You just ran the Game command. Good for you!");
             return context.CreateDeferredResponseMessage(response);
-            */
-            return Task.CompletedTask;
         }
     }
 }

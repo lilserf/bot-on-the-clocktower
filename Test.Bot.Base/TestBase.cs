@@ -14,6 +14,8 @@ namespace Test.Bot.Base
             return service;
         }
 
+        protected Mock<T> RegisterMock<T>() where T : class => RegisterMock(new Mock<T>());
+
         protected Mock<T> RegisterMock<T>(Mock<T> mock) where T : class
         {
             m_mockServiceProvider.RegisterService(mock.Object);
