@@ -20,7 +20,7 @@ namespace Bot.DSharp
             m_environment = serviceProvider.GetService<IEnvironment>();
         }
 
-        public Task ConnectAsync()
+        public async Task ConnectAsync()
         {
             var token = m_environment.GetEnvironmentVariable("DISCORD_TOKEN");
 
@@ -42,14 +42,17 @@ namespace Bot.DSharp
             foreach (var com in slash.RegisteredCommands.OfType<IDSharpSlashCommandModuleWithClientContext>())
                 com.SetClientContext(this, m_serviceProvider);
 
-            discord.Ready += Discord_Ready;
+            TaskCompletionSource readyTcs = new();
 
-            return discord.ConnectAsync();
-        }
+            discord.Ready += (_, _) =>
+            {
+                readyTcs.SetResult();
+                return Task.CompletedTask;
+            };
 
-        private Task Discord_Ready(DiscordClient sender, ReadyEventArgs e)
-        {
-            return Task.CompletedTask;
+            await discord.ConnectAsync();
+
+            await readyTcs.Task;
         }
 
         public IBotInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
