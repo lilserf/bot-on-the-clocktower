@@ -1,7 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Core;
 using Moq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Test.Bot.Core

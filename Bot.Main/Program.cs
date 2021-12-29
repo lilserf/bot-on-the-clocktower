@@ -8,6 +8,8 @@ namespace Bot.Main
     {
         static async Task Main(string[] _)
         {
+            DotEnv.Load(@"..\..\..\..\.env");
+
             DSharpSystem dSharpSystem = new();
             BotSystemRunner botRunner = new(dSharpSystem);
 
