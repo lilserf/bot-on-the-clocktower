@@ -55,16 +55,14 @@ namespace Test.Bot.Core
         [Fact]
         public static void CreateServices_ConstructsType()
         {
-            ServiceProviderFactory spf = new();
-            var sp = spf.CreateServiceProvider();
+            var sp = ServiceProviderFactory.CreateServiceProvider();
             Assert.IsType<ServiceProvider>(sp);
         }
 
         [Fact]
         public static void CreateServices_HasEnvironment()
         {
-            ServiceProviderFactory spf = new();
-            var sp = spf.CreateServiceProvider();
+            var sp = ServiceProviderFactory.CreateServiceProvider();
             var env = sp.GetService<IEnvironment>();
 
             Assert.IsType<BotEnvironment>(env);

@@ -10,7 +10,8 @@ namespace Bot.Main
         {
             DotEnv.Load(@"..\..\..\..\.env");
 
-            DSharpSystem dSharpSystem = new();
+            var sp = ServiceProviderFactory.CreateServiceProvider();
+            DSharpSystem dSharpSystem = new(sp);
             BotSystemRunner botRunner = new(dSharpSystem);
 
             await botRunner.InitializeAsync();
