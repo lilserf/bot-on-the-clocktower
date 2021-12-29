@@ -4,12 +4,14 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
     public class DSharpClient : IBotClient
     {
+        private readonly IServiceProvider mServiceProvider;
         private readonly IEnvironment mEnvironment;
 
         public DSharpClient(IServiceProvider serviceProvider)
@@ -36,6 +38,9 @@ namespace Bot.DSharp
 
             slash.RegisterCommands<SlashCommands>(128585855097896963);
 
+            foreach (var com in slash.RegisteredCommands.OfType<ICommandWithClientContext>())
+                com.SetClientContext(this, mServiceProvider);
+
             discord.Ready += Discord_Ready;
 
             return discord.ConnectAsync();
@@ -46,16 +51,51 @@ namespace Bot.DSharp
             return Task.CompletedTask;
         }
 
-        class SlashCommands : SlashCommandModule
-        {
-            [SlashCommand("test", "A test C# slash command")]
-            public async Task TestCommand(InteractionContext ctx)
-            {
-                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.DeferredChannelMessageWithSource);
+        public IBotInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
 
-                var builder = new DiscordWebhookBuilder().WithContent("Wahoo, this worked!");
-                await ctx.EditResponseAsync(builder);
+        private class SlashCommands : CommandWithClientContext
+        {
+            [SlashCommand("game", "Starts up a game of Blood on the Clocktower")]
+            public Task GameCommand(InteractionContext ctx)
+            {
+                var gs = Services.GetService<IBotGameService>();
+                return gs.RunGameAsync(Client, new DSharpInteractionContext(ctx));
             }
+        }
+
+        private class CommandWithClientContext : SlashCommandModule
+        {
+            protected IBotClient Client
+            {
+                get
+                {
+                    if (mClient == null) throw new InvalidOperationException("Must set up client context before accepting commands");
+                    return mClient!;
+                }
+            }
+
+            protected IServiceProvider Services
+            {
+                get
+                {
+                    if (mServices == null) throw new InvalidOperationException("Must set up client context before accepting commands");
+                    return mServices!;
+                }
+            }
+
+            private IBotClient? mClient = null;
+            private IServiceProvider? mServices = null;
+
+            public void SetClientContext(IBotClient client, IServiceProvider serviceProvider)
+            {
+                mClient = client;
+                mServices = serviceProvider;
+            }
+        }
+
+        private interface ICommandWithClientContext
+        {
+            void SetClientContext(IBotClient client, IServiceProvider serviceProvider);
         }
 
         public class InvalidDiscordTokenException : Exception { }

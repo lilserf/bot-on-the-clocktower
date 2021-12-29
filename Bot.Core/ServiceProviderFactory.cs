@@ -9,6 +9,8 @@ namespace Bot.Core
         {
             ServiceProvider sp = new();
             sp.AddService<IEnvironment>(new BotEnvironment());
+
+            sp.AddService<IBotGameService>(new BotGameService());
             return sp;
         }
     }

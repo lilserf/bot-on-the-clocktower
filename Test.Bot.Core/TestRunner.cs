@@ -30,7 +30,6 @@ namespace Test.Bot.Core
             t.Wait(5);
 
             sysMock.Verify(s => s.CreateClient(It.IsAny<IServiceProvider>()), Times.Once);
-            Assert.True(t.IsCompleted);
         }
 
         [Fact]
@@ -48,7 +47,6 @@ namespace Test.Bot.Core
             t.Wait(5);
 
             clientMock.Verify(c => c.ConnectAsync(), Times.Once);
-            Assert.True(t.IsCompleted);
         }
 
         [Fact]

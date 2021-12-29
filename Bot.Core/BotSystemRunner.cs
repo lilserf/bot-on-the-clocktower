@@ -25,10 +25,8 @@ namespace Bot.Core
             using (cancelToken.Register(tcs.SetCanceled))
             {
                 await Task.WhenAny(tcs.Task, client.ConnectAsync());
+                await Task.WhenAny(tcs.Task, Task.Delay(-1));
             }
-
-            // Wait forever or until canceled
-            await Task.Delay(-1, cancelToken);
         }
     }
 }

@@ -5,5 +5,7 @@ namespace Bot.Api
     public interface IBotClient
     {
         Task ConnectAsync();
+
+        IBotInteractionResponseBuilder CreateInteractionResponseBuilder();
     }
 }
