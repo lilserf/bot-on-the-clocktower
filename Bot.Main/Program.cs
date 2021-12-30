@@ -15,7 +15,11 @@ namespace Bot.Main
         {
             DotEnv.Load(@"..\..\..\..\.env");
 
-            IServiceProvider sp = ServiceProviderFactory.CreateServiceProvider();
+            // NOTE: the IEnvironment should probably be here in Bot.Main rather than in Bot.Core, and
+            // we should probably do the DB services before the Bot.Core services.
+            var sp = ServiceProviderFactory.CreateServiceProvider();
+
+            sp = Bot.Database.ServiceFactory.RegisterServices(sp);
 
             DatabaseFactory dbp = new(sp);
             sp = dbp.Connect();

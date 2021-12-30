@@ -1,39 +1,20 @@
 ﻿using Bot.Api;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Database
 {
-	class TownLookup : ITownLookup
+    public class TownLookup : ITownLookup
 	{
-		IMongoCollection<MongoGuildInfo>? m_guildInfo;
+		public const string GuildInfoDbName = "GuildInfo";
 
-		static TownLookup()
+		private readonly IMongoCollection<MongoGuildInfo> m_guildInfo;
+
+		public TownLookup(IMongoDatabase db)
 		{
-			// We're advised to register this as early as possible before connecting
-			BsonClassMap.RegisterClassMap<MongoGuildInfo>();
-		}
-
-		public TownLookup()
-		{
-			m_guildInfo = null;
-		}
-
-		// Connect to this Mongo DB and get the collection(s) we'll be wrapping
-		public void Connect(IMongoDatabase db)
-		{
-			m_guildInfo = db.GetCollection<MongoGuildInfo>("GuildInfo");
-
-			if (m_guildInfo == null)
-			{
-				throw new MissingGuildInfoDatabaseException();
-			}
+			m_guildInfo = db.GetCollection<MongoGuildInfo>(GuildInfoDbName);
+			if (m_guildInfo == null) throw new MissingGuildInfoDatabaseException();
 		}
 
 		public async Task<Town> GetTown(long guildId, long channelId)

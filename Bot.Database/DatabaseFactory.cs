@@ -6,49 +6,48 @@ using System;
 
 namespace Bot.Database
 {
-	public class DatabaseFactory : IDatabaseFactory
+    public class DatabaseFactory
 	{
         private readonly IServiceProvider m_serviceProvider;
         private readonly IEnvironment m_environment;
+        private readonly IMongoClientFactory m_mongoClientFactory;
+        private readonly ITownLookupFactory m_townLookupFactory;
 
-        ITownLookup IDatabaseFactory.TownLookup => m_townLookup;
-        private TownLookup m_townLookup;
+        public const string MongoConnectEnvironmentVar = "MONGO_CONNECT";
+        public const string MongoDbEnvironmentVar = "MONGO_DB";
+
+        static DatabaseFactory()
+        {
+            BsonClassMap.RegisterClassMap<MongoGuildInfo>();
+        }
 
         public DatabaseFactory(IServiceProvider serviceProvider)
         {
             m_serviceProvider = serviceProvider;
             m_environment = serviceProvider.GetService<IEnvironment>();
-            m_townLookup = new();
+            m_mongoClientFactory = serviceProvider.GetService<IMongoClientFactory>();
+            m_townLookupFactory = serviceProvider.GetService<ITownLookupFactory>();
         }
 
         public IServiceProvider Connect()
-		{
-            // Add ourself to the Services
+        {
             var childSp = new ServiceProvider(m_serviceProvider);
-            childSp.AddService<IDatabaseFactory>(this);
 
             // Connect to Mongo
-			var connectionString = m_environment.GetEnvironmentVariable("MONGO_CONNECT");
-            var db = m_environment.GetEnvironmentVariable("MONGO_DB");
+			var connectionString = m_environment.GetEnvironmentVariable(MongoConnectEnvironmentVar);
+            if(string.IsNullOrWhiteSpace(connectionString)) throw new InvalidMongoConnectStringException();
 
-            if(string.IsNullOrWhiteSpace(connectionString))
-			{
-                throw new InvalidMongoConnectStringException();
-			}
+            var db = m_environment.GetEnvironmentVariable(MongoDbEnvironmentVar);
+            if(string.IsNullOrWhiteSpace(db)) throw new InvalidMongoDbException();
 
-            if(string.IsNullOrWhiteSpace(db))
-			{
-                throw new InvalidMongoDbException();
-			}
+            IMongoClient client = m_mongoClientFactory.CreateClient(connectionString);
+            if (client == null) throw new MongoClientNotCreatedException();
 
-            IMongoClient client = new MongoClient(connectionString);
             IMongoDatabase database = client.GetDatabase(db);
-
-            // TODO: throw exceptions for null/invalid client or database?
+            if (database == null) throw new MongoDbNotFoundException();
 
             // Initialize the child DB services we provide and add them to the service registry
-            m_townLookup.Connect(database);
-            childSp.AddService<ITownLookup>(m_townLookup);
+            childSp.AddService(m_townLookupFactory.CreateTownLookup(database));
 
             // Return our new service registry full of child services
             return childSp;
@@ -56,5 +55,7 @@ namespace Bot.Database
 
         public class InvalidMongoConnectStringException : Exception { }
         public class InvalidMongoDbException : Exception { }
+        public class MongoClientNotCreatedException : Exception { }
+        public class MongoDbNotFoundException : Exception { }
 	}
 }
