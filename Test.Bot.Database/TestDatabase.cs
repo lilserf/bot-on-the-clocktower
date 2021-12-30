@@ -59,7 +59,7 @@ namespace Test.Bot.Database
 			mockClientFactory.Setup(cf => cf.CreateClient(It.Is<string>(s => s == MockConnectionString))).Returns(mockClient.Object);
 			DatabaseFactory db = new(GetServiceProvider());
 
-			Assert.Throws<DatabaseFactory.MongoClientNotCreatedException>(db.Connect);
+			Assert.Throws<DatabaseFactory.MongoDbNotFoundException>(db.Connect);
 		}
 
 		[Fact]
