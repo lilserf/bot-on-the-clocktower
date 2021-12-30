@@ -29,6 +29,9 @@ namespace Bot.Database
             m_townLookupFactory = serviceProvider.GetService<ITownLookupFactory>();
         }
 
+        // TODO: This connect call should probably call out to a smaller class or two that handle this, via an interface, so we can
+        // test this Connect call itself (which is currently not tested). However, at the moment, all the calls from this Connect
+        // call ARE tested, so we're pretty covered.
         public IServiceProvider Connect()
         {
             var client = ConnectToMongoClient();

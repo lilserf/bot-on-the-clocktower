@@ -1,7 +1,5 @@
-﻿using Bot.Api;
-using Bot.Base;
+﻿using Bot.Base;
 using Bot.Core;
-using System;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -11,17 +9,8 @@ namespace Test.Bot.Core
         [Fact]
         public static void CreateServices_ConstructsType()
         {
-            var sp = ServiceProviderFactory.CreateServiceProvider();
+            var sp = ServiceFactory.RegisterServices(null);
             Assert.IsType<ServiceProvider>(sp);
-        }
-
-        [Fact]
-        public static void CreateServices_HasEnvironment()
-        {
-            var sp = ServiceProviderFactory.CreateServiceProvider();
-            var env = sp.GetService<IEnvironment>();
-
-            Assert.IsType<BotEnvironment>(env);
         }
     }
 }

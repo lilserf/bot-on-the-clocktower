@@ -18,7 +18,7 @@ namespace Test.Bot.Core
         [Fact]
         public void ServiceProvider_GameServiceProvided()
         {
-            var sp = ServiceProviderFactory.CreateServiceProvider();
+            var sp = ServiceFactory.RegisterServices(null);
 
             var gs = sp.GetService<IBotGameService>();
             Assert.IsType<BotGameService>(gs);

@@ -1,14 +1,10 @@
 ﻿using MongoDB.Bson;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Database
 {
-	// Class that exists solely to serialize/deserialize to the Mongo GuildInfo collection
-	class MongoGuildInfo
+    // Class that exists solely to serialize/deserialize to the Mongo GuildInfo collection
+    class MongoGuildInfo
 	{
 		public ObjectId _id { get; set; }
 		public long guild { get; set; }

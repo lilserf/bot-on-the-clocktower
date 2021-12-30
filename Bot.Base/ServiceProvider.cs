@@ -13,7 +13,7 @@ namespace Bot.Base
             : this(null)
         {}
 
-        public ServiceProvider(IServiceProvider parent)
+        public ServiceProvider(IServiceProvider? parent)
         {
             m_parent = parent;
         }

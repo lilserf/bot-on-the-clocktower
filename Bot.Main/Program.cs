@@ -15,11 +15,9 @@ namespace Bot.Main
         {
             DotEnv.Load(@"..\..\..\..\.env");
 
-            // NOTE: the IEnvironment should probably be here in Bot.Main rather than in Bot.Core, and
-            // we should probably do the DB services before the Bot.Core services.
-            var sp = ServiceProviderFactory.CreateServiceProvider();
-
-            sp = Bot.Database.ServiceFactory.RegisterServices(sp);
+            var sp = RegisterServices();
+            sp = Database.ServiceFactory.RegisterServices(sp);
+            sp = Core.ServiceFactory.RegisterServices(sp);
 
             DatabaseFactory dbp = new(sp);
             sp = dbp.Connect();
@@ -35,6 +33,13 @@ namespace Bot.Main
             BotSystemRunner botRunner = new(sp, dSharpSystem);
 
             await botRunner.RunAsync(CancellationToken.None);
+        }
+
+        public static IServiceProvider RegisterServices()
+        {
+            var sp = new ServiceProvider();
+            sp.AddService<IEnvironment>(new ProgramEnvironment());
+            return sp;
         }
     }
 }

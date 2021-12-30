@@ -21,9 +21,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Bot.DSharp", "Test.Bot
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Base", "Bot.Base\Bot.Base.csproj", "{87566E40-5675-4F11-B942-C74A9B3D040B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.Database", "Bot.Database\Bot.Database.csproj", "{2E58069F-9243-4BA1-9CC8-9588D8AC702D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Database", "Bot.Database\Bot.Database.csproj", "{2E58069F-9243-4BA1-9CC8-9588D8AC702D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Bot.Database", "Test.Bot.Database\Test.Bot.Database.csproj", "{ACC1EB2F-4D5E-4BD7-AE0D-3D8B55E80F43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Bot.Database", "Test.Bot.Database\Test.Bot.Database.csproj", "{ACC1EB2F-4D5E-4BD7-AE0D-3D8B55E80F43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Main", "Test.Main\Test.Main.csproj", "{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +75,10 @@ Global
 		{ACC1EB2F-4D5E-4BD7-AE0D-3D8B55E80F43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACC1EB2F-4D5E-4BD7-AE0D-3D8B55E80F43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACC1EB2F-4D5E-4BD7-AE0D-3D8B55E80F43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
