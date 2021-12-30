@@ -31,27 +31,38 @@ namespace Bot.Database
 
         public IServiceProvider Connect()
         {
-            var childSp = new ServiceProvider(m_serviceProvider);
+            var client = ConnectToMongoClient();
+            var database = ConnectToMongoDatabase(client);
+            return CreateDatabaseServices(database);
+        }
 
-            // Connect to Mongo
-			var connectionString = m_environment.GetEnvironmentVariable(MongoConnectEnvironmentVar);
-            if(string.IsNullOrWhiteSpace(connectionString)) throw new InvalidMongoConnectStringException();
-
-            var db = m_environment.GetEnvironmentVariable(MongoDbEnvironmentVar);
-            if(string.IsNullOrWhiteSpace(db)) throw new InvalidMongoDbException();
+        public IMongoClient ConnectToMongoClient()
+        {
+            var connectionString = m_environment.GetEnvironmentVariable(MongoConnectEnvironmentVar);
+            if (string.IsNullOrWhiteSpace(connectionString)) throw new InvalidMongoConnectStringException();
 
             IMongoClient client = m_mongoClientFactory.CreateClient(connectionString);
             if (client == null) throw new MongoClientNotCreatedException();
 
+            return client;
+        }
+
+        public IMongoDatabase ConnectToMongoDatabase(IMongoClient client)
+        {
+            var db = m_environment.GetEnvironmentVariable(MongoDbEnvironmentVar);
+            if (string.IsNullOrWhiteSpace(db)) throw new InvalidMongoDbException();
+
             IMongoDatabase database = client.GetDatabase(db);
             if (database == null) throw new MongoDbNotFoundException();
+            return database;
+        }
 
-            // Initialize the child DB services we provide and add them to the service registry
-            childSp.AddService(m_townLookupFactory.CreateTownLookup(database));
-
-            // Return our new service registry full of child services
+        public IServiceProvider CreateDatabaseServices(IMongoDatabase mongoDatabase)
+        {
+            var childSp = new ServiceProvider(m_serviceProvider);
+            childSp.AddService(m_townLookupFactory.CreateTownLookup(mongoDatabase));
             return childSp;
-		}
+        }
 
         public class InvalidMongoConnectStringException : Exception { }
         public class InvalidMongoDbException : Exception { }
