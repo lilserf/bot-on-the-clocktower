@@ -14,7 +14,7 @@ namespace Test.Bot.Database
 		private const string MockDbString = "mock-db-string";
 
 		[Fact]
-		public void DatabaseConnect_NoConnString_ThrowsException()
+		public void ConnectToMongo_NoConnString_ThrowsException()
 		{
 			var mockEnv = RegisterMock(new Mock<IEnvironment>());
 			DatabaseFactory db = new(GetServiceProvider());
@@ -23,7 +23,7 @@ namespace Test.Bot.Database
 		}
 
 		[Fact]
-		public void DatabaseConnect_NoClient_ThrowsException()
+		public void ConnectToMongo_NoClient_ThrowsException()
         {
 			var mockEnv = RegisterMock(new Mock<IEnvironment>());
 			mockEnv.Setup(e => e.GetEnvironmentVariable(It.Is<string>(s => s == DatabaseFactory.MongoConnectEnvironmentVar))).Returns(MockConnectionString);
@@ -35,7 +35,24 @@ namespace Test.Bot.Database
 		}
 
 		[Fact]
-		public void DatabaseConnect_NoDb_ThrowsException()
+		public void ConnectToMongo_ClientMade_Works()
+        {
+			var mockEnv = RegisterMock(new Mock<IEnvironment>());
+			mockEnv.Setup(e => e.GetEnvironmentVariable(It.Is<string>(s => s == DatabaseFactory.MongoConnectEnvironmentVar))).Returns(MockConnectionString);
+
+			var mockClient = new Mock<IMongoClient>();
+
+			var clientFactory = RegisterMock(new Mock<IMongoClientFactory>());
+			clientFactory.Setup(cf => cf.CreateClient(It.Is<string>(s => s == MockConnectionString))).Returns(mockClient.Object);
+			DatabaseFactory db = new(GetServiceProvider());
+
+			var result = db.ConnectToMongoClient();
+
+			Assert.Equal(mockClient.Object, result);
+		}
+
+		[Fact]
+		public void ConnectToDb_NoDbString_ThrowsException()
 		{
 			var mockClient = new Mock<IMongoClient>();
 
@@ -46,7 +63,7 @@ namespace Test.Bot.Database
 		}
 
 		[Fact]
-		public void DatabaseConnect_NoDatabase_ThrowsException()
+		public void ConnectToDb_NoDbFound_ThrowsException()
 		{
 			var mockEnv = RegisterMock(new Mock<IEnvironment>());
 			mockEnv.Setup(e => e.GetEnvironmentVariable(It.Is<string>(s => s == DatabaseFactory.MongoDbEnvironmentVar))).Returns(MockDbString);
@@ -60,7 +77,25 @@ namespace Test.Bot.Database
 		}
 
 		[Fact]
-		public void DatabaseConnect_CreateServices_CreatesTownLookup()
+		public void ConnectToDb_DbMade_Works()
+		{
+			var mockEnv = RegisterMock(new Mock<IEnvironment>());
+			mockEnv.Setup(e => e.GetEnvironmentVariable(It.Is<string>(s => s == DatabaseFactory.MongoDbEnvironmentVar))).Returns(MockDbString);
+
+			var mockDb = new Mock<IMongoDatabase>();
+			var mockClient = new Mock<IMongoClient>();
+			mockClient.Setup(c => c.GetDatabase(It.Is<string>(s => s == MockDbString), It.IsAny<MongoDatabaseSettings>())).Returns(mockDb.Object);
+			var mockClientFactory = RegisterMock(new Mock<IMongoClientFactory>());
+			mockClientFactory.Setup(cf => cf.CreateClient(It.Is<string>(s => s == MockConnectionString))).Returns(mockClient.Object);
+			DatabaseFactory db = new(GetServiceProvider());
+
+			var result = db.ConnectToMongoDatabase(mockClient.Object);
+
+			Assert.Equal(mockDb.Object, result);
+		}
+
+		[Fact]
+		public void CreateDbServices_CreatesTownLookup()
 		{
 			var mockDatabase = new Mock<IMongoDatabase>();
 			var mockTownLookup = new Mock<ITownLookup>();
