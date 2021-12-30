@@ -9,4 +9,9 @@
     <PackageReference Include="MongoDB.Driver" Version="2.14.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Bot.Api\Bot.Api.csproj" />
+    <ProjectReference Include="..\Bot.Base\Bot.Base.csproj" />
+  </ItemGroup>
+
 </Project>
