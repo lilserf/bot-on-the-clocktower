@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Bot.Base\Bot.Base.csproj" />
     <ProjectReference Include="..\Bot.Core\Bot.Core.csproj" />
     <ProjectReference Include="..\Bot.Database\Bot.Database.csproj" />
     <ProjectReference Include="..\Bot.DSharp\Bot.DSharp.csproj" />

@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Base;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using System;
 
@@ -22,9 +23,11 @@ namespace Bot.Database
 
         public IServiceProvider Connect()
 		{
+            // Add ourself to the Services
             var childSp = new ServiceProvider(m_serviceProvider);
             childSp.AddService<IDatabaseFactory>(this);
 
+            // Connect to Mongo
 			var connectionString = m_environment.GetEnvironmentVariable("MONGO_CONNECT");
             var db = m_environment.GetEnvironmentVariable("MONGO_DB");
 
@@ -38,11 +41,16 @@ namespace Bot.Database
                 throw new InvalidMongoDbException();
 			}
 
-            MongoClient client = new MongoClient(connectionString);
+            IMongoClient client = new MongoClient(connectionString);
+            IMongoDatabase database = client.GetDatabase(db);
 
-            m_townLookup.Connect(client);
+            // TODO: throw exceptions for null/invalid client or database?
+
+            // Initialize the child DB services we provide and add them to the service registry
+            m_townLookup.Connect(database);
             childSp.AddService<ITownLookup>(m_townLookup);
 
+            // Return our new service registry full of child services
             return childSp;
 		}
 
