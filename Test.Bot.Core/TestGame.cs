@@ -55,7 +55,7 @@ namespace Test.Bot.Core
             var t = gs.PhaseNightAsync(contextMock.Object);
 
             townLookupMock.Verify(x => x.GetTown(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId)), Times.Once);
-
+            VerifyContext(contextMock);
         }
     }
 }
