@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Database", "Bot.Databas
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Bot.Database", "Test.Bot.Database\Test.Bot.Database.csproj", "{ACC1EB2F-4D5E-4BD7-AE0D-3D8B55E80F43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Main", "Test.Main\Test.Main.csproj", "{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Main", "Test.Main\Test.Main.csproj", "{D99BEC8A-EB3B-4D70-A215-D229BB436BBE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

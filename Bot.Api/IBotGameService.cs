@@ -5,5 +5,6 @@ namespace Bot.Api
     public interface IBotGameService
     {
         Task RunGameAsync(IBotInteractionContext context);
-    }
+		Task PhaseNightAsync(IBotInteractionContext context);
+	}
 }

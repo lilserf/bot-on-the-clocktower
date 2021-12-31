@@ -28,18 +28,34 @@ namespace Test.Bot.Core
         public void RunGame_SendsMessageToContext()
         {
             Mock<IBotSystem> systemMock = RegisterMock<IBotSystem>();
-            Mock<IBotInteractionContext> contextMock = new();
+            Mock<IBotInteractionContext> contextMock = GetStandardContext();
             Mock<IBotWebhookBuilder> builderMock = new();
             systemMock.Setup(c => c.CreateWebhookBuilder()).Returns(builderMock.Object);
-            contextMock.SetupGet(c => c.Services).Returns(GetServiceProvider());
             BotGameService gs = new();
 
             var t = gs.RunGameAsync(contextMock.Object);
 
             systemMock.Verify(c => c.CreateWebhookBuilder(), Times.Once);
             builderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
-            contextMock.Verify(c => c.CreateDeferredResponseMessageAsync(), Times.Once);
             contextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == builderMock.Object)), Times.Once);
+
+            VerifyContext(contextMock);
+        }
+
+        [Fact]
+        public void PhaseNight_LooksUpTown()
+		{
+            Mock<IBotInteractionContext> contextMock = GetStandardContext();
+            Mock<ITownLookup> townLookupMock = RegisterMock<ITownLookup>();
+            Mock<ITown> townMock = new();
+
+            townLookupMock.Setup(x => x.GetTown(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(townMock.Object);
+
+            BotGameService gs = new();
+            var t = gs.PhaseNightAsync(contextMock.Object);
+
+            townLookupMock.Verify(x => x.GetTown(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId)), Times.Once);
+
         }
     }
 }

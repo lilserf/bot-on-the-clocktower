@@ -10,39 +10,39 @@ namespace Bot.Database
 	{
 		public ObjectId _id { get; set; }
 		[BsonElement("guild")]
-		public long GuildId { get; set; }
+		public ulong GuildId { get; set; }
 		[BsonElement("controlChannel")]
 		public string? ControlChannel { get; set; }
 		[BsonElement("controlChannelId")]
-		public long ControlChannelId { get; set; }
+		public ulong ControlChannelId { get; set; }
 		[BsonElement("chatChannel")]
 		public string? ChatChannel { get; set; }
 		[BsonElement("chatChannelId")]
-		public long ChatChannelId { get; set; }
+		public ulong ChatChannelId { get; set; }
 		[BsonElement("townSquare")]
 		public string? TownSquare { get; set; }
 		[BsonElement("townSquareId")]
-		public long TownSquareId { get; set; }
+		public ulong TownSquareId { get; set; }
 		[BsonElement("dayCategory")]
 		public string? DayCategory { get; set; }
 		[BsonElement("dayCategoryId")]
-		public long DayCategoryId { get; set; }
+		public ulong DayCategoryId { get; set; }
 		[BsonElement("nightCategory")]
 		public string? NightCategory { get; set; }
 		[BsonElement("nightCategoryId")]
-		public long NightCategoryId { get; set; }
+		public ulong NightCategoryId { get; set; }
 		[BsonElement("storyTellerRole")]
 		public string? StoryTellerRole { get; set; }
 		[BsonElement("storyTellerRoleId")]
-		public long StoryTellerRoleId { get; set; }
+		public ulong StoryTellerRoleId { get; set; }
 		[BsonElement("villagerRole")]
 		public string? VillagerRole { get; set; }
 		[BsonElement("villagerRoleId")]
-		public long VillagerRoleId { get; set; }
+		public ulong VillagerRoleId { get; set; }
 		[BsonElement("authorName")]
 		public string? AuthorName { get; set; }
 		[BsonElement("author")]
-		public long Author { get; set; }
+		public ulong Author { get; set; }
 		[BsonElement("timestamp")]
 		public DateTime Timestamp { get; set; }
 	}

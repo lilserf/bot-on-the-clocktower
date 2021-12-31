@@ -18,7 +18,7 @@ namespace Bot.Database
 			if (m_guildInfo == null) throw new MissingGuildInfoDatabaseException();
 		}
 
-		public async Task<ITown> GetTown(long guildId, long channelId)
+		public async Task<ITown> GetTown(ulong guildId, ulong channelId)
 		{
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTown>.Filter;

@@ -6,7 +6,17 @@ namespace Bot.Core
 {
     public class BotGameService : IBotGameService
     {
-        public async Task RunGameAsync(IBotInteractionContext context)
+		public async Task PhaseNightAsync(IBotInteractionContext context)
+		{
+            await context.CreateDeferredResponseMessageAsync();
+
+            var townLookup = context.Services.GetService<ITownLookup>();
+            var town = townLookup.GetTown(context.Guild.Id, context.Channel.Id);
+
+            // TODO: do something with the town
+		}
+
+		public async Task RunGameAsync(IBotInteractionContext context)
         {
             var system = context.Services.GetService<IBotSystem>();
             await context.CreateDeferredResponseMessageAsync();

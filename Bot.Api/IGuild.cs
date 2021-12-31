@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public interface ITownLookup
+	public interface IGuild
 	{
-		// Get a Town given its guild and channel IDs
-		public Task<ITown> GetTown(ulong guildId, ulong channelId);
+		public ulong Id { get; }
 	}
 }
