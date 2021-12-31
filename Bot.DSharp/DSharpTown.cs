@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Bot.Api;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bot.Api
+namespace Bot.DSharp
 {
-	public interface ITown
+	class DSharpTown : ITown
 	{
 		public IGuild Guild { get; set; }
 		public IChannel ControlChannel { get; set; }
@@ -14,7 +15,5 @@ namespace Bot.Api
 		public IChannel DayCategory { get; set; }
 		public IChannel NightCategory { get; set; }
 		public IChannel ChatChannel { get; set; }
-		//public IRole StoryTellerRole {get; set;}
-		//public IRole VillagerRole {get; set;}
 	}
 }

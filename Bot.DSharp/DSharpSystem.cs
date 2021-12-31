@@ -15,5 +15,5 @@ namespace Bot.DSharp
         }
 
         public IBotWebhookBuilder CreateWebhookBuilder() => new DSharpWebhookBuilder(new DiscordWebhookBuilder());
-    }
+	}
 }

@@ -12,6 +12,7 @@ namespace Bot.DSharp
     {
         private readonly IServiceProvider m_serviceProvider;
         private readonly IEnvironment m_environment;
+        private DiscordClient? m_discord;
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
@@ -20,6 +21,7 @@ namespace Bot.DSharp
             m_serviceProvider = sp;
 
             m_environment = serviceProvider.GetService<IEnvironment>();
+            m_discord = null;
         }
 
         public async Task ConnectAsync()
@@ -36,24 +38,49 @@ namespace Bot.DSharp
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
             };
 
-            var discord = new DiscordClient(config);
-            var slash = discord.UseSlashCommands(new SlashCommandsConfiguration { Services = m_serviceProvider });
+            m_discord = new DiscordClient(config);
+            var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = m_serviceProvider });
 
+            // TODO: register to all guilds, not just ours
             slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
 
             TaskCompletionSource readyTcs = new();
 
-            discord.Ready += (_, _) =>
+            m_discord.Ready += (_, _) =>
             {
                 readyTcs.SetResult();
                 return Task.CompletedTask;
             };
 
-            await discord.ConnectAsync();
+            await m_discord.ConnectAsync();
 
             await readyTcs.Task;
         }
 
-        public class InvalidDiscordTokenException : Exception { }
+		public async Task<IChannel> GetChannelAsync(ulong id)
+		{
+            return new DSharpChannel(await m_discord!.GetChannelAsync(id));
+		}
+
+		public async Task<IGuild> GetGuildAsync(ulong id)
+		{
+            return new DSharpGuild(await m_discord!.GetGuildAsync(id));
+		}
+
+        public async Task<ITown> ResolveTownAsync(ITownRecord rec)
+        {
+            var town = new DSharpTown()
+            {
+                Guild = await GetGuildAsync(rec.GuildId),
+                ControlChannel = await GetChannelAsync(rec.ControlChannelId),
+                DayCategory = await GetChannelAsync(rec.DayCategoryId),
+                NightCategory = await GetChannelAsync(rec.NightCategoryId),
+                ChatChannel = await GetChannelAsync(rec.ChatChannelId),
+                TownSquare = await GetChannelAsync(rec.TownSquareId),
+            };
+            return town;
+		}
+
+		public class InvalidDiscordTokenException : Exception { }
     }
 }

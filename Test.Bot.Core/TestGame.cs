@@ -47,14 +47,14 @@ namespace Test.Bot.Core
 		{
             Mock<IBotInteractionContext> contextMock = GetStandardContext();
             Mock<ITownLookup> townLookupMock = RegisterMock<ITownLookup>();
-            Mock<ITown> townMock = new();
+            Mock<ITownRecord> townMock = new();
 
-            townLookupMock.Setup(x => x.GetTown(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(townMock.Object);
+            townLookupMock.Setup(x => x.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(townMock.Object);
 
             BotGameService gs = new();
             var t = gs.PhaseNightAsync(contextMock.Object);
 
-            townLookupMock.Verify(x => x.GetTown(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId)), Times.Once);
+            townLookupMock.Verify(x => x.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId)), Times.Once);
             VerifyContext(contextMock);
         }
     }

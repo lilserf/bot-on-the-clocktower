@@ -7,5 +7,6 @@ namespace Bot.Api
         IBotClient CreateClient(IServiceProvider serviceProvider);
 
         IBotWebhookBuilder CreateWebhookBuilder();
+
     }
 }

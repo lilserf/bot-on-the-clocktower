@@ -1,5 +1,7 @@
 ﻿using Bot.Api;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -8,15 +10,32 @@ namespace Bot.Core
     {
 		public async Task PhaseNightAsync(IBotInteractionContext context)
 		{
+            // TODO: "current game" role assignment
+
             await context.CreateDeferredResponseMessageAsync();
 
             var townLookup = context.Services.GetService<ITownLookup>();
-            var town = townLookup.GetTown(context.Guild.Id, context.Channel.Id);
+            var townRec = await townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
 
-            // TODO: do something with the town
-		}
+            var client = context.Services.GetService<IBotClient>();
+            var town = await client.ResolveTownAsync(townRec);
 
-		public async Task RunGameAsync(IBotInteractionContext context)
+            // TODO: order users by display name
+            // TODO: put storytellers in the first cottages
+            var pairs = town.NightCategory.Channels.Zip(town.TownSquare.Users, (c, u) => Tuple.Create(c, u));
+
+            foreach(var (cottage, user) in pairs)
+			{
+                await user.PlaceInAsync(cottage);
+			}
+
+            var system = context.Services.GetService<IBotSystem>();
+            var webhook = system.CreateWebhookBuilder();
+            webhook.WithContent("Moved all users from Town Square to Cottages!");
+            await context.EditResponseAsync(webhook);
+        }
+
+        public async Task RunGameAsync(IBotInteractionContext context)
         {
             var system = context.Services.GetService<IBotSystem>();
             await context.CreateDeferredResponseMessageAsync();

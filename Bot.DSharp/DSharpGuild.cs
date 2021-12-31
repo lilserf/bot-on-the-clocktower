@@ -10,12 +10,12 @@ namespace Bot.DSharp
 {
 	class DSharpGuild : IGuild
 	{
-		private DiscordGuild m_wrapped;
+		public DiscordGuild Wrapped { get; }
 		public DSharpGuild(DiscordGuild wrapped)
 		{
-			m_wrapped = wrapped;
+			Wrapped = wrapped;
 		}
 
-		public ulong Id => m_wrapped.Id;
+		public ulong Id => Wrapped.Id;
 	}
 }

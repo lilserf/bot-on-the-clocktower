@@ -9,5 +9,9 @@ namespace Bot.Api
 	public interface IChannel
 	{
 		public ulong Id { get; }
+
+		public IReadOnlyCollection<IMember> Users { get; }
+
+		public IReadOnlyCollection<IChannel> Channels { get; }
 	}
 }

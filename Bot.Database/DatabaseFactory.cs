@@ -18,7 +18,7 @@ namespace Bot.Database
 
         static DatabaseFactory()
         {
-            BsonClassMap.RegisterClassMap<MongoTown>();
+            BsonClassMap.RegisterClassMap<MongoTownRecord>();
         }
 
         public DatabaseFactory(IServiceProvider serviceProvider)

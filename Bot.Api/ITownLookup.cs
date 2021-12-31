@@ -9,6 +9,6 @@ namespace Bot.Api
 	public interface ITownLookup
 	{
 		// Get a Town given its guild and channel IDs
-		public Task<ITown> GetTown(ulong guildId, ulong channelId);
+		public Task<ITownRecord> GetTownRecord(ulong guildId, ulong channelId);
 	}
 }

@@ -10,13 +10,17 @@ namespace Bot.DSharp
 {
 	class DSharpChannel : IChannel
 	{
-		private DiscordChannel m_wrapped;
+		public DiscordChannel Wrapped { get; }
 
 		public DSharpChannel(DiscordChannel wrapped)
 		{
-			m_wrapped = wrapped;
+			Wrapped = wrapped;
 		}
 
-		public ulong Id => m_wrapped.Id;
+		public ulong Id => Wrapped.Id;
+
+		public IReadOnlyCollection<IMember> Users => Wrapped.Users.Select(x => new DSharpMember(x)).ToList();
+
+		public IReadOnlyCollection<IChannel> Channels => Wrapped.Children.Select(x => new DSharpChannel(x)).ToList();
 	}
 }
