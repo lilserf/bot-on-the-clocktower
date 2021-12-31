@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public struct Town
+	public interface ITown
 	{
 		public long GuildId { get; set; }
 		public long ControlChannelId { get; set; }
