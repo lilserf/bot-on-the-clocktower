@@ -30,8 +30,9 @@ namespace Test.Bot.DSharp
             var constructor = dSharpException.GetConstructor(Array.Empty<Type>());
             Assert.NotNull(constructor);
             Task throwFunc() => throw (Exception)(constructor!.Invoke(Array.Empty<object?>()));
-            Assert.ThrowsAsync(apiException, () => ExceptionWrap.WrapExceptionsAsync(throwFunc))
-                .Wait(50);
+            var t = Assert.ThrowsAsync(apiException, () => ExceptionWrap.WrapExceptionsAsync(throwFunc));
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
         }
     }
 }
