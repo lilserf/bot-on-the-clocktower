@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public interface IGuild
+	public interface IRole
 	{
-		public ulong Id { get; }
-
-		public IReadOnlyDictionary<ulong, IRole> Roles { get; }
 	}
 }

@@ -8,6 +8,7 @@ namespace Bot.Api
         IServiceProvider Services { get; }
         IGuild Guild { get; }
         IChannel Channel { get; }
+        IMember Member { get; }
         Task CreateDeferredResponseMessageAsync();
         Task EditResponseAsync(IBotWebhookBuilder webhookBuilder);
     }

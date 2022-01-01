@@ -5,7 +5,7 @@ namespace Bot.DSharp
 {
     public static class ExceptionWrap
     {
-        public static Task WrapExceptionsAsync(Func<Task> f) => WrapExceptionsAsync(f);
+        public static Task WrapExceptionsAsync(Func<Task> f) => WrapExceptionsAsync( async () => { await f(); return true; });
 
         public static async Task<T> WrapExceptionsAsync<T>(Func<Task<T>> f)
         {

@@ -13,5 +13,7 @@ namespace Bot.Api
 		public IReadOnlyCollection<IMember> Users { get; }
 
 		public IReadOnlyCollection<IChannel> Channels { get; }
+
+		public int Position { get; }
 	}
 }

@@ -6,10 +6,13 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public interface IGuild
+	public interface IGame
 	{
-		public ulong Id { get; }
+		ITown Town { get; }
 
-		public IReadOnlyDictionary<ulong, IRole> Roles { get; }
+		IList<IMember> StoryTellers { get; }
+
+		IList<IMember> Villagers { get; }
+
 	}
 }
