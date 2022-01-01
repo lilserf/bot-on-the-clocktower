@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Test.Bot.Core
 {
-    public class TestGame : CoreTestBase
+    public class TestGame : GameTestBase
     {
         [Fact]
         public void ConstructGame_NoExceptions()

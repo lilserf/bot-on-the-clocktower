@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Test.Bot.Core
 {
-    public class TestNightPhase : CoreTestBase
+    public class TestNightPhase : GameTestBase
     {
         [Fact]
         public void PhaseNight_LooksUpTown()

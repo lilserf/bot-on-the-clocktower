@@ -4,7 +4,7 @@ using Test.Bot.Base;
 
 namespace Test.Bot.Core
 {
-    public class CoreTestBase : TestBase
+    public class GameTestBase : TestBase
     {
         protected const ulong MockGuildId = 1337;
         protected const ulong MockChannelId = 42;
@@ -32,7 +32,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
 
 
-        public CoreTestBase()
+        public GameTestBase()
         {
             Mock<IBotWebhookBuilder> builderMock = new();
             BotSystemMock.Setup(c => c.CreateWebhookBuilder()).Returns(WebhookBuilderMock.Object);
