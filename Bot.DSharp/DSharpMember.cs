@@ -1,14 +1,11 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-	class DSharpMember : IMember
+    class DSharpMember : IMember
 	{
 		public DiscordMember Wrapped { get; }
 
@@ -17,14 +14,10 @@ namespace Bot.DSharp
 			Wrapped = wrapped;
 		}
 
-		public async Task PlaceInAsync(IChannel c)
+		public Task PlaceInAsync(IChannel c)
 		{
-			// Have to upcast to a DSharpChannel
 			if (c is DSharpChannel chan)
-			{
-				await Wrapped.PlaceInAsync(chan.Wrapped);
-				return;
-			}
+				return Wrapped.PlaceInAsync(chan.Wrapped);
 
 			throw new InvalidOperationException("Passed an incorrect IChannel type");
 		}

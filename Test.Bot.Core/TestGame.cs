@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Test.Bot.Core
 {
-    public class TestGame : TestBase
+    public class TestGame : CoreTestBase
     {
         [Fact]
         public void ConstructGame_NoExceptions()
@@ -27,35 +27,15 @@ namespace Test.Bot.Core
         [Fact]
         public void RunGame_SendsMessageToContext()
         {
-            Mock<IBotSystem> systemMock = RegisterMock<IBotSystem>();
-            Mock<IBotInteractionContext> contextMock = GetStandardContext();
-            Mock<IBotWebhookBuilder> builderMock = new();
-            systemMock.Setup(c => c.CreateWebhookBuilder()).Returns(builderMock.Object);
             BotGameService gs = new();
 
-            var t = gs.RunGameAsync(contextMock.Object);
+            var t = gs.RunGameAsync(InteractionContextMock.Object);
 
-            systemMock.Verify(c => c.CreateWebhookBuilder(), Times.Once);
-            builderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
-            contextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == builderMock.Object)), Times.Once);
+            BotSystemMock.Verify(c => c.CreateWebhookBuilder(), Times.Once);
+            WebhookBuilderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
+            InteractionContextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == WebhookBuilderMock.Object)), Times.Once);
 
-            VerifyContext(contextMock);
-        }
-
-        [Fact]
-        public void PhaseNight_LooksUpTown()
-		{
-            Mock<IBotInteractionContext> contextMock = GetStandardContext();
-            Mock<ITownLookup> townLookupMock = RegisterMock<ITownLookup>();
-            Mock<ITownRecord> townMock = new();
-
-            townLookupMock.Setup(x => x.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(townMock.Object);
-
-            BotGameService gs = new();
-            var t = gs.PhaseNightAsync(contextMock.Object);
-
-            townLookupMock.Verify(x => x.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId)), Times.Once);
-            VerifyContext(contextMock);
+            VerifyContext();
         }
     }
 }
