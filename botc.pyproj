@@ -29,6 +29,7 @@
     <Compile Include="bot.py" />
     <Compile Include="botctypes.py" />
     <Compile Include="discordutil.py" />
+    <Compile Include="gameplay.py" />
     <Compile Include="lookup.py" />
     <Compile Include="test_announce.py" />
     <Compile Include="test_botctypes.py" />

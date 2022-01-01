@@ -11,11 +11,19 @@ namespace Bot.DSharp
 	class DSharpGuild : IGuild
 	{
 		public DiscordGuild Wrapped { get; }
+		public ulong Id => Wrapped.Id;
+
+		public IReadOnlyDictionary<ulong, IRole> Roles => m_roles;
+		private Dictionary<ulong, IRole> m_roles;
+
 		public DSharpGuild(DiscordGuild wrapped)
 		{
 			Wrapped = wrapped;
+			m_roles = new();
+			foreach(var (k,v) in wrapped.Roles)
+			{
+				m_roles[k] = new DSharpRole(v);
+			}
 		}
-
-		public ulong Id => Wrapped.Id;
 	}
 }
