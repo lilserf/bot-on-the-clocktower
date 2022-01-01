@@ -1,7 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Core;
 using Moq;
-using Test.Bot.Base;
+using System;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -20,12 +20,15 @@ namespace Test.Bot.Core
             VerifyContext();
         }
 
-        [Fact(Skip="Committing fixes and refactoring for other tests first")]
-        public void NightSendToCottages_UnauthorizedException_Continues()
+        [Theory]
+        [InlineData(typeof(UnauthorizedException))]
+        [InlineData(typeof(NotFoundException))]
+        public void NightSendToCottages_ExceptionMoving1Member_Continues(Type exceptionType)
         {
             Mock<IMember> memberMock = new();
             TownSquareMock.SetupGet(c => c.Users).Returns(new[] { memberMock.Object });
-            memberMock.Setup(m => m.PlaceInAsync(It.IsAny<IChannel>())).ThrowsAsync(new UnauthorizedException());
+
+            memberMock.Setup(m => m.PlaceInAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
             BotGameService gs = new();
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
@@ -33,8 +36,6 @@ namespace Test.Bot.Core
             Assert.True(t.IsCompleted);
 
             VerifyContext();
-
-            Assert.False(true);
         }
     }
 }

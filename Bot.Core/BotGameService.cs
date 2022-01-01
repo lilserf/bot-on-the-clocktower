@@ -25,7 +25,14 @@ namespace Bot.Core
 
             foreach(var (cottage, user) in pairs)
 			{
-                await user.PlaceInAsync(cottage);
+                try
+                {
+                    await user.PlaceInAsync(cottage);
+                }
+                catch (UnauthorizedException)
+                { }
+                catch (NotFoundException)
+                { }
 			}
 
             var system = context.Services.GetService<IBotSystem>();

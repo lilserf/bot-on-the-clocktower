@@ -1,5 +1,6 @@
 ﻿using Moq;
 using System;
+using Xunit;
 
 namespace Test.Bot.Base
 {
@@ -20,6 +21,13 @@ namespace Test.Bot.Base
         {
             m_mockServiceProvider.RegisterService(mock.Object);
             return mock;
+        }
+
+        protected static Exception CreateException(Type exceptionType)
+        {
+            var exceptionConstructor = exceptionType.GetConstructor(Array.Empty<Type>());
+            Assert.NotNull(exceptionConstructor);
+            return (Exception)(exceptionConstructor!.Invoke(Array.Empty<object?>()));
         }
     }
 }

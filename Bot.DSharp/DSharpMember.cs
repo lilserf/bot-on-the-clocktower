@@ -17,7 +17,7 @@ namespace Bot.DSharp
 		public Task PlaceInAsync(IChannel c)
 		{
 			if (c is DSharpChannel chan)
-				return Wrapped.PlaceInAsync(chan.Wrapped);
+				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
 
 			throw new InvalidOperationException("Passed an incorrect IChannel type");
 		}

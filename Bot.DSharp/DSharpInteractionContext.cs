@@ -28,7 +28,8 @@ namespace Bot.DSharp
         public Task EditResponseAsync(IBotWebhookBuilder webhookBuilder)
         {
             if (webhookBuilder is DSharpWebhookBuilder irb)
-                return m_wrapped.EditResponseAsync(irb.Wrapped);
+                return ExceptionWrap.WrapExceptionsAsync(() => m_wrapped.EditResponseAsync(irb.Wrapped));
+
             throw new InvalidOperationException("Passed an incorrect response type");
         }
     }
