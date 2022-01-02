@@ -1,15 +1,16 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Bot.Api
 {
     public interface IMember
 	{
-		public Task PlaceInAsync(IChannel c);
+		Task PlaceInAsync(IChannel c);
 
-		public Task GrantRoleAsync(IRole role, string? reason=null);
+		Task GrantRoleAsync(IRole role, string? reason=null);
 
-		public Task RevokeRoleAsync(IRole role, string? reason=null);
+		Task RevokeRoleAsync(IRole role, string? reason=null);
+
+		Task<IMessage> SendMessageAsync(string content);
 
 		public string DisplayName { get; }
 		public bool IsBot { get; }

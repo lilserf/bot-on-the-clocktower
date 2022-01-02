@@ -41,6 +41,12 @@ namespace Bot.DSharp
 			throw new InvalidOperationException("Passed an incorrect IRole type");
 		}
 
+		public async Task<IMessage> SendMessageAsync(string content)
+		{
+			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(content));
+			return new DSharpMessage(messageRet);
+		}
+
 		public override bool Equals(object? other)
 		{
 			if (other is DSharpMember d)
@@ -54,5 +60,5 @@ namespace Bot.DSharp
 		{
 			return Wrapped.GetHashCode();
 		}
-	}
+    }
 }
