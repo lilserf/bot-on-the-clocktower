@@ -17,7 +17,7 @@ namespace Test.Bot.Core
 
             Mock<Func<IProcessLogger, Task>> mockFunc = new();
 
-            var t = InteractionWrapper.TryProcessReportingErrors(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -31,7 +31,7 @@ namespace Test.Bot.Core
 
             Mock<Func<IProcessLogger, Task>> mockFunc = new();
 
-            var t = InteractionWrapper.TryProcessReportingErrors(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -52,7 +52,7 @@ namespace Test.Bot.Core
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
 
-            var t = InteractionWrapper.TryProcessReportingErrors(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -76,7 +76,7 @@ namespace Test.Bot.Core
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
 
-            var t = InteractionWrapper.TryProcessReportingErrors(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }

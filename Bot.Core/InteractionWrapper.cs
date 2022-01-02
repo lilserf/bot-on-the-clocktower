@@ -6,7 +6,7 @@ namespace Bot.Core
 {
     public static class InteractionWrapper
     {
-        public static async Task TryProcessReportingErrors(IBotInteractionContext context, Func<IProcessLogger, Task> process)
+        public static async Task TryProcessReportingErrorsAsync(IBotInteractionContext context, Func<IProcessLogger, Task> process)
         {
             var logger = new ProcessLogger();
             try
@@ -15,13 +15,18 @@ namespace Bot.Core
             }
             catch (Exception e)
             {
-                try
-                {
-                    await context.Member.SendMessageAsync($"Bot on the Clocktower encountered an error.\nPlease consider reporting the error at https://github.com/lilserf/bot-on-the-clocktower/issues\n\n{e.Message}\nStack trace:\n{e.StackTrace}");
-                }
-                catch (Exception)
-                { }
+                await TrySendMessageToAuthorAsync(context, e);
             }
+        }
+
+        private static async Task TrySendMessageToAuthorAsync(IBotInteractionContext context, Exception e)
+        {
+            try
+            {
+                await context.Member.SendMessageAsync($"Bot on the Clocktower encountered an error.\nPlease consider reporting the error at https://github.com/lilserf/bot-on-the-clocktower/issues\n\n{e.Message}\nStack trace:\n{e.StackTrace}");
+            }
+            catch (Exception)
+            { }
         }
     }
 }
