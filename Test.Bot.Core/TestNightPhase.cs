@@ -38,7 +38,6 @@ namespace Test.Bot.Core
             VerifyContext();
         }
 
-        // TODO: Test that storyteller went into first cottage (not implemented, this test is currently checking they are alphabetically last)
         [Fact]
         public void Night_CottagesCorrect()
 		{
@@ -47,13 +46,13 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            // Cottage1 should get Alice (Villager2)
-            // Cottage2 should get Bob (Villager1)
-            // Cottage3 should get Storyteller (InteractionAuthor)
+            // Storyteller should go in Cottage1 since they're the Storyteller
+            // Alice (Villager2) should go in Cottage2
+            // Bot (Villager1) should go in Cottage3
 
-            Villager2Mock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
-            Villager1Mock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object)), Times.Once);
-            InteractionAuthorMock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage3Mock.Object)), Times.Once);
+            InteractionAuthorMock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
+            Villager2Mock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object)), Times.Once);
+            Villager1Mock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage3Mock.Object)), Times.Once);
 
             VerifyContext();
         }

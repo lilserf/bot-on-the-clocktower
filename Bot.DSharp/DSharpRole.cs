@@ -12,9 +12,13 @@ namespace Bot.DSharp
 	{
 		public DiscordRole Wrapped { get; }
 
-		public DSharpRole(DiscordRole wrapped)
+        public string Name => Wrapped.Name;
+
+        public DSharpRole(DiscordRole wrapped)
 		{
 			Wrapped = wrapped;
 		}
+
+
 	}
 }
