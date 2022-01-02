@@ -18,6 +18,7 @@ namespace Test.Bot.DSharp
             Assert.True(t.IsCompleted);
         }
 
+        /* Commented out so it doesn't show up in the Test Explorer
         [Theory(Skip="The DSharpPlus exceptions do not have public constructors so I cannot figure out how to run a test that relies on us throwing those exceptions during the test.")]
         [InlineData(typeof(DSharpPlus.Exceptions.BadRequestException), typeof(BadRequestException))]
         [InlineData(typeof(DSharpPlus.Exceptions.NotFoundException), typeof(NotFoundException))]
@@ -34,5 +35,6 @@ namespace Test.Bot.DSharp
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }
+        */
     }
 }
