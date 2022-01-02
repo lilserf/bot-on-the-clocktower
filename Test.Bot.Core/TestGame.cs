@@ -12,7 +12,7 @@ namespace Test.Bot.Core
         [Fact]
         public void ConstructGame_NoExceptions()
         {
-            var _ = new BotGameService();
+            var _ = new BotGameplay();
         }
 
         [Fact]
@@ -21,13 +21,13 @@ namespace Test.Bot.Core
             var sp = ServiceFactory.RegisterServices(null);
 
             var gs = sp.GetService<IBotGameplay>();
-            Assert.IsType<BotGameService>(gs);
+            Assert.IsType<BotGameplay>(gs);
         }
 
         [Fact]
         public void RunGame_SendsMessageToContext()
         {
-            BotGameService gs = new();
+            BotGameplay gs = new();
 
             var t = gs.RunGameAsync(InteractionContextMock.Object);
 

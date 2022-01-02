@@ -11,7 +11,7 @@ namespace Test.Bot.Core
         [Fact]
         public void PhaseNight_LooksUpTown()
         {
-            BotGameService gs = new();
+            BotGameplay gs = new();
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -30,7 +30,7 @@ namespace Test.Bot.Core
 
             memberMock.Setup(m => m.PlaceInAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
-            BotGameService gs = new();
+            BotGameplay gs = new();
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -41,7 +41,7 @@ namespace Test.Bot.Core
         [Fact]
         public void Night_CottagesCorrect()
 		{
-            BotGameService gs = new();
+            BotGameplay gs = new();
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -65,7 +65,7 @@ namespace Test.Bot.Core
         [Fact]
         public void CurrentGame_RolesCorrect()
 		{
-            BotGameService gs = new();
+            BotGameplay gs = new();
             var t = gs.CurrentGameAsync(InteractionContextMock.Object, TownMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
