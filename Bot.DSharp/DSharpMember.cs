@@ -5,17 +5,14 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-    class DSharpMember : IMember
+    public class DSharpMember : DiscordWrapper<DiscordMember>, IMember
 	{
-		public DiscordMember Wrapped { get; }
-
 		public string DisplayName => Wrapped.DisplayName;
 		public bool IsBot => Wrapped.IsBot;
 
 		public DSharpMember(DiscordMember wrapped)
-		{
-			Wrapped = wrapped;
-		}
+			: base(wrapped)
+		{}
 
 		public Task PlaceInAsync(IChannel c)
 		{
@@ -45,20 +42,6 @@ namespace Bot.DSharp
 		{
 			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(content));
 			return new DSharpMessage(messageRet);
-		}
-
-		public override bool Equals(object? other)
-		{
-			if (other is DSharpMember d)
-			{
-				return Wrapped.Equals(d?.Wrapped);
-			}
-			return false;
-		}
-
-		public override int GetHashCode()
-		{
-			return Wrapped.GetHashCode();
 		}
     }
 }
