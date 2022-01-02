@@ -24,5 +24,21 @@ namespace Bot.DSharp
 		public IReadOnlyCollection<IChannel> Channels => Wrapped.Children.Select(x => new DSharpChannel(x)).ToList();
 
 		public int Position => Wrapped.Position;
+
+		public bool IsVoice => Wrapped.Type == DSharpPlus.ChannelType.Voice;
+
+		public override bool Equals(object? other)
+		{
+			if (other is DSharpChannel d)
+			{
+				return Wrapped.Equals(d?.Wrapped);
+			}
+			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return Wrapped.GetHashCode();
+		}
 	}
 }

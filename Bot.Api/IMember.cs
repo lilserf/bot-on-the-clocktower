@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Bot.Api
 {
@@ -11,5 +12,6 @@ namespace Bot.Api
 		public Task RevokeRoleAsync(IRole role, string? reason=null);
 
 		public string DisplayName { get; }
+		public bool IsBot { get; }
 	}
 }

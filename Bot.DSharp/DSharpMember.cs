@@ -10,6 +10,7 @@ namespace Bot.DSharp
 		public DiscordMember Wrapped { get; }
 
 		public string DisplayName => Wrapped.DisplayName;
+		public bool IsBot => Wrapped.IsBot;
 
 		public DSharpMember(DiscordMember wrapped)
 		{
@@ -38,6 +39,20 @@ namespace Bot.DSharp
 				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, reason));
 
 			throw new InvalidOperationException("Passed an incorrect IRole type");
+		}
+
+		public override bool Equals(object? other)
+		{
+			if (other is DSharpMember d)
+			{
+				return Wrapped.Equals(d?.Wrapped);
+			}
+			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return Wrapped.GetHashCode();
 		}
 	}
 }

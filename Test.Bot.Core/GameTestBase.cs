@@ -37,7 +37,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IMember> Villager2Mock = new();
 
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
-
+        protected readonly Mock<IActiveGameService> ActiveGameServiceMock = new();
 
         public GameTestBase()
         {
@@ -47,10 +47,15 @@ namespace Test.Bot.Core
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
             RegisterMock(TownLookupMock);
+            RegisterMock(ActiveGameServiceMock);
 
             TownLookupMock.Setup(tl => tl.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(TownRecordMock.Object);
 
             ClientMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
+
+            // By default, the ActiveGameService won't find a game for this context
+            IGame? defaultGame = null;
+            ActiveGameServiceMock.Setup(a => a.TryGetGame(It.IsAny<IBotInteractionContext>(), out defaultGame)).Returns(false);
 
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
             ControlChannelMock.SetupGet(x => x.Id).Returns(MockChannelId);
@@ -82,22 +87,28 @@ namespace Test.Bot.Core
             // Purposely don't order the collection of cottages in their display order
             NightCategoryMock.SetupGet(c => c.Channels).Returns(new[] { Cottage1Mock.Object, Cottage3Mock.Object, Cottage2Mock.Object});
 
-            InteractionAuthorMock.SetupGet(x => x.DisplayName).Returns("Storyteller");
-            Villager1Mock.SetupGet(x => x.DisplayName).Returns("Bob");
-            Villager2Mock.SetupGet(x => x.DisplayName).Returns("Alice");
+            SetupUserMock(InteractionAuthorMock, "Storyteller");
+            SetupUserMock(Villager1Mock, "Bob");
+            SetupUserMock(Villager2Mock, "Alice");
         }
 
         private static void SetupChannelMock(Mock<IChannel> channel)
         {
             channel.SetupGet(c => c.Users).Returns(new IMember[] { });
+            channel.Setup(c => c.Equals((object)channel.Object)).Returns(true);
         }
 
+        private static void SetupUserMock(Mock<IMember> member, string name)
+		{
+            member.Setup(c => c.Equals((object)member.Object)).Returns(true);
+            member.SetupGet(x => x.DisplayName).Returns(name);
+        }
 
         // Common assumptions we want to make for most of our Interactions
         protected void VerifyContext()
         {
             // Most interactions should Defer to allow for latency
-            InteractionContextMock.Verify(c => c.CreateDeferredResponseMessageAsync(), Times.Once);
+            InteractionContextMock.Verify(c => c.DeferInteractionResponse(), Times.Once);
         }
     }
 }

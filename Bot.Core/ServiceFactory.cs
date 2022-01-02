@@ -10,6 +10,7 @@ namespace Bot.Core
         {
             ServiceProvider sp = new(parentServices);
             sp.AddService<IBotGameplay>(new BotGameplay());
+            sp.AddService<IActiveGameService>(new ActiveGameService());
             return sp;
         }
     }

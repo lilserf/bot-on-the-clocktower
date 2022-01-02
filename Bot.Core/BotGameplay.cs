@@ -56,23 +56,94 @@ namespace Bot.Core
             }
         }
 
-        // TODO: better name for this method, probably
-        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, ITown town)
+        private async Task<bool> RevokeRoleAsync(IBotInteractionContext context, IMember member, IRole role)
+		{
+			try
+			{
+                await member.RevokeRoleAsync(role);
+                return true;
+			}
+            catch(Exception ex)
+			{
+                await ReportException(context, ex, $"revoke role '{role.Name}' from {member.DisplayName}");
+                return false;
+            }
+        }
+
+        // Helper for editing the original interaction with a summarizing message when finished
+        private async Task EditOriginalMessage(IBotInteractionContext context, string s)
         {
-            // TODO: check if there's already an active game in this town by adding some kind of ActiveGameService
-            var game = new Game(town);
+            var system = context.Services.GetService<IBotSystem>();
+            var webhook = system.CreateWebhookBuilder().WithContent(s);
+            await context.EditResponseAsync(webhook);
+        }
 
-            // Assume the author of the command is the Storyteller
-            var storyteller = context.Member;
+        // TODO: better name for this method, probably
+        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context)
+        {
+            var ags = context.Services.GetService<IActiveGameService>();
 
-            await GrantRoleAsync(context, storyteller, town.StoryTellerRole);
-            game.StoryTellers.Add(storyteller);
-
-            // Make everyone else a villager
-            foreach(var v in town.TownSquare.Users.Where(x => x != storyteller))
+            IGame? game = null;
+            if (ags.TryGetGame(context, out game))
             {
-                await GrantRoleAsync(context, v, town.VillagerRole);
-                game.Villagers.Add(v);
+                // TODO: resolve a change in Storytellers
+
+                var foundUsers = game!.Town.TownSquare.Users.ToList();
+                foreach(var c in game!.Town.DayCategory.Channels.Where(c => c.IsVoice))
+                {
+                    foundUsers.AddRange(c.Users.ToList());
+                }
+                foreach(var c in game!.Town.NightCategory.Channels.Where(c => c.IsVoice))
+                {
+                    foundUsers.AddRange(c.Users.ToList());
+                }
+
+                // Sanity check for bots
+                foundUsers = foundUsers.Where(u => !u.IsBot).ToList();
+
+                var newPlayers = foundUsers.Except(game.AllPlayers);
+                var oldPlayers = game.AllPlayers.Except(foundUsers);
+
+                foreach(var p in newPlayers)
+				{
+                    await GrantRoleAsync(context, p, game.Town.VillagerRole);
+                    game.Villagers.Add(p);
+				}
+                foreach(var p in oldPlayers)
+				{
+                    await RevokeRoleAsync(context, p, game.Town.VillagerRole);
+                    game.Villagers.Remove(p);
+                }
+
+            }
+            else
+            {
+                var townLookup = context.Services.GetService<ITownLookup>();
+                var townRec = await townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
+
+                var client = context.Services.GetService<IBotClient>();
+                var town = await client.ResolveTownAsync(townRec);
+
+                // No record, so create one
+                game = new Game(town);
+
+                // Assume the author of the command is the Storyteller
+                var storyteller = context.Member;
+
+                await GrantRoleAsync(context, storyteller, town.StoryTellerRole);
+                game.StoryTellers.Add(storyteller);
+
+                var allUsers = town.TownSquare.Users.ToList();
+                allUsers.Remove(storyteller);
+
+                // Make everyone else a villager
+                foreach (var v in allUsers)
+                {
+                    await GrantRoleAsync(context, v, town.VillagerRole);
+                    game.Villagers.Add(v);
+                }
+
+                ags.RegisterGame(town, game);
             }
 
             return game;
@@ -80,28 +151,30 @@ namespace Bot.Core
 
         public async Task PhaseNightAsync(IBotInteractionContext context)
         {
-            await context.CreateDeferredResponseMessageAsync();
+            await context.DeferInteractionResponse();
 
-            var townLookup = context.Services.GetService<ITownLookup>();
-            var townRec = await townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
-
-            var client = context.Services.GetService<IBotClient>();
-            var town = await client.ResolveTownAsync(townRec);
-
-            var game = await CurrentGameAsync(context, town);
+            var game = await CurrentGameAsync(context);
             if(game == null)
             {
                 // TODO: more error reporting here?
+                await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
                 return;
             }
 
             // First. put storytellers into the top cottages
-            var cottages = town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
+            var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
             foreach(var st in game.StoryTellers)
             {
                 var c = cottages.ElementAt(0);
                 cottages.Remove(c);
-                await st.PlaceInAsync(c);
+                try
+                {
+                    await st.PlaceInAsync(c);
+                }
+                catch (UnauthorizedException)
+                { }
+                catch(NotFoundException)
+                { }
             }
 
             // Now put everyone else in the remaining cottages
@@ -121,20 +194,69 @@ namespace Bot.Core
 
             // TODO: set permissions on the cottages for each user (hopefully in a batch)
 
-            var system = context.Services.GetService<IBotSystem>();
-            var webhook = system.CreateWebhookBuilder();
-            webhook.WithContent("Moved all users from Town Square to Cottages!");
-            await context.EditResponseAsync(webhook);
+            await EditOriginalMessage(context, "Moved all players from Town Square to Cottages!");
+        }
+
+        // TODO: should this be a method on Game itself? :thinking:
+        // Helper for moving all players to Town Square (used by Day and Vote commands)
+        private async Task MoveActivePlayersToTownSquare(IGame game)
+        {
+            foreach (var member in game.AllPlayers)
+            {
+                try
+                {
+                    await member.PlaceInAsync(game.Town.TownSquare);
+                }
+                catch (UnauthorizedException)
+                { }
+                catch (NotFoundException)
+                { }
+            }
+        }
+
+        public async Task PhaseDayAsync(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var game = await CurrentGameAsync(context);
+            if(game == null)
+            {
+                // TODO: more error reporting here?
+                await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                return;
+            }
+
+            await MoveActivePlayersToTownSquare(game);
+
+            await EditOriginalMessage(context, "Moved all players from Cottages back to Town Square!");
+        }
+
+        public async Task PhaseVoteAsync(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var game = await CurrentGameAsync(context);
+            if(game == null)
+            {
+                // TODO: more error reporting here?
+                await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                return;
+            }
+
+            await MoveActivePlayersToTownSquare(game);
+
+            await EditOriginalMessage(context, "Moved all players to Town Square for voting!");
         }
 
         public async Task RunGameAsync(IBotInteractionContext context)
         {
             var system = context.Services.GetService<IBotSystem>();
-            await context.CreateDeferredResponseMessageAsync();
+            await context.DeferInteractionResponse();
 
             var webhook = system.CreateWebhookBuilder();
             webhook.WithContent("You just ran the Game command. Good for you!");
             await context.EditResponseAsync(webhook);
         }
+
     }
 }

@@ -15,5 +15,7 @@ namespace Bot.Api
 		public IReadOnlyCollection<IChannel> Channels { get; }
 
 		public int Position { get; }
+		
+		public bool IsVoice { get; }
 	}
 }

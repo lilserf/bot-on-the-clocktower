@@ -8,18 +8,6 @@ namespace Test.Bot.Core
 {
     public class TestNightPhase : GameTestBase
     {
-        [Fact]
-        public void PhaseNight_LooksUpTown()
-        {
-            BotGameplay gs = new();
-            var t = gs.PhaseNightAsync(InteractionContextMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-
-            TownLookupMock.Verify(x => x.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId)), Times.Once);
-            VerifyContext();
-        }
-
         [Theory]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
@@ -66,13 +54,28 @@ namespace Test.Bot.Core
         public void CurrentGame_RolesCorrect()
 		{
             BotGameplay gs = new();
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, TownMock.Object);
+            var t = gs.CurrentGameAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
             InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object), It.IsAny<string>()), Times.Once);
             Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object), It.IsAny<string>()), Times.Once);
             Villager2Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object), It.IsAny<string>()), Times.Once);
+		}
+
+        [Theory]
+        [InlineData(typeof(UnauthorizedException))]
+        [InlineData(typeof(NotFoundException))]
+        [InlineData(typeof(BadRequestException))]
+        [InlineData(typeof(ServerErrorException))]
+        public void CurrentGame_Exceptions(Type exceptionType)
+		{
+            Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>(), null)).ThrowsAsync(CreateException(exceptionType));
+
+            BotGameplay gs = new();
+            var t = gs.CurrentGameAsync(InteractionContextMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
 		}
     }
 }

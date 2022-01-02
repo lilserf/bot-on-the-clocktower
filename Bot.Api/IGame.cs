@@ -13,6 +13,7 @@ namespace Bot.Api
 		IList<IMember> StoryTellers { get; }
 
 		IList<IMember> Villagers { get; }
-
+		
+		IReadOnlyCollection<IMember> AllPlayers { get; }
 	}
 }

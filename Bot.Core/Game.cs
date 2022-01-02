@@ -18,6 +18,8 @@ namespace Bot.Core
 		public IList<IMember> Villagers => m_villagers;
 		List<IMember> m_villagers;
 
+		public IReadOnlyCollection<IMember> AllPlayers => StoryTellers.Concat(Villagers).ToList();
+
 		public Game(ITown town)
 		{
 			m_town = town;

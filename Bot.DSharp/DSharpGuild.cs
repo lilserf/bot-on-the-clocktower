@@ -25,5 +25,18 @@ namespace Bot.DSharp
 				m_roles[k] = new DSharpRole(v);
 			}
 		}
+		public override bool Equals(object? other)
+		{
+			if (other is DSharpGuild d)
+			{
+				return Wrapped.Equals(d?.Wrapped);
+			}
+			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return Wrapped.GetHashCode();
+		}
 	}
 }

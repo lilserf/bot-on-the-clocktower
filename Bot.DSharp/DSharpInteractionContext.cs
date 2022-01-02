@@ -26,7 +26,7 @@ namespace Bot.DSharp
         public IChannel Channel => m_channel;
         public IMember Member => m_member;
 
-        public Task CreateDeferredResponseMessageAsync() => m_wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        public Task DeferInteractionResponse() => m_wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
         public Task EditResponseAsync(IBotWebhookBuilder webhookBuilder)
         {
