@@ -60,5 +60,25 @@ namespace Test.Bot.Core
             mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(thrownException.StackTrace!))), Times.Once);
             mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(@"https://github.com/lilserf/bot-on-the-clocktower/issues"))), Times.Once);
         }
+
+        [Fact]
+        public void InteractionWrapper_UnhandledException_ExceptionSendingToAuthor_ContinuesAnyway()
+        {
+            Mock<IMember> mockAuthor = new();
+            Mock<IBotInteractionContext> mockContext = new();
+
+            mockContext.SetupGet(c => c.Member).Returns(mockAuthor.Object);
+
+            mockAuthor.Setup(m => m.SendMessageAsync(It.IsAny<string>())).ThrowsAsync(new ApplicationException());
+
+            Mock<Func<IProcessLogger, Task>> mockFunc = new();
+
+            var thrownException = new ApplicationException();
+            mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
+
+            var t = InteractionWrapper.TryProcessReportingErrors(mockContext.Object, mockFunc.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+        }
     }
 }

@@ -15,7 +15,12 @@ namespace Bot.Core
             }
             catch (Exception e)
             {
-                await context.Member.SendMessageAsync($"Bot on the Clocktower encountered an error.\nPlease consider reporting the error at https://github.com/lilserf/bot-on-the-clocktower/issues\n\n{e.Message}\nStack trace:\n{e.StackTrace}");
+                try
+                {
+                    await context.Member.SendMessageAsync($"Bot on the Clocktower encountered an error.\nPlease consider reporting the error at https://github.com/lilserf/bot-on-the-clocktower/issues\n\n{e.Message}\nStack trace:\n{e.StackTrace}");
+                }
+                catch (Exception)
+                { }
             }
         }
     }
