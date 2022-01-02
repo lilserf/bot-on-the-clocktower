@@ -20,7 +20,7 @@ namespace Test.Bot.Core
         {
             var sp = ServiceFactory.RegisterServices(null);
 
-            var gs = sp.GetService<IBotGameService>();
+            var gs = sp.GetService<IBotGameplay>();
             Assert.IsType<BotGameService>(gs);
         }
 

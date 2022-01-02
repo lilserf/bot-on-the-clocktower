@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public class BotGameService : IBotGameService
+    public class BotGameplay : IBotGameplay
     {
         // TODO: we probably need a more robust system that can queue up multiple lines of errors without returning, then report them all?
         public async Task ReportException(IBotInteractionContext context, Exception ex, string goal)

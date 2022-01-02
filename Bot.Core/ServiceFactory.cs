@@ -9,7 +9,7 @@ namespace Bot.Core
         public static IServiceProvider RegisterServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
-            sp.AddService<IBotGameService>(new BotGameService());
+            sp.AddService<IBotGameplay>(new BotGameplay());
             return sp;
         }
     }
