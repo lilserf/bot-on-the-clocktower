@@ -28,7 +28,7 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public void MoveMemberToChannel_NoException_NoLoggerCalls()
+        public void MoveToChannel_NoException_NoLoggerCalls()
         {
             MemberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Returns(Task.CompletedTask);
 
@@ -45,7 +45,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(NotFoundException))]
         [InlineData(typeof(BadRequestException))]
         [InlineData(typeof(ServerErrorException))]
-        public void MoveMemberToChannel_ThrowsException_LoggerUpdated(Type exceptionType)
+        public void MoveToChannel_ThrowsException_LoggerUpdated(Type exceptionType)
         {
             var thrownException = CreateException(exceptionType);
             MemberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
@@ -118,6 +118,39 @@ namespace Test.Bot.Core
             Assert.False(t.Result);
 
             ProcessLoggerMock.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains(MockMemberName) && s.Contains(MockRoleName))), Times.Once);
+        }
+
+        [Fact]
+        public void MoveToChannel_UnhandledExceptopn_Throws()
+        {
+            MemberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(new ApplicationException());
+
+            var t = Assert.ThrowsAsync<ApplicationException>(() => MemberHelper.MoveToChannelLoggingErrorsAsync(MemberMock.Object, ChannelMock.Object, ProcessLoggerMock.Object));
+
+            t.Wait(5);
+            Assert.True(t.IsCompleted);
+        }
+
+        [Fact]
+        public void GrantRole_UnhandledExceptopn_Throws()
+        {
+            MemberMock.Setup(m => m.GrantRoleAsync(It.IsAny<IRole>())).ThrowsAsync(new ApplicationException());
+
+            var t = Assert.ThrowsAsync<ApplicationException>(() => MemberHelper.GrantRoleLoggingErrorsAsync(MemberMock.Object, RoleMock.Object, ProcessLoggerMock.Object));
+
+            t.Wait(5);
+            Assert.True(t.IsCompleted);
+        }
+
+        [Fact]
+        public void RevokeRole_UnhandledExceptopn_Throws()
+        {
+            MemberMock.Setup(m => m.RevokeRoleAsync(It.IsAny<IRole>())).ThrowsAsync(new ApplicationException());
+
+            var t = Assert.ThrowsAsync<ApplicationException>(() => MemberHelper.RevokeRoleLoggingErrorsAsync(MemberMock.Object, RoleMock.Object, ProcessLoggerMock.Object));
+
+            t.Wait(5);
+            Assert.True(t.IsCompleted);
         }
     }
 }
