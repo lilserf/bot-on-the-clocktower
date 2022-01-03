@@ -95,12 +95,12 @@ namespace Test.Bot.Core
         private static void SetupChannelMock(Mock<IChannel> channel)
         {
             channel.SetupGet(c => c.Users).Returns(new IMember[] { });
-            channel.Setup(c => c.Equals((object)channel.Object)).Returns(true);
+            channel.Setup(c => c.Equals(channel.Object)).Returns(true);
         }
 
         private static void SetupUserMock(Mock<IMember> member, string name)
 		{
-            member.Setup(c => c.Equals((object)member.Object)).Returns(true);
+            member.Setup(c => c.Equals(member.Object)).Returns(true);
             member.SetupGet(x => x.DisplayName).Returns(name);
         }
 

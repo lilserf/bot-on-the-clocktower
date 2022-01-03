@@ -1,19 +1,27 @@
-﻿using Bot.Core;
+﻿using Bot.Api;
+using Bot.Core;
+using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Test.Bot.Core
 {
-	class TestDayPhase : GameTestBase
+    public class TestDayPhase : GameTestBase
 	{
-		public void TestDay()
+		[Fact]
+		public void TestDay_Completes()
 		{
 			BotGameplay gs = new();
 			var t = gs.PhaseDayAsync(InteractionContextMock.Object);
+			t.Wait(50);
+			Assert.True(t.IsCompleted);
+		}
+
+		[Fact]
+		public void TestVote_Completes()
+		{
+			BotGameplay gs = new();
+			var t = gs.PhaseVoteAsync(InteractionContextMock.Object);
 			t.Wait(50);
 			Assert.True(t.IsCompleted);
 		}

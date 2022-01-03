@@ -2,6 +2,8 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
 
@@ -36,6 +38,34 @@ namespace Test.Bot.Core
             InteractionContextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == WebhookBuilderMock.Object)), Times.Once);
 
             VerifyContext();
+        }
+
+        [Fact]
+        public void Night_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.PhaseNightAsync(context));
+
+        [Fact]
+        public void Day_UnhandledException_NotifiesAuthorOfException() =>   TestUnhandledExceptionForCommand((bg, context) => bg.PhaseDayAsync(context));
+
+        [Fact]
+        public void Vote_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.PhaseVoteAsync(context));
+
+        [Fact]
+        public void Game_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.RunGameAsync(context));
+
+        private void TestUnhandledExceptionForCommand(Func<BotGameplay, IBotInteractionContext, Task> gameCommandTestFunc)
+        {
+            var thrownException = new ApplicationException();
+
+            // Could add other exceptions here for other types of commands, if needed
+            Villager1Mock.Setup(m => m.PlaceInAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
+            BotSystemMock.Setup(s => s.CreateWebhookBuilder()).Throws(thrownException);
+
+            BotGameplay gs = new();
+            var t = gameCommandTestFunc(gs, InteractionContextMock.Object);
+            t.Wait(5);
+            Assert.True(t.IsCompleted);
+
+            InteractionAuthorMock.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(thrownException.GetType().Name))), Times.Once);
         }
     }
 }

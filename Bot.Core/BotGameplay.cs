@@ -8,37 +8,38 @@ namespace Bot.Core
     public class BotGameplay : IBotGameplay
     {
         // TODO: we probably need a more robust system that can queue up multiple lines of errors without returning, then report them all?
-        public async Task ReportException(IBotInteractionContext context, Exception ex, string goal)
+        // This could be what IProcessLogger does
+        private static Task ReportExceptionAsync(IBotInteractionContext context, Exception ex, string goal)
         {
             string message = $"Couldn't {goal} due to unknown error!";
-            if (ex is UnauthorizedException uex)
+            if (ex is UnauthorizedException)
             {
                 message = $"Couldn't {goal} due to lack of permissions.";
             }
-            else if(ex is ServerErrorException sex) // teehee
+            else if(ex is ServerErrorException) // teehee
             {
                 message = $"Couldn't {goal} due to a server error.";
             }
-            else if(ex is RequestSizeException rex) // grrr
+            else if(ex is RequestSizeException) // grrr
             {
                 message = $"Couldn't {goal} due to bad request size?";
             }
-            else if(ex is RateLimitException rlex) // nice watch
+            else if(ex is RateLimitException) // nice watch
             {
                 message = $"Couldn't {goal} due to rate limits.";
             }
-            else if (ex is BadRequestException brex) // no more common market
+            else if (ex is BadRequestException) // no more common market
             {
                 message = $"Couldn't {goal} - somehow resulted in a bad request.";
             }
-            else if (ex is NotFoundException nfex) // can't think of something clever here
+            else if (ex is NotFoundException) // can't think of something clever here
             {
                 message = $"Couldn't {goal} - something was not found!";
             }
 
             var system = context.Services.GetService<IBotSystem>();
             var webhook = system.CreateWebhookBuilder().WithContent(message);
-            await context.EditResponseAsync(webhook);
+            return context.EditResponseAsync(webhook);
         }
 
         // Helper that tries to grant a role, and sends a message if that failed
@@ -51,7 +52,7 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
-                await ReportException(context, ex, $"grant role '{role.Name}' to {member.DisplayName}");
+                await ReportExceptionAsync(context, ex, $"grant role '{role.Name}' to {member.DisplayName}");
                 return false;
             }
         }
@@ -65,7 +66,7 @@ namespace Bot.Core
 			}
             catch(Exception ex)
 			{
-                await ReportException(context, ex, $"revoke role '{role.Name}' from {member.DisplayName}");
+                await ReportExceptionAsync(context, ex, $"revoke role '{role.Name}' from {member.DisplayName}");
                 return false;
             }
         }
@@ -153,48 +154,51 @@ namespace Bot.Core
         {
             await context.DeferInteractionResponse();
 
-            var game = await CurrentGameAsync(context);
-            if(game == null)
+            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                // TODO: more error reporting here?
-                await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
-                return;
-            }
-
-            // First. put storytellers into the top cottages
-            var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-            foreach(var st in game.StoryTellers)
-            {
-                var c = cottages.ElementAt(0);
-                cottages.Remove(c);
-                try
+                var game = await CurrentGameAsync(context);
+                if (game == null)
                 {
-                    await st.PlaceInAsync(c);
+                    // TODO: more error reporting here? Could make use of use processLog!
+                    await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                    return;
                 }
-                catch (UnauthorizedException)
-                { }
-                catch(NotFoundException)
-                { }
-            }
 
-            // Now put everyone else in the remaining cottages
-            var pairs = cottages.Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u));
-
-            foreach(var (cottage, user) in pairs)
-            {
-                try
+                // First. put storytellers into the top cottages
+                var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
+                foreach (var st in game.StoryTellers)
                 {
-                    await user.PlaceInAsync(cottage);
+                    var c = cottages.ElementAt(0);
+                    cottages.Remove(c);
+                    try
+                    {
+                        await st.PlaceInAsync(c);
+                    }
+                    catch (UnauthorizedException)
+                    { }
+                    catch (NotFoundException)
+                    { }
                 }
-                catch (UnauthorizedException)
-                { }
-                catch (NotFoundException)
-                { }
-            }
 
-            // TODO: set permissions on the cottages for each user (hopefully in a batch)
+                // Now put everyone else in the remaining cottages
+                var pairs = cottages.Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u));
 
-            await EditOriginalMessage(context, "Moved all players from Town Square to Cottages!");
+                foreach (var (cottage, user) in pairs)
+                {
+                    try
+                    {
+                        await user.PlaceInAsync(cottage);
+                    }
+                    catch (UnauthorizedException)
+                    { }
+                    catch (NotFoundException)
+                    { }
+                }
+
+                // TODO: set permissions on the cottages for each user (hopefully in a batch)
+
+                await EditOriginalMessage(context, "Moved all players from Town Square to Cottages!");
+            });
         }
 
         // TODO: should this be a method on Game itself? :thinking:
@@ -218,45 +222,55 @@ namespace Bot.Core
         {
             await context.DeferInteractionResponse();
 
-            var game = await CurrentGameAsync(context);
-            if(game == null)
+            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                // TODO: more error reporting here?
-                await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
-                return;
-            }
+                var game = await CurrentGameAsync(context);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                    return;
+                }
 
-            await MoveActivePlayersToTownSquare(game);
+                await MoveActivePlayersToTownSquare(game);
 
-            await EditOriginalMessage(context, "Moved all players from Cottages back to Town Square!");
+                await EditOriginalMessage(context, "Moved all players from Cottages back to Town Square!");
+            });
         }
 
         public async Task PhaseVoteAsync(IBotInteractionContext context)
         {
-            await context.DeferInteractionResponse();
-
-            var game = await CurrentGameAsync(context);
-            if(game == null)
+            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                // TODO: more error reporting here?
-                await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
-                return;
-            }
+                await context.DeferInteractionResponse();
 
-            await MoveActivePlayersToTownSquare(game);
+                var game = await CurrentGameAsync(context);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                    return;
+                }
 
-            await EditOriginalMessage(context, "Moved all players to Town Square for voting!");
+                await MoveActivePlayersToTownSquare(game);
+
+                await EditOriginalMessage(context, "Moved all players to Town Square for voting!");
+            });
         }
 
         public async Task RunGameAsync(IBotInteractionContext context)
         {
-            var system = context.Services.GetService<IBotSystem>();
             await context.DeferInteractionResponse();
 
-            var webhook = system.CreateWebhookBuilder();
-            webhook.WithContent("You just ran the Game command. Good for you!");
-            await context.EditResponseAsync(webhook);
-        }
+            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var system = context.Services.GetService<IBotSystem>();
 
+                var webhook = system.CreateWebhookBuilder();
+
+                webhook.WithContent("You just ran the Game command. Good for you!");
+                await context.EditResponseAsync(webhook);
+            });
+        }
     }
 }
