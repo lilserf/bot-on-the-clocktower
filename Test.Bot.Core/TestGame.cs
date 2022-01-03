@@ -32,6 +32,8 @@ namespace Test.Bot.Core
             BotGameplay gs = new();
 
             var t = gs.RunGameAsync(InteractionContextMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
 
             BotSystemMock.Verify(c => c.CreateWebhookBuilder(), Times.Once);
             WebhookBuilderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
@@ -57,7 +59,7 @@ namespace Test.Bot.Core
             var thrownException = new ApplicationException();
 
             // Could add other exceptions here for other types of commands, if needed
-            Villager1Mock.Setup(m => m.PlaceInAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
+            Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>(), It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
             BotSystemMock.Setup(s => s.CreateWebhookBuilder()).Throws(thrownException);
 
             BotGameplay gs = new();

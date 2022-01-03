@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
@@ -20,5 +21,9 @@ namespace Bot.DSharp
 		public int Position => Wrapped.Position;
 
 		public bool IsVoice => Wrapped.Type == DSharpPlus.ChannelType.Voice;
+
+		public string Name => Wrapped.Name;
+
+		public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);
 	}
 }

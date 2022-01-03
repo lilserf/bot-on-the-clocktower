@@ -7,6 +7,8 @@ namespace Bot.DSharp
 {
     public class DSharpMember : DiscordWrapper<DiscordMember>, IMember
 	{
+		private const string AUDIT_REASON = "Playing Blood on the Clocktower";
+
 		public string DisplayName => Wrapped.DisplayName;
 		public bool IsBot => Wrapped.IsBot;
 
@@ -14,27 +16,59 @@ namespace Bot.DSharp
 			: base(wrapped)
 		{}
 
-		public Task PlaceInAsync(IChannel c)
+		public async Task<bool> MoveToChannelAsync(IChannel c, IProcessLogger logger)
 		{
 			if (c is DSharpChannel chan)
-				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
+			{
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
+					return true;
+				}
+				catch (Exception ex)
+				{
+					logger.LogException(ex, $"move {DisplayName} to channel {chan.Name}");
+					return false;
+				}
+			}
 
 			throw new InvalidOperationException("Passed an incorrect IChannel type");
 		}
 
-		public Task GrantRoleAsync(IRole r, string? reason = null)
+		public async Task<bool> GrantRoleAsync(IRole r, IProcessLogger logger)
 		{
 			if (r is DSharpRole role)
-				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, reason));
+			{
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
+					return true;
+				}
+				catch (Exception ex)
+				{
+					logger.LogException(ex, $"grant role '{role.Name}' to {DisplayName}");
+					return false;
+				}
+			}
 
 			throw new InvalidOperationException("Passed an incorrect IRole type");
 		}
 
-		public Task RevokeRoleAsync(IRole r, string? reason = null)
+		public async Task<bool> RevokeRoleAsync(IRole r, IProcessLogger logger)
 		{
 			if (r is DSharpRole role)
-				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, reason));
-
+			{
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
+					return true;
+				}
+				catch(Exception ex)
+				{
+					logger.LogException(ex, $"revoke role '{role.Name}' from {DisplayName}");
+					return false;
+				}
+			}
 			throw new InvalidOperationException("Passed an incorrect IRole type");
 		}
 

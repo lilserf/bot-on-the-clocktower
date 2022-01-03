@@ -1,5 +1,7 @@
 ﻿using Bot.Api;
+using Bot.Core;
 using Moq;
+using System;
 using Test.Bot.Base;
 
 namespace Test.Bot.Core
@@ -38,11 +40,15 @@ namespace Test.Bot.Core
 
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
         protected readonly Mock<IActiveGameService> ActiveGameServiceMock = new();
+        protected readonly Mock<IProcessLogger> ProcessLoggerMock = new();
 
         public GameTestBase()
         {
             Mock<IBotWebhookBuilder> builderMock = new();
             BotSystemMock.Setup(c => c.CreateWebhookBuilder()).Returns(WebhookBuilderMock.Object);
+
+            // WithContent returns the mock again so you can chain calls
+            WebhookBuilderMock.Setup(c => c.WithContent(It.IsAny<string>())).Returns(WebhookBuilderMock.Object);
 
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
@@ -56,6 +62,8 @@ namespace Test.Bot.Core
             // By default, the ActiveGameService won't find a game for this context
             IGame? defaultGame = null;
             ActiveGameServiceMock.Setup(a => a.TryGetGame(It.IsAny<IBotInteractionContext>(), out defaultGame)).Returns(false);
+
+            ProcessLoggerMock.Setup(c => c.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
             ControlChannelMock.SetupGet(x => x.Id).Returns(MockChannelId);

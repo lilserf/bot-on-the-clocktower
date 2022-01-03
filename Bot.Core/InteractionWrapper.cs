@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -15,11 +16,28 @@ namespace Bot.Core
             }
             catch (Exception e)
             {
-                await TrySendMessageToAuthorAsync(context, e);
+                await TrySendExceptionToAuthorAsync(context, e);
             }
+
+            if(logger.HasMessages)
+			{
+                await TrySendMessagesToChannelAsync(context, logger.Messages);
+			}
         }
 
-        private static async Task TrySendMessageToAuthorAsync(IBotInteractionContext context, Exception e)
+        // TODO: edit the interaction response instead?
+        private static async Task TrySendMessagesToChannelAsync(IBotInteractionContext context, IReadOnlyCollection<string> messages)
+		{
+            try
+			{
+                string fullMsg = string.Join("\n", messages);
+                await context.Channel.SendMessageAsync(fullMsg);
+			}
+            catch(Exception)
+            { }
+		}
+
+        private static async Task TrySendExceptionToAuthorAsync(IBotInteractionContext context, Exception e)
         {
             try
             {

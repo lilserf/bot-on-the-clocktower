@@ -16,7 +16,7 @@ namespace Test.Bot.Core
             Mock<IMember> memberMock = new();
             TownSquareMock.SetupGet(c => c.Users).Returns(new[] { memberMock.Object });
 
-            memberMock.Setup(m => m.PlaceInAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
+            memberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>(), It.IsAny<IProcessLogger>())).ThrowsAsync(CreateException(exceptionType));
 
             BotGameplay gs = new();
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
@@ -38,9 +38,9 @@ namespace Test.Bot.Core
             // Alice (Villager2) should go in Cottage2
             // Bot (Villager1) should go in Cottage3
 
-            InteractionAuthorMock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
-            Villager2Mock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object)), Times.Once);
-            Villager1Mock.Verify(v => v.PlaceInAsync(It.Is<IChannel>(c => c == Cottage3Mock.Object)), Times.Once);
+            InteractionAuthorMock.Verify(v => v.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object), It.IsAny<IProcessLogger>()), Times.Once);
+            Villager2Mock.Verify(v => v.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object), It.IsAny<IProcessLogger>()), Times.Once);
+            Villager1Mock.Verify(v => v.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage3Mock.Object), It.IsAny<IProcessLogger>()), Times.Once);
 
             VerifyContext();
         }
@@ -54,26 +54,26 @@ namespace Test.Bot.Core
         public void CurrentGame_RolesCorrect()
 		{
             BotGameplay gs = new();
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object);
+            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object), It.IsAny<string>()), Times.Once);
-            Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object), It.IsAny<string>()), Times.Once);
-            Villager2Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object), It.IsAny<string>()), Times.Once);
+            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object), It.IsAny<IProcessLogger>()), Times.Once);
+            Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object), It.IsAny<IProcessLogger>()), Times.Once);
+            Villager2Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object), It.IsAny<IProcessLogger>()), Times.Once);
 		}
 
-        [Theory]
+        [Theory(Skip = "Out of date - GrantRoleAsync is now a 'safe' method that itself catches internal exceptions and logs them")]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
         [InlineData(typeof(BadRequestException))]
         [InlineData(typeof(ServerErrorException))]
         public void CurrentGame_Exceptions(Type exceptionType)
 		{
-            Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>(), null)).ThrowsAsync(CreateException(exceptionType));
+            Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>(), It.IsAny<IProcessLogger>())).ThrowsAsync(CreateException(exceptionType));
 
             BotGameplay gs = new();
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object);
+            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 		}

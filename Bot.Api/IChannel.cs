@@ -17,5 +17,9 @@ namespace Bot.Api
 		public int Position { get; }
 		
 		public bool IsVoice { get; }
+
+		public string Name { get; }
+
+		public Task SendMessageAsync(string msg);
 	}
 }

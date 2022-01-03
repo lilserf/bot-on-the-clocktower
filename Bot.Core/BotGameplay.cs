@@ -7,71 +7,9 @@ namespace Bot.Core
 {
     public class BotGameplay : IBotGameplay
     {
-        // TODO: we probably need a more robust system that can queue up multiple lines of errors without returning, then report them all?
-        // This could be what IProcessLogger does
-        private static Task ReportExceptionAsync(IBotInteractionContext context, Exception ex, string goal)
-        {
-            string message = $"Couldn't {goal} due to unknown error!";
-            if (ex is UnauthorizedException)
-            {
-                message = $"Couldn't {goal} due to lack of permissions.";
-            }
-            else if(ex is ServerErrorException) // teehee
-            {
-                message = $"Couldn't {goal} due to a server error.";
-            }
-            else if(ex is RequestSizeException) // grrr
-            {
-                message = $"Couldn't {goal} due to bad request size?";
-            }
-            else if(ex is RateLimitException) // nice watch
-            {
-                message = $"Couldn't {goal} due to rate limits.";
-            }
-            else if (ex is BadRequestException) // no more common market
-            {
-                message = $"Couldn't {goal} - somehow resulted in a bad request.";
-            }
-            else if (ex is NotFoundException) // can't think of something clever here
-            {
-                message = $"Couldn't {goal} - something was not found!";
-            }
-
-            var system = context.Services.GetService<IBotSystem>();
-            var webhook = system.CreateWebhookBuilder().WithContent(message);
-            return context.EditResponseAsync(webhook);
-        }
-
-        // Helper that tries to grant a role, and sends a message if that failed
-        private async Task<bool> GrantRoleAsync(IBotInteractionContext context, IMember member, IRole role)
-        {
-            try
-            {
-                await member.GrantRoleAsync(role);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await ReportExceptionAsync(context, ex, $"grant role '{role.Name}' to {member.DisplayName}");
-                return false;
-            }
-        }
-
-        private async Task<bool> RevokeRoleAsync(IBotInteractionContext context, IMember member, IRole role)
-		{
-			try
-			{
-                await member.RevokeRoleAsync(role);
-                return true;
-			}
-            catch(Exception ex)
-			{
-                await ReportExceptionAsync(context, ex, $"revoke role '{role.Name}' from {member.DisplayName}");
-                return false;
-            }
-        }
 
         // Helper for editing the original interaction with a summarizing message when finished
+        // TODO: move within IBotInteractionContext
         private async Task EditOriginalMessage(IBotInteractionContext context, string s)
         {
             var system = context.Services.GetService<IBotSystem>();
@@ -80,7 +18,7 @@ namespace Bot.Core
         }
 
         // TODO: better name for this method, probably
-        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context)
+        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
             var ags = context.Services.GetService<IActiveGameService>();
 
@@ -107,12 +45,12 @@ namespace Bot.Core
 
                 foreach(var p in newPlayers)
 				{
-                    await GrantRoleAsync(context, p, game.Town.VillagerRole);
+                    await p.GrantRoleAsync(game.Town.VillagerRole, logger);
                     game.Villagers.Add(p);
 				}
                 foreach(var p in oldPlayers)
 				{
-                    await RevokeRoleAsync(context, p, game.Town.VillagerRole);
+                    await p.RevokeRoleAsync(game.Town.VillagerRole, logger);
                     game.Villagers.Remove(p);
                 }
 
@@ -131,7 +69,7 @@ namespace Bot.Core
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
 
-                await GrantRoleAsync(context, storyteller, town.StoryTellerRole);
+                await storyteller.GrantRoleAsync(town.StoryTellerRole, logger);
                 game.StoryTellers.Add(storyteller);
 
                 var allUsers = town.TownSquare.Users.ToList();
@@ -140,7 +78,7 @@ namespace Bot.Core
                 // Make everyone else a villager
                 foreach (var v in allUsers)
                 {
-                    await GrantRoleAsync(context, v, town.VillagerRole);
+                    await v.GrantRoleAsync(town.VillagerRole, logger);
                     game.Villagers.Add(v);
                 }
 
@@ -156,7 +94,7 @@ namespace Bot.Core
 
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                var game = await CurrentGameAsync(context);
+                var game = await CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
@@ -170,14 +108,7 @@ namespace Bot.Core
                 {
                     var c = cottages.ElementAt(0);
                     cottages.Remove(c);
-                    try
-                    {
-                        await st.PlaceInAsync(c);
-                    }
-                    catch (UnauthorizedException)
-                    { }
-                    catch (NotFoundException)
-                    { }
+                    await st.MoveToChannelAsync(c, processLog);
                 }
 
                 // Now put everyone else in the remaining cottages
@@ -185,14 +116,7 @@ namespace Bot.Core
 
                 foreach (var (cottage, user) in pairs)
                 {
-                    try
-                    {
-                        await user.PlaceInAsync(cottage);
-                    }
-                    catch (UnauthorizedException)
-                    { }
-                    catch (NotFoundException)
-                    { }
+                    await user.MoveToChannelAsync(cottage, processLog);
                 }
 
                 // TODO: set permissions on the cottages for each user (hopefully in a batch)
@@ -203,18 +127,11 @@ namespace Bot.Core
 
         // TODO: should this be a method on Game itself? :thinking:
         // Helper for moving all players to Town Square (used by Day and Vote commands)
-        private async Task MoveActivePlayersToTownSquare(IGame game)
+        private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
         {
             foreach (var member in game.AllPlayers)
             {
-                try
-                {
-                    await member.PlaceInAsync(game.Town.TownSquare);
-                }
-                catch (UnauthorizedException)
-                { }
-                catch (NotFoundException)
-                { }
+                await member.MoveToChannelAsync(game.Town.TownSquare, logger);
             }
         }
 
@@ -224,7 +141,7 @@ namespace Bot.Core
 
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                var game = await CurrentGameAsync(context);
+                var game = await CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here?
@@ -232,7 +149,7 @@ namespace Bot.Core
                     return;
                 }
 
-                await MoveActivePlayersToTownSquare(game);
+                await MoveActivePlayersToTownSquare(game, processLog);
 
                 await EditOriginalMessage(context, "Moved all players from Cottages back to Town Square!");
             });
@@ -244,7 +161,7 @@ namespace Bot.Core
             {
                 await context.DeferInteractionResponse();
 
-                var game = await CurrentGameAsync(context);
+                var game = await CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here?
@@ -252,7 +169,7 @@ namespace Bot.Core
                     return;
                 }
 
-                await MoveActivePlayersToTownSquare(game);
+                await MoveActivePlayersToTownSquare(game, processLog);
 
                 await EditOriginalMessage(context, "Moved all players to Town Square for voting!");
             });
@@ -260,16 +177,11 @@ namespace Bot.Core
 
         public async Task RunGameAsync(IBotInteractionContext context)
         {
-            await context.DeferInteractionResponse();
-
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                var system = context.Services.GetService<IBotSystem>();
+                await context.DeferInteractionResponse();
 
-                var webhook = system.CreateWebhookBuilder();
-
-                webhook.WithContent("You just ran the Game command. Good for you!");
-                await context.EditResponseAsync(webhook);
+                await EditOriginalMessage(context, "You just ran the Game command. Good for you!");
             });
         }
     }
