@@ -52,10 +52,19 @@ namespace Bot.DSharp
                 return Task.CompletedTask;
             };
 
+			m_discord.ComponentInteractionCreated += ComponentInteractionCreated;
+
             await m_discord.ConnectAsync();
 
             await readyTcs.Task;
         }
+
+		private async Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
+		{
+            // TODO: a registry of some sort so that BotGameplay can register buttons and lambdas to call when they're pushed
+            var builder = new DiscordInteractionResponseBuilder().WithContent("You clicked on my button. Congratulations!");
+            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, builder);
+		}
 
 		public async Task<IChannel> GetChannelAsync(ulong id)
 		{

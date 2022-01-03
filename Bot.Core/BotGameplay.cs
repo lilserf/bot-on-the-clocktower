@@ -181,7 +181,12 @@ namespace Bot.Core
             {
                 await context.DeferInteractionResponse();
 
-                await EditOriginalMessage(context, "You just ran the Game command. Good for you!");
+                var system = context.Services.GetService<IBotSystem>();
+                var testButton = system.CreateButton("test_id", "Test Button!");
+
+                var webhook = system.CreateWebhookBuilder().WithContent("You just ran the Game command. Good for you!");
+                webhook = webhook.AddComponents(testButton);
+                await context.EditResponseAsync(webhook);
             });
         }
     }

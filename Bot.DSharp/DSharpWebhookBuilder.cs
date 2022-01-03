@@ -1,23 +1,30 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 using System;
+using System.Linq;
 
 namespace Bot.DSharp
 {
-    public class DSharpWebhookBuilder : IBotWebhookBuilder
+    public class DSharpWebhookBuilder : DiscordWrapper<DiscordWebhookBuilder>, IBotWebhookBuilder
     {
-        public DiscordWebhookBuilder Wrapped => m_wrapped;
-        private readonly DiscordWebhookBuilder m_wrapped;
-
         public DSharpWebhookBuilder(DiscordWebhookBuilder wrapped)
+            : base(wrapped)
         {
-            m_wrapped = wrapped;
         }
 
         public IBotWebhookBuilder WithContent(string content)
         {
-            var w2 = m_wrapped.WithContent(content);
-            if (w2 != m_wrapped) throw new ApplicationException("Unexpected chained call did not return itself");
+            var w2 = Wrapped.WithContent(content);
+            if (w2 != Wrapped) throw new ApplicationException("Unexpected chained call did not return itself");
+            return this;
+        }
+
+        public IBotWebhookBuilder AddComponents(params IComponent[] components)
+        {
+            if (!components.All(x => x is DSharpComponent)) throw new InvalidOperationException("Unexpected type of IComponent!");
+            var realComponents = components.Cast<DSharpComponent>().Select(x => x.Wrapped);
+            var w2 = Wrapped.AddComponents(realComponents);
+            if (w2 != Wrapped) throw new ApplicationException("Unexpected chained call did not return itself");
             return this;
         }
     }

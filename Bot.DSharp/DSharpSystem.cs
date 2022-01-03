@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Base;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using System;
 
@@ -15,5 +16,9 @@ namespace Bot.DSharp
         }
 
         public IBotWebhookBuilder CreateWebhookBuilder() => new DSharpWebhookBuilder(new DiscordWebhookBuilder());
+
+        // TODO: allow for selection of a button style
+        public IComponent CreateButton(string customId, string label, bool disabled=false) 
+            => new DSharpComponent(new DiscordButtonComponent(ButtonStyle.Primary, customId, label, disabled));
 	}
 }

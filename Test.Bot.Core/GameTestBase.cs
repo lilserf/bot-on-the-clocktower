@@ -49,6 +49,7 @@ namespace Test.Bot.Core
 
             // WithContent returns the mock again so you can chain calls
             WebhookBuilderMock.Setup(c => c.WithContent(It.IsAny<string>())).Returns(WebhookBuilderMock.Object);
+            WebhookBuilderMock.Setup(c => c.AddComponents(It.IsAny<IComponent[]>())).Returns(WebhookBuilderMock.Object);
 
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
