@@ -4,13 +4,12 @@ namespace Bot.Api
 {
     public interface IMember
 	{
-		Task<bool> MoveToChannelAsync(IChannel c, IProcessLogger logger);
+		Task MoveToChannelAsync(IChannel c);
 
-		Task<bool> GrantRoleAsync(IRole role, IProcessLogger logger);
+		Task GrantRoleAsync(IRole role);
 
-		Task<bool> RevokeRoleAsync(IRole role, IProcessLogger logger);
+		Task RevokeRoleAsync(IRole role);
 
-		// TODO: this should probably also take an IProcessLogger
 		Task<IMessage> SendMessageAsync(string content);
 
 		public string DisplayName { get; }

@@ -45,12 +45,12 @@ namespace Bot.Core
 
                 foreach(var p in newPlayers)
 				{
-                    await p.GrantRoleAsync(game.Town.VillagerRole, logger);
+                    await MemberHelper.GrantRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
                     game.Villagers.Add(p);
 				}
                 foreach(var p in oldPlayers)
 				{
-                    await p.RevokeRoleAsync(game.Town.VillagerRole, logger);
+                    await MemberHelper.RevokeRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
                     game.Villagers.Remove(p);
                 }
 
@@ -69,7 +69,7 @@ namespace Bot.Core
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
 
-                await storyteller.GrantRoleAsync(town.StoryTellerRole, logger);
+                await MemberHelper.GrantRoleLoggingErrorsAsync(storyteller, town.StoryTellerRole, logger);
                 game.StoryTellers.Add(storyteller);
 
                 var allUsers = town.TownSquare.Users.ToList();
@@ -78,7 +78,7 @@ namespace Bot.Core
                 // Make everyone else a villager
                 foreach (var v in allUsers)
                 {
-                    await v.GrantRoleAsync(town.VillagerRole, logger);
+                    await MemberHelper.GrantRoleLoggingErrorsAsync(v, town.VillagerRole, logger);
                     game.Villagers.Add(v);
                 }
 
@@ -108,7 +108,7 @@ namespace Bot.Core
                 {
                     var c = cottages.ElementAt(0);
                     cottages.Remove(c);
-                    await st.MoveToChannelAsync(c, processLog);
+                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
                 }
 
                 // Now put everyone else in the remaining cottages
@@ -116,7 +116,7 @@ namespace Bot.Core
 
                 foreach (var (cottage, user) in pairs)
                 {
-                    await user.MoveToChannelAsync(cottage, processLog);
+                    await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
                 }
 
                 // TODO: set permissions on the cottages for each user (hopefully in a batch)
@@ -131,7 +131,7 @@ namespace Bot.Core
         {
             foreach (var member in game.AllPlayers)
             {
-                await member.MoveToChannelAsync(game.Town.TownSquare, logger);
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare, logger);
             }
         }
 

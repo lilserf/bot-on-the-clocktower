@@ -16,60 +16,29 @@ namespace Bot.DSharp
 			: base(wrapped)
 		{}
 
-		public async Task<bool> MoveToChannelAsync(IChannel c, IProcessLogger logger)
+		public async Task MoveToChannelAsync(IChannel c)
 		{
-			if (c is DSharpChannel chan)
-			{
-				try
-				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
-					return true;
-				}
-				catch (Exception ex)
-				{
-					logger.LogException(ex, $"move {DisplayName} to channel {chan.Name}");
-					return false;
-				}
-			}
+			if (!(c is DSharpChannel chan))
+				throw new InvalidOperationException("Passed an incorrect IChannel type");
+			
+			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
 
-			throw new InvalidOperationException("Passed an incorrect IChannel type");
 		}
 
-		public async Task<bool> GrantRoleAsync(IRole r, IProcessLogger logger)
+		public async Task GrantRoleAsync(IRole r)
 		{
-			if (r is DSharpRole role)
-			{
-				try
-				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
-					return true;
-				}
-				catch (Exception ex)
-				{
-					logger.LogException(ex, $"grant role '{role.Name}' to {DisplayName}");
-					return false;
-				}
-			}
-
-			throw new InvalidOperationException("Passed an incorrect IRole type");
+			if (!(r is DSharpRole role))
+				throw new InvalidOperationException("Passed an incorrect IRole type");
+			
+			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
 		}
 
-		public async Task<bool> RevokeRoleAsync(IRole r, IProcessLogger logger)
+		public async Task RevokeRoleAsync(IRole r)
 		{
-			if (r is DSharpRole role)
-			{
-				try
-				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
-					return true;
-				}
-				catch(Exception ex)
-				{
-					logger.LogException(ex, $"revoke role '{role.Name}' from {DisplayName}");
-					return false;
-				}
-			}
-			throw new InvalidOperationException("Passed an incorrect IRole type");
+			if (!(r is DSharpRole role))
+				throw new InvalidOperationException("Passed an incorrect IRole type");
+			
+			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
 		}
 
 		public async Task<IMessage> SendMessageAsync(string content)
