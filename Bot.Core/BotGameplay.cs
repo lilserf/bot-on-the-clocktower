@@ -24,18 +24,18 @@ namespace Bot.Core
 		{
         }
 
-        private IBotComponent CreateButton(IBotSystem system, GameplayButton id, string label)
+        private IBotComponent CreateButton(IBotSystem system, GameplayButton id, string label, IBotSystem.ButtonType type=IBotSystem.ButtonType.Primary)
 		{
-            return system.CreateButton($"gameplay_{id.ToString()}", label);
+            return system.CreateButton($"gameplay_{id.ToString()}", label, type);
 		}
 
         public void CreateComponents(IServiceProvider services)
 		{
             var system = services.GetService<IBotSystem>();
             m_nightButton = CreateButton(system, GameplayButton.Night, "Night");
-            m_dayButton = CreateButton(system, GameplayButton.Day, "Day");
-            m_voteButton = CreateButton(system, GameplayButton.Vote, "Vote");
-            m_moreButton = CreateButton(system, GameplayButton.More, "More");
+            m_dayButton = CreateButton(system, GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
+            m_voteButton = CreateButton(system, GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger);
+            m_moreButton = CreateButton(system, GameplayButton.More, "More", IBotSystem.ButtonType.Secondary);
 
             var compService = services.GetService<IComponentService>();
             compService.RegisterComponent(m_nightButton, NightButtonPressed);

@@ -10,7 +10,14 @@ namespace Bot.Api
 
         IInteractionResponseBuilder CreateInteractionResponseBuilder();
 
-        IBotComponent CreateButton(string customId, string label, bool disabled = false);
+        enum ButtonType
+		{
+            Primary = 1,
+            Secondary = 2,
+            Success = 3,
+            Danger = 4,
+		}
+        IBotComponent CreateButton(string customId, string label, ButtonType type = ButtonType.Primary, bool disabled = false);
 
     }
 }

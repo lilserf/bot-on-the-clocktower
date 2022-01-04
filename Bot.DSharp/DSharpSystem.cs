@@ -18,8 +18,19 @@ namespace Bot.DSharp
         public IBotWebhookBuilder CreateWebhookBuilder() => new DSharpWebhookBuilder(new DiscordWebhookBuilder());
 
         // TODO: allow for selection of a button style
-        public IBotComponent CreateButton(string customId, string label, bool disabled=false) 
-            => new DSharpComponent(new DiscordButtonComponent(ButtonStyle.Primary, customId, label, disabled));
+        private ButtonStyle TranslateButtonStyle(IBotSystem.ButtonType type)
+		{
+            switch(type)
+			{
+                case IBotSystem.ButtonType.Primary: return ButtonStyle.Primary;
+                case IBotSystem.ButtonType.Secondary: return ButtonStyle.Secondary;
+                case IBotSystem.ButtonType.Success: return ButtonStyle.Success;
+                case IBotSystem.ButtonType.Danger: return ButtonStyle.Danger;
+                default: throw new InvalidCastException("Can't translate this button type to a Discord button style!");
+			}
+		}
+        public IBotComponent CreateButton(string customId, string label, IBotSystem.ButtonType type, bool disabled=false) 
+            => new DSharpComponent(new DiscordButtonComponent(TranslateButtonStyle(type), customId, label, disabled));
 
         public IInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
 	}
