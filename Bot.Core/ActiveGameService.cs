@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Bot.Core
 {
@@ -36,7 +37,7 @@ namespace Bot.Core
 			return false;
 		}
 
-		public bool TryGetGame(IBotInteractionContext context, out IGame? game)
+		public bool TryGetGame(IBotInteractionContext context, [MaybeNullWhen(false)] out IGame game)
 		{
 			return m_games.TryGetValue(new TownKey(context.Guild.Id, context.Channel.Id), out game);
 		}

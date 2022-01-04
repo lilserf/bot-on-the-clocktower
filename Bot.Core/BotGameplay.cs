@@ -72,12 +72,12 @@ namespace Bot.Core
             {
                 // TODO: resolve a change in Storytellers
 
-                var foundUsers = game!.Town.TownSquare.Users.ToList();
-                foreach (var c in game!.Town.DayCategory.Channels.Where(c => c.IsVoice))
+                var foundUsers = game.Town.TownSquare.Users.ToList();
+                foreach (var c in game.Town.DayCategory.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
-                foreach (var c in game!.Town.NightCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in game.Town.NightCategory.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }

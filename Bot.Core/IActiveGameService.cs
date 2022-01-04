@@ -1,15 +1,11 @@
 ﻿using Bot.Api;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Bot.Core
 {
-	public interface IActiveGameService
+    public interface IActiveGameService
 	{
-		bool TryGetGame(IBotInteractionContext context, out IGame? game);
+		bool TryGetGame(IBotInteractionContext context, [MaybeNullWhen(false)] out IGame game);
 		bool RegisterGame(ITown town, IGame game);
 	}
 }
