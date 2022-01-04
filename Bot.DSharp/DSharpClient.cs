@@ -62,7 +62,7 @@ namespace Bot.DSharp
 		private async Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
 		{
             var compServ = m_serviceProvider.GetService<IComponentService>();
-            await compServ.CallAsync(new DSharpComponentContext(e.Interaction), m_serviceProvider);
+            await compServ.CallAsync(new DSharpComponentContext(e.Interaction, m_serviceProvider));
         }
 
         public async Task<IChannel> GetChannelAsync(ulong id)

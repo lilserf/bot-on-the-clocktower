@@ -9,8 +9,8 @@ namespace Bot.Api
 {
 	public interface IComponentService
 	{
-		public void RegisterComponent(IBotComponent component, Func<IBotComponentContext, IServiceProvider, Task> callback);
+		public void RegisterComponent(IBotComponent component, Func<IBotInteractionContext, Task> callback);
 
-		public Task<bool> CallAsync(IBotComponentContext context, IServiceProvider services);
+		public Task<bool> CallAsync(IBotInteractionContext context);
 	}
 }

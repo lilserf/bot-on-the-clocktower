@@ -7,27 +7,55 @@ namespace Bot.Core
 {
     public class BotGameplay : IBotGameplay
     {
-        private IBotComponent? m_testButton;
+        enum GameplayButton
+		{
+            Night,
+            Day,
+            Vote,
+            More,
+		}
+
+        private IBotComponent? m_nightButton;
+        private IBotComponent? m_dayButton;
+        private IBotComponent? m_voteButton;
+        private IBotComponent? m_moreButton;
+
 		public BotGameplay()
 		{
         }
 
+        private IBotComponent CreateButton(IBotSystem system, GameplayButton id, string label)
+		{
+            return system.CreateButton($"gameplay_{id.ToString()}", label);
+		}
+
         public void CreateComponents(IServiceProvider services)
 		{
             var system = services.GetService<IBotSystem>();
-            m_testButton = system.CreateButton("test_id", "Test Button!");
+            m_nightButton = CreateButton(system, GameplayButton.Night, "Night");
+            m_dayButton = CreateButton(system, GameplayButton.Day, "Day");
+            m_voteButton = CreateButton(system, GameplayButton.Vote, "Vote");
+            m_moreButton = CreateButton(system, GameplayButton.More, "More");
 
             var compService = services.GetService<IComponentService>();
-            compService.RegisterComponent(m_testButton, TestButtonPressed);
+            compService.RegisterComponent(m_nightButton, NightButtonPressed);
+            compService.RegisterComponent(m_dayButton, DayButtonPressed);
+            compService.RegisterComponent(m_voteButton, VoteButtonPressed);
+            compService.RegisterComponent(m_moreButton, MoreButtonPressed);
         }
 
         // Helper for editing the original interaction with a summarizing message when finished
         // TODO: move within IBotInteractionContext
         private async Task EditOriginalMessage(IBotInteractionContext context, string s)
         {
-            var system = context.Services.GetService<IBotSystem>();
-            var webhook = system.CreateWebhookBuilder().WithContent(s);
-            await context.EditResponseAsync(webhook);
+            try
+            {
+                var system = context.Services.GetService<IBotSystem>();
+                var webhook = system.CreateWebhookBuilder().WithContent(s);
+                await context.EditResponseAsync(webhook);
+            }
+            catch (Exception)
+            { }
         }
 
         // TODO: better name for this method, probably
@@ -105,13 +133,21 @@ namespace Bot.Core
         {
             await context.DeferInteractionResponse();
 
+            var message = await PhaseNightInternal(context);
+
+            await EditOriginalMessage(context, message);
+        }
+
+        public async Task<string> PhaseNightInternal(IBotInteractionContext context)
+        {
+            string message = "Moved all players from Town Square to Cottages!";
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
                 var game = await CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
-                    await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                    message = "Couldn't find an active game record for this town!";
                     return;
                 }
 
@@ -133,9 +169,9 @@ namespace Bot.Core
                 }
 
                 // TODO: set permissions on the cottages for each user (hopefully in a batch)
-
-                await EditOriginalMessage(context, "Moved all players from Town Square to Cottages!");
             });
+
+            return message;
         }
 
         // TODO: should this be a method on Game itself? :thinking:
@@ -151,41 +187,54 @@ namespace Bot.Core
         public async Task PhaseDayAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
+            var message = await PhaseDayInternal(context);
+            await EditOriginalMessage(context, message);
+        }
 
+        public async Task<string> PhaseDayInternal(IBotInteractionContext context)
+        {
+            string msg = "Moved all players from Cottages back to Town Square!";
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
                 var game = await CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here?
-                    await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                    msg = "Couldn't find an active game record for this town!";
                     return;
                 }
 
                 await MoveActivePlayersToTownSquare(game, processLog);
 
-                await EditOriginalMessage(context, "Moved all players from Cottages back to Town Square!");
             });
+
+            return msg;
         }
 
         public async Task PhaseVoteAsync(IBotInteractionContext context)
         {
+            await context.DeferInteractionResponse();
+            var message = await PhaseVoteInternal(context);
+            await EditOriginalMessage(context, message);
+        }
+
+        public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
+        { 
+            string msg = "Moved all players to Town Square for voting!";
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
-                await context.DeferInteractionResponse();
 
                 var game = await CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here?
-                    await EditOriginalMessage(context, "Couldn't find an active game record for this town!");
+                    msg = "Couldn't find an active game record for this town!";
                     return;
                 }
 
                 await MoveActivePlayersToTownSquare(game, processLog);
-
-                await EditOriginalMessage(context, "Moved all players to Town Square for voting!");
             });
+            return msg;
         }
 
         public async Task RunGameAsync(IBotInteractionContext context)
@@ -195,17 +244,56 @@ namespace Bot.Core
                 await context.DeferInteractionResponse();
 
                 var system = context.Services.GetService<IBotSystem>();
-                var webhook = system.CreateWebhookBuilder().WithContent("You just ran the Game command. Good for you!");
-                webhook = webhook.AddComponents(m_testButton!);
+                var webhook = system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
+                webhook = webhook.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
                 await context.EditResponseAsync(webhook);
             });
         }
 
-        public async Task TestButtonPressed(IBotComponentContext context, IServiceProvider services)
+        public async Task NightButtonPressed(IBotInteractionContext context)
 		{
-            var system = services.GetService<IBotSystem>();
-            var builder = system.CreateInteractionResponseBuilder().WithContent("You clicked on my button. Congratulations!");
-			await context.UpdateOriginalMessageAsync(builder);
+            await context.DeferInteractionResponse();
+
+            var message = await PhaseNightInternal(context);
+
+            var system = context.Services.GetService<IBotSystem>();
+            var builder = system.CreateWebhookBuilder().WithContent(message);
+            builder = builder.AddComponents(m_dayButton!, m_moreButton!);
+            await context.EditResponseAsync(builder);
 		}
+
+        public async Task DayButtonPressed(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var message = await PhaseDayInternal(context);
+
+            var system = context.Services.GetService<IBotSystem>();
+            var builder = system.CreateWebhookBuilder().WithContent(message);
+            builder = builder.AddComponents(m_voteButton!, m_moreButton!);
+            await context.EditResponseAsync(builder);
+        }
+
+        public async Task VoteButtonPressed(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var message = await PhaseVoteInternal(context);
+
+            var system = context.Services.GetService<IBotSystem>();
+            var builder = system.CreateWebhookBuilder().WithContent(message);
+            builder = builder.AddComponents(m_nightButton!, m_moreButton!);
+            await context.EditResponseAsync(builder);
+        }
+
+        public async Task MoreButtonPressed(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var system = context.Services.GetService<IBotSystem>();
+            var builder = system.CreateWebhookBuilder().WithContent("Here are all the options again!");
+            builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
+            await context.EditResponseAsync(builder);
+        }
     }
 }

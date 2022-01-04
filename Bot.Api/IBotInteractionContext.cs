@@ -9,8 +9,10 @@ namespace Bot.Api
         IGuild Guild { get; }
         IChannel Channel { get; }
         IMember Member { get; }
+        string? ComponentCustomId { get; }
         Task DeferInteractionResponse();
         Task EditResponseAsync(IBotWebhookBuilder webhookBuilder);
         Task UpdateOriginalMessageAsync(IInteractionResponseBuilder builder);
+
     }
 }

@@ -9,16 +9,32 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-	class DSharpComponentContext : DiscordWrapper<DiscordInteraction>, IBotComponentContext
+	class DSharpComponentContext : DiscordWrapper<DiscordInteraction>, IBotInteractionContext
 	{
-		public DSharpComponentContext(DiscordInteraction wrapped)
+		DSharpGuild m_guild;
+		DSharpChannel m_channel;
+		DSharpMember m_member;
+		IServiceProvider m_services;
+		public DSharpComponentContext(DiscordInteraction wrapped, IServiceProvider services)
 			: base(wrapped)
 		{
-
+			m_guild = new DSharpGuild(wrapped.Guild);
+			m_channel = new DSharpChannel(wrapped.Channel);
+			m_member = new DSharpMember(wrapped.User as DiscordMember);
+			m_services = services;
 		}
-		public string CustomId => Wrapped.Data.CustomId;
+		public IServiceProvider Services => m_services;
 
-		public Task DeferInteractionResponse() => Wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+		public IGuild Guild => m_guild;
+
+		public IChannel Channel => m_channel;
+
+		public IMember Member => m_member;
+
+		public string? ComponentCustomId => Wrapped.Data.CustomId;
+
+		// Defer and say we're going to update the original message
+		public Task DeferInteractionResponse() => Wrapped.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
 
 		public Task EditResponseAsync(IBotWebhookBuilder webhookBuilder)
 		{
@@ -31,7 +47,7 @@ namespace Bot.DSharp
 		public Task UpdateOriginalMessageAsync(IInteractionResponseBuilder builder)
 		{
 			if (builder is DSharpInteractionResponseBuilder d)
-				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, d.Wrapped));
+				return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.CreateResponseAsync(InteractionResponseType.UpdateMessage, d.Wrapped));
 
 			throw new InvalidOperationException("Passed an incorrect builder!");
 		}
