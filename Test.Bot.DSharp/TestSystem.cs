@@ -23,7 +23,9 @@ namespace Test.Bot.DSharp
         [Fact]
         public void System_CreateCalled_CreatesDSharpClient()
         {
-            RegisterMock(new Mock<IEnvironment>());
+            var env = RegisterMock(new Mock<IEnvironment>());
+            env.Setup(e => e.GetEnvironmentVariable(It.IsAny<string>())).Returns("env var");
+
             DSharpSystem system = new();
 
             var result = system.CreateClient(GetServiceProvider());

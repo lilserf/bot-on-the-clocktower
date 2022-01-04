@@ -1,13 +1,8 @@
 ﻿using Bot.Api;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-	class DSharpTown : ITown
+    class DSharpTown : ITown
 	{
 		public IGuild Guild { get; set; }
 		public IChannel ControlChannel { get; set; }

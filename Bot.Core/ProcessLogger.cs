@@ -1,13 +1,12 @@
 ﻿using Bot.Api;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Bot.Core
 {
     public class ProcessLogger : IProcessLogger
     {
-        private List<string> m_messages = new();
+        private readonly List<string> m_messages = new();
 
         public void LogException(Exception ex, string goal)
 		{

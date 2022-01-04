@@ -1,35 +1,28 @@
 ﻿using Bot.Api;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-	class ActiveGameService : IActiveGameService
+    public class ActiveGameService : IActiveGameService
 	{
 		struct TownKey
 		{
-			ulong GuildId;
-			ulong ChannelId;
+            readonly ulong GuildId;
+            readonly ulong ChannelId;
 			public TownKey(ulong guildId, ulong channelId)
 			{
 				GuildId = guildId;
 				ChannelId = channelId;
 			}
 		}
-		private TownKey KeyFromTown(ITown town)
+
+		private static TownKey KeyFromTown(ITown town)
 		{
 			return new TownKey(town.Guild.Id, town.ControlChannel.Id);
 		}
 
-		private Dictionary<TownKey, IGame> m_games;
+		private readonly Dictionary<TownKey, IGame> m_games = new();
 
-		public ActiveGameService()
-		{
-			m_games = new();
-		}
 		public bool RegisterGame(ITown town, IGame game)
 		{
 			var key = KeyFromTown(town);
@@ -45,6 +38,5 @@ namespace Bot.Core
 		{
 			return m_games.TryGetValue(new TownKey(context.Guild.Id, context.Channel.Id), out game);
 		}
-
 	}
 }

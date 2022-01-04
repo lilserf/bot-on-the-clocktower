@@ -2,28 +2,26 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-	class DSharpComponentContext : DiscordWrapper<DiscordInteraction>, IBotInteractionContext
+    class DSharpComponentContext : DiscordWrapper<DiscordInteraction>, IBotInteractionContext
 	{
-		DSharpGuild m_guild;
-		DSharpChannel m_channel;
-		DSharpMember m_member;
-		IServiceProvider m_services;
-		public DSharpComponentContext(DiscordInteraction wrapped, IServiceProvider services)
+		private readonly DSharpGuild m_guild;
+		private readonly DSharpChannel m_channel;
+		private readonly DSharpMember m_member;
+
+		public DSharpComponentContext(DiscordInteraction wrapped)
 			: base(wrapped)
 		{
+			if (wrapped.User is not DiscordMember dm)
+				throw new InvalidOperationException("Passed unexpected User type");
+
 			m_guild = new DSharpGuild(wrapped.Guild);
 			m_channel = new DSharpChannel(wrapped.Channel);
-			m_member = new DSharpMember(wrapped.User as DiscordMember);
-			m_services = services;
+			m_member = new DSharpMember(dm);
 		}
-		public IServiceProvider Services => m_services;
 
 		public IGuild Guild => m_guild;
 

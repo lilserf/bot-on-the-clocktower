@@ -18,7 +18,7 @@ namespace Test.Bot.Core
 
             memberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
-            BotGameplay gs = new();
+            BotGameplay gs = new(GetServiceProvider());
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -29,7 +29,7 @@ namespace Test.Bot.Core
         [Fact]
         public void Night_CottagesCorrect()
 		{
-            BotGameplay gs = new();
+            BotGameplay gs = new(GetServiceProvider());
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -53,7 +53,7 @@ namespace Test.Bot.Core
         [Fact]
         public void CurrentGame_RolesCorrect()
 		{
-            BotGameplay gs = new();
+            BotGameplay gs = new(GetServiceProvider());
             var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -72,7 +72,7 @@ namespace Test.Bot.Core
 		{
             Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>())).ThrowsAsync(CreateException(exceptionType));
 
-            BotGameplay gs = new();
+            BotGameplay gs = new(GetServiceProvider());
             var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);

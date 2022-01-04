@@ -10,12 +10,10 @@ namespace Test.Bot.DSharp
     public class TestClient : TestBase
     {
         [Fact]
-        public async Task ClientConnect_NoDiscordToken_ThrowsException()
+        public void ClientConnect_NoDiscordToken_ThrowsException()
         {
-            var mockEnv = RegisterMock(new Mock<IEnvironment>());
-            DSharpClient client = new(GetServiceProvider());
-
-            await Assert.ThrowsAsync<DSharpClient.InvalidDiscordTokenException>(() => client.ConnectAsync());
+            RegisterMock(new Mock<IEnvironment>());
+            Assert.Throws<DSharpClient.InvalidDiscordTokenException>(() => new DSharpClient(GetServiceProvider()));
         }
     }
 }

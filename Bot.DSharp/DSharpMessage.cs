@@ -3,12 +3,11 @@ using DSharpPlus.Entities;
 
 namespace Bot.DSharp
 {
-    public class DSharpMessage : IMessage
+    public class DSharpMessage : DiscordWrapper<DiscordMessage>, IMessage
     {
-        private readonly DiscordMessage m_wrapped;
         public DSharpMessage(DiscordMessage wrapped)
+            : base(wrapped)
         {
-            m_wrapped = wrapped;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Bot.Core
 {
     public class BotGameplay : IBotGameplay
     {
-        enum GameplayButton
+        private enum GameplayButton
 		{
             Night,
             Day,
@@ -15,33 +15,41 @@ namespace Bot.Core
             More,
 		}
 
-        private IBotComponent? m_nightButton;
-        private IBotComponent? m_dayButton;
-        private IBotComponent? m_voteButton;
-        private IBotComponent? m_moreButton;
+        private readonly IBotComponent m_nightButton;
+        private readonly IBotComponent m_dayButton;
+        private readonly IBotComponent m_voteButton;
+        private readonly IBotComponent m_moreButton;
 
-		public BotGameplay()
+        private readonly IBotSystem m_system;
+        private readonly IBotClient m_client;
+
+        private readonly IComponentService m_componentService;
+        private readonly IActiveGameService m_activeGameService;
+
+        private readonly ITownLookup m_townLookup;
+
+		public BotGameplay(IServiceProvider services)
 		{
+            m_system = services.GetService<IBotSystem>();
+            m_client = services.GetService<IBotClient>();
+            m_componentService = services.GetService<IComponentService>();
+            m_activeGameService = services.GetService<IActiveGameService>();
+            m_townLookup = services.GetService<ITownLookup>();
+
+            m_nightButton = CreateButton(GameplayButton.Night, "Night");
+            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
+            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger);
+            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary);
+
+            m_componentService.RegisterComponent(m_nightButton, NightButtonPressed);
+            m_componentService.RegisterComponent(m_dayButton, DayButtonPressed);
+            m_componentService.RegisterComponent(m_voteButton, VoteButtonPressed);
+            m_componentService.RegisterComponent(m_moreButton, MoreButtonPressed);
         }
 
-        private IBotComponent CreateButton(IBotSystem system, GameplayButton id, string label, IBotSystem.ButtonType type=IBotSystem.ButtonType.Primary)
-		{
-            return system.CreateButton($"gameplay_{id.ToString()}", label, type);
-		}
-
-        public void CreateComponents(IServiceProvider services)
-		{
-            var system = services.GetService<IBotSystem>();
-            m_nightButton = CreateButton(system, GameplayButton.Night, "Night");
-            m_dayButton = CreateButton(system, GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
-            m_voteButton = CreateButton(system, GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger);
-            m_moreButton = CreateButton(system, GameplayButton.More, "More", IBotSystem.ButtonType.Secondary);
-
-            var compService = services.GetService<IComponentService>();
-            compService.RegisterComponent(m_nightButton, NightButtonPressed);
-            compService.RegisterComponent(m_dayButton, DayButtonPressed);
-            compService.RegisterComponent(m_voteButton, VoteButtonPressed);
-            compService.RegisterComponent(m_moreButton, MoreButtonPressed);
+        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary)
+        {
+            return m_system.CreateButton($"gameplay_{id}", label, type);
         }
 
         // Helper for editing the original interaction with a summarizing message when finished
@@ -50,8 +58,7 @@ namespace Bot.Core
         {
             try
             {
-                var system = context.Services.GetService<IBotSystem>();
-                var webhook = system.CreateWebhookBuilder().WithContent(s);
+                var webhook = m_system.CreateWebhookBuilder().WithContent(s);
                 await context.EditResponseAsync(webhook);
             }
             catch (Exception)
@@ -61,19 +68,16 @@ namespace Bot.Core
         // TODO: better name for this method, probably
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
-            var ags = context.Services.GetService<IActiveGameService>();
-
-            IGame? game = null;
-            if (ags.TryGetGame(context, out game))
+            if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
                 // TODO: resolve a change in Storytellers
 
                 var foundUsers = game!.Town.TownSquare.Users.ToList();
-                foreach(var c in game!.Town.DayCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in game!.Town.DayCategory.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
-                foreach(var c in game!.Town.NightCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in game!.Town.NightCategory.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
@@ -84,13 +88,13 @@ namespace Bot.Core
                 var newPlayers = foundUsers.Except(game.AllPlayers);
                 var oldPlayers = game.AllPlayers.Except(foundUsers);
 
-                foreach(var p in newPlayers)
-				{
+                foreach (var p in newPlayers)
+                {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
                     game.Villagers.Add(p);
-				}
-                foreach(var p in oldPlayers)
-				{
+                }
+                foreach (var p in oldPlayers)
+                {
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
                     game.Villagers.Remove(p);
                 }
@@ -98,11 +102,8 @@ namespace Bot.Core
             }
             else
             {
-                var townLookup = context.Services.GetService<ITownLookup>();
-                var townRec = await townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
-
-                var client = context.Services.GetService<IBotClient>();
-                var town = await client.ResolveTownAsync(townRec);
+                var townRec = await m_townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
+                var town = await m_client.ResolveTownAsync(townRec);
 
                 // No record, so create one
                 game = new Game(town);
@@ -123,7 +124,7 @@ namespace Bot.Core
                     game.Villagers.Add(v);
                 }
 
-                ags.RegisterGame(town, game);
+                m_activeGameService.RegisterGame(town, game);
             }
 
             return game;
@@ -176,7 +177,7 @@ namespace Bot.Core
 
         // TODO: should this be a method on Game itself? :thinking:
         // Helper for moving all players to Town Square (used by Day and Vote commands)
-        private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
+        private static async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
         {
             foreach (var member in game.AllPlayers)
             {
@@ -243,8 +244,7 @@ namespace Bot.Core
             {
                 await context.DeferInteractionResponse();
 
-                var system = context.Services.GetService<IBotSystem>();
-                var webhook = system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
+                var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
                 webhook = webhook.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
                 await context.EditResponseAsync(webhook);
             });
@@ -256,8 +256,7 @@ namespace Bot.Core
 
             var message = await PhaseNightInternal(context);
 
-            var system = context.Services.GetService<IBotSystem>();
-            var builder = system.CreateWebhookBuilder().WithContent(message);
+            var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_dayButton!, m_moreButton!);
             await context.EditResponseAsync(builder);
 		}
@@ -268,8 +267,7 @@ namespace Bot.Core
 
             var message = await PhaseDayInternal(context);
 
-            var system = context.Services.GetService<IBotSystem>();
-            var builder = system.CreateWebhookBuilder().WithContent(message);
+            var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_voteButton!, m_moreButton!);
             await context.EditResponseAsync(builder);
         }
@@ -280,8 +278,7 @@ namespace Bot.Core
 
             var message = await PhaseVoteInternal(context);
 
-            var system = context.Services.GetService<IBotSystem>();
-            var builder = system.CreateWebhookBuilder().WithContent(message);
+            var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_nightButton!, m_moreButton!);
             await context.EditResponseAsync(builder);
         }
@@ -290,8 +287,7 @@ namespace Bot.Core
         {
             await context.DeferInteractionResponse();
 
-            var system = context.Services.GetService<IBotSystem>();
-            var builder = system.CreateWebhookBuilder().WithContent("Here are all the options again!");
+            var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
             builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
             await context.EditResponseAsync(builder);
         }

@@ -18,7 +18,7 @@ namespace Bot.DSharp
 
 		public async Task MoveToChannelAsync(IChannel c)
 		{
-			if (!(c is DSharpChannel chan))
+			if (c is not DSharpChannel chan)
 				throw new InvalidOperationException("Passed an incorrect IChannel type");
 			
 			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
@@ -27,7 +27,7 @@ namespace Bot.DSharp
 
 		public async Task GrantRoleAsync(IRole r)
 		{
-			if (!(r is DSharpRole role))
+			if (r is not DSharpRole role)
 				throw new InvalidOperationException("Passed an incorrect IRole type");
 			
 			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
@@ -35,7 +35,7 @@ namespace Bot.DSharp
 
 		public async Task RevokeRoleAsync(IRole r)
 		{
-			if (!(r is DSharpRole role))
+			if (r is not DSharpRole role)
 				throw new InvalidOperationException("Passed an incorrect IRole type");
 			
 			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));

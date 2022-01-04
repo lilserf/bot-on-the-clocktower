@@ -1,7 +1,5 @@
 ﻿using Bot.Api;
-using Bot.Base;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Threading.Tasks;
@@ -10,36 +8,30 @@ namespace Bot.DSharp
 {
     public class DSharpClient : IBotClient
     {
-        private readonly IServiceProvider m_serviceProvider;
-        private readonly IEnvironment m_environment;
-        private DiscordClient? m_discord;
+        private readonly IComponentService m_componentService;
+
+        private readonly DiscordClient m_discord;
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
-            ServiceProvider sp = new(serviceProvider);
-            sp.AddService<IBotClient>(this);
-            m_serviceProvider = sp;
+            m_componentService = serviceProvider.GetService<IComponentService>();
 
-            m_environment = serviceProvider.GetService<IEnvironment>();
-            m_discord = null;
-        }
-
-        public async Task ConnectAsync()
-        {
-            var token = m_environment.GetEnvironmentVariable("DISCORD_TOKEN");
-
+            var environment = serviceProvider.GetService<IEnvironment>();
+            var token = environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token)) throw new InvalidDiscordTokenException();
 
-            // NOTE: The below is not tested
             var config = new DiscordConfiguration()
             {
                 Token = token,
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
             };
-
             m_discord = new DiscordClient(config);
-            var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = m_serviceProvider });
+        }
+
+        public async Task ConnectAsync(IServiceProvider botServices)
+        {
+            var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
 
             // TODO: register to all guilds, not just ours
             slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
@@ -59,10 +51,9 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
-		private async Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
+		private Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
 		{
-            var compServ = m_serviceProvider.GetService<IComponentService>();
-            await compServ.CallAsync(new DSharpComponentContext(e.Interaction, m_serviceProvider));
+            return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
         }
 
         public async Task<IChannel> GetChannelAsync(ulong id)

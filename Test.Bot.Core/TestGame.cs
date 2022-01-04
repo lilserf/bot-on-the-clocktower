@@ -2,9 +2,7 @@
 using Bot.Core;
 using Moq;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Test.Bot.Base;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -14,22 +12,21 @@ namespace Test.Bot.Core
         [Fact]
         public void ConstructGame_NoExceptions()
         {
-            var _ = new BotGameplay();
+            var _ = new BotGameplay(GetServiceProvider());
         }
 
         [Fact]
-        public void ServiceProvider_GameServiceProvided()
+        public void CreateBotServices_ProperServicesAvailable_RegistersServices()
         {
-            var sp = ServiceFactory.RegisterServices(null);
+            var sp = ServiceFactory.RegisterBotServices(GetServiceProvider());
 
-            var gs = sp.GetService<IBotGameplay>();
-            Assert.IsType<BotGameplay>(gs);
+            Assert.NotNull(sp.GetService<IBotGameplay>());
         }
 
         [Fact]
         public void RunGame_SendsMessageToContext()
         {
-            BotGameplay gs = new();
+            BotGameplay gs = new(GetServiceProvider());
 
             var t = gs.RunGameAsync(InteractionContextMock.Object);
             t.Wait(50);
@@ -62,12 +59,19 @@ namespace Test.Bot.Core
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
             BotSystemMock.Setup(s => s.CreateWebhookBuilder()).Throws(thrownException);
 
-            BotGameplay gs = new();
+            BotGameplay gs = new(GetServiceProvider());
             var t = gameCommandTestFunc(gs, InteractionContextMock.Object);
             t.Wait(5);
             Assert.True(t.IsCompleted);
 
             InteractionAuthorMock.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(thrownException.GetType().Name))), Times.Once);
+        }
+
+        [Fact]
+        public void GameConstructed_RegistersButtons()
+        {
+            BotGameplay gs = new(GetServiceProvider());
+            ComponentServiceMock.Verify(cs => cs.RegisterComponent(It.IsAny<IBotComponent>(), It.IsAny<Func<IBotInteractionContext, Task>>()), Times.AtLeastOnce);
         }
     }
 }

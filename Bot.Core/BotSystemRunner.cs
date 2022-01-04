@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Base;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,28 +9,26 @@ namespace Bot.Core
     public class BotSystemRunner
     {
         private readonly IServiceProvider m_serviceProvider;
+        private readonly IBotClient m_client;
 
-        public BotSystemRunner(IServiceProvider serviceProvider)
+        public BotSystemRunner(IServiceProvider parentServices, IBotSystem system)
         {
-            m_serviceProvider = serviceProvider;
+            m_client = system.CreateClient(parentServices);
+
+            var systemServices = new ServiceProvider(parentServices);
+            systemServices.AddService(system);
+            systemServices.AddService(m_client);
+
+            m_serviceProvider = ServiceFactory.RegisterBotServices(systemServices);
         }
 
         public async Task RunAsync(CancellationToken cancelToken)
         {
-            // THIS FEELS HACKY
-            // We need to have the Gameplay system (and maybe others later) initialize their components (Buttons etc) once
-            // most of the other services exist (IBotSystem in particular)
-            var gameplay = m_serviceProvider.GetService<IBotGameplay>();
-            gameplay.CreateComponents(m_serviceProvider);
-
-            var system = m_serviceProvider.GetService<IBotSystem>();
-            var client = system.CreateClient(m_serviceProvider);
-
             TaskCompletionSource tcs = new();
 
             using (cancelToken.Register(tcs.SetCanceled))
             {
-                await Task.WhenAny(tcs.Task, client.ConnectAsync());
+                await Task.WhenAny(tcs.Task, m_client.ConnectAsync(m_serviceProvider));
                 await Task.WhenAny(tcs.Task, Task.Delay(-1, CancellationToken.None)); // avoiding TaskCanceledException
             }
         }

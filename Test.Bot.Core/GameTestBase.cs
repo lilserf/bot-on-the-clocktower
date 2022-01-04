@@ -71,7 +71,6 @@ namespace Test.Bot.Core
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
             ControlChannelMock.SetupGet(x => x.Id).Returns(MockChannelId);
 
-            InteractionContextMock.SetupGet(c => c.Services).Returns(GetServiceProvider());
             InteractionContextMock.SetupGet(x => x.Guild).Returns(GuildMock.Object);
             InteractionContextMock.SetupGet(x => x.Channel).Returns(ControlChannelMock.Object);
             InteractionContextMock.SetupGet(x => x.Member).Returns(InteractionAuthorMock.Object);
@@ -105,7 +104,7 @@ namespace Test.Bot.Core
 
         private static void SetupChannelMock(Mock<IChannel> channel)
         {
-            channel.SetupGet(c => c.Users).Returns(new IMember[] { });
+            channel.SetupGet(c => c.Users).Returns(Array.Empty<IMember>());
             channel.Setup(c => c.Equals(channel.Object)).Returns(true);
         }
 
