@@ -7,8 +7,10 @@ namespace Bot.Core
 	{
 		struct TownKey
 		{
-            readonly ulong GuildId;
-            readonly ulong ChannelId;
+#pragma warning disable IDE0052 // Remove unread private members
+            private readonly ulong GuildId;
+            private readonly ulong ChannelId;
+#pragma warning restore IDE0052 // Remove unread private members
 			public TownKey(ulong guildId, ulong channelId)
 			{
 				GuildId = guildId;
