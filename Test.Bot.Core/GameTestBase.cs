@@ -41,6 +41,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
         protected readonly Mock<IActiveGameService> ActiveGameServiceMock = new();
         protected readonly Mock<IProcessLogger> ProcessLoggerMock = new();
+        protected readonly Mock<IComponentService> ComponentServiceMock = new();
 
         public GameTestBase()
         {
@@ -49,12 +50,13 @@ namespace Test.Bot.Core
 
             // WithContent returns the mock again so you can chain calls
             WebhookBuilderMock.Setup(c => c.WithContent(It.IsAny<string>())).Returns(WebhookBuilderMock.Object);
-            WebhookBuilderMock.Setup(c => c.AddComponents(It.IsAny<IComponent[]>())).Returns(WebhookBuilderMock.Object);
+            WebhookBuilderMock.Setup(c => c.AddComponents(It.IsAny<IBotComponent[]>())).Returns(WebhookBuilderMock.Object);
 
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
             RegisterMock(TownLookupMock);
             RegisterMock(ActiveGameServiceMock);
+            RegisterMock(ComponentServiceMock);
 
             TownLookupMock.Setup(tl => tl.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(TownRecordMock.Object);
 

@@ -18,7 +18,9 @@ namespace Bot.DSharp
         public IBotWebhookBuilder CreateWebhookBuilder() => new DSharpWebhookBuilder(new DiscordWebhookBuilder());
 
         // TODO: allow for selection of a button style
-        public IComponent CreateButton(string customId, string label, bool disabled=false) 
+        public IBotComponent CreateButton(string customId, string label, bool disabled=false) 
             => new DSharpComponent(new DiscordButtonComponent(ButtonStyle.Primary, customId, label, disabled));
+
+        public IInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
 	}
 }

@@ -16,6 +16,8 @@ namespace Bot.Main
             DotEnv.Load(@"..\..\..\..\.env");
 
             var sp = RegisterServices();
+            // Register IBotSystem (and any other DSharp services) first, since it's a core factory piece
+            sp = DSharp.ServiceFactory.RegisterServices(sp);
             sp = Database.ServiceFactory.RegisterServices(sp);
             sp = Core.ServiceFactory.RegisterServices(sp);
 
@@ -29,8 +31,7 @@ namespace Bot.Main
             //Console.WriteLine(t);
             //// END TEST CODE
 
-            DSharpSystem dSharpSystem = new();
-            BotSystemRunner botRunner = new(sp, dSharpSystem);
+            BotSystemRunner botRunner = new(sp);
 
             await botRunner.RunAsync(CancellationToken.None);
         }

@@ -4,6 +4,6 @@
     {
         IBotWebhookBuilder WithContent(string content);
 
-        public IBotWebhookBuilder AddComponents(params IComponent[] components);
+        IBotWebhookBuilder AddComponents(params IBotComponent[] components);
     }
 }

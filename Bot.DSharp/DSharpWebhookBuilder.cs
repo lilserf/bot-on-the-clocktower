@@ -19,7 +19,7 @@ namespace Bot.DSharp
             return this;
         }
 
-        public IBotWebhookBuilder AddComponents(params IComponent[] components)
+        public IBotWebhookBuilder AddComponents(params IBotComponent[] components)
         {
             if (!components.All(x => x is DSharpComponent)) throw new InvalidOperationException("Unexpected type of IComponent!");
             var realComponents = components.Cast<DSharpComponent>().Select(x => x.Wrapped);

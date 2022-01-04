@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public interface IComponent
+	public interface IBotComponent
 	{
+		public string CustomId { get; }
 	}
 }

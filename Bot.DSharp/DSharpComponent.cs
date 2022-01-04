@@ -8,11 +8,13 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-	class DSharpComponent : DiscordWrapper<DiscordComponent>, IComponent
+	class DSharpComponent : DiscordWrapper<DiscordComponent>, IBotComponent
 	{
 		public DSharpComponent(DiscordComponent wrapped)
 			: base(wrapped)
 		{
 		}
+
+		public string CustomId => Wrapped.CustomId;
 	}
 }

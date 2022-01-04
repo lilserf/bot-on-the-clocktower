@@ -7,18 +7,23 @@ namespace Bot.Core
 {
     public class BotSystemRunner
     {
-        private readonly IBotSystem m_system;
         private readonly IServiceProvider m_serviceProvider;
 
-        public BotSystemRunner(IServiceProvider serviceProvider, IBotSystem system)
+        public BotSystemRunner(IServiceProvider serviceProvider)
         {
             m_serviceProvider = serviceProvider;
-            m_system = system;
         }
 
         public async Task RunAsync(CancellationToken cancelToken)
         {
-            var client = m_system.CreateClient(m_serviceProvider);
+            // THIS FEELS HACKY
+            // We need to have the Gameplay system (and maybe others later) initialize their components (Buttons etc) once
+            // most of the other services exist (IBotSystem in particular)
+            var gameplay = m_serviceProvider.GetService<IBotGameplay>();
+            gameplay.CreateComponents(m_serviceProvider);
+
+            var system = m_serviceProvider.GetService<IBotSystem>();
+            var client = system.CreateClient(m_serviceProvider);
 
             TaskCompletionSource tcs = new();
 

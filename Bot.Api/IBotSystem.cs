@@ -8,7 +8,9 @@ namespace Bot.Api
 
         IBotWebhookBuilder CreateWebhookBuilder();
 
-        IComponent CreateButton(string customId, string label, bool disabled = false);
+        IInteractionResponseBuilder CreateInteractionResponseBuilder();
+
+        IBotComponent CreateButton(string customId, string label, bool disabled = false);
 
     }
 }

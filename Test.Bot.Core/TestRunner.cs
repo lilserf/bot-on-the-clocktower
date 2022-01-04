@@ -14,15 +14,20 @@ namespace Test.Bot.Core
         [Fact]
         public void ConstructRunner_NoExceptions()
         {
-            _ = new BotSystemRunner(GetServiceProvider(), new Mock<IBotSystem>().Object);
+            RegisterMock(new Mock<IBotSystem>());
+            _ = new BotSystemRunner(GetServiceProvider());
         }
 
         [Fact]
         public void GiveRunnerSystem_Run_CreatesClient()
         {
             Mock<IBotSystem> sysMock = new();
-            BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
+            RegisterMock(sysMock);
+            BotSystemRunner runner = new(GetServiceProvider());
             sysMock.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(new Mock<IBotClient>().Object);
+            Mock<IBotGameplay> gameplayMock = new();
+            gameplayMock.Setup(g => g.CreateComponents(It.IsAny<IServiceProvider>()));
+            RegisterMock(gameplayMock);
 
             sysMock.Verify(s => s.CreateClient(It.IsAny<IServiceProvider>()), Times.Never);
 
@@ -38,8 +43,12 @@ namespace Test.Bot.Core
             Mock<IBotSystem> sysMock = new();
             Mock<IBotClient> clientMock = new();
             sysMock.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(clientMock.Object);
+            RegisterMock(sysMock);
+            Mock<IBotGameplay> gameplayMock = new();
+            gameplayMock.Setup(g => g.CreateComponents(It.IsAny<IServiceProvider>()));
+            RegisterMock(gameplayMock);
 
-            BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
+            BotSystemRunner runner = new(GetServiceProvider());
 
             clientMock.Verify(c => c.ConnectAsync(), Times.Never);
 
@@ -55,11 +64,15 @@ namespace Test.Bot.Core
             Mock<IBotSystem> sysMock = new();
             Mock<IBotClient> clientMock = new();
             sysMock.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(clientMock.Object);
+            RegisterMock(sysMock);
+            Mock<IBotGameplay> gameplayMock = new();
+            gameplayMock.Setup(g => g.CreateComponents(It.IsAny<IServiceProvider>()));
+            RegisterMock(gameplayMock);
 
             TaskCompletionSource<bool> tcs = new();
             clientMock.Setup(c => c.ConnectAsync()).Returns(tcs.Task);
 
-            BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
+            BotSystemRunner runner = new(GetServiceProvider());
 
             var t = runner.RunAsync(CancellationToken.None);
             t.Wait(5);
@@ -73,11 +86,15 @@ namespace Test.Bot.Core
             Mock<IBotSystem> sysMock = new();
             Mock<IBotClient> clientMock = new();
             sysMock.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(clientMock.Object);
+            RegisterMock(sysMock);
+            Mock<IBotGameplay> gameplayMock = new();
+            gameplayMock.Setup(g => g.CreateComponents(It.IsAny<IServiceProvider>()));
+            RegisterMock(gameplayMock);
 
             TaskCompletionSource<bool> tcs = new();
             clientMock.Setup(c => c.ConnectAsync()).Returns(tcs.Task);
 
-            BotSystemRunner runner = new(GetServiceProvider(), sysMock.Object);
+            BotSystemRunner runner = new(GetServiceProvider());
 
             using CancellationTokenSource cts = new();
             var t = runner.RunAsync(cts.Token);

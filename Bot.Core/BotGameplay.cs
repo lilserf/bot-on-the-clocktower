@@ -7,6 +7,19 @@ namespace Bot.Core
 {
     public class BotGameplay : IBotGameplay
     {
+        private IBotComponent? m_testButton;
+		public BotGameplay()
+		{
+        }
+
+        public void CreateComponents(IServiceProvider services)
+		{
+            var system = services.GetService<IBotSystem>();
+            m_testButton = system.CreateButton("test_id", "Test Button!");
+
+            var compService = services.GetService<IComponentService>();
+            compService.RegisterComponent(m_testButton, TestButtonPressed);
+        }
 
         // Helper for editing the original interaction with a summarizing message when finished
         // TODO: move within IBotInteractionContext
@@ -182,12 +195,17 @@ namespace Bot.Core
                 await context.DeferInteractionResponse();
 
                 var system = context.Services.GetService<IBotSystem>();
-                var testButton = system.CreateButton("test_id", "Test Button!");
-
                 var webhook = system.CreateWebhookBuilder().WithContent("You just ran the Game command. Good for you!");
-                webhook = webhook.AddComponents(testButton);
+                webhook = webhook.AddComponents(m_testButton!);
                 await context.EditResponseAsync(webhook);
             });
         }
+
+        public async Task TestButtonPressed(IBotComponentContext context, IServiceProvider services)
+		{
+            var system = services.GetService<IBotSystem>();
+            var builder = system.CreateInteractionResponseBuilder().WithContent("You clicked on my button. Congratulations!");
+			await context.UpdateOriginalMessageAsync(builder);
+		}
     }
 }

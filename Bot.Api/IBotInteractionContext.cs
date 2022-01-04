@@ -11,5 +11,6 @@ namespace Bot.Api
         IMember Member { get; }
         Task DeferInteractionResponse();
         Task EditResponseAsync(IBotWebhookBuilder webhookBuilder);
+        Task UpdateOriginalMessageAsync(IInteractionResponseBuilder builder);
     }
 }

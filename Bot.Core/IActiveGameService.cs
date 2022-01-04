@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Bot.Api;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bot.Api
+namespace Bot.Core
 {
 	public interface IActiveGameService
 	{
