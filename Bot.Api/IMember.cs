@@ -12,6 +12,7 @@ namespace Bot.Api
 
 		Task<IMessage> SendMessageAsync(string content);
 
+		Task SetDisplayName(string name);
 		public string DisplayName { get; }
 		public bool IsBot { get; }
 	}

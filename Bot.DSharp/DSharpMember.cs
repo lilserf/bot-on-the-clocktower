@@ -45,5 +45,10 @@ namespace Bot.DSharp
 			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(content));
 			return new DSharpMessage(messageRet);
 		}
+
+		public async Task SetDisplayName(string newName)
+        {
+			await Wrapped.ModifyAsync(x => x.Nickname = newName);
+        }
     }
 }

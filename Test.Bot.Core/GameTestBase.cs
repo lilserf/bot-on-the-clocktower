@@ -118,7 +118,7 @@ namespace Test.Bot.Core
             SetupUserMock(Villager2Mock, "Alice");
         }
 
-        private static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
+        protected static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
         {
             channel.SetupGet(c => c.Users).Returns(Array.Empty<IMember>());
             channel.Setup(c => c.Equals(channel.Object)).Returns(true);
@@ -126,7 +126,7 @@ namespace Test.Bot.Core
             channel.SetupGet(c => c.IsVoice).Returns(isVoice);
         }
 
-        private static void SetupUserMock(Mock<IMember> member, string name)
+        protected static void SetupUserMock(Mock<IMember> member, string name)
 		{
             member.Setup(c => c.Equals(member.Object)).Returns(true);
             member.SetupGet(x => x.DisplayName).Returns(name);

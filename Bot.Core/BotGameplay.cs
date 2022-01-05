@@ -118,6 +118,19 @@ namespace Bot.Core
             return success;
         }
 
+        private async void TagStorytellers(IGame game, IProcessLogger logger)
+        {
+            foreach (var u in game.StoryTellers)
+            {
+                await MemberHelper.AddStorytellerTag(u, logger);
+            }
+
+            foreach(var u in game.Villagers)
+            {
+                await MemberHelper.RemoveStorytellerTag(u, logger);
+            }
+        }
+
         // TODO: better name for this method, probably
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
@@ -128,6 +141,8 @@ namespace Bot.Core
                     return null;
                 }
                 // TODO: resolve a change in Storytellers
+
+                TagStorytellers(game, logger);
 
                 var foundUsers = game.Town.TownSquare.Users.ToList();
 
@@ -211,6 +226,8 @@ namespace Bot.Core
                     await MemberHelper.GrantRoleLoggingErrorsAsync(v, town.VillagerRole, logger);
                     game.AddVillager(v);
                 }
+
+                TagStorytellers(game, logger);
 
                 m_activeGameService.RegisterGame(town, game);
             }

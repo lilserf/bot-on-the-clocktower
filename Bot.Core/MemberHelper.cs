@@ -57,6 +57,47 @@ namespace Bot.Core
             }
         }
 
+        private const string StorytellerTag = "(ST) ";
+        public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
+        {
+            if (member.DisplayName.StartsWith(StorytellerTag))
+                return true;
+
+            try
+            {
+                await member.SetDisplayName(StorytellerTag + member.DisplayName);
+                return true;
+            }
+            catch(Exception ex)
+            {
+                if (!IsHandledException(ex))
+                    throw;
+
+                logger.LogException(ex, $"change display name of '{member.DisplayName}'");
+                return false;
+            }
+        }
+
+        public static async Task<bool> RemoveStorytellerTag(IMember member, IProcessLogger logger)
+        {
+            if(!member.DisplayName.StartsWith(StorytellerTag))
+                return true;
+
+            try
+            {
+                await member.SetDisplayName(member.DisplayName.Substring(StorytellerTag.Length));
+                return true;
+            }
+            catch(Exception ex)
+            {
+                if (!IsHandledException(ex))
+                    throw;
+
+                logger.LogException(ex, $"change display name of '{member.DisplayName}'");
+                return false;
+            }
+        }
+
         private static bool IsHandledException(Exception ex)
         {
             return (ex is UnauthorizedException || ex is NotFoundException || ex is ServerErrorException);

@@ -26,7 +26,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
         [InlineData(typeof(ServerErrorException))]
-        public void CurrentGame_Exceptions(Type exceptionType)
+        public void CurrentGame_GrantRole_Exceptions(Type exceptionType)
         {
             Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>())).ThrowsAsync(CreateException(exceptionType));
 
@@ -227,6 +227,75 @@ namespace Test.Bot.Core
 
             // Should have some sort of nice error message saying we couldn't find a town, and some suggestions for what to do about it
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("town", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CurrentGame_NewStoryteller_Tag(bool gameInProgress)
+        {
+            if(gameInProgress)
+            {
+                MockGameInProgress();
+            }
+            var stName = "Carol";
+            InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(stName);
+
+            RunCurrentGameAssertComplete();
+
+            var newName = "(ST) " + stName;
+            InteractionAuthorMock.Verify(m => m.SetDisplayName(newName), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CurrentGame_StoryTellerAlreadyTagged(bool gameInProgress)
+        {
+            if(gameInProgress)
+            {
+                MockGameInProgress();
+            }
+            var stName = "(ST) Carol";
+            InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(stName);
+
+            RunCurrentGameAssertComplete();
+
+            InteractionAuthorMock.Verify(m => m.SetDisplayName(It.IsAny<string>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CurrentGame_UnTagVillagers(bool gameInProgress)
+        {
+            if (gameInProgress)
+            {
+                MockGameInProgress();
+            }
+            var v1Name = "(ST) Dave";
+            Villager1Mock.SetupGet(m => m.DisplayName).Returns(v1Name);
+
+            RunCurrentGameAssertComplete();
+
+            // Dave should get the tag removed
+            Villager1Mock.Verify(m => m.SetDisplayName("Dave"), Times.Once);
+            // Other villager shouldn't be messed with
+            Villager2Mock.Verify(m => m.SetDisplayName(It.IsAny<string>()), Times.Never);
+        }
+
+
+
+        [Theory]
+        [InlineData(typeof(UnauthorizedException))]
+        [InlineData(typeof(NotFoundException))]
+        [InlineData(typeof(ServerErrorException))]
+        public void CurrentGame_StoryTellerTag_Exceptions(Type exceptionType)
+        {
+            InteractionAuthorMock.Setup(m => m.SetDisplayName(It.IsAny<string>())).ThrowsAsync(CreateException(exceptionType));
+
+            RunCurrentGameAssertComplete();
+            ProcessLoggerMock.Verify(pl => pl.LogException(It.Is<Exception>(s => s.GetType() == exceptionType), It.IsAny<string>()), Times.Once);
         }
 
         private void RunCurrentGameAssertComplete()

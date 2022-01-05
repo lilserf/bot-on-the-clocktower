@@ -13,10 +13,15 @@ namespace Test.Bot.Core
         [InlineData(typeof(NotFoundException))]
         public void NightSendToCottages_ExceptionMoving1Member_Continues(Type exceptionType)
         {
-            Mock<IMember> memberMock = new();
-            TownSquareMock.SetupGet(c => c.Users).Returns(new[] { memberMock.Object });
+            // For some reason, this code that creates its own member will cause a straight-up access violation when
+            // CurrentGameAsync tries to remove the storyteller from the list of all users (whaaaat?)
+            // This doesn't happen for some reason if we use one of the user mocks the base class created
+            //Mock<IMember> memberMock = new();
+            //SetupUserMock(memberMock, "Ethel");
+            //TownSquareMock.SetupGet(c => c.Users).Returns(new[] { memberMock.Object, InteractionAuthorMock.Object });
+            //memberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
-            memberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
+            Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
             BotGameplay gs = new(GetServiceProvider());
             var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
