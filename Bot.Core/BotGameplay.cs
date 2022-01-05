@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -66,21 +67,81 @@ namespace Bot.Core
             { }
         }
 
+        private const string InvalidTownMessage = "Couldn't find a registered town for this server and channel. Consider re-creating the town with /createTown or /addTown.";
+        public bool CheckIsTownViable(ITown? town, IProcessLogger logger)
+        {
+            // Without these two, there's not much else to do
+            if (town == null)
+            {
+                logger.LogMessage(InvalidTownMessage);
+                return false;
+            }
+            if (town.TownRecord == null)
+            {
+                logger.LogMessage(InvalidTownMessage);
+                return false;
+            }
+
+            // Run all these even if one fails
+            bool success = true;
+            if (town.DayCategory == null)
+            {
+                if (town.TownRecord.DayCategory != null)
+                    logger.LogMessage($"Couldn't find Day Category '{town.TownRecord.DayCategory}'");
+                else
+                    logger.LogMessage($"Couldn't find a registered Day Category for this town! Consider re-creating the town with /createTown or /addTown.");
+                success = false;
+            }
+            if(town.TownSquare == null)
+            {
+                if(town.TownRecord.TownSquare != null)
+                    logger.LogMessage($"Couldn't find Town Square channel '{town.TownRecord.TownSquare}'");
+                else
+                    logger.LogMessage($"Couldn't find a registered Town Square for this town! Consider re-creating the town with /createTown or /addTown.");
+                success = false;
+            }
+            if(town.StoryTellerRole == null)
+            {
+                if(town.TownRecord.StoryTellerRole != null)
+                    logger.LogMessage($"Couldn't find Storyteller role '{town.TownRecord.StoryTellerRole}'");
+                else
+                    logger.LogMessage($"Couldn't find a registered Storyteller role for this town! Consider re-creating the town with /createTown or /addTown.");
+            }
+            if (town.VillagerRole == null)
+            {
+                if (town.TownRecord.VillagerRole != null)
+                    logger.LogMessage($"Couldn't find Storyteller role '{town.TownRecord.VillagerRole}'");
+                else
+                    logger.LogMessage($"Couldn't find a registered Villager role for this town! Consider re-creating the town with /createTown or /addTown.");
+            }
+
+            return success;
+        }
+
         // TODO: better name for this method, probably
-        public async Task<IGame> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
+        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
             if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
+                if(!CheckIsTownViable(game.Town, logger))
+                {
+                    return null;
+                }
                 // TODO: resolve a change in Storytellers
 
                 var foundUsers = game.Town.TownSquare.Users.ToList();
+
                 foreach (var c in game.Town.DayCategory.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
-                foreach (var c in game.Town.NightCategory.Channels.Where(c => c.IsVoice))
+
+                if (game.Town.NightCategory != null)
                 {
-                    foundUsers.AddRange(c.Users.ToList());
+                    foreach (var c in game.Town.NightCategory.Channels.Where(c => c.IsVoice))
+                    {
+                        foundUsers.AddRange(c.Users.ToList());
+                    }
                 }
 
                 // Sanity check for bots
@@ -103,10 +164,20 @@ namespace Bot.Core
             else
             {
                 var townRec = await m_townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
+                if(townRec == null)
+                {
+                    logger.LogMessage(InvalidTownMessage);
+                    return null;
+                }
+
                 var town = await m_client.ResolveTownAsync(townRec);
+                if (!CheckIsTownViable(town, logger))
+                {
+                    return null;
+                }
 
                 // No record, so create one
-                game = new Game(town);
+                game = new Game(town!);
 
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
@@ -114,7 +185,21 @@ namespace Bot.Core
                 await MemberHelper.GrantRoleLoggingErrorsAsync(storyteller, town.StoryTellerRole, logger);
                 game.AddStoryTeller(storyteller);
 
-                var allUsers = town.TownSquare.Users.ToList();
+                var allUsers = new List<IMember>();
+
+                foreach (var c in town.DayCategory.Channels)
+                {
+                    allUsers.AddRange(c.Users);
+                }
+
+                if(town.NightCategory != null)
+                {
+                    foreach(var c in town.NightCategory.Channels)
+                    {
+                        allUsers.AddRange(c.Users);
+                    }
+                }
+                
                 allUsers.Remove(storyteller);
 
                 // Make everyone else a villager

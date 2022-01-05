@@ -34,7 +34,7 @@ namespace Test.Bot.Core
             RunCurrentGameAssertComplete();
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullTownSquare_ErrorMessage(bool gameInProgress)
@@ -52,7 +52,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains(townSquareName))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullTownSquare_NullTownSquareName_ErrorMessage(bool gameInProgress)
@@ -69,7 +69,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("Town Square", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullDayCategory_ErrorMessage(bool gameInProgress)
@@ -87,7 +87,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains(dayCategoryName, StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullDayCategory_NullDayCategoryName_ErrorMessage(bool gameInProgress)
@@ -104,7 +104,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("category", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullNightCategory_Continues(bool gameInProgress)
@@ -122,7 +122,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.IsAny<string>()), Times.Never);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullStorytellerRole_ErrorMessage(bool gameInProgress)
@@ -140,7 +140,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains(storytellerRoleName, StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullStorytellerRole_NullStorytellerRoleName_ErrorMessage(bool gameInProgress)
@@ -157,7 +157,7 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("storyteller", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullVillagerRole_ErrorMessage(bool gameInProgress)
@@ -165,17 +165,17 @@ namespace Test.Bot.Core
             if (gameInProgress)
                 MockGameInProgress();
 
-            const string storytellerRoleName = "Mock Storyteller Role";
-            TownMock.SetupGet(t => t.StoryTellerRole).Returns((IRole?)null);
-            TownRecordMock.SetupGet(t => t.StoryTellerRole).Returns(storytellerRoleName);
+            const string villagerRoleName = "Mock Villager Role";
+            TownMock.SetupGet(t => t.VillagerRole).Returns((IRole?)null);
+            TownRecordMock.SetupGet(t => t.VillagerRole).Returns(villagerRoleName);
 
             RunCurrentGameAssertComplete();
 
             // Should have some sort of nice error message indicating the role name
-            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains(storytellerRoleName, StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains(villagerRoleName, StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullVillagerRole_NullVillagerRoleName_ErrorMessage(bool gameInProgress)
@@ -192,13 +192,16 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("villager", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullTownRecord_ErrorMessage(bool gameInProgress)
         {
             if (gameInProgress)
+            {
                 MockGameInProgress();
+                TownMock.SetupGet(t => t.TownRecord).Returns(() => (ITownRecord?)null);
+            }
 
             TownLookupMock.Setup(tl => tl.GetTownRecord(It.IsAny<ulong>(), It.IsAny<ulong>())).ReturnsAsync(() => (ITownRecord?)null);
 
@@ -208,13 +211,16 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("town", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-        [Theory(Skip="Needs fixing")]
+        [Theory]
         [InlineData(true)]
         [InlineData(false)]
         public void CurrentGame_NullTown_ErrorMessage(bool gameInProgress)
         {
             if (gameInProgress)
-                MockGameInProgress();
+            {
+                var gameMock = MockGameInProgress();
+                gameMock.SetupGet(g => g.Town).Returns(() => (ITown?)null);
+            }
 
             ClientMock.Setup(c => c.ResolveTownAsync(It.IsAny<ITownRecord>())).ReturnsAsync(() => (ITown?)null);
 
@@ -232,10 +238,16 @@ namespace Test.Bot.Core
             Assert.True(t.IsCompleted);
         }
 
-        private void MockGameInProgress()
+        private Mock<IGame> MockGameInProgress()
         {
-            var gameObject = new Mock<IGame>().Object;
+            var gameMock = new Mock<IGame>();
+            gameMock.SetupGet(g => g.Town).Returns(TownMock.Object);
+            gameMock.SetupGet(g => g.AllPlayers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object, InteractionAuthorMock.Object });
+            gameMock.SetupGet(g => g.StoryTellers).Returns(new[] { InteractionAuthorMock.Object });
+            gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object });
+            var gameObject = gameMock.Object;
             ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);
+            return gameMock;
         }
     }
 }
