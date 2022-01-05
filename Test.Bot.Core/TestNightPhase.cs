@@ -45,6 +45,7 @@ namespace Test.Bot.Core
             VerifyContext();
         }
 
+        // Test that users are moved in the order the IShuffleService dictates
         [Fact]
         public void Night_MoveOrder()
         {
@@ -56,32 +57,32 @@ namespace Test.Bot.Core
             bool v2Check = true;
             bool iaCheck = true;
 
-            // First Villager 2 should get moved
-            Villager2Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
-            {
-                v2Calls++;
-                v2Check = (v2Calls == 1) && (v1Calls == 0) && (iaCalls == 0);
-            });
-            // Next Villager 1 should get moved
-            Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
-            {
-                v1Calls++;
-                v1Check = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 0);
-            });
-            // Finally the Interaction Author
+            // Interaction Author, as storyteller, should move first
             InteractionAuthorMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
             {
                 iaCalls++;
-                iaCheck = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 1);
+                iaCheck = (v2Calls == 0) && (v1Calls == 0) && (iaCalls == 1);
+            });
+            // Villager1 is Bob and would normally move last but our mock Shuffle makes him next
+            Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
+            {
+                v1Calls++;
+                v1Check = (v2Calls == 0) && (v1Calls == 1) && (iaCalls == 1);
+            });
+            // Then Villager2 who is Alice ends up last
+            Villager2Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
+            {
+                v2Calls++;
+                v2Check = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 1);
             });
 
             BotGameplay gs = new(GetServiceProvider());
             var t = gs.PhaseNightAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
-            Assert.True(v1Check);
-            Assert.True(v2Check);
-            Assert.True(iaCheck);
+            Assert.True(iaCheck, "InteractionAuthor should be moved first as storyteller");
+            Assert.True(v1Check, "Villager1 should be moved second");
+            Assert.True(v2Check, "Villager2 should be moved last");
         }
     }
 }
