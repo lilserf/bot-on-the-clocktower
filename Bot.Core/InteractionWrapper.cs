@@ -10,9 +10,10 @@ namespace Bot.Core
         public static async Task<string> TryProcessReportingErrorsAsync(IBotInteractionContext context, Func<IProcessLogger, Task<string>> process)
         {
             var logger = new ProcessLogger();
+            var msg = "Unknown error occurred.";
             try
             {
-                return await process(logger);
+                msg = await process(logger);
             }
             catch (Exception e)
             {
@@ -22,10 +23,10 @@ namespace Bot.Core
             if(logger.HasMessages)
 			{
                 //await TrySendMessagesToChannelAsync(context, logger.Messages);
-                return string.Join("\n", logger.Messages);
+                msg = string.Join("\n", logger.Messages) + "\n" + msg;
 			}
 
-            return "Unknown error occurred.";
+            return msg;
         }
 
         // TODO: edit the interaction response instead?

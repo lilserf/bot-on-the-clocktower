@@ -22,7 +22,6 @@ namespace Bot.DSharp
 				throw new InvalidOperationException("Passed an incorrect IChannel type");
 			
 			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.PlaceInAsync(chan.Wrapped));
-
 		}
 
 		public async Task GrantRoleAsync(IRole r)
