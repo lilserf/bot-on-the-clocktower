@@ -187,19 +187,22 @@ namespace Bot.Core
 
                 var allUsers = new List<IMember>();
 
-                foreach (var c in town.DayCategory.Channels)
+                foreach (var c in town.DayCategory.Channels.Where(c => c.IsVoice))
                 {
                     allUsers.AddRange(c.Users);
                 }
 
                 if(town.NightCategory != null)
                 {
-                    foreach(var c in town.NightCategory.Channels)
+                    foreach(var c in town.NightCategory.Channels.Where(c => c.IsVoice))
                     {
                         allUsers.AddRange(c.Users);
                     }
                 }
-                
+
+                // Sanity check for bots
+                allUsers = allUsers.Where(u => !u.IsBot).ToList();
+
                 allUsers.Remove(storyteller);
 
                 // Make everyone else a villager

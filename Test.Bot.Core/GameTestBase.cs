@@ -96,17 +96,17 @@ namespace Test.Bot.Core
             TownMock.SetupGet(t => t.VillagerRole).Returns(VillagerRoleMock.Object);
             TownMock.SetupGet(t => t.TownRecord).Returns(TownRecordMock.Object);
 
-            SetupChannelMock(ControlChannelMock);
-            SetupChannelMock(ChatChannelMock);
+            SetupChannelMock(ControlChannelMock, "botc_mover", false);
+            SetupChannelMock(ChatChannelMock, "chat", false);
 
-            SetupChannelMock(TownSquareMock);
+            SetupChannelMock(TownSquareMock, "Town Square");
             TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object });
 
             DayCategoryMock.SetupGet(c => c.Channels).Returns(new[] { ControlChannelMock.Object, ChatChannelMock.Object, TownSquareMock.Object });
             
-            SetupChannelMock(Cottage1Mock);
-            SetupChannelMock(Cottage2Mock);
-            SetupChannelMock(Cottage3Mock);
+            SetupChannelMock(Cottage1Mock, "Cottage 1");
+            SetupChannelMock(Cottage2Mock, "Cottage 2");
+            SetupChannelMock(Cottage3Mock, "Cottage 3");
             Cottage1Mock.SetupGet(x => x.Position).Returns(1);
             Cottage2Mock.SetupGet(x => x.Position).Returns(2);
             Cottage3Mock.SetupGet(x => x.Position).Returns(3);
@@ -118,10 +118,12 @@ namespace Test.Bot.Core
             SetupUserMock(Villager2Mock, "Alice");
         }
 
-        private static void SetupChannelMock(Mock<IChannel> channel)
+        private static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
         {
             channel.SetupGet(c => c.Users).Returns(Array.Empty<IMember>());
             channel.Setup(c => c.Equals(channel.Object)).Returns(true);
+            channel.SetupGet(c => c.Name).Returns(name);
+            channel.SetupGet(c => c.IsVoice).Returns(isVoice);
         }
 
         private static void SetupUserMock(Mock<IMember> member, string name)
