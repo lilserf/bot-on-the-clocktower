@@ -21,7 +21,7 @@ namespace Bot.Core
 
 		private static TownKey KeyFromTown(ITown town)
 		{
-			return new TownKey(town.Guild.Id, town.ControlChannel.Id);
+			return new TownKey(town.TownRecord.GuildId, town.TownRecord.ControlChannelId);
 		}
 
 		private readonly Dictionary<TownKey, IGame> m_games = new();

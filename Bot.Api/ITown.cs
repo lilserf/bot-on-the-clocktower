@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Bot.Api
+﻿namespace Bot.Api
 {
 	public interface ITown
 	{
-		public IGuild Guild { get; set; }
-		public IChannel ControlChannel { get; set; }
-		public IChannel TownSquare { get; set; }
-		public IChannel DayCategory { get; set; }
-		public IChannel NightCategory { get; set; }
-		public IChannel ChatChannel { get; set; }
-		public IRole StoryTellerRole {get; set;}
-		public IRole VillagerRole {get; set;}
+		public ITownRecord TownRecord { get; }
+		public IGuild? Guild { get; }
+		public IChannel? ControlChannel { get; }
+		public IChannel? TownSquare { get; }
+		public IChannel? DayCategory { get; }
+		public IChannel? NightCategory { get; }
+		public IChannel? ChatChannel { get; }
+		public IRole? StoryTellerRole {get; }
+		public IRole? VillagerRole {get; }
 	}
 }

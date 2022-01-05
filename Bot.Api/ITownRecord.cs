@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public interface ITownRecord
+    public interface ITownRecord
 	{
 		public ulong GuildId { get; set; }
 		public ulong ControlChannelId { get; set; }

@@ -69,7 +69,7 @@ namespace Bot.DSharp
         public async Task<ITown> ResolveTownAsync(ITownRecord rec)
         {
             var guild = await GetGuildAsync(rec.GuildId);
-            var town = new DSharpTown()
+            var town = new DSharpTown(rec)
             {
                 Guild = guild,
                 ControlChannel = await GetChannelAsync(rec.ControlChannelId),
