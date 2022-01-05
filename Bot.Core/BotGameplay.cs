@@ -141,6 +141,8 @@ namespace Bot.Core
 
         public async Task<string> PhaseNightInternal(IBotInteractionContext context)
         {
+            // TODO: games with no night category
+
             string message = "Moved all players from Town Square to Cottages!";
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
@@ -164,6 +166,7 @@ namespace Bot.Core
                 // Now put everyone else in the remaining cottages
                 var pairs = cottages.Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u));
 
+                // TODO: randomize order users are moved
                 foreach (var (cottage, user) in pairs)
                 {
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
@@ -179,6 +182,8 @@ namespace Bot.Core
         // Helper for moving all players to Town Square (used by Day and Vote commands)
         private static async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
         {
+            // TODO: take away cottage permissions
+            // TODO: randomize order of moves
             foreach (var member in game.AllPlayers)
             {
                 await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare, logger);
