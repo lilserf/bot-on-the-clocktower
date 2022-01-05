@@ -1,31 +1,32 @@
 ﻿using Bot.Api;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-	class Game : IGame
+    class Game : IGame
 	{
-		public ITown Town => m_town;
-		ITown m_town;
+		public ITown Town { get; }
 
-		public IList<IMember> StoryTellers => m_storyTellers;
-		List<IMember> m_storyTellers;
+		public IReadOnlyCollection<IMember> StoryTellers => m_storyTellers;
 
-		public IList<IMember> Villagers => m_villagers;
-		List<IMember> m_villagers;
+		private readonly List<IMember> m_storyTellers = new();
+
+		public IReadOnlyCollection<IMember> Villagers => m_villagers;
+
+		private readonly List<IMember> m_villagers = new();
 
 		public IReadOnlyCollection<IMember> AllPlayers => StoryTellers.Concat(Villagers).ToList();
 
 		public Game(ITown town)
 		{
-			m_town = town;
-			m_storyTellers = new();
-			m_villagers = new();
+			Town = town;
 		}
+
+		public void AddVillager(IMember villager) => m_villagers.Add(villager);
+		public void RemoveVillager(IMember villager) => m_villagers.Remove(villager);
+		public void AddStoryTeller(IMember storyTeller) => m_storyTellers.Add(storyTeller);
+		public void RemoveStoryTeller(IMember storyTeller) => m_storyTellers.Remove(storyTeller);
 
 	}
 }

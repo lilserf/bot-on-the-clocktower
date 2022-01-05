@@ -80,38 +80,5 @@ namespace Test.Bot.Core
             Assert.True(v1Check, "Villager1 should be moved second");
             Assert.True(v2Check, "Villager2 should be moved last");
         }
-
-        // Test that storyteller got the Storyteller role
-        // Test that villagers got the villager role
-        // TODO: move this to another module since it's not strictly Night
-        // TODO: more complex setup where some users already have the roles and shouldn't get GrantRole called
-        // TODO: old players should lose the roles?
-        [Fact]
-        public void CurrentGame_RolesCorrect()
-		{
-            BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-
-            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object)), Times.Once);
-            Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-            Villager2Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-		}
-
-        [Theory]
-        [InlineData(typeof(UnauthorizedException))]
-        [InlineData(typeof(NotFoundException))]
-        [InlineData(typeof(BadRequestException))]
-        [InlineData(typeof(ServerErrorException))]
-        public void CurrentGame_Exceptions(Type exceptionType)
-		{
-            Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>())).ThrowsAsync(CreateException(exceptionType));
-
-            BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-		}
     }
 }

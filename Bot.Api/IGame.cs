@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Bot.Api
 {
-	public interface IGame
+    public interface IGame
 	{
 		ITown Town { get; }
 
-		IList<IMember> StoryTellers { get; }
+		IReadOnlyCollection<IMember> StoryTellers { get; }
 
-		IList<IMember> Villagers { get; }
+		IReadOnlyCollection<IMember> Villagers { get; }
 		
 		IReadOnlyCollection<IMember> AllPlayers { get; }
+
+		void AddVillager(IMember villager);
+		void RemoveVillager(IMember villager);
+		void AddStoryTeller(IMember storyTeller);
+		void RemoveStoryTeller(IMember storyTeller);
 	}
 }

@@ -58,30 +58,34 @@ namespace Bot.DSharp
 
         public async Task<IChannel> GetChannelAsync(ulong id)
 		{
-            return new DSharpChannel(await m_discord!.GetChannelAsync(id));
+            return new DSharpChannel(await m_discord.GetChannelAsync(id));
 		}
 
 		public async Task<IGuild> GetGuildAsync(ulong id)
 		{
-            return new DSharpGuild(await m_discord!.GetGuildAsync(id));
+            return new DSharpGuild(await m_discord.GetGuildAsync(id));
 		}
 
-        public async Task<ITown> ResolveTownAsync(ITownRecord rec)
+        public async Task<ITown?> ResolveTownAsync(ITownRecord rec)
         {
             var guild = await GetGuildAsync(rec.GuildId);
-            var town = new DSharpTown(rec)
+            if (guild != null)
             {
-                Guild = guild,
-                ControlChannel = await GetChannelAsync(rec.ControlChannelId),
-                DayCategory = await GetChannelAsync(rec.DayCategoryId),
-                NightCategory = await GetChannelAsync(rec.NightCategoryId),
-                ChatChannel = await GetChannelAsync(rec.ChatChannelId),
-                TownSquare = await GetChannelAsync(rec.TownSquareId),
-                StoryTellerRole = guild.Roles[rec.StoryTellerRoleId],
-                VillagerRole = guild.Roles[rec.VillagerRoleId],
-            };
-            return town;
-		}
+                var town = new DSharpTown(rec)
+                {
+                    Guild = guild,
+                    ControlChannel = await GetChannelAsync(rec.ControlChannelId),
+                    DayCategory = await GetChannelAsync(rec.DayCategoryId),
+                    NightCategory = await GetChannelAsync(rec.NightCategoryId),
+                    ChatChannel = await GetChannelAsync(rec.ChatChannelId),
+                    TownSquare = await GetChannelAsync(rec.TownSquareId),
+                    StoryTellerRole = guild.Roles[rec.StoryTellerRoleId],
+                    VillagerRole = guild.Roles[rec.VillagerRoleId],
+                };
+                return town;
+            }
+            return null;
+        }
 
 		public class InvalidDiscordTokenException : Exception { }
     }

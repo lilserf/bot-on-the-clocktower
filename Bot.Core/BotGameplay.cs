@@ -92,14 +92,13 @@ namespace Bot.Core
                 foreach (var p in newPlayers)
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
-                    game.Villagers.Add(p);
+                    game.AddVillager(p);
                 }
                 foreach (var p in oldPlayers)
                 {
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
-                    game.Villagers.Remove(p);
+                    game.RemoveVillager(p);
                 }
-
             }
             else
             {
@@ -113,7 +112,7 @@ namespace Bot.Core
                 var storyteller = context.Member;
 
                 await MemberHelper.GrantRoleLoggingErrorsAsync(storyteller, town.StoryTellerRole, logger);
-                game.StoryTellers.Add(storyteller);
+                game.AddStoryTeller(storyteller);
 
                 var allUsers = town.TownSquare.Users.ToList();
                 allUsers.Remove(storyteller);
@@ -122,7 +121,7 @@ namespace Bot.Core
                 foreach (var v in allUsers)
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(v, town.VillagerRole, logger);
-                    game.Villagers.Add(v);
+                    game.AddVillager(v);
                 }
 
                 m_activeGameService.RegisterGame(town, game);
