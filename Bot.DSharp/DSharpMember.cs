@@ -38,7 +38,7 @@ namespace Bot.DSharp
 			if (r is not DSharpRole role)
 				throw new InvalidOperationException("Passed an incorrect IRole type");
 			
-			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.GrantRoleAsync(role.Wrapped, AUDIT_REASON));
+			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.RevokeRoleAsync(role.Wrapped, AUDIT_REASON));
 		}
 
 		public async Task<IMessage> SendMessageAsync(string content)
