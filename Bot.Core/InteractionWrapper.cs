@@ -10,7 +10,7 @@ namespace Bot.Core
         public static async Task<string> TryProcessReportingErrorsAsync(IBotInteractionContext context, Func<IProcessLogger, Task<string>> process)
         {
             var logger = new ProcessLogger();
-            var msg = "Unknown error occurred.";
+            var msg = "An error occurred processing this command - please check your private messages for a detailed report.";
             try
             {
                 msg = await process(logger);
