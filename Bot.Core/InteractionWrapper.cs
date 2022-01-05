@@ -45,7 +45,7 @@ namespace Bot.Core
         {
             try
             {
-                await context.Member.SendMessageAsync($"Bot on the Clocktower encountered an error.\n\nPlease consider reporting the error at https://github.com/lilserf/bot-on-the-clocktower/issues\n\nException: `{e.GetType().Name}`\nMessage:   `{e.Message}`\nStack trace:\n```{e.StackTrace}```");
+                await context.Member.SendMessageAsync($"Bot on the Clocktower encountered an error.\n\nPlease consider reporting the error at <https://github.com/lilserf/bot-on-the-clocktower/issues> and including all the information below:\n\nGuild: `{context.Guild.Id}`\nChannel: `{context.Channel.Id}`\nException: `{e.GetType().Name}`\nMessage:   `{e.Message}`\nStack trace:\n```{e.StackTrace}```");
             }
             catch (Exception)
             { }
