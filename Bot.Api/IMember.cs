@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Bot.Api
 {
@@ -15,5 +16,7 @@ namespace Bot.Api
 		Task SetDisplayName(string name);
 		public string DisplayName { get; }
 		public bool IsBot { get; }
+
+		public IReadOnlyCollection<IRole> Roles { get; }
 	}
 }

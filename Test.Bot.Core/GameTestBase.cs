@@ -142,6 +142,9 @@ namespace Test.Bot.Core
             var gameObject = gameMock.Object;
             ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);
             InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
+            InteractionAuthorMock.SetupGet(m => m.Roles).Returns(new[] { StoryTellerRoleMock.Object });
+            Villager1Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
+            Villager2Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
             return gameMock;
         }
 

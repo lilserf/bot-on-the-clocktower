@@ -1,6 +1,8 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -12,7 +14,9 @@ namespace Bot.DSharp
 		public string DisplayName => Wrapped.DisplayName;
 		public bool IsBot => Wrapped.IsBot;
 
-		public DSharpMember(DiscordMember wrapped)
+		public IReadOnlyCollection<IRole> Roles => Wrapped.Roles.Select(x => new DSharpRole(x)).ToList();
+
+        public DSharpMember(DiscordMember wrapped)
 			: base(wrapped)
 		{}
 

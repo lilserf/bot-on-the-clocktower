@@ -137,7 +137,32 @@ namespace Bot.Core
 
         private async void GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
+            IRole storytellerRole = game!.Town!.StoryTellerRole!;
+            IRole villagerRole = game!.Town!.VillagerRole!;
 
+            foreach(var u in game.StoryTellers)
+            {
+                if(!u.Roles.Contains(game.Town.StoryTellerRole))
+                {
+                    await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
+                }
+                if (!u.Roles.Contains(game.Town.VillagerRole))
+                {
+                    await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
+                }
+            }
+
+            foreach (var u in game.Villagers)
+            {
+                if(u.Roles.Contains(game.Town.StoryTellerRole))
+                {
+                    await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
+                }
+                if(!u.Roles.Contains(game.Town.VillagerRole))
+                {
+                    await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
+                }
+            }
         }
 
         // TODO: better name for this method, probably
@@ -176,14 +201,14 @@ namespace Bot.Core
 
                 foreach (var p in newPlayers)
                 {
-                    await MemberHelper.GrantRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
                     game.AddVillager(p);
                 }
                 foreach (var p in oldPlayers)
                 {
-                    await MemberHelper.RevokeRoleLoggingErrorsAsync(p, game.Town.VillagerRole, logger);
                     game.RemoveVillager(p);
                 }
+
+                GrantAndRevokeRoles(game, logger);
             }
             else
             {
@@ -205,8 +230,6 @@ namespace Bot.Core
 
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
-
-                await MemberHelper.GrantRoleLoggingErrorsAsync(storyteller, town.StoryTellerRole, logger);
                 game.AddStoryTeller(storyteller);
 
                 var allUsers = new List<IMember>();
@@ -232,10 +255,10 @@ namespace Bot.Core
                 // Make everyone else a villager
                 foreach (var v in allUsers)
                 {
-                    await MemberHelper.GrantRoleLoggingErrorsAsync(v, town.VillagerRole, logger);
                     game.AddVillager(v);
                 }
 
+                GrantAndRevokeRoles(game, logger);
                 TagStorytellers(game, logger);
 
                 m_activeGameService.RegisterGame(town, game);
