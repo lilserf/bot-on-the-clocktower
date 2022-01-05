@@ -66,7 +66,7 @@ namespace Bot.Core
         }
 
         // TODO: better name for this method, probably
-        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
+        public async Task<IGame> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
             if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
