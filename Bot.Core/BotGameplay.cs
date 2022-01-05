@@ -167,7 +167,6 @@ namespace Bot.Core
                 // Now put everyone else in the remaining cottages
                 var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
-                // TODO: randomize order users are moved
                 foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
                 {
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
@@ -184,7 +183,6 @@ namespace Bot.Core
         private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
         {
             // TODO: take away cottage permissions
-            // TODO: randomize order of moves
             foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
             {
                 await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare, logger);
