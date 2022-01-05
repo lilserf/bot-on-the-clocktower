@@ -2,6 +2,8 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Test.Bot.Base;
 
 namespace Test.Bot.Core
@@ -42,6 +44,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IActiveGameService> ActiveGameServiceMock = new();
         protected readonly Mock<IProcessLogger> ProcessLoggerMock = new();
         protected readonly Mock<IComponentService> ComponentServiceMock = new();
+        protected readonly Mock<IShuffleService> ShuffleServiceMock = new();
 
         public GameTestBase()
         {
@@ -57,9 +60,17 @@ namespace Test.Bot.Core
             RegisterMock(TownLookupMock);
             RegisterMock(ActiveGameServiceMock);
             RegisterMock(ComponentServiceMock);
+            RegisterMock(ShuffleServiceMock);
 
+            ShuffleServiceMock.Setup(ss => ss.Shuffle(It.IsAny<IEnumerable<Tuple<IChannel, IMember>>>()))
+                .Returns((IEnumerable<Tuple<IChannel, IMember>> input) => input.Reverse());
+            ShuffleServiceMock.Setup(ss => ss.Shuffle(It.IsAny<IEnumerable<IMember>>()))
+                .Returns((IEnumerable<IMember> input) => input.Reverse());
+
+            // TownLookup expects MockGuildId and MockChannelId and returns the TownRecord
             TownLookupMock.Setup(tl => tl.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(TownRecordMock.Object);
 
+            // ResolveTown expects the TownRecord and returns the Town
             ClientMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
 
             // By default, the ActiveGameService won't find a game for this context

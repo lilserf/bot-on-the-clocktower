@@ -25,8 +25,8 @@ namespace Bot.Core
 
         private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
-
         private readonly ITownLookup m_townLookup;
+        private readonly IShuffleService m_shuffle;
 
 		public BotGameplay(IServiceProvider services)
 		{
@@ -35,6 +35,7 @@ namespace Bot.Core
             m_componentService = services.GetService<IComponentService>();
             m_activeGameService = services.GetService<IActiveGameService>();
             m_townLookup = services.GetService<ITownLookup>();
+            m_shuffle = services.GetService<IShuffleService>();
 
             m_nightButton = CreateButton(GameplayButton.Night, "Night");
             m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
@@ -156,18 +157,18 @@ namespace Bot.Core
 
                 // First. put storytellers into the top cottages
                 var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-                foreach (var st in game.StoryTellers)
+                var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+
+                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
                 {
-                    var c = cottages.ElementAt(0);
-                    cottages.Remove(c);
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
                 }
 
                 // Now put everyone else in the remaining cottages
-                var pairs = cottages.Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u));
+                var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
                 // TODO: randomize order users are moved
-                foreach (var (cottage, user) in pairs)
+                foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
                 {
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
                 }
@@ -180,11 +181,11 @@ namespace Bot.Core
 
         // TODO: should this be a method on Game itself? :thinking:
         // Helper for moving all players to Town Square (used by Day and Vote commands)
-        private static async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
+        private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
         {
             // TODO: take away cottage permissions
             // TODO: randomize order of moves
-            foreach (var member in game.AllPlayers)
+            foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
             {
                 await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare, logger);
             }

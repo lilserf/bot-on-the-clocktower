@@ -14,6 +14,7 @@ namespace Bot.Core
             ServiceProvider sp = new(parentServices);
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
+            sp.AddService<IShuffleService>(new ShuffleService());
             return sp;
         }
 
