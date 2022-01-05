@@ -25,7 +25,6 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
-        [InlineData(typeof(BadRequestException))]
         [InlineData(typeof(ServerErrorException))]
         public void CurrentGame_Exceptions(Type exceptionType)
         {

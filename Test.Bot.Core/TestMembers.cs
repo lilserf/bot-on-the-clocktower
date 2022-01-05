@@ -43,7 +43,6 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
-        [InlineData(typeof(BadRequestException))]
         [InlineData(typeof(ServerErrorException))]
         public void MoveToChannel_ThrowsException_LoggerUpdated(Type exceptionType)
         {
@@ -74,7 +73,6 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
-        [InlineData(typeof(BadRequestException))]
         [InlineData(typeof(ServerErrorException))]
         public void GrantRole_ThrowsException_LoggerUpdated(Type exceptionType)
         {
@@ -105,7 +103,6 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
-        [InlineData(typeof(BadRequestException))]
         [InlineData(typeof(ServerErrorException))]
         public void RevokeRole_ThrowsException_LoggerUpdated(Type exceptionType)
         {

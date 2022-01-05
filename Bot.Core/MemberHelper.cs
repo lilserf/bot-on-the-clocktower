@@ -59,7 +59,7 @@ namespace Bot.Core
 
         private static bool IsHandledException(Exception ex)
         {
-            return (ex is UnauthorizedException || ex is NotFoundException || ex is BadRequestException || ex is ServerErrorException);
+            return (ex is UnauthorizedException || ex is NotFoundException || ex is ServerErrorException);
         }
     }
 }
