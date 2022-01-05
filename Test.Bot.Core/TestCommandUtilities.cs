@@ -44,8 +44,17 @@ namespace Test.Bot.Core
         {
             Mock<IMember> mockAuthor = new();
             Mock<IBotInteractionContext> mockContext = new();
+            Mock<IGuild> mockGuild = new();
+            Mock<IChannel> mockChannel = new();
+            ulong mockGuildId = 12345;
+            ulong mockChannelId = 67890;
+
+            mockGuild.SetupGet(g => g.Id).Returns(mockGuildId);
+            mockChannel.SetupGet(g => g.Id).Returns(mockChannelId);
 
             mockContext.SetupGet(c => c.Member).Returns(mockAuthor.Object);
+            mockContext.SetupGet(c => c.Guild).Returns(mockGuild.Object);
+            mockContext.SetupGet(c => c.Channel).Returns(mockChannel.Object);
 
             Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
@@ -56,6 +65,8 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
+            mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(mockGuildId.ToString()))), Times.Once);
+            mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(mockChannelId.ToString()))), Times.Once);
             mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(thrownException.GetType().Name))), Times.Once);
             mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(thrownException.Message))), Times.Once);
             mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(thrownException.StackTrace!))), Times.Once);
