@@ -7,9 +7,9 @@ namespace Bot.Api
 		public ulong GuildId { get; }
 		public string? ControlChannel { get; }
 		public ulong ControlChannelId { get; }
-		public string? DayCategory{ get; }
+		public string? DayCategory { get; }
 		public ulong DayCategoryId { get; }
-		public string? NightCategory{ get; }
+		public string? NightCategory { get; }
 		public ulong NightCategoryId { get; }
 		public string? ChatChannel { get; }
 		public ulong ChatChannelId { get; }

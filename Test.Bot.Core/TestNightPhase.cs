@@ -2,6 +2,7 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -86,16 +87,12 @@ namespace Test.Bot.Core
 
         // Test that storyteller got the Storyteller role
         // Test that villagers got the villager role
-        // TODO: move this to another module since it's not strictly Night
         // TODO: more complex setup where some users already have the roles and shouldn't get GrantRole called
         // TODO: old players should lose the roles?
         [Fact]
         public void CurrentGame_RolesCorrect()
 		{
-            BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
+            RunCurrentGameAssertComplete();
 
             InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object)), Times.Once);
             Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
@@ -111,10 +108,42 @@ namespace Test.Bot.Core
 		{
             Villager1Mock.Setup(v => v.GrantRoleAsync(It.IsAny<IRole>())).ThrowsAsync(CreateException(exceptionType));
 
+            RunCurrentGameAssertComplete();
+        }
+
+        [Fact(Skip="Needs implementaton")]
+        public void CurrentGame_NullTownSquare_ErrorMessage()
+        {
+            const string townSquareName = "Mock Town Square";
+            TownMock.SetupGet(t => t.TownSquare).Returns((IChannel?)null);
+            TownRecordMock.SetupGet(t => t.TownSquare).Returns(townSquareName);
+
+            RunCurrentGameAssertComplete();
+
+            // Should have some sort of nice error message indicating the name of the Town Square, and some suggestions
+            // for what to do about it
+            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains(townSquareName) && s.Contains("/createTown") && s.Contains("/addTown"))), Times.Once);
+        }
+
+        [Fact(Skip="Needs implementaton")]
+        public void CurrentGame_NullTownSquare_NullTownSquareName_ErrorMessage()
+        {
+            TownMock.SetupGet(t => t.TownSquare).Returns((IChannel?)null);
+            TownRecordMock.SetupGet(t => t.TownSquare).Returns((string)null);
+
+            RunCurrentGameAssertComplete();
+
+            // Should have some sort of nice error message saying we couldn't find a Town Square, and some suggestions
+            // for what to do about it
+            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("Town Square") && s.Contains("/createTown") && s.Contains("/addTown"))), Times.Once);
+        }
+
+        private void RunCurrentGameAssertComplete()
+        {
             BotGameplay gs = new(GetServiceProvider());
             var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
-		}
+        }
     }
 }
