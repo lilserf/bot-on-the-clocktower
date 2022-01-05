@@ -15,7 +15,7 @@ namespace Test.Bot.Core
         {
             Mock<IBotInteractionContext> mockContext = new();
 
-            Mock<Func<IProcessLogger, Task>> mockFunc = new();
+            Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
             var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
             t.Wait(50);
@@ -29,7 +29,7 @@ namespace Test.Bot.Core
         {
             Mock<IBotInteractionContext> mockContext = new();
 
-            Mock<Func<IProcessLogger, Task>> mockFunc = new();
+            Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
             var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
             t.Wait(50);
@@ -47,7 +47,7 @@ namespace Test.Bot.Core
 
             mockContext.SetupGet(c => c.Member).Returns(mockAuthor.Object);
 
-            Mock<Func<IProcessLogger, Task>> mockFunc = new();
+            Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
@@ -72,7 +72,7 @@ namespace Test.Bot.Core
 
             mockAuthor.Setup(m => m.SendMessageAsync(It.IsAny<string>())).ThrowsAsync(new ApplicationException());
 
-            Mock<Func<IProcessLogger, Task>> mockFunc = new();
+            Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);

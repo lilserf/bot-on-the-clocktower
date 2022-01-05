@@ -7,12 +7,12 @@ namespace Bot.Core
 {
     public static class InteractionWrapper
     {
-        public static async Task TryProcessReportingErrorsAsync(IBotInteractionContext context, Func<IProcessLogger, Task> process)
+        public static async Task<string> TryProcessReportingErrorsAsync(IBotInteractionContext context, Func<IProcessLogger, Task<string>> process)
         {
             var logger = new ProcessLogger();
             try
             {
-                await process(logger);
+                return await process(logger);
             }
             catch (Exception e)
             {
@@ -21,8 +21,11 @@ namespace Bot.Core
 
             if(logger.HasMessages)
 			{
-                await TrySendMessagesToChannelAsync(context, logger.Messages);
+                //await TrySendMessagesToChannelAsync(context, logger.Messages);
+                return string.Join("\n", logger.Messages);
 			}
+
+            return "Unknown error occurred.";
         }
 
         // TODO: edit the interaction response instead?

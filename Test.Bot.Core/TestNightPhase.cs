@@ -19,18 +19,16 @@ namespace Test.Bot.Core
             memberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.PhaseNightAsync(InteractionContextMock.Object);
+            var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
-
-            VerifyContext();
         }
 
         [Fact]
         public void Night_CottagesCorrect()
 		{
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.PhaseNightAsync(InteractionContextMock.Object);
+            var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -41,8 +39,6 @@ namespace Test.Bot.Core
             InteractionAuthorMock.Verify(v => v.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
             Villager2Mock.Verify(v => v.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object)), Times.Once);
             Villager1Mock.Verify(v => v.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage3Mock.Object)), Times.Once);
-
-            VerifyContext();
         }
 
         // Test that users are moved in the order the IShuffleService dictates
@@ -77,7 +73,7 @@ namespace Test.Bot.Core
             });
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.PhaseNightAsync(InteractionContextMock.Object);
+            var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
             Assert.True(iaCheck, "InteractionAuthor should be moved first as storyteller");

@@ -142,40 +142,38 @@ namespace Bot.Core
 
         public async Task<string> PhaseNightInternal(IBotInteractionContext context)
         {
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseNightUnsafe(context, processLog) );
+        }
+
+        public async Task<string> PhaseNightUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+		{
             // TODO: games with no night category
-
-            string message = "Moved all players from Town Square to Cottages!";
-            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            var game = await CurrentGameAsync(context, processLog);
+            if (game == null)
             {
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    // TODO: more error reporting here? Could make use of use processLog!
-                    message = "Couldn't find an active game record for this town!";
-                    return;
-                }
+                // TODO: more error reporting here? Could make use of use processLog!
+                return "Couldn't find an active game record for this town!";
+            }
 
-                // First. put storytellers into the top cottages
-                var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-                var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+            // First. put storytellers into the top cottages
+            var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
+            var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
-                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
-                {
-                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
-                }
+            foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
+            {
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+            }
 
-                // Now put everyone else in the remaining cottages
-                var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+            // Now put everyone else in the remaining cottages
+            var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
-                foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
-                {
-                    await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
-                }
+            foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
+            {
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
+            }
 
-                // TODO: set permissions on the cottages for each user (hopefully in a batch)
-            });
-
-            return message;
+            // TODO: set permissions on the cottages for each user (hopefully in a batch)
+            return "Moved all players from Town Square to Cottages!";
         }
 
         // TODO: should this be a method on Game itself? :thinking:
@@ -198,22 +196,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseDayInternal(IBotInteractionContext context)
         {
-            string msg = "Moved all players from Cottages back to Town Square!";
-            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseDayUnsafe(context, processLog));
+        }
+
+        public async Task<string> PhaseDayUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+		{
+            var game = await CurrentGameAsync(context, processLog);
+            if (game == null)
             {
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    // TODO: more error reporting here?
-                    msg = "Couldn't find an active game record for this town!";
-                    return;
-                }
+                // TODO: more error reporting here?
+                return "Couldn't find an active game record for this town!";
+            }
 
-                await MoveActivePlayersToTownSquare(game, processLog);
-
-            });
-
-            return msg;
+            await MoveActivePlayersToTownSquare(game, processLog);
+            return "Moved all players from Cottages back to Town Square!";
         }
 
         public async Task PhaseVoteAsync(IBotInteractionContext context)
@@ -224,22 +220,21 @@ namespace Bot.Core
         }
 
         public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
+        {
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseDayUnsafe(context, processLog));
+        }
+
+        public async Task<string> PhaseVoteUnsafe(IBotInteractionContext context, IProcessLogger processLog)
         { 
-            string msg = "Moved all players to Town Square for voting!";
-            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            var game = await CurrentGameAsync(context, processLog);
+            if (game == null)
             {
+                // TODO: more error reporting here?
+                return "Couldn't find an active game record for this town!";
+            }
 
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    // TODO: more error reporting here?
-                    msg = "Couldn't find an active game record for this town!";
-                    return;
-                }
-
-                await MoveActivePlayersToTownSquare(game, processLog);
-            });
-            return msg;
+            await MoveActivePlayersToTownSquare(game, processLog);
+            return "Moved all players to Town Square for voting!";
         }
 
         public async Task RunGameAsync(IBotInteractionContext context)
@@ -251,6 +246,7 @@ namespace Bot.Core
                 var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
                 webhook = webhook.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
                 await context.EditResponseAsync(webhook);
+                return "";
             });
         }
 
