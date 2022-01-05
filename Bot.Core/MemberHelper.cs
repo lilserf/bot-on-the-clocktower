@@ -99,6 +99,23 @@ namespace Bot.Core
             }
         }
 
+        public static async Task<bool> AddPermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
+        {
+            try
+            {
+                await channel.AddPermissionsAsync(member);
+                return true;
+            }
+            catch(Exception ex)
+            {
+                if (!IsHandledException(ex))
+                    throw;
+
+                logger.LogException(ex, $"grant '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
+                return false;
+            }
+        }
+
         private static bool IsHandledException(Exception ex)
         {
             return (ex is UnauthorizedException || ex is NotFoundException || ex is ServerErrorException);

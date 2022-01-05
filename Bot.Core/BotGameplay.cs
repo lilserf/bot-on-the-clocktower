@@ -283,7 +283,6 @@ namespace Bot.Core
 
         public async Task<string> PhaseNightUnsafe(IBotInteractionContext context, IProcessLogger processLog)
 		{
-            // TODO: games with no night category
             var game = await CurrentGameAsync(context, processLog);
             if (game == null)
             {
@@ -291,25 +290,32 @@ namespace Bot.Core
                 return "Couldn't find an active game record for this town!";
             }
 
-            // First. put storytellers into the top cottages
-            var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-            var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
-
-            foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
+            if (game.Town.NightCategory != null)
             {
-                await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+                // First, put storytellers into the top cottages
+                var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
+                var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+
+                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
+                {
+                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+                }
+
+                // Now put everyone else in the remaining cottages
+                var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+
+                foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
+                {
+                    await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
+                    await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
+                }
+
+                return "Moved all players from Town Square to Cottages!";
             }
-
-            // Now put everyone else in the remaining cottages
-            var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
-
-            foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
+            else
             {
-                await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
+                return "No Night Category for this town!";
             }
-
-            // TODO: set permissions on the cottages for each user (hopefully in a batch)
-            return "Moved all players from Town Square to Cottages!";
         }
 
         // TODO: should this be a method on Game itself? :thinking:

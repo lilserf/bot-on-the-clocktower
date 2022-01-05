@@ -24,6 +24,14 @@ namespace Bot.DSharp
 
 		public string Name => Wrapped.Name;
 
-		public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);
+        public async Task AddPermissionsAsync(IMember m)
+        {
+			if (m is DSharpMember member)
+			{
+				await Wrapped.AddOverwriteAsync(member.Wrapped, DSharpPlus.Permissions.ReadMessageHistory);
+			}
+        }
+
+        public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);
 	}
 }

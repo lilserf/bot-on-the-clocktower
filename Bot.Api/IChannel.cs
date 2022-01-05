@@ -21,5 +21,7 @@ namespace Bot.Api
 		public string Name { get; }
 
 		public Task SendMessageAsync(string msg);
+
+		public Task AddPermissionsAsync(IMember member);
 	}
 }
