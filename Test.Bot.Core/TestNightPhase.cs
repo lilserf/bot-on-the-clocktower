@@ -45,6 +45,45 @@ namespace Test.Bot.Core
             VerifyContext();
         }
 
+        [Fact]
+        public void Night_MoveOrder()
+        {
+            int v1Calls = 0;
+            int v2Calls = 0;
+            int iaCalls = 0;
+
+            bool v1Check = true;
+            bool v2Check = true;
+            bool iaCheck = true;
+
+            // First Villager 2 should get moved
+            Villager2Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
+            {
+                v2Calls++;
+                v2Check = (v2Calls == 1) && (v1Calls == 0) && (iaCalls == 0);
+            });
+            // Next Villager 1 should get moved
+            Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
+            {
+                v1Calls++;
+                v1Check = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 0);
+            });
+            // Finally the Interaction Author
+            InteractionAuthorMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
+            {
+                iaCalls++;
+                iaCheck = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 1);
+            });
+
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.PhaseNightAsync(InteractionContextMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+            Assert.True(v1Check);
+            Assert.True(v2Check);
+            Assert.True(iaCheck);
+        }
+
         // Test that storyteller got the Storyteller role
         // Test that villagers got the villager role
         // TODO: move this to another module since it's not strictly Night
