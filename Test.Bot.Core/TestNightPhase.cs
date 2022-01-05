@@ -83,19 +83,5 @@ namespace Test.Bot.Core
             Assert.True(v2Check);
             Assert.True(iaCheck);
         }
-
-        // Test that storyteller got the Storyteller role
-        // Test that villagers got the villager role
-        // TODO: more complex setup where some users already have the roles and shouldn't get GrantRole called
-        // TODO: old players should lose the roles?
-        [Fact]
-        public void CurrentGame_RolesCorrect()
-		{
-            RunCurrentGameAssertComplete();
-
-            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object)), Times.Once);
-            Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-            Villager2Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-		}
     }
 }

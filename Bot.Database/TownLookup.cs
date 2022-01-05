@@ -1,5 +1,4 @@
 ﻿using Bot.Api;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Threading.Tasks;
@@ -18,7 +17,7 @@ namespace Bot.Database
 			if (m_guildInfo == null) throw new MissingGuildInfoDatabaseException();
 		}
 
-		public async Task<ITownRecord> GetTownRecord(ulong guildId, ulong channelId)
+		public async Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId)
 		{
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;
