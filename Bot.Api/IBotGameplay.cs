@@ -8,5 +8,6 @@ namespace Bot.Api
         Task PhaseNightAsync(IBotInteractionContext context);
         Task PhaseDayAsync(IBotInteractionContext context);
         Task PhaseVoteAsync(IBotInteractionContext context);
+        Task EndGameAsync(IBotInteractionContext context);
     }
 }

@@ -7,5 +7,6 @@ namespace Bot.Core
 	{
 		bool TryGetGame(IBotInteractionContext context, [MaybeNullWhen(false)] out IGame game);
 		bool RegisterGame(ITown town, IGame game);
+		bool EndGame(ITown town);
 	}
 }

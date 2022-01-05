@@ -306,16 +306,5 @@ namespace Test.Bot.Core
             Assert.True(t.IsCompleted);
         }
 
-        private Mock<IGame> MockGameInProgress()
-        {
-            var gameMock = new Mock<IGame>();
-            gameMock.SetupGet(g => g.Town).Returns(TownMock.Object);
-            gameMock.SetupGet(g => g.AllPlayers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object, InteractionAuthorMock.Object });
-            gameMock.SetupGet(g => g.StoryTellers).Returns(new[] { InteractionAuthorMock.Object });
-            gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object });
-            var gameObject = gameMock.Object;
-            ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);
-            return gameMock;
-        }
     }
 }

@@ -6,6 +6,8 @@ namespace Bot.Core
 {
     public static class MemberHelper
     {
+        public const string StorytellerTag = "(ST) ";
+
         public static async Task<bool> MoveToChannelLoggingErrorsAsync(IMember member, IChannel channel, IProcessLogger logger)
         {
             try
@@ -57,7 +59,6 @@ namespace Bot.Core
             }
         }
 
-        private const string StorytellerTag = "(ST) ";
         public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
         {
             if (member.DisplayName.StartsWith(StorytellerTag))

@@ -12,6 +12,7 @@ namespace Test.Bot.Core
     {
         protected const ulong MockGuildId = 1337;
         protected const ulong MockChannelId = 42;
+        protected const string StorytellerDisplayName = "Peter Storyteller";
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
         protected readonly Mock<IBotWebhookBuilder> WebhookBuilderMock = new();
@@ -113,7 +114,7 @@ namespace Test.Bot.Core
             // Purposely don't order the collection of cottages in their display order
             NightCategoryMock.SetupGet(c => c.Channels).Returns(new[] { Cottage1Mock.Object, Cottage3Mock.Object, Cottage2Mock.Object});
 
-            SetupUserMock(InteractionAuthorMock, "Storyteller");
+            SetupUserMock(InteractionAuthorMock, StorytellerDisplayName);
             SetupUserMock(Villager1Mock, "Bob");
             SetupUserMock(Villager2Mock, "Alice");
         }
@@ -131,6 +132,19 @@ namespace Test.Bot.Core
             member.Setup(c => c.Equals(member.Object)).Returns(true);
             member.SetupGet(x => x.DisplayName).Returns(name);
         }
+        protected Mock<IGame> MockGameInProgress()
+        {
+            var gameMock = new Mock<IGame>();
+            gameMock.SetupGet(g => g.Town).Returns(TownMock.Object);
+            gameMock.SetupGet(g => g.AllPlayers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object, InteractionAuthorMock.Object });
+            gameMock.SetupGet(g => g.StoryTellers).Returns(new[] { InteractionAuthorMock.Object });
+            gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object });
+            var gameObject = gameMock.Object;
+            ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);
+            InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
+            return gameMock;
+        }
+
 
         // Common assumptions we want to make for most of our Interactions
         protected void VerifyContext()

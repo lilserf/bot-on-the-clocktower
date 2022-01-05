@@ -14,12 +14,14 @@ namespace Bot.Core
             Day,
             Vote,
             More,
+            EndGame,
 		}
 
         private readonly IBotComponent m_nightButton;
         private readonly IBotComponent m_dayButton;
         private readonly IBotComponent m_voteButton;
         private readonly IBotComponent m_moreButton;
+        private readonly IBotComponent m_endGameButton;
 
         private readonly IBotSystem m_system;
         private readonly IBotClient m_client;
@@ -42,11 +44,13 @@ namespace Bot.Core
             m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
             m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger);
             m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary);
+            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Danger);
 
             m_componentService.RegisterComponent(m_nightButton, NightButtonPressed);
             m_componentService.RegisterComponent(m_dayButton, DayButtonPressed);
             m_componentService.RegisterComponent(m_voteButton, VoteButtonPressed);
             m_componentService.RegisterComponent(m_moreButton, MoreButtonPressed);
+            m_componentService.RegisterComponent(m_endGameButton, EndGameButtonPressed);
         }
 
         private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary)
@@ -129,6 +133,11 @@ namespace Bot.Core
             {
                 await MemberHelper.RemoveStorytellerTag(u, logger);
             }
+        }
+
+        private async void GrantAndRevokeRoles(IGame game, IProcessLogger logger)
+        {
+
         }
 
         // TODO: better name for this method, probably
@@ -354,6 +363,43 @@ namespace Bot.Core
             });
         }
 
+
+        public async Task EndGameAsync(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+            var message = await EndGameInternal(context);
+            await EditOriginalMessage(context, message);
+        }
+
+        public async Task<string> EndGameInternal(IBotInteractionContext context)
+        {
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => EndGameUnsafe(context, processLog));
+        }
+
+        private async Task<string> EndGameUnsafe(IBotInteractionContext context, IProcessLogger logger)
+        {
+            var game = await CurrentGameAsync(context, logger);
+            if(game == null)
+            {
+                return "Couldn't find a current game to end!";
+            }
+            m_activeGameService.EndGame(game.Town);
+
+            foreach (var user in game.StoryTellers)
+            {
+                await MemberHelper.RemoveStorytellerTag(user, logger);
+                await user.RevokeRoleAsync(game.Town.StoryTellerRole);
+                await user.RevokeRoleAsync(game.Town.VillagerRole);
+            }
+
+            foreach(var user in game.Villagers)
+            {
+                await user.RevokeRoleAsync(game.Town.VillagerRole);
+            }
+
+            return "Thank you for playing Blood on the Clocktower!";
+        }
+
         public async Task NightButtonPressed(IBotInteractionContext context)
 		{
             await context.DeferInteractionResponse();
@@ -392,7 +438,16 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
 
             var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
-            builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
+            builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!, m_endGameButton!);
+            await context.EditResponseAsync(builder);
+        }
+
+        public async Task EndGameButtonPressed(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var message = await EndGameInternal(context);
+            var builder = m_system.CreateWebhookBuilder().WithContent(message);
             await context.EditResponseAsync(builder);
         }
     }

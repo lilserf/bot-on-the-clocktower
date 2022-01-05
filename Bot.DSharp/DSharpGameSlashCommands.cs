@@ -19,5 +19,8 @@ namespace Bot.DSharp
 
         [SlashCommand("vote", "Move all active players to Town Square for voting")]
         public Task VoteCommand(InteractionContext ctx) => BotGameplay!.PhaseVoteAsync(new DSharpInteractionContext(ctx));
+
+        [SlashCommand("endGame", "End any current game, removing roles etc")]
+        public Task EndGameCommand(InteractionContext ctx) => BotGameplay!.EndGameAsync(new DSharpInteractionContext(ctx));
     }
 }

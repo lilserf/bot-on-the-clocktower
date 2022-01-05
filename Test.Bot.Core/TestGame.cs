@@ -73,5 +73,42 @@ namespace Test.Bot.Core
             BotGameplay gs = new(GetServiceProvider());
             ComponentServiceMock.Verify(cs => cs.RegisterComponent(It.IsAny<IBotComponent>(), It.IsAny<Func<IBotInteractionContext, Task>>()), Times.AtLeastOnce);
         }
+
+        [Fact]
+        public void GameEnd_Completes()
+        {
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.EndGameAsync(InteractionContextMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void GameEnd_RolesAndTagsRemoved(bool gameInProgress)
+        {
+            if (gameInProgress)
+            {
+                MockGameInProgress();
+            }
+            else
+            {
+                // Even if no game is supposedly in progress, let's give the storyteller the (ST) tag
+                InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
+            }
+
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.EndGameAsync(InteractionContextMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+
+            InteractionAuthorMock.Verify(m => m.RevokeRoleAsync(StoryTellerRoleMock.Object), Times.Once);
+            InteractionAuthorMock.Verify(m => m.SetDisplayName(StorytellerDisplayName), Times.Once);
+            Villager1Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
+            Villager2Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
+            ActiveGameServiceMock.Verify(m => m.EndGame(TownMock.Object), Times.Once);
+        }
+
     }
 }
