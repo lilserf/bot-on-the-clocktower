@@ -131,6 +131,7 @@ namespace Test.Bot.Core
 		{
             member.Setup(c => c.Equals(member.Object)).Returns(true);
             member.SetupGet(x => x.DisplayName).Returns(name);
+            member.SetupGet(x => x.Roles).Returns(Array.Empty<IRole>());
         }
         protected Mock<IGame> MockGameInProgress()
         {
