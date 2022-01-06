@@ -122,23 +122,23 @@ namespace Test.Bot.Core
         protected static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
         {
             channel.SetupGet(c => c.Users).Returns(Array.Empty<IMember>());
-            channel.Setup(c => c.Equals(channel.Object)).Returns(true);
+            channel.Setup(c => c.Equals(It.Is<IMember>(x => x.Equals(channel.Object)))).Returns(true);
             channel.SetupGet(c => c.Name).Returns(name);
             channel.SetupGet(c => c.IsVoice).Returns(isVoice);
         }
 
         protected static void SetupUserMock(Mock<IMember> member, string name)
 		{
-            member.Setup(c => c.Equals(member.Object)).Returns(true);
             member.SetupGet(x => x.DisplayName).Returns(name);
             member.SetupGet(x => x.Roles).Returns(Array.Empty<IRole>());
+            member.Setup(x => x.Equals(It.Is<IMember>(c => c.Equals(member.Object)))).Returns(true);
         }
         protected Mock<IGame> MockGameInProgress()
         {
             var gameMock = new Mock<IGame>();
             gameMock.SetupGet(g => g.Town).Returns(TownMock.Object);
             gameMock.SetupGet(g => g.AllPlayers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object, InteractionAuthorMock.Object });
-            gameMock.SetupGet(g => g.StoryTellers).Returns(new[] { InteractionAuthorMock.Object });
+            gameMock.SetupGet(g => g.StoryTellers).Returns(() => new[] { InteractionAuthorMock.Object });
             gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object, Villager2Mock.Object });
             var gameObject = gameMock.Object;
             ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);

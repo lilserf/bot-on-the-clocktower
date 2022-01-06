@@ -298,6 +298,22 @@ namespace Test.Bot.Core
             ProcessLoggerMock.Verify(pl => pl.LogException(It.Is<Exception>(s => s.GetType() == exceptionType), It.IsAny<string>()), Times.Once);
         }
 
+        [Fact]
+        public void CurrentGame_StoryTellerSwitch()
+        {
+            var gameMock = MockGameInProgress();
+            // Make Villager1 send the message, not IAuthor
+            InteractionContextMock.SetupGet(m => m.Member).Returns(Villager1Mock.Object);
+
+            RunCurrentGameAssertComplete();
+
+            // Should have removed IAuthor as the ST and added Villager1, and vice versa for the Villager list
+            gameMock.Verify(m => m.RemoveStoryTeller(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
+            gameMock.Verify(m => m.AddStoryTeller(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(m => m.AddVillager(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
+            gameMock.Verify(m => m.RemoveVillager(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
+        }
+
         private void RunCurrentGameAssertComplete()
         {
             BotGameplay gs = new(GetServiceProvider());

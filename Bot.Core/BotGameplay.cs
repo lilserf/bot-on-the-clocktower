@@ -174,7 +174,18 @@ namespace Bot.Core
                 {
                     return null;
                 }
-                // TODO: resolve a change in Storytellers
+
+                //Resolve a change in Storytellers
+                if (!game.StoryTellers.Contains(context.Member))
+                {
+                    foreach (var user in game.StoryTellers)
+                    {
+                        game.AddVillager(user);
+                        game.RemoveStoryTeller(user);
+                    }
+                    game.RemoveVillager(context.Member);
+                    game.AddStoryTeller(context.Member);
+                }
 
                 TagStorytellers(game, logger);
 
