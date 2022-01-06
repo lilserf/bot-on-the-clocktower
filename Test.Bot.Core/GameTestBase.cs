@@ -122,7 +122,6 @@ namespace Test.Bot.Core
         protected static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
         {
             channel.SetupGet(c => c.Users).Returns(Array.Empty<IMember>());
-            channel.Setup(c => c.Equals(It.Is<IMember>(x => x.Equals(channel.Object)))).Returns(true);
             channel.SetupGet(c => c.Name).Returns(name);
             channel.SetupGet(c => c.IsVoice).Returns(isVoice);
         }
@@ -131,8 +130,8 @@ namespace Test.Bot.Core
 		{
             member.SetupGet(x => x.DisplayName).Returns(name);
             member.SetupGet(x => x.Roles).Returns(Array.Empty<IRole>());
-            member.Setup(x => x.Equals(It.Is<IMember>(c => c.Equals(member.Object)))).Returns(true);
         }
+
         protected Mock<IGame> MockGameInProgress()
         {
             var gameMock = new Mock<IGame>();
