@@ -28,8 +28,16 @@ namespace Bot.DSharp
         {
 			if (m is DSharpMember member)
 			{
-				await Wrapped.AddOverwriteAsync(member.Wrapped, DSharpPlus.Permissions.ReadMessageHistory);
+				await Wrapped.AddOverwriteAsync(member.Wrapped, DSharpPlus.Permissions.AccessChannels);
 			}
+        }
+
+		public async Task RemovePermissionsAsync(IMember m)
+        {
+			if (m is DSharpMember member)
+            {
+				await Wrapped.DeleteOverwriteAsync(member.Wrapped);
+            }
         }
 
         public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);

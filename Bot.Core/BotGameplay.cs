@@ -318,6 +318,21 @@ namespace Bot.Core
             }
         }
 
+        // Clear all permissions for cottages based on who's in which one
+        private async Task ClearCottagePermissions(IGame game, IProcessLogger logger)
+        {
+            if (game.Town.NightCategory != null)
+            {
+                foreach (var chan in game.Town.NightCategory.Channels)
+                {
+                    foreach (var mem in chan.Users)
+                    {
+                        await MemberHelper.RemovePermissionsAsync(mem, chan, logger);
+                    }
+                }
+            }
+        }
+
         // TODO: should this be a method on Game itself? :thinking:
         // Helper for moving all players to Town Square (used by Day and Vote commands)
         private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
@@ -350,6 +365,7 @@ namespace Bot.Core
                 return "Couldn't find an active game record for this town!";
             }
 
+            await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players from Cottages back to Town Square!";
         }
