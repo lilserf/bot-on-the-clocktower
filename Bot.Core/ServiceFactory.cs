@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Base;
+using Bot.Core.Callbacks;
 using System;
 
 namespace Bot.Core
@@ -12,6 +13,9 @@ namespace Bot.Core
         public static IServiceProvider RegisterCoreServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
+            sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
+
+
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());

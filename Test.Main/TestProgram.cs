@@ -15,5 +15,23 @@ namespace Test.Main
 
             Assert.IsType<ProgramEnvironment>(env);
         }
+
+        [Fact]
+        public static void CreateServices_HasDateTime()
+        {
+            var sp = Program.RegisterServices();
+            var env = sp.GetService<IDateTime>();
+
+            Assert.IsType<DateTimeStatic>(env);
+        }
+
+        [Fact]
+        public static void CreateServices_HasTask()
+        {
+            var sp = Program.RegisterServices();
+            var env = sp.GetService<ITask>();
+
+            Assert.IsType<TaskStatic>(env);
+        }
     }
 }
