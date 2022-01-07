@@ -104,7 +104,7 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            InteractionAuthorMock.Verify(m => m.RevokeRoleAsync(StoryTellerRoleMock.Object), Times.Once);
+            InteractionAuthorMock.Verify(m => m.RevokeRoleAsync(StorytellerRoleMock.Object), Times.Once);
             InteractionAuthorMock.Verify(m => m.SetDisplayName(StorytellerDisplayName), Times.Once);
             Villager1Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
             Villager2Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
@@ -123,9 +123,9 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
-            gameMock.Verify(g => g.RemoveStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
-            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
+            gameMock.Verify(g => g.RemoveStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
+            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
             gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
         }
 
@@ -141,11 +141,11 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
-            gameMock.Verify(g => g.RemoveStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Once);
-            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
+            gameMock.Verify(g => g.RemoveStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Once);
+            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
             gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
-            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
             gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
         }
     }

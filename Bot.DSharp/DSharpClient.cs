@@ -79,7 +79,7 @@ namespace Bot.DSharp
                     NightCategory = await GetChannelAsync(rec.NightCategoryId),
                     ChatChannel = await GetChannelAsync(rec.ChatChannelId),
                     TownSquare = await GetChannelAsync(rec.TownSquareId),
-                    StoryTellerRole = guild.Roles[rec.StoryTellerRoleId],
+                    StorytellerRole = guild.Roles[rec.StorytellerRoleId],
                     VillagerRole = guild.Roles[rec.VillagerRoleId],
                 };
                 return town;

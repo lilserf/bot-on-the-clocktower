@@ -8,15 +8,15 @@ namespace Bot.Core
 	{
 		public ITown Town { get; }
 
-		public IReadOnlyCollection<IMember> StoryTellers => m_storyTellers;
+		public IReadOnlyCollection<IMember> Storytellers => m_storytellers;
 
-		private readonly List<IMember> m_storyTellers = new();
+		private readonly List<IMember> m_storytellers = new();
 
 		public IReadOnlyCollection<IMember> Villagers => m_villagers;
 
 		private readonly List<IMember> m_villagers = new();
 
-		public IReadOnlyCollection<IMember> AllPlayers => StoryTellers.Concat(Villagers).ToList();
+		public IReadOnlyCollection<IMember> AllPlayers => Storytellers.Concat(Villagers).ToList();
 
 		public Game(ITown town)
 		{
@@ -25,8 +25,8 @@ namespace Bot.Core
 
 		public void AddVillager(IMember villager) => m_villagers.Add(villager);
 		public void RemoveVillager(IMember villager) => m_villagers.Remove(villager);
-		public void AddStoryTeller(IMember storyTeller) => m_storyTellers.Add(storyTeller);
-		public void RemoveStoryTeller(IMember storyTeller) => m_storyTellers.Remove(storyTeller);
+		public void AddStoryteller(IMember storyteller) => m_storytellers.Add(storyteller);
+		public void RemoveStoryteller(IMember storyteller) => m_storytellers.Remove(storyteller);
 
 	}
 }

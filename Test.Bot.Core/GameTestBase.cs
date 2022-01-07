@@ -29,7 +29,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IChannel> NightCategoryMock = new();
         protected readonly Mock<IChannel> ChatChannelMock = new();
 
-        protected readonly Mock<IRole> StoryTellerRoleMock = new();
+        protected readonly Mock<IRole> StorytellerRoleMock = new();
         protected readonly Mock<IRole> VillagerRoleMock = new();
 
         protected readonly Mock<IChannel> DarkAlleyMock = new();
@@ -93,7 +93,7 @@ namespace Test.Bot.Core
             TownMock.SetupGet(t => t.DayCategory).Returns(DayCategoryMock.Object);
             TownMock.SetupGet(t => t.NightCategory).Returns(NightCategoryMock.Object);
             TownMock.SetupGet(t => t.ChatChannel).Returns(ChatChannelMock.Object);
-            TownMock.SetupGet(t => t.StoryTellerRole).Returns(StoryTellerRoleMock.Object);
+            TownMock.SetupGet(t => t.StorytellerRole).Returns(StorytellerRoleMock.Object);
             TownMock.SetupGet(t => t.VillagerRole).Returns(VillagerRoleMock.Object);
             TownMock.SetupGet(t => t.TownRecord).Returns(TownRecordMock.Object);
 
@@ -138,20 +138,20 @@ namespace Test.Bot.Core
             gameMock.SetupGet(g => g.Town).Returns(TownMock.Object);
 
             // Actually back the Game mock with lists for storytellers and villagers :/
-            var storyTellers = new List<IMember>(new[] { InteractionAuthorMock.Object });
+            var storytellers = new List<IMember>(new[] { InteractionAuthorMock.Object });
             var villagers = new List<IMember>(new[] { Villager1Mock.Object, Villager2Mock.Object });
-            gameMock.SetupGet(g => g.AllPlayers).Returns(() => storyTellers.Concat(villagers).ToList());
-            gameMock.SetupGet(g => g.StoryTellers).Returns(() => storyTellers);
+            gameMock.SetupGet(g => g.AllPlayers).Returns(() => storytellers.Concat(villagers).ToList());
+            gameMock.SetupGet(g => g.Storytellers).Returns(() => storytellers);
             gameMock.SetupGet(g => g.Villagers).Returns(() => villagers);
-            gameMock.Setup(g => g.AddStoryTeller(It.IsAny<IMember>())).Callback<IMember>((m) => storyTellers.Add(m));
-            gameMock.Setup(g => g.RemoveStoryTeller(It.IsAny<IMember>())).Callback<IMember>((m) => storyTellers.Remove(m));
+            gameMock.Setup(g => g.AddStoryteller(It.IsAny<IMember>())).Callback<IMember>((m) => storytellers.Add(m));
+            gameMock.Setup(g => g.RemoveStoryteller(It.IsAny<IMember>())).Callback<IMember>((m) => storytellers.Remove(m));
             gameMock.Setup(g => g.AddVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Add(m));
             gameMock.Setup(g => g.RemoveVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Remove(m));
 
             var gameObject = gameMock.Object;
             ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);
             InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
-            InteractionAuthorMock.SetupGet(m => m.Roles).Returns(new[] { StoryTellerRoleMock.Object });
+            InteractionAuthorMock.SetupGet(m => m.Roles).Returns(new[] { StorytellerRoleMock.Object });
             Villager1Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
             Villager2Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
             return gameMock;

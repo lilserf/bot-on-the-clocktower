@@ -84,10 +84,10 @@ namespace Bot.Core
                     logger.LogMessage($"Couldn't find a registered Town Square for this town! Consider re-creating the town with /createTown or /addTown.");
                 success = false;
             }
-            if(town.StoryTellerRole == null)
+            if(town.StorytellerRole == null)
             {
-                if(town.TownRecord.StoryTellerRole != null)
-                    logger.LogMessage($"Couldn't find Storyteller role '{town.TownRecord.StoryTellerRole}'");
+                if(town.TownRecord.StorytellerRole != null)
+                    logger.LogMessage($"Couldn't find Storyteller role '{town.TownRecord.StorytellerRole}'");
                 else
                     logger.LogMessage($"Couldn't find a registered Storyteller role for this town! Consider re-creating the town with /createTown or /addTown.");
             }
@@ -104,7 +104,7 @@ namespace Bot.Core
 
         private async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
-            foreach (var u in game.StoryTellers)
+            foreach (var u in game.Storytellers)
             {
                 await MemberHelper.AddStorytellerTag(u, logger);
             }
@@ -117,12 +117,12 @@ namespace Bot.Core
 
         private async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
-            IRole storytellerRole = game!.Town!.StoryTellerRole!;
+            IRole storytellerRole = game!.Town!.StorytellerRole!;
             IRole villagerRole = game!.Town!.VillagerRole!;
 
-            foreach(var u in game.StoryTellers)
+            foreach(var u in game.Storytellers)
             {
-                if(!u.Roles.Contains(game.Town.StoryTellerRole))
+                if(!u.Roles.Contains(game.Town.StorytellerRole))
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 }
@@ -134,7 +134,7 @@ namespace Bot.Core
 
             foreach (var u in game.Villagers)
             {
-                if(u.Roles.Contains(game.Town.StoryTellerRole))
+                if(u.Roles.Contains(game.Town.StorytellerRole))
                 {
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 }
@@ -156,15 +156,15 @@ namespace Bot.Core
                 }
 
                 //Resolve a change in Storytellers
-                if (!game.StoryTellers.Contains(context.Member))
+                if (!game.Storytellers.Contains(context.Member))
                 {
-                    foreach (var user in game.StoryTellers.ToList())
+                    foreach (var user in game.Storytellers.ToList())
                     {
                         game.AddVillager(user);
-                        game.RemoveStoryTeller(user);
+                        game.RemoveStoryteller(user);
                     }
                     game.RemoveVillager(context.Member);
-                    game.AddStoryTeller(context.Member);
+                    game.AddStoryteller(context.Member);
                 }
 
                 await TagStorytellers(game, logger);
@@ -215,7 +215,7 @@ namespace Bot.Core
 
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
-                game.AddStoryTeller(storyteller);
+                game.AddStoryteller(storyteller);
 
                 var allUsers = new List<IMember>();
 
@@ -279,7 +279,7 @@ namespace Bot.Core
             {
                 // First, put storytellers into the top cottages
                 var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-                var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                var stPairs = cottages.Take(game.Storytellers.Count).Zip(game.Storytellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
                 foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
                 {
@@ -287,7 +287,7 @@ namespace Bot.Core
                 }
 
                 // Now put everyone else in the remaining cottages
-                var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                var pairs = cottages.Skip(game.Storytellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
                 foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
                 {
@@ -415,10 +415,10 @@ namespace Bot.Core
             }
             m_activeGameService.EndGame(game.Town);
 
-            foreach (var user in game.StoryTellers)
+            foreach (var user in game.Storytellers)
             {
                 await MemberHelper.RemoveStorytellerTag(user, logger);
-                await user.RevokeRoleAsync(game.Town.StoryTellerRole);
+                await user.RevokeRoleAsync(game.Town.StorytellerRole);
                 await user.RevokeRoleAsync(game.Town.VillagerRole);
             }
 
@@ -479,18 +479,18 @@ namespace Bot.Core
                 return returnMsg + "Nothing to do!";
             }
 
-            var revoke = game.StoryTellers.Where(s => !users.Contains(s)).ToList();
-            var grant = users.Where(s => !game.StoryTellers.Contains(s)).ToList();
+            var revoke = game.Storytellers.Where(s => !users.Contains(s)).ToList();
+            var grant = users.Where(s => !game.Storytellers.Contains(s)).ToList();
 
             foreach(var user in revoke)
             {
-                game.RemoveStoryTeller(user);
+                game.RemoveStoryteller(user);
                 game.AddVillager(user);
             }
             foreach (var user in grant)
             {
                 game.RemoveVillager(user);
-                game.AddStoryTeller(user);
+                game.AddStoryteller(user);
             }
             await GrantAndRevokeRoles(game, logger);
             await TagStorytellers (game, logger);
