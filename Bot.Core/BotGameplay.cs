@@ -52,7 +52,7 @@ namespace Bot.Core
             return m_system.CreateButton($"gameplay_{id}", label, type);
         }
 
-        public bool CheckIsTownViable(ITown? town, IProcessLogger logger)
+        public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
         {
             // Without these two, there's not much else to do
             if (town == null)

@@ -42,7 +42,7 @@ namespace Bot.DSharp
             [Option("user5", "Name of a user (or part of their name)")] string user5 = ""
             )
         {
-            var allUsers = new[] { user1, user2, user3, user5, user5 };
+            var allUsers = new[] { user1, user2, user3, user4, user5 };
 
             return BotGameplay!.CommandSetStorytellersAsync(new DSharpInteractionContext(ctx), allUsers.Where(x => x != "").ToList());
         }

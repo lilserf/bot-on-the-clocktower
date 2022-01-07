@@ -117,7 +117,6 @@ namespace Bot.Core
         {
             private readonly IDateTime DateTime;
 
-            private readonly IBotGameplay m_gameplay;
             private readonly ICallbackScheduler<ITownRecord> m_callbackScheduler;
             private readonly IBotClient m_client;
             private readonly IVoteHandler m_voteHandler;
@@ -128,7 +127,6 @@ namespace Bot.Core
             {
                 DateTime = serviceProvider.GetService<IDateTime>();
 
-                m_gameplay = serviceProvider.GetService<IBotGameplay>();
                 m_client = serviceProvider.GetService<IBotClient>();
                 m_voteHandler = serviceProvider.GetService<IVoteHandler>();
 
@@ -170,7 +168,7 @@ namespace Bot.Core
                 return "Could not find town";
             }
 
-            private async Task<string> SendMessageAsync(ITown town, string message)
+            private static async Task<string> SendMessageAsync(ITown town, string message)
             {
                 if (town.ChatChannel != null)
                 {
@@ -215,7 +213,7 @@ namespace Bot.Core
             {
                 var timeSpan = (endTime - now);
 
-                var townSquareName = town.TownSquare.Name ?? "Town Square";
+                var townSquareName = town.TownSquare?.Name ?? "Town Square";
                 var messagePrefix = $"{GetVillagerRoleMention(town.VillagerRole)} - ";
                 var messageTime = (timeSpan.TotalSeconds < 3) ? $"Returning to {townSquareName} to vote!" : $"{GetTimeString(timeSpan, true)} remaining until vote!";
 

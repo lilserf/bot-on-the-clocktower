@@ -5,15 +5,12 @@ using System.Threading.Tasks;
 
 namespace Bot.Core.Callbacks
 {
-    public class CallbackScheduler<TKey> : ICallbackScheduler<TKey>
+    public class CallbackScheduler<TKey> : ICallbackScheduler<TKey> where TKey : notnull
     {
         private readonly Func<TKey, Task> m_callback;
         private readonly TimeSpan m_period;
 
         private readonly Dictionary<TKey, DateTime> m_keysToCallbackTime = new();
-
-        private bool m_isPumping = false;
-        private readonly object m_pumpLock = new();
 
         private IDateTime DateTime { get; }
         private ITask Task { get; }
