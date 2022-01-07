@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
+    internal class EmptyCommands : SlashCommandModule
+    {
+    }
+
     internal class DSharpGameSlashCommands : SlashCommandModule
     {
         public IBotGameplay? BotGameplay { get; set; }

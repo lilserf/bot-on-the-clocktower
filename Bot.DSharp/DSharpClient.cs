@@ -33,8 +33,10 @@ namespace Bot.DSharp
         {
             var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
 
-            // TODO: register to all guilds, not just ours
+            // During development, register our commands to the dev guild only
             slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
+            // During development, register no commands globally
+            slash.RegisterCommands<EmptyCommands>();
 
             TaskCompletionSource readyTcs = new();
 
