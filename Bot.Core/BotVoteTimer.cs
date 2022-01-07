@@ -35,7 +35,7 @@ namespace Bot.Core
         {
             var town = await GetValidTownOrLogErrorAsync(context, processLoggger);
             if (town == null)
-                return "";
+                return "Failed to run command";
 
             if (town.ChatChannel == null)
                 return LogAndReturnEmptyString(processLoggger, "No chat channel found for this town. Please set the chat channel via the `/setChatChannel` command.");
@@ -51,7 +51,12 @@ namespace Bot.Core
             if (span.Value.TotalSeconds < 10 || span.Value.TotalMinutes > 20)
                 return LogAndReturnEmptyString(processLoggger, $"Please choose a time between 10 seconds and 20 minutes. You requested: {GetTimeString(span.Value, false)}");
 
-            return await m_voteTimerController.AddTownAsync(town.TownRecord, span.Value);
+            var ret = await m_voteTimerController.AddTownAsync(town.TownRecord, span.Value);
+
+            if (!string.IsNullOrWhiteSpace(ret))
+                return ret;
+
+            return $"Vote timer started for {GetTimeString(span.Value, false)}!";
         }
 
         public async Task RunStopVoteTimerAsync(IBotInteractionContext context)
@@ -72,7 +77,7 @@ namespace Bot.Core
         {
             var town = await GetValidTownOrLogErrorAsync(context, processLoggger);
             if (town == null)
-                return "";
+                return "Failed to run command";
 
             return await m_voteTimerController.RemoveTownAsync(town.TownRecord);
         }
@@ -80,7 +85,7 @@ namespace Bot.Core
         private static string LogAndReturnEmptyString(IProcessLogger processLoggger, string logString)
         {
             processLoggger.LogMessage(logString);
-            return "";
+            return "Failed to run command";
         }
 
         private static string GetTimeString(TimeSpan timeSpan, bool round)
