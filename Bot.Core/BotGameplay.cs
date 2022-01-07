@@ -169,9 +169,9 @@ namespace Bot.Core
 
                 await TagStorytellers(game, logger);
 
-                var foundUsers = game.Town.TownSquare.Users.ToList();
+                var foundUsers = game.Town!.TownSquare!.Users.ToList();
 
-                foreach (var c in game.Town.DayCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in game.Town!.DayCategory!.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
@@ -219,7 +219,7 @@ namespace Bot.Core
 
                 var allUsers = new List<IMember>();
 
-                foreach (var c in town.DayCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
                 {
                     allUsers.AddRange(c.Users);
                 }
@@ -263,18 +263,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseNightInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseNightUnsafe(context, processLog) );
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here? Could make use of use processLog!
+                    return "Couldn't find an active game record for this town!";
+                }
+                return await PhaseNightUnsafe(game, processLog);
+            });
         }
 
-        public async Task<string> PhaseNightUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+        public async Task<string> PhaseNightUnsafe(IGame game, IProcessLogger processLog)
 		{
-            var game = await CurrentGameAsync(context, processLog);
-            if (game == null)
-            {
-                // TODO: more error reporting here? Could make use of use processLog!
-                return "Couldn't find an active game record for this town!";
-            }
-
             if (game.Town.NightCategory != null)
             {
                 // First, put storytellers into the top cottages
@@ -325,7 +327,7 @@ namespace Bot.Core
             // TODO: take away cottage permissions
             foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
             {
-                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare, logger);
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare!, logger);
             }
         }
 
@@ -338,17 +340,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseDayInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseDayUnsafe(context, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    return "Couldn't find an active game record for this town!";
+                }
+                return await PhaseDayUnsafe(game, processLog);
+            });
         }
 
-        public async Task<string> PhaseDayUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+        public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
-            var game = await CurrentGameAsync(context, processLog);
-            if (game == null)
-            {
-                // TODO: more error reporting here?
-                return "Couldn't find an active game record for this town!";
-            }
 
             await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, processLog);
@@ -364,17 +369,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseDayUnsafe(context, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    return "Couldn't find an active game record for this town!";
+                }
+                return await PhaseVoteUnsafe(game, processLog);
+            });
         }
 
-        public async Task<string> PhaseVoteUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+        public async Task<string> PhaseVoteUnsafe(IGame game, IProcessLogger processLog)
         { 
-            var game = await CurrentGameAsync(context, processLog);
-            if (game == null)
-            {
-                // TODO: more error reporting here?
-                return "Couldn't find an active game record for this town!";
-            }
 
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players to Town Square for voting!";
@@ -382,7 +390,20 @@ namespace Bot.Core
 
         public async Task PerformVoteAsync(ITownRecord townRecord)
         {
-            throw new NotImplementedException();
+            IGame? game;
+            if(m_activeGameService.TryGetGame(townRecord.GuildId, townRecord.ControlChannelId, out game))
+            {
+                var logger = new ProcessLogger();
+                try
+                {
+                    await PhaseVoteUnsafe(game, logger);
+                }
+                catch(Exception ex)
+                {
+                    logger.LogException(ex, "trying to run a vote");
+                }
+                // TODO: what to do with this logger?
+            }
         }
 
         public async Task CommandGameAsync(IBotInteractionContext context)
@@ -408,28 +429,31 @@ namespace Bot.Core
 
         public async Task<string> EndGameInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => EndGameUnsafe(context, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    return "Couldn't find a current game to end!";
+                }
+                return await EndGameUnsafe(game, processLog);
+            });
         }
 
-        private async Task<string> EndGameUnsafe(IBotInteractionContext context, IProcessLogger logger)
+        private async Task<string> EndGameUnsafe(IGame game, IProcessLogger logger)
         {
-            var game = await CurrentGameAsync(context, logger);
-            if(game == null)
-            {
-                return "Couldn't find a current game to end!";
-            }
             m_activeGameService.EndGame(game.Town);
 
             foreach (var user in game.Storytellers)
             {
                 await MemberHelper.RemoveStorytellerTag(user, logger);
-                await user.RevokeRoleAsync(game.Town.StorytellerRole);
-                await user.RevokeRoleAsync(game.Town.VillagerRole);
+                await user.RevokeRoleAsync(game.Town!.StorytellerRole!);
+                await user.RevokeRoleAsync(game.Town!.VillagerRole!);
             }
 
             foreach(var user in game.Villagers)
             {
-                await user.RevokeRoleAsync(game.Town.VillagerRole);
+                await user.RevokeRoleAsync(game.Town!.VillagerRole!);
             }
 
             return "Thank you for playing Blood on the Clocktower!";

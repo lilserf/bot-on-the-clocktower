@@ -24,7 +24,7 @@ namespace Test.Bot.Core
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            var t = gs.PhaseNightInternal(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }
@@ -33,7 +33,7 @@ namespace Test.Bot.Core
         public void Night_CottagesCorrect()
 		{
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            var t = gs.PhaseNightInternal(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -78,7 +78,7 @@ namespace Test.Bot.Core
             });
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.PhaseNightUnsafe(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            var t = gs.PhaseNightInternal(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
             Assert.True(iaCheck, "InteractionAuthor should be moved first as storyteller");
