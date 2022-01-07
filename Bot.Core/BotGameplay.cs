@@ -25,7 +25,6 @@ namespace Bot.Core
 
         private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
-        private readonly ITownLookup m_townLookup;
         private readonly IShuffleService m_shuffle;
 
 		public BotGameplay(IServiceProvider services)
@@ -33,7 +32,6 @@ namespace Bot.Core
 		{
             m_componentService = services.GetService<IComponentService>();
             m_activeGameService = services.GetService<IActiveGameService>();
-            m_townLookup = services.GetService<ITownLookup>();
             m_shuffle = services.GetService<IShuffleService>();
 
             m_nightButton = CreateButton(GameplayButton.Night, "Night");
@@ -86,10 +84,10 @@ namespace Bot.Core
                     logger.LogMessage($"Couldn't find a registered Town Square for this town! Consider re-creating the town with /createTown or /addTown.");
                 success = false;
             }
-            if(town.StoryTellerRole == null)
+            if(town.StorytellerRole == null)
             {
-                if(town.TownRecord.StoryTellerRole != null)
-                    logger.LogMessage($"Couldn't find Storyteller role '{town.TownRecord.StoryTellerRole}'");
+                if(town.TownRecord.StorytellerRole != null)
+                    logger.LogMessage($"Couldn't find Storyteller role '{town.TownRecord.StorytellerRole}'");
                 else
                     logger.LogMessage($"Couldn't find a registered Storyteller role for this town! Consider re-creating the town with /createTown or /addTown.");
             }
@@ -104,9 +102,9 @@ namespace Bot.Core
             return success;
         }
 
-        private async void TagStorytellers(IGame game, IProcessLogger logger)
+        private async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
-            foreach (var u in game.StoryTellers)
+            foreach (var u in game.Storytellers)
             {
                 await MemberHelper.AddStorytellerTag(u, logger);
             }
@@ -117,14 +115,14 @@ namespace Bot.Core
             }
         }
 
-        private async void GrantAndRevokeRoles(IGame game, IProcessLogger logger)
+        private async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
-            IRole storytellerRole = game!.Town!.StoryTellerRole!;
+            IRole storytellerRole = game!.Town!.StorytellerRole!;
             IRole villagerRole = game!.Town!.VillagerRole!;
 
-            foreach(var u in game.StoryTellers)
+            foreach(var u in game.Storytellers)
             {
-                if(!u.Roles.Contains(game.Town.StoryTellerRole))
+                if(!u.Roles.Contains(game.Town.StorytellerRole))
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 }
@@ -136,7 +134,7 @@ namespace Bot.Core
 
             foreach (var u in game.Villagers)
             {
-                if(u.Roles.Contains(game.Town.StoryTellerRole))
+                if(u.Roles.Contains(game.Town.StorytellerRole))
                 {
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 }
@@ -158,18 +156,18 @@ namespace Bot.Core
                 }
 
                 //Resolve a change in Storytellers
-                if (!game.StoryTellers.Contains(context.Member))
+                if (!game.Storytellers.Contains(context.Member))
                 {
-                    foreach (var user in game.StoryTellers)
+                    foreach (var user in game.Storytellers.ToList())
                     {
                         game.AddVillager(user);
-                        game.RemoveStoryTeller(user);
+                        game.RemoveStoryteller(user);
                     }
                     game.RemoveVillager(context.Member);
-                    game.AddStoryTeller(context.Member);
+                    game.AddStoryteller(context.Member);
                 }
 
-                TagStorytellers(game, logger);
+                await TagStorytellers(game, logger);
 
                 var foundUsers = game.Town.TownSquare.Users.ToList();
 
@@ -201,7 +199,7 @@ namespace Bot.Core
                     game.RemoveVillager(p);
                 }
 
-                GrantAndRevokeRoles(game, logger);
+                await GrantAndRevokeRoles(game, logger);
             }
             else
             {
@@ -217,7 +215,7 @@ namespace Bot.Core
 
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
-                game.AddStoryTeller(storyteller);
+                game.AddStoryteller(storyteller);
 
                 var allUsers = new List<IMember>();
 
@@ -245,8 +243,8 @@ namespace Bot.Core
                     game.AddVillager(v);
                 }
 
-                GrantAndRevokeRoles(game, logger);
-                TagStorytellers(game, logger);
+                await GrantAndRevokeRoles (game, logger);
+                await TagStorytellers (game, logger);
 
                 m_activeGameService.RegisterGame(town, game);
             }
@@ -254,7 +252,7 @@ namespace Bot.Core
             return game;
         }
 
-        public async Task PhaseNightAsync(IBotInteractionContext context)
+        public async Task CommandNightAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
 
@@ -281,7 +279,7 @@ namespace Bot.Core
             {
                 // First, put storytellers into the top cottages
                 var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-                var stPairs = cottages.Take(game.StoryTellers.Count).Zip(game.StoryTellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                var stPairs = cottages.Take(game.Storytellers.Count).Zip(game.Storytellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
                 foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
                 {
@@ -289,7 +287,7 @@ namespace Bot.Core
                 }
 
                 // Now put everyone else in the remaining cottages
-                var pairs = cottages.Skip(game.StoryTellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                var pairs = cottages.Skip(game.Storytellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
                 foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
                 {
@@ -331,7 +329,7 @@ namespace Bot.Core
             }
         }
 
-        public async Task PhaseDayAsync(IBotInteractionContext context)
+        public async Task CommandDayAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
             var message = await PhaseDayInternal(context);
@@ -357,7 +355,7 @@ namespace Bot.Core
             return "Moved all players from Cottages back to Town Square!";
         }
 
-        public async Task PhaseVoteAsync(IBotInteractionContext context)
+        public async Task CommandVoteAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
             var message = await PhaseVoteInternal(context);
@@ -387,7 +385,7 @@ namespace Bot.Core
             throw new NotImplementedException();
         }
 
-        public async Task RunGameAsync(IBotInteractionContext context)
+        public async Task CommandGameAsync(IBotInteractionContext context)
         {
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
@@ -401,7 +399,7 @@ namespace Bot.Core
         }
 
 
-        public async Task EndGameAsync(IBotInteractionContext context)
+        public async Task CommandEndGameAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
             var message = await EndGameInternal(context);
@@ -422,10 +420,10 @@ namespace Bot.Core
             }
             m_activeGameService.EndGame(game.Town);
 
-            foreach (var user in game.StoryTellers)
+            foreach (var user in game.Storytellers)
             {
                 await MemberHelper.RemoveStorytellerTag(user, logger);
-                await user.RevokeRoleAsync(game.Town.StoryTellerRole);
+                await user.RevokeRoleAsync(game.Town.StorytellerRole);
                 await user.RevokeRoleAsync(game.Town.VillagerRole);
             }
 
@@ -436,6 +434,80 @@ namespace Bot.Core
 
             return "Thank you for playing Blood on the Clocktower!";
         }
+
+        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<string> users)
+        {
+            await context.DeferInteractionResponse();
+            var message = await SetStorytellersInternal(context, users);
+            await EditOriginalMessage(context, message);
+        }
+
+        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<string> users)
+        {
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => SetStorytellersUnsafe(context, users, processLog));
+        }
+
+        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<string> userNames, IProcessLogger logger)
+        {
+            IGame? game = await CurrentGameAsync(context, logger);
+            if (game == null)
+            {
+                // TODO: more error reporting here?
+                return "Couldn't find an active game record for this town!";
+            }
+
+            List<string> notFoundNames = new();
+            // TODO: Levenshtein distance?
+            List<IMember> users = new();
+            foreach(var name in userNames)
+            {
+                bool found = false;
+                foreach(var user in game.AllPlayers)
+                {
+                    if(MemberHelper.DisplayName(user).StartsWith(name, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        users.Add(user);
+                        found = true;
+                    }
+                }
+                if(!found)
+                    notFoundNames.Add(name);
+            }
+
+            string returnMsg = "";
+            if(notFoundNames.Count > 0)
+            {
+                returnMsg += $"Couldn't find users named: {string.Join(", ", notFoundNames.Select(x => "'" + x + "'"))}\n";
+            }
+            if(users.Count == 0)
+            {
+                return returnMsg + "Nothing to do!";
+            }
+
+            var revoke = game.Storytellers.Where(s => !users.Contains(s)).ToList();
+            var grant = users.Where(s => !game.Storytellers.Contains(s)).ToList();
+
+            foreach(var user in revoke)
+            {
+                game.RemoveStoryteller(user);
+                game.AddVillager(user);
+            }
+            foreach (var user in grant)
+            {
+                game.RemoveVillager(user);
+                game.AddStoryteller(user);
+            }
+            await GrantAndRevokeRoles(game, logger);
+            await TagStorytellers (game, logger);
+
+            var verbage = users.Count > 1 ? "New Storytellers are" : "New Storyteller is";
+            returnMsg += $"{verbage} {string.Join(", ", users.Select(x => MemberHelper.DisplayName(x)))}";
+            return returnMsg;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Button Code
+        ////////////////////////////////////////////////////////////////////////////////////////////////
 
         public async Task NightButtonPressed(IBotInteractionContext context)
 		{
@@ -487,5 +559,7 @@ namespace Bot.Core
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             await context.EditResponseAsync(builder);
         }
+
+ 
     }
 }

@@ -15,8 +15,8 @@ namespace Bot.Api
 		public ulong ChatChannelId { get; }
 		public string? TownSquare { get; }
 		public ulong TownSquareId { get; }
-		public string? StoryTellerRole { get; }
-		public ulong StoryTellerRoleId { get; }
+		public string? StorytellerRole { get; }
+		public ulong StorytellerRoleId { get; }
 		public string? VillagerRole { get; }
 		public ulong VillagerRoleId { get; }
 		public string? AuthorName { get; }

@@ -1,13 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Bot.Api
 {
     public interface IBotGameplay
     {
-        Task RunGameAsync(IBotInteractionContext context);
-        Task PhaseNightAsync(IBotInteractionContext context);
-        Task PhaseDayAsync(IBotInteractionContext context);
-        Task PhaseVoteAsync(IBotInteractionContext context);
-        Task EndGameAsync(IBotInteractionContext context);
+        Task CommandGameAsync(IBotInteractionContext context);
+        Task CommandNightAsync(IBotInteractionContext context);
+        Task CommandDayAsync(IBotInteractionContext context);
+        Task CommandVoteAsync(IBotInteractionContext context);
+        Task CommandEndGameAsync(IBotInteractionContext context);
+        Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<string> users);
     }
 }

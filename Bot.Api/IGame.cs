@@ -6,7 +6,7 @@ namespace Bot.Api
 	{
 		ITown Town { get; }
 
-		IReadOnlyCollection<IMember> StoryTellers { get; }
+		IReadOnlyCollection<IMember> Storytellers { get; }
 
 		IReadOnlyCollection<IMember> Villagers { get; }
 		
@@ -14,7 +14,7 @@ namespace Bot.Api
 
 		void AddVillager(IMember villager);
 		void RemoveVillager(IMember villager);
-		void AddStoryTeller(IMember storyTeller);
-		void RemoveStoryTeller(IMember storyTeller);
+		void AddStoryteller(IMember storyteller);
+		void RemoveStoryteller(IMember storyteller);
 	}
 }

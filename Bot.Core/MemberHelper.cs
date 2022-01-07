@@ -59,6 +59,13 @@ namespace Bot.Core
             }
         }
 
+        public static string DisplayName(IMember m)
+        {
+            if (m.DisplayName.StartsWith(StorytellerTag))
+                return m.DisplayName.Substring(StorytellerTag.Length);
+            else
+                return m.DisplayName;
+        }
         public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
         {
             if (member.DisplayName.StartsWith(StorytellerTag))

@@ -32,9 +32,9 @@ namespace Bot.Database
 		[BsonElement("nightCategoryId")]
 		public ulong NightCategoryId { get; set; }
 		[BsonElement("storyTellerRole")]
-		public string? StoryTellerRole { get; set; }
+		public string? StorytellerRole { get; set; }
 		[BsonElement("storyTellerRoleId")]
-		public ulong StoryTellerRoleId { get; set; }
+		public ulong StorytellerRoleId { get; set; }
 		[BsonElement("villagerRole")]
 		public string? VillagerRole { get; set; }
 		[BsonElement("villagerRoleId")]

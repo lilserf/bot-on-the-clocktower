@@ -9,7 +9,7 @@
 		public IChannel? DayCategory { get; }
 		public IChannel? NightCategory { get; }
 		public IChannel? ChatChannel { get; }
-		public IRole? StoryTellerRole {get; }
+		public IRole? StorytellerRole {get; }
 		public IRole? VillagerRole {get; }
 	}
 }

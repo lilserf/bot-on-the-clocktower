@@ -11,7 +11,7 @@ namespace Bot.DSharp
 		public IChannel? DayCategory { get; set; }
 		public IChannel? NightCategory { get; set; }
 		public IChannel? ChatChannel { get; set; }
-		public IRole? StoryTellerRole { get; set; }
+		public IRole? StorytellerRole { get; set; }
 		public IRole? VillagerRole { get; set; }
 
         public DSharpTown(ITownRecord townRecord)

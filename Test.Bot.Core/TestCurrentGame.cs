@@ -17,7 +17,7 @@ namespace Test.Bot.Core
         {
             RunCurrentGameAssertComplete();
 
-            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StoryTellerRoleMock.Object)), Times.Once);
+            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == StorytellerRoleMock.Object)), Times.Once);
             Villager1Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
             Villager2Mock.Verify(x => x.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
         }
@@ -130,8 +130,8 @@ namespace Test.Bot.Core
                 MockGameInProgress();
 
             const string storytellerRoleName = "Mock Storyteller Role";
-            TownMock.SetupGet(t => t.StoryTellerRole).Returns((IRole?)null);
-            TownRecordMock.SetupGet(t => t.StoryTellerRole).Returns(storytellerRoleName);
+            TownMock.SetupGet(t => t.StorytellerRole).Returns((IRole?)null);
+            TownRecordMock.SetupGet(t => t.StorytellerRole).Returns(storytellerRoleName);
 
             RunCurrentGameAssertComplete();
 
@@ -147,8 +147,8 @@ namespace Test.Bot.Core
             if (gameInProgress)
                 MockGameInProgress();
 
-            TownMock.SetupGet(t => t.StoryTellerRole).Returns((IRole?)null);
-            TownRecordMock.SetupGet(t => t.StoryTellerRole).Returns((string?)null);
+            TownMock.SetupGet(t => t.StorytellerRole).Returns((IRole?)null);
+            TownRecordMock.SetupGet(t => t.StorytellerRole).Returns((string?)null);
 
             RunCurrentGameAssertComplete();
 
@@ -250,7 +250,7 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void CurrentGame_StoryTellerAlreadyTagged(bool gameInProgress)
+        public void CurrentGame_StorytellerAlreadyTagged(bool gameInProgress)
         {
             if(gameInProgress)
             {
@@ -290,7 +290,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
         [InlineData(typeof(ServerErrorException))]
-        public void CurrentGame_StoryTellerTag_Exceptions(Type exceptionType)
+        public void CurrentGame_StorytellerTag_Exceptions(Type exceptionType)
         {
             InteractionAuthorMock.Setup(m => m.SetDisplayName(It.IsAny<string>())).ThrowsAsync(CreateException(exceptionType));
 
@@ -299,7 +299,7 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public void CurrentGame_StoryTellerSwitch()
+        public void CurrentGame_StorytellerSwitch()
         {
             var gameMock = MockGameInProgress();
             // Make Villager1 send the message, not IAuthor
@@ -308,8 +308,8 @@ namespace Test.Bot.Core
             RunCurrentGameAssertComplete();
 
             // Should have removed IAuthor as the ST and added Villager1, and vice versa for the Villager list
-            gameMock.Verify(m => m.RemoveStoryTeller(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
-            gameMock.Verify(m => m.AddStoryTeller(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(m => m.RemoveStoryteller(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
+            gameMock.Verify(m => m.AddStoryteller(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
             gameMock.Verify(m => m.AddVillager(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
             gameMock.Verify(m => m.RemoveVillager(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
         }
