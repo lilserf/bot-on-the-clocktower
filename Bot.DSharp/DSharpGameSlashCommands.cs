@@ -7,6 +7,7 @@ namespace Bot.DSharp
     internal class DSharpGameSlashCommands : SlashCommandModule
     {
         public IBotGameplay? BotGameplay { get; set; }
+        public IBotVoteTimer? BotVoteTimer { get; set; }
 
         [SlashCommand("game", "Starts up a game of Blood on the Clocktower")]
         public Task GameCommand(InteractionContext ctx) => BotGameplay!.RunGameAsync(new DSharpInteractionContext(ctx));
@@ -19,6 +20,11 @@ namespace Bot.DSharp
 
         [SlashCommand("vote", "Move all active players to Town Square for voting")]
         public Task VoteCommand(InteractionContext ctx) => BotGameplay!.PhaseVoteAsync(new DSharpInteractionContext(ctx));
+
+        [SlashCommand("voteTimer", "Move all active players to Town Square for voting after a provided amount of time")]
+        public Task VoteTimerCommand(InteractionContext ctx,
+            [Option("timeString", "Time string, such as \"5m30s\" or \"2 minutes\". Valid times are between 10 seconds and 20 minutes.")] string timeString = "")
+            => BotVoteTimer!.RunVoteTimerAsync(new DSharpInteractionContext(ctx), timeString);
 
         [SlashCommand("endGame", "End any current game, removing roles etc")]
         public Task EndGameCommand(InteractionContext ctx) => BotGameplay!.EndGameAsync(new DSharpInteractionContext(ctx));

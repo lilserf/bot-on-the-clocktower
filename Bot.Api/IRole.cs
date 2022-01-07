@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Bot.Api
+﻿namespace Bot.Api
 {
-	public interface IRole
+    public interface IRole
 	{
 		public string Name { get; }
+		public string Mention { get; }
 	}
 }

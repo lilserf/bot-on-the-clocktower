@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public class BotGameplay : IBotGameplay
+    public class BotGameplay : BotCommandHandler, IBotGameplay
     {
         private enum GameplayButton
 		{
@@ -23,18 +23,14 @@ namespace Bot.Core
         private readonly IBotComponent m_moreButton;
         private readonly IBotComponent m_endGameButton;
 
-        private readonly IBotSystem m_system;
-        private readonly IBotClient m_client;
-
         private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
         private readonly ITownLookup m_townLookup;
         private readonly IShuffleService m_shuffle;
 
 		public BotGameplay(IServiceProvider services)
+            : base(services)
 		{
-            m_system = services.GetService<IBotSystem>();
-            m_client = services.GetService<IBotClient>();
             m_componentService = services.GetService<IComponentService>();
             m_activeGameService = services.GetService<IActiveGameService>();
             m_townLookup = services.GetService<ITownLookup>();
@@ -58,20 +54,6 @@ namespace Bot.Core
             return m_system.CreateButton($"gameplay_{id}", label, type);
         }
 
-        // Helper for editing the original interaction with a summarizing message when finished
-        // TODO: move within IBotInteractionContext
-        private async Task EditOriginalMessage(IBotInteractionContext context, string s)
-        {
-            try
-            {
-                var webhook = m_system.CreateWebhookBuilder().WithContent(s);
-                await context.EditResponseAsync(webhook);
-            }
-            catch (Exception)
-            { }
-        }
-
-        private const string InvalidTownMessage = "Couldn't find a registered town for this server and channel. Consider re-creating the town with /createTown or /addTown.";
         public bool CheckIsTownViable(ITown? town, IProcessLogger logger)
         {
             // Without these two, there's not much else to do
@@ -223,18 +205,12 @@ namespace Bot.Core
             }
             else
             {
-                var townRec = await m_townLookup.GetTownRecord(context.Guild.Id, context.Channel.Id);
-                if(townRec == null)
-                {
-                    logger.LogMessage(InvalidTownMessage);
+                var town = await GetValidTownOrLogErrorAsync(context, logger);
+                if (town == null)
                     return null;
-                }
 
-                var town = await m_client.ResolveTownAsync(townRec);
                 if (!CheckIsTownViable(town, logger))
-                {
                     return null;
-                }
 
                 // No record, so create one
                 game = new Game(town!);

@@ -29,6 +29,7 @@ namespace Bot.Core
         {
             ServiceProvider sp = new(parentServices);
             sp.AddService<IBotGameplay>(new BotGameplay(sp));
+            sp.AddService<IBotVoteTimer>(new BotVoteTimer(sp));
             return sp;
         }
     }
