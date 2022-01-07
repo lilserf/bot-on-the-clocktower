@@ -142,6 +142,7 @@ namespace Test.Bot.Core
             var t = vt.RunVoteTimerUnsafe(InteractionContextMock.Object, timeString, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
+            Assert.False(string.IsNullOrWhiteSpace(t.Result));
         }
 
         private void AdvanceTime(TimeSpan span)
