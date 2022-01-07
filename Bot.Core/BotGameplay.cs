@@ -25,7 +25,6 @@ namespace Bot.Core
 
         private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
-        private readonly ITownLookup m_townLookup;
         private readonly IShuffleService m_shuffle;
 
 		public BotGameplay(IServiceProvider services)
@@ -33,7 +32,6 @@ namespace Bot.Core
 		{
             m_componentService = services.GetService<IComponentService>();
             m_activeGameService = services.GetService<IActiveGameService>();
-            m_townLookup = services.GetService<ITownLookup>();
             m_shuffle = services.GetService<IShuffleService>();
 
             m_nightButton = CreateButton(GameplayButton.Night, "Night");
@@ -104,7 +102,7 @@ namespace Bot.Core
             return success;
         }
 
-        private async void TagStorytellers(IGame game, IProcessLogger logger)
+        private async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
             foreach (var u in game.StoryTellers)
             {
@@ -117,7 +115,7 @@ namespace Bot.Core
             }
         }
 
-        private async void GrantAndRevokeRoles(IGame game, IProcessLogger logger)
+        private async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
             IRole storytellerRole = game!.Town!.StoryTellerRole!;
             IRole villagerRole = game!.Town!.VillagerRole!;
@@ -160,7 +158,7 @@ namespace Bot.Core
                 //Resolve a change in Storytellers
                 if (!game.StoryTellers.Contains(context.Member))
                 {
-                    foreach (var user in game.StoryTellers)
+                    foreach (var user in game.StoryTellers.ToList())
                     {
                         game.AddVillager(user);
                         game.RemoveStoryTeller(user);
@@ -169,7 +167,7 @@ namespace Bot.Core
                     game.AddStoryTeller(context.Member);
                 }
 
-                TagStorytellers(game, logger);
+                await TagStorytellers(game, logger);
 
                 var foundUsers = game.Town.TownSquare.Users.ToList();
 
@@ -201,7 +199,7 @@ namespace Bot.Core
                     game.RemoveVillager(p);
                 }
 
-                GrantAndRevokeRoles(game, logger);
+                await GrantAndRevokeRoles(game, logger);
             }
             else
             {
@@ -245,8 +243,8 @@ namespace Bot.Core
                     game.AddVillager(v);
                 }
 
-                GrantAndRevokeRoles(game, logger);
-                TagStorytellers(game, logger);
+                await GrantAndRevokeRoles (game, logger);
+                await TagStorytellers (game, logger);
 
                 m_activeGameService.RegisterGame(town, game);
             }
@@ -432,6 +430,80 @@ namespace Bot.Core
             return "Thank you for playing Blood on the Clocktower!";
         }
 
+        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<string> users)
+        {
+            await context.DeferInteractionResponse();
+            var message = await SetStorytellersInternal(context, users);
+            await EditOriginalMessage(context, message);
+        }
+
+        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<string> users)
+        {
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => SetStorytellersUnsafe(context, users, processLog));
+        }
+
+        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<string> userNames, IProcessLogger logger)
+        {
+            IGame? game = await CurrentGameAsync(context, logger);
+            if (game == null)
+            {
+                // TODO: more error reporting here?
+                return "Couldn't find an active game record for this town!";
+            }
+
+            List<string> notFoundNames = new();
+            // TODO: Levenshtein distance?
+            List<IMember> users = new();
+            foreach(var name in userNames)
+            {
+                bool found = false;
+                foreach(var user in game.AllPlayers)
+                {
+                    if(MemberHelper.DisplayName(user).StartsWith(name, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        users.Add(user);
+                        found = true;
+                    }
+                }
+                if(!found)
+                    notFoundNames.Add(name);
+            }
+
+            string returnMsg = "";
+            if(notFoundNames.Count > 0)
+            {
+                returnMsg += $"Couldn't find users named: {string.Join(", ", notFoundNames.Select(x => "'" + x + "'"))}\n";
+            }
+            if(users.Count == 0)
+            {
+                return returnMsg + "Nothing to do!";
+            }
+
+            var revoke = game.StoryTellers.Where(s => !users.Contains(s)).ToList();
+            var grant = users.Where(s => !game.StoryTellers.Contains(s)).ToList();
+
+            foreach(var user in revoke)
+            {
+                game.RemoveStoryTeller(user);
+                game.AddVillager(user);
+            }
+            foreach (var user in grant)
+            {
+                game.RemoveVillager(user);
+                game.AddStoryTeller(user);
+            }
+            await GrantAndRevokeRoles(game, logger);
+            await TagStorytellers (game, logger);
+
+            var verbage = users.Count > 1 ? "New Storytellers are" : "New Storyteller is";
+            returnMsg += $"{verbage} {string.Join(", ", users.Select(x => MemberHelper.DisplayName(x)))}";
+            return returnMsg;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Button Code
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+
         public async Task NightButtonPressed(IBotInteractionContext context)
 		{
             await context.DeferInteractionResponse();
@@ -482,5 +554,7 @@ namespace Bot.Core
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             await context.EditResponseAsync(builder);
         }
+
+ 
     }
 }

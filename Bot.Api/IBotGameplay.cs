@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Bot.Api
 {
@@ -9,5 +10,6 @@ namespace Bot.Api
         Task CommandDayAsync(IBotInteractionContext context);
         Task CommandVoteAsync(IBotInteractionContext context);
         Task CommandEndGameAsync(IBotInteractionContext context);
+        Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<string> users);
     }
 }

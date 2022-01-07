@@ -2,12 +2,13 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Test.Bot.Core
 {
-    public class TestGame : GameTestBase
+    public class TestGameplayMisc : GameTestBase
     {
         [Fact]
         public void ConstructGame_NoExceptions()
@@ -43,13 +44,13 @@ namespace Test.Bot.Core
         public void Night_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandNightAsync(context));
 
         [Fact]
-        public void Day_UnhandledException_NotifiesAuthorOfException() =>   TestUnhandledExceptionForCommand((bg, context) => bg.CommandDayAsync(context));
+        public void Day_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandDayAsync(context));
 
         [Fact]
-        public void Vote_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.CommandVoteAsync(context));
+        public void Vote_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandVoteAsync(context));
 
         [Fact]
-        public void Game_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.CommandGameAsync(context));
+        public void Game_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandGameAsync(context));
 
         private void TestUnhandledExceptionForCommand(Func<BotGameplay, IBotInteractionContext, Task> gameCommandTestFunc)
         {
@@ -110,5 +111,42 @@ namespace Test.Bot.Core
             ActiveGameServiceMock.Verify(m => m.EndGame(TownMock.Object), Times.Once);
         }
 
+        [Fact]
+        public void Gameplay_SetStorytellers_OneExisting()
+        {
+            var gameMock = MockGameInProgress();
+
+            var sts = new[] { "Peter", "Bob" };
+
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+
+            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
+            gameMock.Verify(g => g.RemoveStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
+            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+        }
+
+        [Fact]
+        public void Gameplay_SetStorytellers_NoneExisting()
+        {
+            var gameMock = MockGameInProgress();
+
+            var sts = new[] { "Alice", "Bob" };
+
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+
+            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
+            gameMock.Verify(g => g.RemoveStoryTeller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Once);
+            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.AddStoryTeller(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
+            gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
+        }
     }
 }
