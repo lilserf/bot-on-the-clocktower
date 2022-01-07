@@ -49,7 +49,7 @@ namespace Bot.Core
                 return LogAndReturnEmptyString(processLoggger, "Please enter a vote time in a format like \"5m30s\" or \"2 minutes\" or similar.");
 
             if (span.Value.TotalSeconds < 10 || span.Value.TotalMinutes > 20)
-                return LogAndReturnEmptyString(processLoggger, "Please choose a time between 10 seconds and 20 minutes.");
+                return LogAndReturnEmptyString(processLoggger, $"Please choose a time between 10 seconds and 20 minutes. You requested: {GetTimeString(span.Value, false)}");
 
             throw new NotImplementedException();
         }
@@ -60,30 +60,27 @@ namespace Bot.Core
             return "";
         }
 
-        private static string GetTimeString(TimeSpan timeSpan)
+        private static string GetTimeString(TimeSpan timeSpan, bool round)
         {
             var totalSeconds = timeSpan.TotalSeconds;
-            var roundedSeconds = Math.Round(totalSeconds / 5) * 5;
+            var roundedSeconds = round ? Math.Round(totalSeconds / 5) * 5 : totalSeconds;
 
             StringBuilder message = new();
 
-            if (roundedSeconds > 0)
+            var minutes = Math.Floor(roundedSeconds / 60);
+            var seconds = roundedSeconds % 60;
+
+            if (minutes > 0)
             {
-                var minutes = Math.Floor(roundedSeconds / 60);
-                var seconds = roundedSeconds % 60;
-
-                if (minutes > 0)
-                {
-                    message.Append($"{minutes} minute");
-                    if (minutes > 1)
-                        message.Append("s");
-                    if (seconds > 0)
-                        message.Append(", ");
-                }
-
+                message.Append($"{minutes} minute");
+                if (minutes > 1)
+                    message.Append('s');
                 if (seconds > 0)
-                    message.Append("${seconds} seconds");
+                    message.Append(", ");
             }
+
+            if (seconds > 0 || minutes == 0)
+                message.Append($"{seconds} seconds");
 
             return message.ToString();
         }
