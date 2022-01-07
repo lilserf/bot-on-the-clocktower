@@ -130,6 +130,16 @@ namespace Test.Bot.Core
             ChatChannelMock.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains(VillagerRoleMock.Object.Mention) && s.Contains(TownSquareMock.Object.Name) && s.Contains("returning", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
+        [Fact(Skip="Not yet implemented")]
+        public void PerformVote_Succeeds()
+        {
+            var bc = new BotGameplay(GetServiceProvider());
+
+            var t = bc.PerformVoteAsync(TownRecordMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+        }
+
         private void RunVoteTimerVerifyCompleted()
         {
             RunVoteTimerVerifyCompleted("");
