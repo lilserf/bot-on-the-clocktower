@@ -28,7 +28,7 @@ namespace Test.Bot.Core
         {
             BotGameplay gs = new(GetServiceProvider());
 
-            var t = gs.RunGameAsync(InteractionContextMock.Object);
+            var t = gs.CommandGameAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -40,16 +40,16 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public void Night_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.PhaseNightAsync(context));
+        public void Night_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandNightAsync(context));
 
         [Fact]
-        public void Day_UnhandledException_NotifiesAuthorOfException() =>   TestUnhandledExceptionForCommand((bg, context) => bg.PhaseDayAsync(context));
+        public void Day_UnhandledException_NotifiesAuthorOfException() =>   TestUnhandledExceptionForCommand((bg, context) => bg.CommandDayAsync(context));
 
         [Fact]
-        public void Vote_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.PhaseVoteAsync(context));
+        public void Vote_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.CommandVoteAsync(context));
 
         [Fact]
-        public void Game_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.RunGameAsync(context));
+        public void Game_UnhandledException_NotifiesAuthorOfException() =>  TestUnhandledExceptionForCommand((bg, context) => bg.CommandGameAsync(context));
 
         private void TestUnhandledExceptionForCommand(Func<BotGameplay, IBotInteractionContext, Task> gameCommandTestFunc)
         {
@@ -78,7 +78,7 @@ namespace Test.Bot.Core
         public void GameEnd_Completes()
         {
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.EndGameAsync(InteractionContextMock.Object);
+            var t = gs.CommandEndGameAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }
@@ -99,7 +99,7 @@ namespace Test.Bot.Core
             }
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.EndGameAsync(InteractionContextMock.Object);
+            var t = gs.CommandEndGameAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 

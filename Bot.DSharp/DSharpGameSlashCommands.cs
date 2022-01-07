@@ -10,16 +10,16 @@ namespace Bot.DSharp
         public IBotVoteTimer? BotVoteTimer { get; set; }
 
         [SlashCommand("game", "Starts up a game of Blood on the Clocktower")]
-        public Task GameCommand(InteractionContext ctx) => BotGameplay!.RunGameAsync(new DSharpInteractionContext(ctx));
+        public Task GameCommand(InteractionContext ctx) => BotGameplay!.CommandGameAsync(new DSharpInteractionContext(ctx));
 
         [SlashCommand("night", "Move all active players from Town Square into Cottages for the night")]
-        public Task NightCommand(InteractionContext ctx) => BotGameplay!.PhaseNightAsync(new DSharpInteractionContext(ctx));
+        public Task NightCommand(InteractionContext ctx) => BotGameplay!.CommandNightAsync(new DSharpInteractionContext(ctx));
 
         [SlashCommand("day", "Move all active players from Cottages to Town Square")]
-        public Task DayCommand(InteractionContext ctx) => BotGameplay!.PhaseDayAsync(new DSharpInteractionContext(ctx));
+        public Task DayCommand(InteractionContext ctx) => BotGameplay!.CommandDayAsync(new DSharpInteractionContext(ctx));
 
         [SlashCommand("vote", "Move all active players to Town Square for voting")]
-        public Task VoteCommand(InteractionContext ctx) => BotGameplay!.PhaseVoteAsync(new DSharpInteractionContext(ctx));
+        public Task VoteCommand(InteractionContext ctx) => BotGameplay!.CommandVoteAsync(new DSharpInteractionContext(ctx));
 
         [SlashCommand("voteTimer", "Move all active players to Town Square for voting after a provided amount of time")]
         public Task VoteTimerCommand(InteractionContext ctx,
@@ -27,6 +27,6 @@ namespace Bot.DSharp
             => BotVoteTimer!.RunVoteTimerAsync(new DSharpInteractionContext(ctx), timeString);
 
         [SlashCommand("endGame", "End any current game, removing roles etc")]
-        public Task EndGameCommand(InteractionContext ctx) => BotGameplay!.EndGameAsync(new DSharpInteractionContext(ctx));
+        public Task EndGameCommand(InteractionContext ctx) => BotGameplay!.CommandEndGameAsync(new DSharpInteractionContext(ctx));
     }
 }

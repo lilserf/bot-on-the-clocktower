@@ -254,7 +254,7 @@ namespace Bot.Core
             return game;
         }
 
-        public async Task PhaseNightAsync(IBotInteractionContext context)
+        public async Task CommandNightAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
 
@@ -331,7 +331,7 @@ namespace Bot.Core
             }
         }
 
-        public async Task PhaseDayAsync(IBotInteractionContext context)
+        public async Task CommandDayAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
             var message = await PhaseDayInternal(context);
@@ -357,7 +357,7 @@ namespace Bot.Core
             return "Moved all players from Cottages back to Town Square!";
         }
 
-        public async Task PhaseVoteAsync(IBotInteractionContext context)
+        public async Task CommandVoteAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
             var message = await PhaseVoteInternal(context);
@@ -382,7 +382,7 @@ namespace Bot.Core
             return "Moved all players to Town Square for voting!";
         }
 
-        public async Task RunGameAsync(IBotInteractionContext context)
+        public async Task CommandGameAsync(IBotInteractionContext context)
         {
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
@@ -396,7 +396,7 @@ namespace Bot.Core
         }
 
 
-        public async Task EndGameAsync(IBotInteractionContext context)
+        public async Task CommandEndGameAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
             var message = await EndGameInternal(context);
