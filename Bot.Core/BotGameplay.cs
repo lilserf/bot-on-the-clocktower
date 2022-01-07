@@ -459,19 +459,19 @@ namespace Bot.Core
             return "Thank you for playing Blood on the Clocktower!";
         }
 
-        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<string> users)
+        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
         {
             await context.DeferInteractionResponse();
             var message = await SetStorytellersInternal(context, users);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<string> users)
+        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<IMember> users)
         {
             return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => SetStorytellersUnsafe(context, users, processLog));
         }
 
-        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<string> userNames, IProcessLogger logger)
+        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<IMember> users, IProcessLogger logger)
         {
             IGame? game = await CurrentGameAsync(context, logger);
             if (game == null)
@@ -480,36 +480,33 @@ namespace Bot.Core
                 return "Couldn't find an active game record for this town!";
             }
 
+            List<IMember> foundUsers = new();
+
             List<string> notFoundNames = new();
-            // TODO: Levenshtein distance?
-            List<IMember> users = new();
-            foreach(var name in userNames)
+            foreach(var u in users)
             {
-                bool found = false;
-                foreach(var user in game.AllPlayers)
+                if(game.AllPlayers.Contains(u))
                 {
-                    if(MemberHelper.DisplayName(user).StartsWith(name, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        users.Add(user);
-                        found = true;
-                    }
+                    foundUsers.Add(u);
                 }
-                if(!found)
-                    notFoundNames.Add(name);
+                else
+                {
+                    notFoundNames.Add(MemberHelper.DisplayName(u));
+                }
             }
 
             string returnMsg = "";
-            if(notFoundNames.Count > 0)
+            if (notFoundNames.Count > 0)
             {
-                returnMsg += $"Couldn't find users named: {string.Join(", ", notFoundNames.Select(x => "'" + x + "'"))}\n";
+                returnMsg += $"These users don't seem to be playing the game: {string.Join(", ", notFoundNames.Select(x => "'" + x + "'"))}\n";
             }
-            if(users.Count == 0)
+            if (foundUsers.Count == 0)
             {
                 return returnMsg + "Nothing to do!";
             }
 
-            var revoke = game.Storytellers.Where(s => !users.Contains(s)).ToList();
-            var grant = users.Where(s => !game.Storytellers.Contains(s)).ToList();
+            var revoke = game.Storytellers.Where(s => !foundUsers.Contains(s)).ToList();
+            var grant = foundUsers.Where(s => !game.Storytellers.Contains(s)).ToList();
 
             foreach(var user in revoke)
             {
@@ -524,8 +521,8 @@ namespace Bot.Core
             await GrantAndRevokeRoles(game, logger);
             await TagStorytellers (game, logger);
 
-            var verbage = users.Count > 1 ? "New Storytellers are" : "New Storyteller is";
-            returnMsg += $"{verbage} {string.Join(", ", users.Select(x => MemberHelper.DisplayName(x)))}";
+            var verbage = foundUsers.Count() > 1 ? "New Storytellers are" : "New Storyteller is";
+            returnMsg += $"{verbage} {string.Join(", ", foundUsers.Select(x => MemberHelper.DisplayName(x)))}";
             return returnMsg;
         }
 
