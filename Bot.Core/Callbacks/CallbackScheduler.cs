@@ -78,7 +78,14 @@ namespace Bot.Core.Callbacks
 
         private void CallCallback(TKey key)
         {
-            m_callback(key).ConfigureAwait(true);
+            try
+            {
+                m_callback(key).ConfigureAwait(true);
+            }
+            catch (Exception)
+            {
+                // Not a whole lot we can do about this, as we don't have anyone to report it to at present
+            }
         }
     }
 }

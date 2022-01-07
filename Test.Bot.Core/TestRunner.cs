@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Core;
+using Bot.Core.Callbacks;
 using Moq;
 using System;
 using System.Threading;
@@ -17,6 +18,7 @@ namespace Test.Bot.Core
 
         public TestRunner()
         {
+            RegisterMock(new Mock<ICallbackSchedulerFactory>());
             RegisterMock(m_componentService);
 
             m_systemMock.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(m_clientMock.Object);

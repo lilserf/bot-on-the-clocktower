@@ -1,9 +1,11 @@
 ﻿using Bot.Api;
 using Bot.Core;
+using Bot.Core.Callbacks;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Test.Bot.Base;
 
 namespace Test.Bot.Core
@@ -13,6 +15,9 @@ namespace Test.Bot.Core
         protected const ulong MockGuildId = 1337;
         protected const ulong MockChannelId = 42;
         protected const string StorytellerDisplayName = "Peter Storyteller";
+
+        protected readonly Mock<ICallbackScheduler<ITownRecord>> TownRecordCallbackSchedulerMock = new(MockBehavior.Strict);
+        protected readonly Mock<ICallbackSchedulerFactory> CallbackSchedulerFactoryMock = new(MockBehavior.Strict);
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
         protected readonly Mock<IBotWebhookBuilder> WebhookBuilderMock = new();
@@ -49,6 +54,9 @@ namespace Test.Bot.Core
 
         public GameTestBase()
         {
+            RegisterMock(CallbackSchedulerFactoryMock);
+            CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<ITownRecord, Task>>(), It.IsAny<TimeSpan>())).Returns(TownRecordCallbackSchedulerMock.Object);
+
             Mock<IBotWebhookBuilder> builderMock = new();
             BotSystemMock.Setup(c => c.CreateWebhookBuilder()).Returns(WebhookBuilderMock.Object);
 
@@ -97,17 +105,20 @@ namespace Test.Bot.Core
             TownMock.SetupGet(t => t.VillagerRole).Returns(VillagerRoleMock.Object);
             TownMock.SetupGet(t => t.TownRecord).Returns(TownRecordMock.Object);
 
-            SetupChannelMock(ControlChannelMock, "botc_mover", false);
-            SetupChannelMock(ChatChannelMock, "chat", false);
+            VillagerRoleMock.SetupGet(r => r.Name).Returns("BotC Villager Mock");
+            VillagerRoleMock.SetupGet(r => r.Mention).Returns(@"BotC Villager Mock");
 
-            SetupChannelMock(TownSquareMock, "Town Square");
+            SetupChannelMock(ControlChannelMock, "botc_mover_mock", false);
+            SetupChannelMock(ChatChannelMock, "chat_mock", false);
+
+            SetupChannelMock(TownSquareMock, "Town Square Mock");
             TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object });
 
             DayCategoryMock.SetupGet(c => c.Channels).Returns(new[] { ControlChannelMock.Object, ChatChannelMock.Object, TownSquareMock.Object });
             
-            SetupChannelMock(Cottage1Mock, "Cottage 1");
-            SetupChannelMock(Cottage2Mock, "Cottage 2");
-            SetupChannelMock(Cottage3Mock, "Cottage 3");
+            SetupChannelMock(Cottage1Mock, "Cottage 1 Mock");
+            SetupChannelMock(Cottage2Mock, "Cottage 2 Mock");
+            SetupChannelMock(Cottage3Mock, "Cottage 3 Mock");
             Cottage1Mock.SetupGet(x => x.Position).Returns(1);
             Cottage2Mock.SetupGet(x => x.Position).Returns(2);
             Cottage3Mock.SetupGet(x => x.Position).Returns(3);

@@ -28,7 +28,9 @@ namespace Bot.Core
         public static IServiceProvider RegisterBotServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
-            sp.AddService<IBotGameplay>(new BotGameplay(sp));
+            var gameplay = new BotGameplay(sp);
+            sp.AddService<IBotGameplay>(gameplay);
+            sp.AddService<IVoteHandler>(gameplay);
             sp.AddService<IBotVoteTimer>(new BotVoteTimer(sp));
             return sp;
         }

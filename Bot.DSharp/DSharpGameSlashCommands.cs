@@ -26,6 +26,9 @@ namespace Bot.DSharp
             [Option("timeString", "Time string, such as \"5m30s\" or \"2 minutes\". Valid times are between 10 seconds and 20 minutes.")] string timeString)
             => BotVoteTimer!.RunVoteTimerAsync(new DSharpInteractionContext(ctx), timeString);
 
+        [SlashCommand("stopVoteTimer", "Cancels an outstanding call to `/voteTimer`.")]
+        public Task StopVoteTimerCommand(InteractionContext ctx) => BotVoteTimer!.RunStopVoteTimerAsync(new DSharpInteractionContext(ctx));
+
         [SlashCommand("endGame", "End any current game, removing roles etc")]
         public Task EndGameCommand(InteractionContext ctx) => BotGameplay!.EndGameAsync(new DSharpInteractionContext(ctx));
     }
