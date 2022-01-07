@@ -140,10 +140,8 @@ namespace Bot.Core
                 var endTime = now + timeSpan;
                 m_townToVoteTime[townRecord] = endTime;
 
-                var ret = await SendTimeRemainingMessageAsync(townRecord, endTime, now);
                 ScheduleNextProcessTime(townRecord, endTime, now);
-
-                return ret;
+                return await SendTimeRemainingMessageAsync(townRecord, endTime, now);
             }
 
             public async Task<string> RemoveTownAsync(ITownRecord townRecord)
@@ -203,8 +201,8 @@ namespace Bot.Core
                     }
                     else
                     {
-                        await SendTimeRemainingMessageAsync(townRecord, endTime, now);
                         ScheduleNextProcessTime(townRecord, endTime, now);
+                        await SendTimeRemainingMessageAsync(townRecord, endTime, now);
                     }
                 }
             }
