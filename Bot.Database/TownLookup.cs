@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Database
@@ -26,6 +27,15 @@ namespace Bot.Database
 			// Get the first match
 			var document = await m_guildInfo.Find(filter).FirstOrDefaultAsync();
 			return document;
+		}
+
+        public async Task<IEnumerable<ITownRecord>> GetTownRecords(ulong guildId)
+        {
+			// Build a filter for the specific document we want
+			var builder = Builders<MongoTownRecord>.Filter;
+			var filter = builder.Eq(x => x.GuildId, guildId);
+
+			return await m_guildInfo.Find(filter).ToListAsync();
 		}
 
 		public class MissingGuildInfoDatabaseException : Exception { }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Bot.Api
 {
@@ -6,5 +7,8 @@ namespace Bot.Api
 	{
 		// Get a Town given its guild and channel IDs
 		public Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId);
+
+		// Get all Towns present on this guild
+		public Task<IEnumerable<ITownRecord>> GetTownRecords(ulong guildId);
 	}
 }
