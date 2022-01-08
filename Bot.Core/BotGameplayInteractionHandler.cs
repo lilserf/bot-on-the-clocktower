@@ -134,7 +134,7 @@ namespace Bot.Core
                 var game = await m_gameplay.CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
-                    // TODO: more error reporting here?
+                    // TODO: more error reporting here? Could make use of use processLog!
                     return "Couldn't find an active game record for this town!";
                 }
                 return await m_gameplay.PhaseDayUnsafe(game, processLog);
@@ -167,6 +167,13 @@ namespace Bot.Core
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
                 await context.DeferInteractionResponse();
+
+                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    return "Couldn't find an active game record for this town!";
+                }
 
                 var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
                 webhook = webhook.AddComponents(m_nightButton, m_dayButton, m_voteButton, m_endGameButton);
