@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public class BotVoteTimer : BotCommandHandler, IBotVoteTimer
+    public class BotVoteTimer : BotTownLookupHelper
     {
         private readonly VoteTimerController m_voteTimerController;
 
@@ -15,20 +15,6 @@ namespace Bot.Core
             : base(serviceProvider)
         {
             m_voteTimerController = new(serviceProvider);
-        }
-
-        public async Task RunVoteTimerAsync(IBotInteractionContext context, string timeString)
-        {
-            await context.DeferInteractionResponse();
-
-            var message = await RunVoteTimerInternal(context, timeString);
-
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> RunVoteTimerInternal(IBotInteractionContext context, string timeString)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, processLoggger => RunVoteTimerUnsafe(context, timeString, processLoggger));
         }
 
         public async Task<string> RunVoteTimerUnsafe(IBotInteractionContext context, string timeString, IProcessLogger processLoggger)
@@ -57,20 +43,6 @@ namespace Bot.Core
                 return ret;
 
             return $"Vote timer started for {GetTimeString(span.Value, false)}!";
-        }
-
-        public async Task RunStopVoteTimerAsync(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var message = await RunStopVoteTimerInternal(context);
-
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> RunStopVoteTimerInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, processLoggger => RunStopVoteTimerUnsafe(context, processLoggger));
         }
 
         public async Task<string> RunStopVoteTimerUnsafe(IBotInteractionContext context, IProcessLogger processLoggger)

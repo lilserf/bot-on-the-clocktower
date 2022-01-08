@@ -5,32 +5,20 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public abstract class BotCommandHandler
+    /// <summary>
+    /// TODO: Should use composition, not inheritence, for this
+    /// </summary>
+    public abstract class BotTownLookupHelper
     {
         protected readonly IBotClient m_client;
-        protected readonly IBotSystem m_system;
         protected readonly ITownLookup m_townLookup;
 
         protected const string InvalidTownMessage = "Couldn't find a registered town for this server and channel. Consider re-creating the town with `/createTown` or `/addTown`.";
 
-        public BotCommandHandler(IServiceProvider serviceProvider)
+        public BotTownLookupHelper(IServiceProvider serviceProvider)
         {
             m_client = serviceProvider.GetService<IBotClient>();
-            m_system = serviceProvider.GetService<IBotSystem>();
             m_townLookup = serviceProvider.GetService<ITownLookup>();
-        }
-
-        // Helper for editing the original interaction with a summarizing message when finished
-        // TODO: move within IBotInteractionContext
-        protected async Task EditOriginalMessage(IBotInteractionContext context, string s)
-        {
-            try
-            {
-                var webhook = m_system.CreateWebhookBuilder().WithContent(s);
-                await context.EditResponseAsync(webhook);
-            }
-            catch (Exception)
-            { }
         }
 
         protected async Task<ITown?> GetValidTownOrLogErrorAsync(IBotInteractionContext context, IProcessLogger processLogger)

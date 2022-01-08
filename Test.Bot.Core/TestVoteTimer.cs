@@ -21,22 +21,12 @@ namespace Test.Bot.Core
             MockDateTime.SetupGet(dt => dt.Now).Returns(() => m_currentTime);
         }
 
-
-        [Fact]
-        public void BotServices_RegistersType()
-        {
-            var sp = ServiceFactory.RegisterBotServices(GetServiceProvider());
-            var vts = sp.GetService<IBotVoteTimer>();
-
-            Assert.IsType<BotVoteTimer>(vts);
-        }
-
         [Fact]
         public void RunVoteTimer_DefersContext()
         {
-            var vt = new BotVoteTimer(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
 
-            var t = vt.RunVoteTimerAsync(InteractionContextMock.Object, "");
+            var t = gs.RunVoteTimerAsync(InteractionContextMock.Object, "");
             t.Wait(50);
             Assert.True(t.IsCompleted);
 

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-    public interface IBotGameplay
+    public interface IBotGameplayInteractionHandler
     {
         Task CommandGameAsync(IBotInteractionContext context);
         Task CommandNightAsync(IBotInteractionContext context);
@@ -11,5 +11,7 @@ namespace Bot.Api
         Task CommandVoteAsync(IBotInteractionContext context);
         Task CommandEndGameAsync(IBotInteractionContext context);
         Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users);
+        Task RunVoteTimerAsync(IBotInteractionContext context, string timeString);
+        Task RunStopVoteTimerAsync(IBotInteractionContext dSharpInteractionContext);
     }
 }

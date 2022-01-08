@@ -11,7 +11,7 @@ namespace Test.Bot.Core
 		[Fact]
 		public void TestDay_Completes()
 		{
-			BotGameplay gs = new(GetServiceProvider());
+			var gs = CreateGameplayInteractionHandler();
 			var t = gs.CommandDayAsync(InteractionContextMock.Object);
 			t.Wait(50);
 			Assert.True(t.IsCompleted);
@@ -20,7 +20,7 @@ namespace Test.Bot.Core
 		[Fact]
 		public void TestVote_Completes()
 		{
-			BotGameplay gs = new(GetServiceProvider());
+			var gs = CreateGameplayInteractionHandler();
 			var t = gs.CommandVoteAsync(InteractionContextMock.Object);
 			t.Wait(50);
 			Assert.True(t.IsCompleted);

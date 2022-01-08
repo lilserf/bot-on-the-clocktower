@@ -176,5 +176,10 @@ namespace Test.Bot.Core
             // Most interactions should Defer to allow for latency
             InteractionContextMock.Verify(c => c.DeferInteractionResponse(), Times.Once);
         }
+
+        protected BotGameplayInteractionHandler CreateGameplayInteractionHandler()
+        {
+            return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
+        }
     }
 }

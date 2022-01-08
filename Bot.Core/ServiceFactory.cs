@@ -29,9 +29,9 @@ namespace Bot.Core
         {
             ServiceProvider sp = new(parentServices);
             var gameplay = new BotGameplay(sp);
-            sp.AddService<IBotGameplay>(gameplay);
             sp.AddService<IVoteHandler>(gameplay);
-            sp.AddService<IBotVoteTimer>(new BotVoteTimer(sp));
+            var voteTimer = new BotVoteTimer(sp);
+            sp.AddService<IBotGameplayInteractionHandler>(new BotGameplayInteractionHandler(sp, gameplay, voteTimer));
             return sp;
         }
     }

@@ -21,13 +21,13 @@ namespace Test.Bot.Core
         {
             var sp = ServiceFactory.RegisterBotServices(GetServiceProvider());
 
-            Assert.NotNull(sp.GetService<IBotGameplay>());
+            Assert.NotNull(sp.GetService<IBotGameplayInteractionHandler>());
         }
 
         [Fact]
         public void RunGame_SendsMessageToContext()
         {
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
 
             var t = gs.CommandGameAsync(InteractionContextMock.Object);
             t.Wait(50);
@@ -52,15 +52,14 @@ namespace Test.Bot.Core
         [Fact]
         public void Game_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandGameAsync(context));
 
-        private void TestUnhandledExceptionForCommand(Func<BotGameplay, IBotInteractionContext, Task> gameCommandTestFunc)
+        private void TestUnhandledExceptionForCommand(Func<BotGameplayInteractionHandler, IBotInteractionContext, Task> gameCommandTestFunc)
         {
             var thrownException = new ApplicationException();
 
             // Could add other exceptions here for other types of commands, if needed
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
             BotSystemMock.Setup(s => s.CreateWebhookBuilder()).Throws(thrownException);
-
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             var t = gameCommandTestFunc(gs, InteractionContextMock.Object);
             t.Wait(5);
             Assert.True(t.IsCompleted);
@@ -71,14 +70,14 @@ namespace Test.Bot.Core
         [Fact]
         public void GameConstructed_RegistersButtons()
         {
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             ComponentServiceMock.Verify(cs => cs.RegisterComponent(It.IsAny<IBotComponent>(), It.IsAny<Func<IBotInteractionContext, Task>>()), Times.AtLeastOnce);
         }
 
         [Fact]
         public void GameEnd_Completes()
         {
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             var t = gs.CommandEndGameAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -99,7 +98,7 @@ namespace Test.Bot.Core
                 InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
             }
 
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             var t = gs.CommandEndGameAsync(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);

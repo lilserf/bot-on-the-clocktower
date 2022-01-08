@@ -6,67 +6,16 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public class BotGameplay : BotCommandHandler, IBotGameplay, IVoteHandler
+    public class BotGameplay : BotTownLookupHelper, IVoteHandler
     {
-        private enum GameplayButton
-		{
-            Night,
-            Day,
-            Vote,
-            More,
-            EndGame,
-		}
-
-        private readonly IBotComponent m_nightButton;
-        private readonly IBotComponent m_dayButton;
-        private readonly IBotComponent m_voteButton;
-        private readonly IBotComponent m_moreButton;
-        private readonly IBotComponent m_endGameButton;
-
-        private readonly IBotComponent m_voteTimerMenu;
-
-        private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
         private readonly IShuffleService m_shuffle;
 
 		public BotGameplay(IServiceProvider services)
             : base(services)
 		{
-            m_componentService = services.GetService<IComponentService>();
             m_activeGameService = services.GetService<IActiveGameService>();
             m_shuffle = services.GetService<IShuffleService>();
-
-            m_nightButton = CreateButton(GameplayButton.Night, "Night", emoji: "🌙");
-            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success, emoji: "☀️");
-            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger, emoji: "💀");
-            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary, emoji: "⚙️");
-            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Secondary, emoji: "🛑");
-
-            m_componentService.RegisterComponent(m_nightButton, NightButtonPressed);
-            m_componentService.RegisterComponent(m_dayButton, DayButtonPressed);
-            m_componentService.RegisterComponent(m_voteButton, VoteButtonPressed);
-            m_componentService.RegisterComponent(m_moreButton, MoreButtonPressed);
-            m_componentService.RegisterComponent(m_endGameButton, EndGameButtonPressed);
-
-            var options = new[]
-            {
-                new IBotSystem.SelectMenuOption("2 min", "2m"),
-                new IBotSystem.SelectMenuOption("2 min 30 sec", "2m30s"),
-                new IBotSystem.SelectMenuOption("3 min", "3m"),
-                new IBotSystem.SelectMenuOption("3 min 30 sec", "3m30s"),
-                new IBotSystem.SelectMenuOption("4 min", "4m"),
-                new IBotSystem.SelectMenuOption("4 min 30 sec", "4m30s"),
-                new IBotSystem.SelectMenuOption("5 min", "5m"),
-                new IBotSystem.SelectMenuOption("5 min 30 sec", "5m30s"),
-            };
-            m_voteTimerMenu = m_system.CreateSelectMenu($"gameplay_menu_votetimer", "Or instead, set a Vote Timer...", options);
-
-            m_componentService.RegisterComponent(m_voteTimerMenu, VoteTimerMenuSelected);
-        }
-
-        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary, string? emoji=null)
-        {
-            return m_system.CreateButton($"gameplay_{id}", label, type, emoji:emoji);
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -269,29 +218,6 @@ namespace Bot.Core
             return game;
         }
 
-        public async Task CommandNightAsync(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var message = await PhaseNightInternal(context);
-
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> PhaseNightInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
-            {
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    // TODO: more error reporting here? Could make use of use processLog!
-                    return "Couldn't find an active game record for this town!";
-                }
-                return await PhaseNightUnsafe(game, processLog);
-            });
-        }
-
         public async Task<string> PhaseNightUnsafe(IGame game, IProcessLogger processLog)
 		{
             if (game.Town.NightCategory != null)
@@ -348,54 +274,12 @@ namespace Bot.Core
             }
         }
 
-        public async Task CommandDayAsync(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-            var message = await PhaseDayInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> PhaseDayInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
-            {
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    // TODO: more error reporting here?
-                    return "Couldn't find an active game record for this town!";
-                }
-                return await PhaseDayUnsafe(game, processLog);
-            });
-        }
-
         public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
 
             await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players from Cottages back to Town Square!";
-        }
-
-        public async Task CommandVoteAsync(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-            var message = await PhaseVoteInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
-            {
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    // TODO: more error reporting here?
-                    return "Couldn't find an active game record for this town!";
-                }
-                return await PhaseVoteUnsafe(game, processLog);
-            });
         }
 
         public async Task<string> PhaseVoteUnsafe(IGame game, IProcessLogger processLog)
@@ -423,41 +307,7 @@ namespace Bot.Core
             }
         }
 
-        public async Task CommandGameAsync(IBotInteractionContext context)
-        {
-            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
-            {
-                await context.DeferInteractionResponse();
-
-                var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
-                webhook = webhook.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!);
-                await context.EditResponseAsync(webhook);
-                return "";
-            });
-        }
-
-
-        public async Task CommandEndGameAsync(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-            var message = await EndGameInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> EndGameInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
-            {
-                var game = await CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    return "Couldn't find a current game to end!";
-                }
-                return await EndGameUnsafe(game, processLog);
-            });
-        }
-
-        private async Task<string> EndGameUnsafe(IGame game, IProcessLogger logger)
+        public async Task<string> EndGameUnsafe(IGame game, IProcessLogger logger)
         {
             m_activeGameService.EndGame(game.Town);
 
@@ -474,18 +324,6 @@ namespace Bot.Core
             }
 
             return "Thank you for playing Blood on the Clocktower!";
-        }
-
-        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
-        {
-            await context.DeferInteractionResponse();
-            var message = await SetStorytellersInternal(context, users);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<IMember> users)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => SetStorytellersUnsafe(context, users, processLog));
         }
 
         public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<IMember> users, IProcessLogger logger)
@@ -541,75 +379,6 @@ namespace Bot.Core
             var verbage = foundUsers.Count() > 1 ? "New Storytellers are" : "New Storyteller is";
             returnMsg += $"{verbage} {string.Join(", ", foundUsers.Select(x => MemberHelper.DisplayName(x)))}";
             return returnMsg;
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////
-        /// Button Code
-        ////////////////////////////////////////////////////////////////////////////////////////////////
-
-        public async Task NightButtonPressed(IBotInteractionContext context)
-		{
-            await context.DeferInteractionResponse();
-
-            var message = await PhaseNightInternal(context);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_dayButton!, m_moreButton!);
-            await context.EditResponseAsync(builder);
-		}
-
-        public async Task DayButtonPressed(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var message = await PhaseDayInternal(context);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_voteButton!, m_moreButton!);
-            builder = builder.AddComponents(m_voteTimerMenu!);
-            await context.EditResponseAsync(builder);
-        }
-
-        public async Task VoteButtonPressed(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var message = await PhaseVoteInternal(context);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_nightButton!, m_moreButton!);
-            await context.EditResponseAsync(builder);
-        }
-
-        public async Task MoreButtonPressed(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
-            builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!, m_endGameButton!);
-            builder = builder.AddComponents(m_voteTimerMenu!);
-            await context.EditResponseAsync(builder);
-        }
-
-        public async Task EndGameButtonPressed(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var message = await EndGameInternal(context);
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            await context.EditResponseAsync(builder);
-        }
-
-        public async Task VoteTimerMenuSelected(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-
-            var value = context.ComponentValues.First();
-            var builder = m_system.CreateWebhookBuilder().WithContent($"You chose '{value}' - it's not hooked up yet; you'll have to use /votetimer, sorry!");
-            builder = builder.AddComponents(m_voteButton!, m_moreButton!);
-            // For now since it doesn't work, don't give them the timer menu again
-            //builder = builder.AddComponents(m_voteTimerMenu!);
-            await context.EditResponseAsync(builder);
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Test.Bot.Core
 
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(CreateException(exceptionType));
 
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             var t = gs.PhaseNightInternal(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -32,7 +32,7 @@ namespace Test.Bot.Core
         [Fact]
         public void Night_CottagesCorrect()
 		{
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             var t = gs.PhaseNightInternal(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -77,7 +77,7 @@ namespace Test.Bot.Core
                 v2Check = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 1);
             });
 
-            BotGameplay gs = new(GetServiceProvider());
+            var gs = CreateGameplayInteractionHandler();
             var t = gs.PhaseNightInternal(InteractionContextMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
