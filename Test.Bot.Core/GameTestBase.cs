@@ -78,6 +78,7 @@ namespace Test.Bot.Core
 
             // TownLookup expects MockGuildId and MockChannelId and returns the TownRecord
             TownLookupMock.Setup(tl => tl.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(TownRecordMock.Object);
+            TownLookupMock.Setup(tl => tl.GetTownRecords(It.Is<ulong>(a => a == MockGuildId))).ReturnsAsync(new[] { TownRecordMock.Object });
 
             // ResolveTown expects the TownRecord and returns the Town
             ClientMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
@@ -90,6 +91,7 @@ namespace Test.Bot.Core
 
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
             ControlChannelMock.SetupGet(x => x.Id).Returns(MockChannelId);
+            TownRecordMock.SetupGet(tr => tr.ControlChannelId).Returns(MockChannelId);
 
             InteractionContextMock.SetupGet(x => x.Guild).Returns(GuildMock.Object);
             InteractionContextMock.SetupGet(x => x.Channel).Returns(ControlChannelMock.Object);

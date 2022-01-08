@@ -2,6 +2,7 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -54,6 +55,7 @@ namespace Test.Bot.Core
         public void NoTownRecordFound_SendsErrorMessage()
         {
             TownLookupMock.Setup(tl => tl.GetTownRecord(It.IsAny<ulong>(), It.IsAny<ulong>())).ReturnsAsync(() => (ITownRecord?)null);
+            TownLookupMock.Setup(tl => tl.GetTownRecords(It.IsAny<ulong>())).ReturnsAsync(() => Enumerable.Empty<ITownRecord>());
 
             RunVoteTimerVerifyCompleted();
 
