@@ -6,29 +6,11 @@ namespace Bot.Core
 {
     public class ActiveGameService : IActiveGameService
     {
-        struct TownKey
-        {
-#pragma warning disable IDE0052 // Remove unread private members
-            private readonly ulong GuildId;
-            private readonly ulong ChannelId;
-#pragma warning restore IDE0052 // Remove unread private members
-            public TownKey(ulong guildId, ulong channelId)
-            {
-                GuildId = guildId;
-                ChannelId = channelId;
-            }
-        }
-
-        private static TownKey KeyFromTown(ITown town)
-        {
-            return new TownKey(town.TownRecord.GuildId, town.TownRecord.ControlChannelId);
-        }
-
         private readonly Dictionary<TownKey, IGame> m_games = new();
 
         public bool RegisterGame(ITown town, IGame game)
         {
-            var key = KeyFromTown(town);
+            var key = TownKey.FromTown(town);
             if (!m_games.ContainsKey(key))
             {
                 m_games.Add(key, game);
@@ -39,7 +21,7 @@ namespace Bot.Core
 
         public bool EndGame(ITown town)
         {
-            var key = KeyFromTown(town);
+            var key = TownKey.FromTown(town);
             if(m_games.ContainsKey(key))
             {
                 m_games.Remove(key);
