@@ -30,14 +30,9 @@ namespace Bot.Core
             return false;
         }
 
-        public bool TryGetGame(IBotInteractionContext context, [MaybeNullWhen(false)] out IGame game)
+        public bool TryGetGame(TownKey townKey, [MaybeNullWhen(false)] out IGame game)
         {
-            return TryGetGame(context.Guild.Id, context.Channel.Id, out game);
-        }
-
-        public bool TryGetGame(ulong guildId, ulong channelId, [MaybeNullWhen(false)] out IGame game)
-        {
-            return m_games.TryGetValue(new TownKey(guildId, channelId), out game);
+            return m_games.TryGetValue(townKey, out game);
         }
     }
 }

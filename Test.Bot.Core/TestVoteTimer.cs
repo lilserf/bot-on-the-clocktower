@@ -90,7 +90,7 @@ namespace Test.Bot.Core
 
             ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("time", StringComparison.InvariantCultureIgnoreCase) && s.Contains("between", StringComparison.InvariantCultureIgnoreCase) && s.Contains("please", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
-        
+
         [Fact]
         public void RunValidTimer_SendsChatMessagesAppropriately()
         {
@@ -98,26 +98,27 @@ namespace Test.Bot.Core
 
             // NOTE: I could have done a lot more testing for this, but the entire happy path after validating the town, chat channel, villager role,
             // and time requested was ported from entirely working python code, so I am just doing that path
-            Func<ITownRecord, Task>? callback = null;
+            Func<TownKey, Task>? callback = null;
             CallbackSchedulerFactoryMock
-                .Setup(csf => csf.CreateScheduler(It.IsAny<Func<ITownRecord, Task>>(), It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))))
-                .Callback<Func<ITownRecord, Task>, TimeSpan>((f, ts) => callback = f)
+                .Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))))
+                .Callback<Func<TownKey, Task>, TimeSpan>((f, ts) => callback = f)
                 .Returns(TownRecordCallbackSchedulerMock.Object);
 
-            TownRecordCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<ITownRecord>(), It.IsAny<DateTime>()));
+            TownRecordCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
 
             RunVoteTimerVerifyCompleted("6 minutes");
             
             Assert.NotNull(callback);
-            voteHandlerMock.Verify(vh => vh.PerformVoteAsync(It.IsAny<ITownRecord>()), Times.Never);
-            TownRecordCallbackSchedulerMock.Verify(cs => cs.ScheduleCallback(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object), It.IsAny<DateTime>()), Times.Once);
+            voteHandlerMock.Verify(vh => vh.PerformVoteAsync(It.IsAny<TownKey>()), Times.Never);
+
+            TownRecordCallbackSchedulerMock.Verify(cs => cs.ScheduleCallback(It.Is<TownKey>(tk => tk == MockTownKey), It.IsAny<DateTime>()), Times.Once);
             ChatChannelMock.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains(VillagerRoleMock.Object.Mention) && s.Contains("6 minutes") && s.Contains("vote", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
 
             AdvanceTime(TimeSpan.FromMinutes(6));
 
-            callback!(TownRecordMock.Object);
+            callback!(MockTownKey);
 
-            voteHandlerMock.Verify(vh => vh.PerformVoteAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object)), Times.Once);
+            voteHandlerMock.Verify(vh => vh.PerformVoteAsync(It.Is<TownKey>(tr => tr == MockTownKey)), Times.Once);
             ChatChannelMock.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains(VillagerRoleMock.Object.Mention) && s.Contains(TownSquareMock.Object.Name) && s.Contains("returning", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
@@ -126,7 +127,7 @@ namespace Test.Bot.Core
         {
             var bc = new BotGameplay(GetServiceProvider());
 
-            var t = bc.PerformVoteAsync(TownRecordMock.Object);
+            var t = bc.PerformVoteAsync(MockTownKey);
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }

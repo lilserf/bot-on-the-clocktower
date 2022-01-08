@@ -13,10 +13,11 @@ namespace Test.Bot.Core
     public class GameTestBase : TestBase
     {
         protected const ulong MockGuildId = 1337;
-        protected const ulong MockChannelId = 42;
+        protected const ulong MockControlChannelId = 42;
+        protected static TownKey MockTownKey = new TownKey(MockGuildId, MockControlChannelId);
         protected const string StorytellerDisplayName = "Peter Storyteller";
 
-        protected readonly Mock<ICallbackScheduler<ITownRecord>> TownRecordCallbackSchedulerMock = new(MockBehavior.Strict);
+        protected readonly Mock<ICallbackScheduler<TownKey>> TownRecordCallbackSchedulerMock = new(MockBehavior.Strict);
         protected readonly Mock<ICallbackSchedulerFactory> CallbackSchedulerFactoryMock = new(MockBehavior.Strict);
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
@@ -55,7 +56,7 @@ namespace Test.Bot.Core
         public GameTestBase()
         {
             RegisterMock(CallbackSchedulerFactoryMock);
-            CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<ITownRecord, Task>>(), It.IsAny<TimeSpan>())).Returns(TownRecordCallbackSchedulerMock.Object);
+            CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownRecordCallbackSchedulerMock.Object);
 
             Mock<IBotWebhookBuilder> builderMock = new();
             BotSystemMock.Setup(c => c.CreateWebhookBuilder()).Returns(WebhookBuilderMock.Object);
@@ -77,6 +78,7 @@ namespace Test.Bot.Core
                 .Returns((IEnumerable<IMember> input) => input.Reverse());
 
             // TownLookup expects MockGuildId and MockChannelId and returns the TownRecord
+            TownLookupMock.Setup(tl => tl.GetTownRecord(It.Is<ulong>(gid => gid == MockGuildId), It.Is<ulong>(cid => cid == MockControlChannelId))).ReturnsAsync(TownRecordMock.Object);
             TownLookupMock.Setup(tl => tl.GetTownRecords(It.Is<ulong>(a => a == MockGuildId))).ReturnsAsync(new[] { TownRecordMock.Object });
 
             // ResolveTown expects the TownRecord and returns the Town
@@ -84,13 +86,12 @@ namespace Test.Bot.Core
 
             // By default, the ActiveGameService won't find a game for this context
             IGame? defaultGame = null;
-            ActiveGameServiceMock.Setup(a => a.TryGetGame(It.IsAny<IBotInteractionContext>(), out defaultGame)).Returns(false);
+            ActiveGameServiceMock.Setup(a => a.TryGetGame(It.IsAny<TownKey>(), out defaultGame)).Returns(false);
 
             ProcessLoggerMock.Setup(c => c.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
-            ControlChannelMock.SetupGet(x => x.Id).Returns(MockChannelId);
-            TownRecordMock.SetupGet(tr => tr.ControlChannelId).Returns(MockChannelId);
+            ControlChannelMock.SetupGet(x => x.Id).Returns(MockControlChannelId);
 
             InteractionContextMock.SetupGet(x => x.Guild).Returns(GuildMock.Object);
             InteractionContextMock.SetupGet(x => x.Channel).Returns(ControlChannelMock.Object);
@@ -106,13 +107,18 @@ namespace Test.Bot.Core
             TownMock.SetupGet(t => t.VillagerRole).Returns(VillagerRoleMock.Object);
             TownMock.SetupGet(t => t.TownRecord).Returns(TownRecordMock.Object);
 
-            VillagerRoleMock.SetupGet(r => r.Name).Returns("BotC Villager Mock");
-            VillagerRoleMock.SetupGet(r => r.Mention).Returns(@"BotC Villager Mock");
+            var villagerRoleName = "BotC Villager Mock";
+            var controlChannelName = "botc_mover_mock";
+            var chatChannelName = "chat_mock";
+            var townSquareName = "Town Square Mock";
 
-            SetupChannelMock(ControlChannelMock, "botc_mover_mock", false);
-            SetupChannelMock(ChatChannelMock, "chat_mock", false);
+            VillagerRoleMock.SetupGet(r => r.Name).Returns(villagerRoleName);
+            VillagerRoleMock.SetupGet(r => r.Mention).Returns($"@{villagerRoleName}");
 
-            SetupChannelMock(TownSquareMock, "Town Square Mock");
+            SetupChannelMock(ControlChannelMock, controlChannelName, false);
+            SetupChannelMock(ChatChannelMock, chatChannelName, false);
+
+            SetupChannelMock(TownSquareMock, townSquareName);
             TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object });
 
             DayCategoryMock.SetupGet(c => c.Channels).Returns(new[] { ControlChannelMock.Object, ChatChannelMock.Object, TownSquareMock.Object });
@@ -125,6 +131,12 @@ namespace Test.Bot.Core
             Cottage3Mock.SetupGet(x => x.Position).Returns(3);
             // Purposely don't order the collection of cottages in their display order
             NightCategoryMock.SetupGet(c => c.Channels).Returns(new[] { Cottage1Mock.Object, Cottage3Mock.Object, Cottage2Mock.Object});
+
+            TownRecordMock.SetupGet(tr => tr.GuildId).Returns(MockGuildId);
+            TownRecordMock.SetupGet(tr => tr.ControlChannelId).Returns(MockControlChannelId);
+            TownRecordMock.SetupGet(tr => tr.VillagerRole).Returns(villagerRoleName);
+            TownRecordMock.SetupGet(tr => tr.ControlChannel).Returns(controlChannelName);
+            TownRecordMock.SetupGet(tr => tr.TownSquare).Returns(townSquareName);
 
             SetupUserMock(InteractionAuthorMock, StorytellerDisplayName);
             SetupUserMock(Villager1Mock, "Bob");
@@ -161,7 +173,7 @@ namespace Test.Bot.Core
             gameMock.Setup(g => g.RemoveVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Remove(m));
 
             var gameObject = gameMock.Object;
-            ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<IBotInteractionContext>(), out gameObject)).Returns(true);
+            ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<TownKey>(), out gameObject)).Returns(true);
             InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
             InteractionAuthorMock.SetupGet(m => m.Roles).Returns(new[] { StorytellerRoleMock.Object });
             Villager1Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });

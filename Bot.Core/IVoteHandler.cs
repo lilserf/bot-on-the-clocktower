@@ -5,6 +5,6 @@ namespace Bot.Core
 {
     public interface IVoteHandler
     {
-        Task PerformVoteAsync(ITownRecord townRecord);
+        Task PerformVoteAsync(TownKey townKey);
     }
 }

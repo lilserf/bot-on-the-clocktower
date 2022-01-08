@@ -37,7 +37,7 @@ namespace Bot.Core
             if (span.Value.TotalSeconds < 10 || span.Value.TotalMinutes > 20)
                 return LogAndReturnEmptyString(processLoggger, $"Please choose a time between 10 seconds and 20 minutes. You requested: {GetTimeString(span.Value, false)}");
 
-            var ret = await m_voteTimerController.AddTownAsync(town.TownRecord, span.Value);
+            var ret = await m_voteTimerController.AddTownAsync(TownKey.FromTown(town), span.Value);
 
             if (!string.IsNullOrWhiteSpace(ret))
                 return ret;
@@ -51,7 +51,7 @@ namespace Bot.Core
             if (town == null)
                 return "Failed to run command";
 
-            return await m_voteTimerController.RemoveTownAsync(town.TownRecord);
+            return await m_voteTimerController.RemoveTownAsync(TownKey.FromTown(town));
         }
 
         private static string LogAndReturnEmptyString(IProcessLogger processLoggger, string logString)
@@ -89,50 +89,56 @@ namespace Bot.Core
         {
             private readonly IDateTime DateTime;
 
-            private readonly ICallbackScheduler<ITownRecord> m_callbackScheduler;
+            private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
             private readonly IBotClient m_client;
+            private readonly ITownLookup m_townLookup;
             private readonly IVoteHandler m_voteHandler;
 
-            private readonly Dictionary<ITownRecord, DateTime> m_townToVoteTime = new();
+            private readonly Dictionary<TownKey, DateTime> m_townKeyToVoteTime = new();
 
             public VoteTimerController(IServiceProvider serviceProvider)
             {
                 DateTime = serviceProvider.GetService<IDateTime>();
 
                 m_client = serviceProvider.GetService<IBotClient>();
+                m_townLookup = serviceProvider.GetService<ITownLookup>();
                 m_voteHandler = serviceProvider.GetService<IVoteHandler>();
 
                 var callbackFactory = serviceProvider.GetService<ICallbackSchedulerFactory>();
-                m_callbackScheduler = callbackFactory.CreateScheduler<ITownRecord>(ScheduledCallbackAsync, TimeSpan.FromSeconds(1));
+                m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(ScheduledCallbackAsync, TimeSpan.FromSeconds(1));
             }
 
-            public async Task<string> AddTownAsync(ITownRecord townRecord, TimeSpan timeSpan)
+            public async Task<string> AddTownAsync(TownKey townKey, TimeSpan timeSpan)
             {
                 var now = DateTime.Now;
                 var endTime = now + timeSpan;
-                m_townToVoteTime[townRecord] = endTime;
+                m_townKeyToVoteTime[townKey] = endTime;
 
-                ScheduleNextProcessTime(townRecord, endTime, now);
-                return await SendTimeRemainingMessageAsync(townRecord, endTime, now);
+                ScheduleNextProcessTime(townKey, endTime, now);
+                return await SendTimeRemainingMessageAsync(townKey, endTime, now);
             }
 
-            public async Task<string> RemoveTownAsync(ITownRecord townRecord)
+            public async Task<string> RemoveTownAsync(TownKey townKey)
             {
                 bool hadTown = false;
-                if (m_townToVoteTime.ContainsKey(townRecord))
+                if (m_townKeyToVoteTime.ContainsKey(townKey))
                 {
                     hadTown = true;
-                    m_townToVoteTime.Remove(townRecord);
-                    m_callbackScheduler.CancelCallback(townRecord);
+                    m_townKeyToVoteTime.Remove(townKey);
+                    m_callbackScheduler.CancelCallback(townKey);
                 }
 
                 if (hadTown)
                 {
-                    var town = await m_client.ResolveTownAsync(townRecord);
-                    if (town != null && town.VillagerRole != null)
+                    var townRecord = await m_townLookup.GetTownRecord(townKey);
+                    if (townRecord != null)
                     {
-                        var message = $"{town.VillagerRole.Mention} - Vote countdown stopped!";
-                        return await SendMessageAsync(town, message);
+                        var town = await m_client.ResolveTownAsync(townRecord);
+                        if (town != null && town.VillagerRole != null)
+                        {
+                            var message = $"{town.VillagerRole.Mention} - Vote countdown stopped!";
+                            return await SendMessageAsync(town, message);
+                        }
                     }
                 }
                 return "Could not find town";
@@ -156,25 +162,25 @@ namespace Bot.Core
             }
 
 
-            private Task ScheduledCallbackAsync(ITownRecord townRecord)
+            private Task ScheduledCallbackAsync(TownKey townKey)
             {
-                return ProcessTownLogicForTimeAsync(townRecord, DateTime.Now);
+                return ProcessTownLogicForTimeAsync(townKey, DateTime.Now);
             }
 
-            private async Task ProcessTownLogicForTimeAsync(ITownRecord townRecord, DateTime now)
+            private async Task ProcessTownLogicForTimeAsync(TownKey townKey, DateTime now)
             {
-                if (m_townToVoteTime.TryGetValue(townRecord, out var endTime))
+                if (m_townKeyToVoteTime.TryGetValue(townKey, out var endTime))
                 {
                     if (endTime <= now)
                     {
-                        m_townToVoteTime.Remove(townRecord);
-                        await SendTimeToVoteMessageAsync(townRecord);
-                        await m_voteHandler.PerformVoteAsync(townRecord);
+                        m_townKeyToVoteTime.Remove(townKey);
+                        await SendTimeToVoteMessageAsync(townKey);
+                        await m_voteHandler.PerformVoteAsync(townKey);
                     }
                     else
                     {
-                        ScheduleNextProcessTime(townRecord, endTime, now);
-                        await SendTimeRemainingMessageAsync(townRecord, endTime, now);
+                        ScheduleNextProcessTime(townKey, endTime, now);
+                        await SendTimeRemainingMessageAsync(townKey, endTime, now);
                     }
                 }
             }
@@ -190,8 +196,12 @@ namespace Bot.Core
                 return messagePrefix + messageTime;
             }
 
-            private async Task<string> SendTimeRemainingMessageAsync(ITownRecord townRecord, DateTime endTime, DateTime now)
+            private async Task<string> SendTimeRemainingMessageAsync(TownKey townKey, DateTime endTime, DateTime now)
             {
+                var townRecord = await m_townLookup.GetTownRecord(townKey);
+                if (townRecord == null)
+                    return "Could not find town";
+
                 var town = await m_client.ResolveTownAsync(townRecord);
                 if (town == null)
                     return "Could not find town";
@@ -205,15 +215,20 @@ namespace Bot.Core
                 return villagerRole != null ? $"{villagerRole.Mention}" : "Players";
             }
 
-            private async Task<string> SendTimeToVoteMessageAsync(ITownRecord townRecord)
+            private async Task<string> SendTimeToVoteMessageAsync(TownKey townKey)
             {
+                var townRecord = await m_townLookup.GetTownRecord(townKey);
+                if (townRecord == null)
+                    return "Could not find town";
+
                 var town = await m_client.ResolveTownAsync(townRecord);
-                if (town != null)
-                    return await SendMessageAsync(town, $"{GetVillagerRoleMention(town.VillagerRole)} - Returning to {town.TownSquare?.Name ?? "Town Square"} to vote!");
-                return "Could not find town";
+                if (town == null)
+                    return "Could not find town";
+
+                return await SendMessageAsync(town, $"{GetVillagerRoleMention(town.VillagerRole)} - Returning to {town.TownSquare?.Name ?? "Town Square"} to vote!");
             }
 
-            private void ScheduleNextProcessTime(ITownRecord townRecord, DateTime endTime, DateTime now)
+            private void ScheduleNextProcessTime(TownKey townKey, DateTime endTime, DateTime now)
             {
                 var next_time = endTime;
                 var delta = (endTime - now).TotalSeconds;
@@ -230,7 +245,7 @@ namespace Bot.Core
                     }
                 }
 
-                m_callbackScheduler.ScheduleCallback(townRecord, next_time);
+                m_callbackScheduler.ScheduleCallback(townKey, next_time);
             }
         }
     }

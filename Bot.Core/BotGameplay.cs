@@ -289,10 +289,10 @@ namespace Bot.Core
             return "Moved all players to Town Square for voting!";
         }
 
-        public async Task PerformVoteAsync(ITownRecord townRecord)
+        public async Task PerformVoteAsync(TownKey townRecord)
         {
             IGame? game;
-            if(m_activeGameService.TryGetGame(townRecord.GuildId, townRecord.ControlChannelId, out game))
+            if(m_activeGameService.TryGetGame(townRecord, out game))
             {
                 var logger = new ProcessLogger();
                 try

@@ -1,6 +1,4 @@
-﻿using Bot.Api;
-
-namespace Bot.Core
+﻿namespace Bot.Api
 {
     public class TownKey
     {
@@ -18,20 +16,26 @@ namespace Bot.Core
 
         public bool Equals(TownKey other)
         {
-            return GuildId == other.GuildId &&
+            return
+                GuildId == other.GuildId &&
                 ControlChannelId == other.ControlChannelId;
         }
 
         public override bool Equals(object? obj)
         {
-            if (obj is TownKey tk)
-                return Equals(tk);
-            return false;
+            if (obj is not TownKey tk)
+                return false;
+            return Equals(tk);
         }
 
         public override int GetHashCode()
         {
             return GuildId.GetHashCode() | ControlChannelId.GetHashCode();
         }
+
+        public override string ToString() => $"[TownKey GuildId: {GuildId}, ControlChannelId: {ControlChannelId}]";
+
+        public static bool operator ==(TownKey lhs, TownKey rhs) => lhs.Equals(rhs);
+        public static bool operator !=(TownKey lhs, TownKey rhs) => !lhs.Equals(rhs);
     }
 }

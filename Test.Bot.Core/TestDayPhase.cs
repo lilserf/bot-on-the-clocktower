@@ -1,8 +1,4 @@
-﻿using Bot.Api;
-using Bot.Core;
-using Moq;
-using System;
-using Xunit;
+﻿using Xunit;
 
 namespace Test.Bot.Core
 {
