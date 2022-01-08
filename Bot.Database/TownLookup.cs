@@ -18,17 +18,6 @@ namespace Bot.Database
 			if (m_guildInfo == null) throw new MissingGuildInfoDatabaseException();
 		}
 
-		public async Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId)
-		{
-			// Build a filter for the specific document we want
-			var builder = Builders<MongoTownRecord>.Filter;
-			var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.ControlChannelId, channelId);
-
-			// Get the first match
-			var document = await m_guildInfo.Find(filter).FirstOrDefaultAsync();
-			return document;
-		}
-
         public async Task<IEnumerable<ITownRecord>> GetTownRecords(ulong guildId)
         {
 			// Build a filter for the specific document we want

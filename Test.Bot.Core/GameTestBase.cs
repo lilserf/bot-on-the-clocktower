@@ -77,7 +77,6 @@ namespace Test.Bot.Core
                 .Returns((IEnumerable<IMember> input) => input.Reverse());
 
             // TownLookup expects MockGuildId and MockChannelId and returns the TownRecord
-            TownLookupMock.Setup(tl => tl.GetTownRecord(It.Is<ulong>(a => a == MockGuildId), It.Is<ulong>(b => b == MockChannelId))).ReturnsAsync(TownRecordMock.Object);
             TownLookupMock.Setup(tl => tl.GetTownRecords(It.Is<ulong>(a => a == MockGuildId))).ReturnsAsync(new[] { TownRecordMock.Object });
 
             // ResolveTown expects the TownRecord and returns the Town
