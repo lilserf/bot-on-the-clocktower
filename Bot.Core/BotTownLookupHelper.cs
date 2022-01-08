@@ -21,10 +21,15 @@ namespace Bot.Core
             m_townLookup = serviceProvider.GetService<ITownLookup>();
         }
 
-        protected async Task<ITown?> GetValidTownOrLogErrorAsync(IBotInteractionContext context, IProcessLogger processLogger)
+        protected Task<ITown?> GetValidTownOrLogErrorAsync(IBotInteractionContext context, IProcessLogger processLogger)
         {
-            var townRecordList = await m_townLookup.GetTownRecords(context.Guild.Id);
-            var townRec = townRecordList.Where(x => x.ControlChannelId == context.Channel.Id).FirstOrDefault();
+            return GetValidTownOrLogErrorAsync(context.Guild.Id, context.Channel.Id, processLogger);
+        }
+
+        protected async Task<ITown?> GetValidTownOrLogErrorAsync(ulong guildId, ulong controlChannelId, IProcessLogger processLogger)
+        {
+            var townRecordList = await m_townLookup.GetTownRecords(guildId);
+            var townRec = townRecordList.Where(x => x.ControlChannelId == controlChannelId).FirstOrDefault();
             
             if (townRec == null)
             {
