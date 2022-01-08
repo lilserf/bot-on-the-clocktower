@@ -23,6 +23,8 @@ namespace Bot.Core
         private readonly IBotComponent m_moreButton;
         private readonly IBotComponent m_endGameButton;
 
+        private readonly IBotComponent m_voteTimerMenu;
+
         private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
         private readonly IShuffleService m_shuffle;
@@ -34,22 +36,37 @@ namespace Bot.Core
             m_activeGameService = services.GetService<IActiveGameService>();
             m_shuffle = services.GetService<IShuffleService>();
 
-            m_nightButton = CreateButton(GameplayButton.Night, "Night");
-            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
-            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger);
-            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary);
-            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Danger);
+            m_nightButton = CreateButton(GameplayButton.Night, "Night", emoji: "🌙");
+            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success, emoji: "☀️");
+            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger, emoji: "💀");
+            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary, emoji: "⚙️");
+            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Secondary, emoji: "🛑");
 
             m_componentService.RegisterComponent(m_nightButton, NightButtonPressed);
             m_componentService.RegisterComponent(m_dayButton, DayButtonPressed);
             m_componentService.RegisterComponent(m_voteButton, VoteButtonPressed);
             m_componentService.RegisterComponent(m_moreButton, MoreButtonPressed);
             m_componentService.RegisterComponent(m_endGameButton, EndGameButtonPressed);
+
+            var options = new[]
+            {
+                new IBotSystem.SelectMenuOption("2 min", "2m"),
+                new IBotSystem.SelectMenuOption("2 min 30 sec", "2m30s"),
+                new IBotSystem.SelectMenuOption("3 min", "3m"),
+                new IBotSystem.SelectMenuOption("3 min 30 sec", "3m30s"),
+                new IBotSystem.SelectMenuOption("4 min", "4m"),
+                new IBotSystem.SelectMenuOption("4 min 30 sec", "4m30s"),
+                new IBotSystem.SelectMenuOption("5 min", "5m"),
+                new IBotSystem.SelectMenuOption("5 min 30 sec", "5m30s"),
+            };
+            m_voteTimerMenu = m_system.CreateSelectMenu($"gameplay_menu_votetimer", "Or instead, set a Vote Timer...", options);
+
+            m_componentService.RegisterComponent(m_voteTimerMenu, VoteTimerMenuSelected);
         }
 
-        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary)
+        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary, string? emoji=null)
         {
-            return m_system.CreateButton($"gameplay_{id}", label, type);
+            return m_system.CreateButton($"gameplay_{id}", label, type, emoji:emoji);
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -549,6 +566,7 @@ namespace Bot.Core
 
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_voteButton!, m_moreButton!);
+            builder = builder.AddComponents(m_voteTimerMenu!);
             await context.EditResponseAsync(builder);
         }
 
@@ -569,6 +587,7 @@ namespace Bot.Core
 
             var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
             builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!, m_endGameButton!);
+            builder = builder.AddComponents(m_voteTimerMenu!);
             await context.EditResponseAsync(builder);
         }
 
@@ -581,6 +600,16 @@ namespace Bot.Core
             await context.EditResponseAsync(builder);
         }
 
- 
+        public async Task VoteTimerMenuSelected(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var value = context.ComponentValues.First();
+            var builder = m_system.CreateWebhookBuilder().WithContent($"You chose '{value}' - it's not hooked up yet; you'll have to use /votetimer, sorry!");
+            builder = builder.AddComponents(m_voteButton!, m_moreButton!);
+            // For now since it doesn't work, don't give them the timer menu again
+            //builder = builder.AddComponents(m_voteTimerMenu!);
+            await context.EditResponseAsync(builder);
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Bot.Api
 {
@@ -17,7 +18,26 @@ namespace Bot.Api
             Success = 3,
             Danger = 4,
 		}
-        IBotComponent CreateButton(string customId, string label, ButtonType type = ButtonType.Primary, bool disabled = false);
+        IBotComponent CreateButton(string customId, string label, ButtonType type = ButtonType.Primary, bool disabled = false, string? emoji = null);
 
+        public struct SelectMenuOption
+        {
+            public string Label { get; }
+            public string Value { get; }
+            public string? Description { get; }
+            public bool IsDefault { get; }
+            public string? Emoji { get; }
+
+            public SelectMenuOption(string label, string value, string? description = null, bool isDefault = false, string? emoji=null)
+            {
+                Label = label;
+                Value = value;
+                Description = description;
+                IsDefault = isDefault;
+                Emoji = emoji;
+            }
+        }
+        
+        IBotComponent CreateSelectMenu(string customId, string placeholder, IEnumerable<SelectMenuOption> options, bool disabled = false, int minOptions = 1, int maxOptions = 1);
     }
 }
