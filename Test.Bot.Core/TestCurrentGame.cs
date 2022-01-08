@@ -194,44 +194,6 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void CurrentGame_NullTownRecord_ErrorMessage(bool gameInProgress)
-        {
-            if (gameInProgress)
-            {
-                MockGameInProgress();
-                TownMock.SetupGet(t => t.TownRecord).Returns(() => (ITownRecord?)null);
-            }
-
-            TownLookupMock.Setup(tl => tl.GetTownRecord(It.IsAny<ulong>(), It.IsAny<ulong>())).ReturnsAsync(() => (ITownRecord?)null);
-
-            RunCurrentGameAssertComplete();
-
-            // Should have some sort of nice error message saying we couldn't find a town, and some suggestions for what to do about it
-            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("town", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
-        }
-
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void CurrentGame_NullTown_ErrorMessage(bool gameInProgress)
-        {
-            if (gameInProgress)
-            {
-                var gameMock = MockGameInProgress();
-                gameMock.SetupGet(g => g.Town).Returns(() => (ITown?)null);
-            }
-
-            ClientMock.Setup(c => c.ResolveTownAsync(It.IsAny<ITownRecord>())).ReturnsAsync(() => (ITown?)null);
-
-            RunCurrentGameAssertComplete();
-
-            // Should have some sort of nice error message saying we couldn't find a town, and some suggestions for what to do about it
-            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("town", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/createTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("/addTown", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
-        }
-
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
         public void CurrentGame_NewStoryteller_Tag(bool gameInProgress)
         {
             if(gameInProgress)

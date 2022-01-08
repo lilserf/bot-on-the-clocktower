@@ -23,6 +23,8 @@ namespace Bot.Core
         private readonly IBotComponent m_moreButton;
         private readonly IBotComponent m_endGameButton;
 
+        private readonly IBotComponent m_voteTimerMenu;
+
         private readonly IComponentService m_componentService;
         private readonly IActiveGameService m_activeGameService;
         private readonly IShuffleService m_shuffle;
@@ -34,22 +36,37 @@ namespace Bot.Core
             m_activeGameService = services.GetService<IActiveGameService>();
             m_shuffle = services.GetService<IShuffleService>();
 
-            m_nightButton = CreateButton(GameplayButton.Night, "Night");
-            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success);
-            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger);
-            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary);
-            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Danger);
+            m_nightButton = CreateButton(GameplayButton.Night, "Night", emoji: "🌙");
+            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success, emoji: "☀️");
+            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger, emoji: "💀");
+            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary, emoji: "⚙️");
+            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Secondary, emoji: "🛑");
 
             m_componentService.RegisterComponent(m_nightButton, NightButtonPressed);
             m_componentService.RegisterComponent(m_dayButton, DayButtonPressed);
             m_componentService.RegisterComponent(m_voteButton, VoteButtonPressed);
             m_componentService.RegisterComponent(m_moreButton, MoreButtonPressed);
             m_componentService.RegisterComponent(m_endGameButton, EndGameButtonPressed);
+
+            var options = new[]
+            {
+                new IBotSystem.SelectMenuOption("2 min", "2m"),
+                new IBotSystem.SelectMenuOption("2 min 30 sec", "2m30s"),
+                new IBotSystem.SelectMenuOption("3 min", "3m"),
+                new IBotSystem.SelectMenuOption("3 min 30 sec", "3m30s"),
+                new IBotSystem.SelectMenuOption("4 min", "4m"),
+                new IBotSystem.SelectMenuOption("4 min 30 sec", "4m30s"),
+                new IBotSystem.SelectMenuOption("5 min", "5m"),
+                new IBotSystem.SelectMenuOption("5 min 30 sec", "5m30s"),
+            };
+            m_voteTimerMenu = m_system.CreateSelectMenu($"gameplay_menu_votetimer", "Or instead, set a Vote Timer...", options);
+
+            m_componentService.RegisterComponent(m_voteTimerMenu, VoteTimerMenuSelected);
         }
 
-        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary)
+        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary, string? emoji=null)
         {
-            return m_system.CreateButton($"gameplay_{id}", label, type);
+            return m_system.CreateButton($"gameplay_{id}", label, type, emoji:emoji);
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -169,9 +186,9 @@ namespace Bot.Core
 
                 await TagStorytellers(game, logger);
 
-                var foundUsers = game.Town.TownSquare.Users.ToList();
+                var foundUsers = game.Town!.TownSquare!.Users.ToList();
 
-                foreach (var c in game.Town.DayCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in game.Town!.DayCategory!.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
@@ -219,7 +236,7 @@ namespace Bot.Core
 
                 var allUsers = new List<IMember>();
 
-                foreach (var c in town.DayCategory.Channels.Where(c => c.IsVoice))
+                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
                 {
                     allUsers.AddRange(c.Users);
                 }
@@ -263,18 +280,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseNightInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseNightUnsafe(context, processLog) );
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here? Could make use of use processLog!
+                    return "Couldn't find an active game record for this town!";
+                }
+                return await PhaseNightUnsafe(game, processLog);
+            });
         }
 
-        public async Task<string> PhaseNightUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+        public async Task<string> PhaseNightUnsafe(IGame game, IProcessLogger processLog)
 		{
-            var game = await CurrentGameAsync(context, processLog);
-            if (game == null)
-            {
-                // TODO: more error reporting here? Could make use of use processLog!
-                return "Couldn't find an active game record for this town!";
-            }
-
             if (game.Town.NightCategory != null)
             {
                 // First, put storytellers into the top cottages
@@ -325,7 +344,7 @@ namespace Bot.Core
             // TODO: take away cottage permissions
             foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
             {
-                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare, logger);
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare!, logger);
             }
         }
 
@@ -338,17 +357,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseDayInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseDayUnsafe(context, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    return "Couldn't find an active game record for this town!";
+                }
+                return await PhaseDayUnsafe(game, processLog);
+            });
         }
 
-        public async Task<string> PhaseDayUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+        public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
-            var game = await CurrentGameAsync(context, processLog);
-            if (game == null)
-            {
-                // TODO: more error reporting here?
-                return "Couldn't find an active game record for this town!";
-            }
 
             await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, processLog);
@@ -364,17 +386,20 @@ namespace Bot.Core
 
         public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => PhaseDayUnsafe(context, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    // TODO: more error reporting here?
+                    return "Couldn't find an active game record for this town!";
+                }
+                return await PhaseVoteUnsafe(game, processLog);
+            });
         }
 
-        public async Task<string> PhaseVoteUnsafe(IBotInteractionContext context, IProcessLogger processLog)
+        public async Task<string> PhaseVoteUnsafe(IGame game, IProcessLogger processLog)
         { 
-            var game = await CurrentGameAsync(context, processLog);
-            if (game == null)
-            {
-                // TODO: more error reporting here?
-                return "Couldn't find an active game record for this town!";
-            }
 
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players to Town Square for voting!";
@@ -382,7 +407,20 @@ namespace Bot.Core
 
         public async Task PerformVoteAsync(ITownRecord townRecord)
         {
-            throw new NotImplementedException();
+            IGame? game;
+            if(m_activeGameService.TryGetGame(townRecord.GuildId, townRecord.ControlChannelId, out game))
+            {
+                var logger = new ProcessLogger();
+                try
+                {
+                    await PhaseVoteUnsafe(game, logger);
+                }
+                catch(Exception ex)
+                {
+                    logger.LogException(ex, "trying to run a vote");
+                }
+                // TODO: what to do with this logger?
+            }
         }
 
         public async Task CommandGameAsync(IBotInteractionContext context)
@@ -408,46 +446,49 @@ namespace Bot.Core
 
         public async Task<string> EndGameInternal(IBotInteractionContext context)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => EndGameUnsafe(context, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            {
+                var game = await CurrentGameAsync(context, processLog);
+                if (game == null)
+                {
+                    return "Couldn't find a current game to end!";
+                }
+                return await EndGameUnsafe(game, processLog);
+            });
         }
 
-        private async Task<string> EndGameUnsafe(IBotInteractionContext context, IProcessLogger logger)
+        private async Task<string> EndGameUnsafe(IGame game, IProcessLogger logger)
         {
-            var game = await CurrentGameAsync(context, logger);
-            if(game == null)
-            {
-                return "Couldn't find a current game to end!";
-            }
             m_activeGameService.EndGame(game.Town);
 
             foreach (var user in game.Storytellers)
             {
                 await MemberHelper.RemoveStorytellerTag(user, logger);
-                await user.RevokeRoleAsync(game.Town.StorytellerRole);
-                await user.RevokeRoleAsync(game.Town.VillagerRole);
+                await user.RevokeRoleAsync(game.Town!.StorytellerRole!);
+                await user.RevokeRoleAsync(game.Town!.VillagerRole!);
             }
 
             foreach(var user in game.Villagers)
             {
-                await user.RevokeRoleAsync(game.Town.VillagerRole);
+                await user.RevokeRoleAsync(game.Town!.VillagerRole!);
             }
 
             return "Thank you for playing Blood on the Clocktower!";
         }
 
-        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<string> users)
+        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
         {
             await context.DeferInteractionResponse();
             var message = await SetStorytellersInternal(context, users);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<string> users)
+        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<IMember> users)
         {
             return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => SetStorytellersUnsafe(context, users, processLog));
         }
 
-        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<string> userNames, IProcessLogger logger)
+        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<IMember> users, IProcessLogger logger)
         {
             IGame? game = await CurrentGameAsync(context, logger);
             if (game == null)
@@ -456,36 +497,33 @@ namespace Bot.Core
                 return "Couldn't find an active game record for this town!";
             }
 
+            List<IMember> foundUsers = new();
+
             List<string> notFoundNames = new();
-            // TODO: Levenshtein distance?
-            List<IMember> users = new();
-            foreach(var name in userNames)
+            foreach(var u in users)
             {
-                bool found = false;
-                foreach(var user in game.AllPlayers)
+                if(game.AllPlayers.Contains(u))
                 {
-                    if(MemberHelper.DisplayName(user).StartsWith(name, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        users.Add(user);
-                        found = true;
-                    }
+                    foundUsers.Add(u);
                 }
-                if(!found)
-                    notFoundNames.Add(name);
+                else
+                {
+                    notFoundNames.Add(MemberHelper.DisplayName(u));
+                }
             }
 
             string returnMsg = "";
-            if(notFoundNames.Count > 0)
+            if (notFoundNames.Count > 0)
             {
-                returnMsg += $"Couldn't find users named: {string.Join(", ", notFoundNames.Select(x => "'" + x + "'"))}\n";
+                returnMsg += $"These users don't seem to be playing the game: {string.Join(", ", notFoundNames.Select(x => "'" + x + "'"))}\n";
             }
-            if(users.Count == 0)
+            if (foundUsers.Count == 0)
             {
                 return returnMsg + "Nothing to do!";
             }
 
-            var revoke = game.Storytellers.Where(s => !users.Contains(s)).ToList();
-            var grant = users.Where(s => !game.Storytellers.Contains(s)).ToList();
+            var revoke = game.Storytellers.Where(s => !foundUsers.Contains(s)).ToList();
+            var grant = foundUsers.Where(s => !game.Storytellers.Contains(s)).ToList();
 
             foreach(var user in revoke)
             {
@@ -500,8 +538,8 @@ namespace Bot.Core
             await GrantAndRevokeRoles(game, logger);
             await TagStorytellers (game, logger);
 
-            var verbage = users.Count > 1 ? "New Storytellers are" : "New Storyteller is";
-            returnMsg += $"{verbage} {string.Join(", ", users.Select(x => MemberHelper.DisplayName(x)))}";
+            var verbage = foundUsers.Count() > 1 ? "New Storytellers are" : "New Storyteller is";
+            returnMsg += $"{verbage} {string.Join(", ", foundUsers.Select(x => MemberHelper.DisplayName(x)))}";
             return returnMsg;
         }
 
@@ -528,6 +566,7 @@ namespace Bot.Core
 
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_voteButton!, m_moreButton!);
+            builder = builder.AddComponents(m_voteTimerMenu!);
             await context.EditResponseAsync(builder);
         }
 
@@ -548,6 +587,7 @@ namespace Bot.Core
 
             var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
             builder = builder.AddComponents(m_nightButton!, m_dayButton!, m_voteButton!, m_endGameButton!);
+            builder = builder.AddComponents(m_voteTimerMenu!);
             await context.EditResponseAsync(builder);
         }
 
@@ -560,6 +600,16 @@ namespace Bot.Core
             await context.EditResponseAsync(builder);
         }
 
- 
+        public async Task VoteTimerMenuSelected(IBotInteractionContext context)
+        {
+            await context.DeferInteractionResponse();
+
+            var value = context.ComponentValues.First();
+            var builder = m_system.CreateWebhookBuilder().WithContent($"You chose '{value}' - it's not hooked up yet; you'll have to use /votetimer, sorry!");
+            builder = builder.AddComponents(m_voteButton!, m_moreButton!);
+            // For now since it doesn't work, don't give them the timer menu again
+            //builder = builder.AddComponents(m_voteTimerMenu!);
+            await context.EditResponseAsync(builder);
+        }
     }
 }

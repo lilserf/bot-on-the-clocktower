@@ -50,7 +50,12 @@ namespace Bot.Core
 
         public bool TryGetGame(IBotInteractionContext context, [MaybeNullWhen(false)] out IGame game)
         {
-            return m_games.TryGetValue(new TownKey(context.Guild.Id, context.Channel.Id), out game);
+            return TryGetGame(context.Guild.Id, context.Channel.Id, out game);
+        }
+
+        public bool TryGetGame(ulong guildId, ulong channelId, [MaybeNullWhen(false)] out IGame game)
+        {
+            return m_games.TryGetValue(new TownKey(guildId, channelId), out game);
         }
     }
 }

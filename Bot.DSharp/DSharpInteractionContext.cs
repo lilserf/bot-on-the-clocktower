@@ -2,6 +2,8 @@
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -28,7 +30,9 @@ namespace Bot.DSharp
         // Non-component interactions have a null ID here
         public string? ComponentCustomId => null;
 
-		public Task DeferInteractionResponse() => Wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        public IEnumerable<string> ComponentValues => Enumerable.Empty<string>();
+
+        public Task DeferInteractionResponse() => Wrapped.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
         public Task EditResponseAsync(IBotWebhookBuilder webhookBuilder)
         {

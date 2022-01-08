@@ -116,7 +116,7 @@ namespace Test.Bot.Core
         {
             var gameMock = MockGameInProgress();
 
-            var sts = new[] { "Peter", "Bob" };
+            var sts = new[] { InteractionAuthorMock.Object, Villager1Mock.Object };
 
             BotGameplay gs = new(GetServiceProvider());
             var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
@@ -134,7 +134,7 @@ namespace Test.Bot.Core
         {
             var gameMock = MockGameInProgress();
 
-            var sts = new[] { "Alice", "Bob" };
+            var sts = new[] { Villager1Mock.Object, Villager2Mock.Object };
 
             BotGameplay gs = new(GetServiceProvider());
             var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);

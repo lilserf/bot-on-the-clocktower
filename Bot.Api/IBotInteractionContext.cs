@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Api
@@ -9,6 +10,7 @@ namespace Bot.Api
         IChannel Channel { get; }
         IMember Member { get; }
         string? ComponentCustomId { get; }
+        IEnumerable<string> ComponentValues { get; }
         Task DeferInteractionResponse();
         Task EditResponseAsync(IBotWebhookBuilder webhookBuilder);
         Task UpdateOriginalMessageAsync(IInteractionResponseBuilder builder);

@@ -2,6 +2,8 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -31,8 +33,11 @@ namespace Bot.DSharp
 
 		public string? ComponentCustomId => Wrapped.Data.CustomId;
 
-		// Defer and say we're going to update the original message
-		public Task DeferInteractionResponse() => Wrapped.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+        public IEnumerable<string> ComponentValues => Wrapped.Data.Values.ToList();
+
+
+        // Defer and say we're going to update the original message
+        public Task DeferInteractionResponse() => Wrapped.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
 
 		public Task EditResponseAsync(IBotWebhookBuilder webhookBuilder)
 		{
