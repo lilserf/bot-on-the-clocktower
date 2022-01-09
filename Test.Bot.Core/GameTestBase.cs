@@ -42,10 +42,12 @@ namespace Test.Bot.Core
         protected readonly Mock<IChannel> Cottage1Mock = new();
         protected readonly Mock<IChannel> Cottage2Mock = new();
         protected readonly Mock<IChannel> Cottage3Mock = new();
+        protected readonly Mock<IChannel> Cottage4Mock = new();
 
         protected readonly Mock<IMember> InteractionAuthorMock = new();
         protected readonly Mock<IMember> Villager1Mock = new();
         protected readonly Mock<IMember> Villager2Mock = new();
+        protected readonly Mock<IMember> Villager3Mock = new();
 
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
         protected readonly Mock<IActiveGameService> ActiveGameServiceMock = new();
@@ -119,18 +121,20 @@ namespace Test.Bot.Core
             SetupChannelMock(ChatChannelMock, chatChannelName, false);
 
             SetupChannelMock(TownSquareMock, townSquareName);
-            TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object });
+            TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
 
             DayCategoryMock.SetupGet(c => c.Channels).Returns(new[] { ControlChannelMock.Object, ChatChannelMock.Object, TownSquareMock.Object });
             
             SetupChannelMock(Cottage1Mock, "Cottage 1 Mock");
             SetupChannelMock(Cottage2Mock, "Cottage 2 Mock");
             SetupChannelMock(Cottage3Mock, "Cottage 3 Mock");
+            SetupChannelMock(Cottage4Mock, "Cottage 4 Mock");
             Cottage1Mock.SetupGet(x => x.Position).Returns(1);
             Cottage2Mock.SetupGet(x => x.Position).Returns(2);
             Cottage3Mock.SetupGet(x => x.Position).Returns(3);
+            Cottage4Mock.SetupGet(x => x.Position).Returns(4);
             // Purposely don't order the collection of cottages in their display order
-            NightCategoryMock.SetupGet(c => c.Channels).Returns(new[] { Cottage1Mock.Object, Cottage3Mock.Object, Cottage2Mock.Object});
+            NightCategoryMock.SetupGet(c => c.Channels).Returns(new[] { Cottage1Mock.Object, Cottage3Mock.Object, Cottage4Mock.Object, Cottage2Mock.Object});
 
             TownRecordMock.SetupGet(tr => tr.GuildId).Returns(MockGuildId);
             TownRecordMock.SetupGet(tr => tr.ControlChannelId).Returns(MockControlChannelId);
@@ -141,6 +145,7 @@ namespace Test.Bot.Core
             SetupUserMock(InteractionAuthorMock, StorytellerDisplayName);
             SetupUserMock(Villager1Mock, "Bob");
             SetupUserMock(Villager2Mock, "Alice");
+            SetupUserMock(Villager3Mock, "Carl");
         }
 
         protected static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
@@ -163,7 +168,7 @@ namespace Test.Bot.Core
 
             // Actually back the Game mock with lists for storytellers and villagers :/
             var storytellers = new List<IMember>(new[] { InteractionAuthorMock.Object });
-            var villagers = new List<IMember>(new[] { Villager1Mock.Object, Villager2Mock.Object });
+            var villagers = new List<IMember>(new[] { Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
             gameMock.SetupGet(g => g.AllPlayers).Returns(() => storytellers.Concat(villagers).ToList());
             gameMock.SetupGet(g => g.Storytellers).Returns(() => storytellers);
             gameMock.SetupGet(g => g.Villagers).Returns(() => villagers);
@@ -178,6 +183,7 @@ namespace Test.Bot.Core
             InteractionAuthorMock.SetupGet(m => m.Roles).Returns(new[] { StorytellerRoleMock.Object });
             Villager1Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
             Villager2Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
+            Villager3Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
             return gameMock;
         }
 
