@@ -86,7 +86,7 @@ namespace Test.Bot.Core
             Assert.True(v2Check, "Villager2 should be moved last");
         }
 
-        [Fact(Skip ="Not set up to mock 2nd ST yet")]
+        [Fact]
         public void TwoStorytellers_BothMoveToSameCottage()
         {
             Mock<IMember> st2 = new();
@@ -94,11 +94,12 @@ namespace Test.Bot.Core
 
             TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, st2.Object, Villager1Mock.Object });
 
-            // TODO: should have second storyteller here somehow probably need to call lower-level function, not PhaseNightInternal
+            var gameMock = CreateGameMock();
+            gameMock.SetupGet(g => g.Storytellers).Returns(new[] { InteractionAuthorMock.Object, st2.Object });
 
-            var gs = CreateGameplayInteractionHandler();
-            var t = gs.PhaseNightInternal(InteractionContextMock.Object);
-            t.Wait(50);
+            BotGameplay g = new(GetServiceProvider());
+            var t = g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object);
+            t.Wait(50);            
             Assert.True(t.IsCompleted);
 
             InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
