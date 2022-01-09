@@ -137,21 +137,21 @@ namespace Bot.Core
                         if (town != null && town.VillagerRole != null)
                         {
                             var message = $"{town.VillagerRole.Mention} - Vote countdown stopped!";
-                            return await SendMessageAsync(town, message);
+                            return await SendMessageAsync(town, message, "Vote countdown stopped");
                         }
                     }
                 }
                 return "Could not find town";
             }
 
-            private static async Task<string> SendMessageAsync(ITown town, string message)
+            private static async Task<string> SendMessageAsync(ITown town, string message, string successfulReturn)
             {
                 if (town.ChatChannel != null)
                 {
                     try
                     {
                         await town.ChatChannel.SendMessageAsync(message);
-                        return "";
+                        return successfulReturn;
                     }
                     catch (Exception ex)
                     {
@@ -207,7 +207,7 @@ namespace Bot.Core
                     return "Could not find town";
 
                 var message = ConstructMessage(town, endTime, now);
-                return await SendMessageAsync(town, message);
+                return await SendMessageAsync(town, message, "Notified town of remaining time");
             }
 
             private static string GetVillagerRoleMention(IRole? villagerRole)
@@ -225,7 +225,8 @@ namespace Bot.Core
                 if (town == null)
                     return "Could not find town";
 
-                return await SendMessageAsync(town, $"{GetVillagerRoleMention(town.VillagerRole)} - Returning to {town.TownSquare?.Name ?? "Town Square"} to vote!");
+                var townSquareName = town.TownSquare?.Name ?? "Town Square";
+                return await SendMessageAsync(town, $"{GetVillagerRoleMention(town.VillagerRole)} - Returning to {townSquareName} to vote!", $"Notified town of returning to {townSquareName}");
             }
 
             private void ScheduleNextProcessTime(TownKey townKey, DateTime endTime, DateTime now)

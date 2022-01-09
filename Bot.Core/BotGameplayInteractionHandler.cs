@@ -89,8 +89,11 @@ namespace Bot.Core
         {
             try
             {
-                var webhook = m_system.CreateWebhookBuilder().WithContent(s);
-                await context.EditResponseAsync(webhook);
+                if (!string.IsNullOrWhiteSpace(s))
+                {
+                    var webhook = m_system.CreateWebhookBuilder().WithContent(s);
+                    await context.EditResponseAsync(webhook);
+                }
             }
             catch (Exception)
             { }

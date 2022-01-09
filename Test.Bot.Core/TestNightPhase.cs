@@ -96,6 +96,7 @@ namespace Test.Bot.Core
 
             var gameMock = CreateGameMock();
             gameMock.SetupGet(g => g.Storytellers).Returns(new[] { InteractionAuthorMock.Object, st2.Object });
+            gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object });
 
             BotGameplay g = new(GetServiceProvider());
             var t = g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object);
