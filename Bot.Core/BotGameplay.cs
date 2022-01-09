@@ -224,21 +224,25 @@ namespace Bot.Core
             {
                 // First, put storytellers into the top cottages
                 var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
-                var stPairs = cottages.Take(game.Storytellers.Count).Zip(game.Storytellers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                int numStCottages = game.Storytellers.Count > 0 ? 1 : 0;
+                if (cottages.Count < numStCottages + game.Villagers.Count)
+                    return "Not enough night channels to move all players"; // TODO: Test
 
-                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
-                {
-                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
-                }
+                var stPairs = game.Storytellers.Select(m => Tuple.Create(cottages.First(), m)).ToList();
 
-                // Now put everyone else in the remaining cottages
-                var pairs = cottages.Skip(game.Storytellers.Count).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                // Put all the villagers into cottages first so the STs are the last to be auto-moved
+                var villagerPairs = cottages.Skip(numStCottages).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
 
-                foreach (var (cottage, user) in m_shuffle.Shuffle(pairs))
-                {
+                foreach (var (cottage, user) in m_shuffle.Shuffle(villagerPairs))
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
+
+                // Now move STs
+                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
+                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+
+                // Finally give members permission to see their cottages so they can move back if need be, or see 
+                foreach (var (cottage, user) in villagerPairs)
                     await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
-                }
 
                 return "Moved all players from Town Square to Cottages!";
             }

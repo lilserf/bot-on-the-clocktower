@@ -58,23 +58,23 @@ namespace Test.Bot.Core
             bool v2Check = true;
             bool iaCheck = true;
 
-            // Interaction Author, as storyteller, should move first
-            InteractionAuthorMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
-            {
-                iaCalls++;
-                iaCheck = (v2Calls == 0) && (v1Calls == 0) && (iaCalls == 1);
-            });
             // Villager1 is Bob and would normally move last but our mock Shuffle makes him next
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
             {
                 v1Calls++;
-                v1Check = (v2Calls == 0) && (v1Calls == 1) && (iaCalls == 1);
+                v1Check = (v2Calls == 0) && (v1Calls == 1) && (iaCalls == 0);
             });
             // Then Villager2 who is Alice ends up last
             Villager2Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
             {
                 v2Calls++;
-                v2Check = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 1);
+                v2Check = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 0);
+            });
+            // Interaction Author, as storyteller, should move last
+            InteractionAuthorMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).Callback(() =>
+            {
+                iaCalls++;
+                iaCheck = (v2Calls == 1) && (v1Calls == 1) && (iaCalls == 1);
             });
 
             var gs = CreateGameplayInteractionHandler();
@@ -84,6 +84,26 @@ namespace Test.Bot.Core
             Assert.True(iaCheck, "InteractionAuthor should be moved first as storyteller");
             Assert.True(v1Check, "Villager1 should be moved second");
             Assert.True(v2Check, "Villager2 should be moved last");
+        }
+
+        [Fact(Skip ="Not set up to mock 2nd ST yet")]
+        public void TwoStorytellers_BothMoveToSameCottage()
+        {
+            Mock<IMember> st2 = new();
+            SetupUserMock(st2, "Other ST");
+
+            TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, st2.Object, Villager1Mock.Object });
+
+            // TODO: should have second storyteller here somehow probably need to call lower-level function, not PhaseNightInternal
+
+            var gs = CreateGameplayInteractionHandler();
+            var t = gs.PhaseNightInternal(InteractionContextMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+
+            InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
+            st2.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
+            Villager1Mock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object)), Times.Once);
         }
     }
 }
