@@ -42,7 +42,7 @@ namespace Bot.DSharp
 
             m_discord.Ready += (_, _) =>
             {
-                readyTcs.SetResult();
+                readyTcs.TrySetResult();
                 return Task.CompletedTask;
             };
 
