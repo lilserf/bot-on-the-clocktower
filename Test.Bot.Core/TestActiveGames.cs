@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Core;
 using Moq;
 using Xunit;

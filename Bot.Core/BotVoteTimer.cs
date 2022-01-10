@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Core.Callbacks;
 using System;
 using System.Collections.Generic;
@@ -91,7 +92,7 @@ namespace Bot.Core
 
             private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
             private readonly IBotClient m_client;
-            private readonly ITownLookup m_townLookup;
+            private readonly ITownDatabase m_townLookup;
             private readonly IVoteHandler m_voteHandler;
 
             private readonly Dictionary<TownKey, DateTime> m_townKeyToVoteTime = new();
@@ -101,7 +102,7 @@ namespace Bot.Core
                 DateTime = serviceProvider.GetService<IDateTime>();
 
                 m_client = serviceProvider.GetService<IBotClient>();
-                m_townLookup = serviceProvider.GetService<ITownLookup>();
+                m_townLookup = serviceProvider.GetService<ITownDatabase>();
                 m_voteHandler = serviceProvider.GetService<IVoteHandler>();
 
                 var callbackFactory = serviceProvider.GetService<ICallbackSchedulerFactory>();

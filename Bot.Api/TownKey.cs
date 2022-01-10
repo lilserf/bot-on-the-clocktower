@@ -1,4 +1,6 @@
-﻿namespace Bot.Api
+﻿using Bot.Api.Database;
+
+namespace Bot.Api
 {
     public class TownKey
     {

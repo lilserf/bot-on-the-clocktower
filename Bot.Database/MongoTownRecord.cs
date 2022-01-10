@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;

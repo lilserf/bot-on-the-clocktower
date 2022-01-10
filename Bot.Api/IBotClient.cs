@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bot.Api.Database;
+using System;
 using System.Threading.Tasks;
 
 namespace Bot.Api

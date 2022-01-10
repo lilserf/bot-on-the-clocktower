@@ -9,7 +9,7 @@ namespace Bot.Database
         {
             var childSp = new ServiceProvider(parentServices);
 
-            childSp.AddService<ITownLookupFactory>(new TownLookupFactory());
+            childSp.AddService<ITownDatabaseFactory>(new TownDatabaseFactory());
             childSp.AddService<IMongoClientFactory>(new MongoClientFactory());
 
             return childSp;

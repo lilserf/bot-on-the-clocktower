@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Core;
 using Bot.Core.Callbacks;
 using Moq;
@@ -24,7 +25,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IBotWebhookBuilder> WebhookBuilderMock = new();
 
         protected readonly Mock<IGuild> GuildMock = new();
-        protected readonly Mock<ITownLookup> TownLookupMock = new();
+        protected readonly Mock<ITownDatabase> TownLookupMock = new();
         protected readonly Mock<ITown> TownMock = new();
         protected readonly Mock<ITownRecord> TownRecordMock = new();
         protected readonly Mock<IBotClient> ClientMock = new();

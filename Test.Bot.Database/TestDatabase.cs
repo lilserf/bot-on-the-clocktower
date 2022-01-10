@@ -1,4 +1,5 @@
 using Bot.Api;
+using Bot.Api.Database;
 using Bot.Database;
 using MongoDB.Driver;
 using Moq;
@@ -98,15 +99,15 @@ namespace Test.Bot.Database
 		public void CreateDbServices_CreatesTownLookup()
 		{
 			var mockDatabase = new Mock<IMongoDatabase>();
-			var mockTownLookup = new Mock<ITownLookup>();
-			var mockTownLookupFactory = RegisterMock(new Mock<ITownLookupFactory>());
+			var mockTownLookup = new Mock<ITownDatabase>();
+			var mockTownLookupFactory = RegisterMock(new Mock<ITownDatabaseFactory>());
 			mockTownLookupFactory.Setup(tlf => tlf.CreateTownLookup(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockTownLookup.Object);
 			DatabaseFactory db = new(GetServiceProvider());
 
 			var result = db.CreateDatabaseServices(mockDatabase.Object);
 
 			mockTownLookupFactory.Verify(tlf => tlf.CreateTownLookup(It.Is<IMongoDatabase>(md => md == mockDatabase.Object)), Times.Once);
-			Assert.Equal(mockTownLookup.Object, result.GetService<ITownLookup>());
+			Assert.Equal(mockTownLookup.Object, result.GetService<ITownDatabase>());
 		}
 	}
 }

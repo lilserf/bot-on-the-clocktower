@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Bot.Api
+namespace Bot.Api.Database
 {
-    public interface ITownLookup
+    public interface ITownDatabase
 	{
 		public Task<ITownRecord?> GetTownRecord(ulong guildId, ulong controlChannelId);
 
@@ -13,6 +13,6 @@ namespace Bot.Api
 
 	public static class ITownLookupExtensions
     {
-		public static Task<ITownRecord?> GetTownRecord(this ITownLookup @this, TownKey townKey) => @this.GetTownRecord(townKey.GuildId, townKey.ControlChannelId);
+		public static Task<ITownRecord?> GetTownRecord(this ITownDatabase @this, TownKey townKey) => @this.GetTownRecord(townKey.GuildId, townKey.ControlChannelId);
     }
 }

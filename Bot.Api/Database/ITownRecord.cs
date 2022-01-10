@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Bot.Api
+namespace Bot.Api.Database
 {
     public interface ITownRecord
 	{

@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,14 +12,14 @@ namespace Bot.Core
     public abstract class BotTownLookupHelper
     {
         protected readonly IBotClient m_client;
-        protected readonly ITownLookup m_townLookup;
+        protected readonly ITownDatabase m_townLookup;
 
         protected const string InvalidTownMessage = "Couldn't find a registered town for this server and channel. Consider re-creating the town with `/createTown` or `/addTown`.";
 
         public BotTownLookupHelper(IServiceProvider serviceProvider)
         {
             m_client = serviceProvider.GetService<IBotClient>();
-            m_townLookup = serviceProvider.GetService<ITownLookup>();
+            m_townLookup = serviceProvider.GetService<ITownDatabase>();
         }
 
         protected Task<ITown?> GetValidTownOrLogErrorAsync(IBotInteractionContext context, IProcessLogger processLogger)

@@ -19,9 +19,9 @@ namespace Test.Bot.Database
         public void RegisterServices_CreatesTownLookupFactory()
         {
             var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var factory = newSp.GetService<ITownLookupFactory>();
+            var factory = newSp.GetService<ITownDatabaseFactory>();
 
-            Assert.IsType<TownLookupFactory>(factory);
+            Assert.IsType<TownDatabaseFactory>(factory);
         }
     }
 }

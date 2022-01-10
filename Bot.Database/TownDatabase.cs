@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -6,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace Bot.Database
 {
-    public class TownLookup : ITownLookup
+    public class TownDatabase : ITownDatabase
 	{
 		public const string GuildInfoDbName = "GuildInfo";
 
 		private readonly IMongoCollection<MongoTownRecord> m_guildInfo;
 
-		public TownLookup(IMongoDatabase db)
+		public TownDatabase(IMongoDatabase db)
 		{
 			m_guildInfo = db.GetCollection<MongoTownRecord>(GuildInfoDbName);
 			if (m_guildInfo == null) throw new MissingGuildInfoDatabaseException();

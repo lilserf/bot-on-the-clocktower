@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Core.Callbacks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +11,25 @@ namespace Bot.Core
     {
         private readonly IActiveGameService m_activeGameService;
         private readonly IShuffleService m_shuffle;
+        private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
+        private readonly IDateTime m_dateTime;
 
 		public BotGameplay(IServiceProvider services)
             : base(services)
 		{
             m_activeGameService = services.GetService<IActiveGameService>();
             m_shuffle = services.GetService<IShuffleService>();
+
+            var callbackFactory = services.GetService<ICallbackSchedulerFactory>();
+            m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CheckForTownCleanup, TimeSpan.FromHours(1));
+
+            m_dateTime = services.GetService<IDateTime>();
+        }
+
+        private Task CheckForTownCleanup(TownKey arg)
+        {
+            // TODO: get the database entry for this town and see if it's ready for cleanup
+            return Task.CompletedTask;
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -111,6 +125,15 @@ namespace Bot.Core
             }
         }
 
+        // Schedule this town for a cleanup after a long time period
+        public void ScheduleCleanup(TownKey townKey)
+        {
+            // TODO: store a record for this town for when to clean it up
+
+            var time = m_dateTime.Now + TimeSpan.FromHours(5);
+            m_callbackScheduler.ScheduleCallback(townKey, time);
+        }
+
         // TODO: better name for this method, probably
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
@@ -120,6 +143,8 @@ namespace Bot.Core
                 {
                     return null;
                 }
+
+                ScheduleCleanup(TownKey.FromTown(game.Town));
 
                 //Resolve a change in Storytellers
                 if (!game.Storytellers.Contains(context.Member))
@@ -175,6 +200,8 @@ namespace Bot.Core
 
                 if (!CheckIsTownViable(town, logger))
                     return null;
+
+                ScheduleCleanup(TownKey.FromTown(town));
 
                 // No record, so create one
                 game = new Game(town!);
