@@ -271,7 +271,6 @@ namespace Bot.Core
         // Helper for moving all players to Town Square (used by Day and Vote commands)
         private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
         {
-            // TODO: take away cottage permissions
             foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
             {
                 await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare!, logger);
@@ -280,7 +279,6 @@ namespace Bot.Core
 
         public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
-
             await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players from Cottages back to Town Square!";
@@ -288,7 +286,6 @@ namespace Bot.Core
 
         public async Task<string> PhaseVoteUnsafe(IGame game, IProcessLogger processLog)
         { 
-
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players to Town Square for voting!";
         }
