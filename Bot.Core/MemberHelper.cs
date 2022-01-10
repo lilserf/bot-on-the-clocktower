@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -12,7 +13,10 @@ namespace Bot.Core
         {
             try
             {
-                await member.MoveToChannelAsync(channel);
+                if (!channel.Users.Contains(member))
+                {
+                    await member.MoveToChannelAsync(channel);
+                }
                 return true;
             }
             catch (Exception ex)
