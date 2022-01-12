@@ -14,8 +14,8 @@ namespace Bot.Database
         [BsonElement("guild")]
         public ulong GuildId { get; set; }
         [BsonElement("channel")]
-        public ulong ChannelId => throw new NotImplementedException();
+        public ulong ChannelId { get; set; }
         [BsonElement("lastActivity")]
-        public DateTime LastActivity => throw new NotImplementedException();
+        public DateTime LastActivity { get; set; }
     }
 }

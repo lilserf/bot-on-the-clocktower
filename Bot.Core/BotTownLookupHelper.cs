@@ -27,6 +27,10 @@ namespace Bot.Core
             return GetValidTownOrLogErrorAsync(context.Guild.Id, context.Channel.Id, processLogger);
         }
 
+        protected Task<ITown?> GetValidTownOrLogErrorAsync(TownKey townKey, IProcessLogger processLogger)
+        {
+            return GetValidTownOrLogErrorAsync(townKey.GuildId, townKey.ControlChannelId, processLogger);
+        }
         protected async Task<ITown?> GetValidTownOrLogErrorAsync(ulong guildId, ulong controlChannelId, IProcessLogger processLogger)
         {
             var townRecordList = await m_townLookup.GetTownRecords(guildId);

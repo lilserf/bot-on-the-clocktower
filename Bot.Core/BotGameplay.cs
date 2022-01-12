@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Core.Callbacks;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,9 @@ namespace Bot.Core
         private readonly IShuffleService m_shuffle;
         private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
         private readonly IDateTime m_dateTime;
+        private readonly IGameActivityDatabase m_gameActivityDb;
 
+        private const int HOURS_INACTIVITY = 5;
 		public BotGameplay(IServiceProvider services)
             : base(services)
 		{
@@ -21,15 +24,68 @@ namespace Bot.Core
             m_shuffle = services.GetService<IShuffleService>();
 
             var callbackFactory = services.GetService<ICallbackSchedulerFactory>();
-            m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CheckForTownCleanup, TimeSpan.FromHours(1));
+            m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CleanupTown, TimeSpan.FromHours(1));
 
             m_dateTime = services.GetService<IDateTime>();
+            m_gameActivityDb = services.GetService<IGameActivityDatabase>();
+
+            // TODO: async startup-time call to do this
+            //await ScheduleOutstandingCleanup();
         }
 
-        private Task CheckForTownCleanup(TownKey arg)
+        private async Task ScheduleOutstandingCleanup()
         {
-            // TODO: get the database entry for this town and see if it's ready for cleanup
-            return Task.CompletedTask;
+            var recs = await m_gameActivityDb.GetAllActivityRecords();
+            foreach(var rec in recs)
+            {
+                ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId));
+            }
+        }
+
+        // Schedule this town for a cleanup after a long time period
+        private void ScheduleCleanup(TownKey townKey)
+        {
+            m_gameActivityDb.RecordActivity(townKey);
+            var time = m_dateTime.Now + TimeSpan.FromHours(HOURS_INACTIVITY);
+            m_callbackScheduler.ScheduleCallback(townKey, time);
+        }
+
+        private async Task CleanupTown(TownKey key)
+        {
+            IGame? game = null;
+            if(m_activeGameService.TryGetGame(key, out game))
+            {
+                try
+                {
+                    var logger = new ProcessLogger();
+                    await EndGameUnsafe(game, logger);
+                }
+                catch(Exception ex)
+                {
+                    // Do what?
+                }
+                finally
+                {
+                    // Success or failure, clear the record
+                    await m_gameActivityDb.ClearActivity(key);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var logger = new ProcessLogger();
+                    await EndGameUnsafe(key, logger);
+                }
+                catch(Exception ex)
+                {
+
+                }
+                finally
+                {
+                    await m_gameActivityDb.ClearActivity(key);
+                }
+            }
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -125,14 +181,6 @@ namespace Bot.Core
             }
         }
 
-        // Schedule this town for a cleanup after a long time period
-        public void ScheduleCleanup(TownKey townKey)
-        {
-            // TODO: store a record for this town for when to clean it up
-
-            var time = m_dateTime.Now + TimeSpan.FromHours(5);
-            m_callbackScheduler.ScheduleCallback(townKey, time);
-        }
 
         // TODO: better name for this method, probably
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
@@ -335,20 +383,37 @@ namespace Bot.Core
             }
         }
 
+        private async Task EndGameForUser(IMember user, ITown town, IProcessLogger logger)
+        {
+            await MemberHelper.RemoveStorytellerTag(user, logger);
+            await user.RevokeRoleAsync(town!.StorytellerRole!);
+            await user.RevokeRoleAsync(town!.VillagerRole!);
+        }
+
+        public async Task<string> EndGameUnsafe(TownKey townKey, IProcessLogger logger)
+        {
+            var town = await GetValidTownOrLogErrorAsync(townKey, logger);
+
+            if (town != null)
+            {
+                var guild = await m_client.GetGuild(townKey.GuildId);
+
+                foreach (var (_, user) in guild.Members)
+                {
+                    await EndGameForUser(user, town, logger);
+                }
+            }
+
+            return "Cleanup of inactive game complete";
+        }
+
         public async Task<string> EndGameUnsafe(IGame game, IProcessLogger logger)
         {
             m_activeGameService.EndGame(game.Town);
 
-            foreach (var user in game.Storytellers)
+            foreach (var user in game.AllPlayers)
             {
-                await MemberHelper.RemoveStorytellerTag(user, logger);
-                await user.RevokeRoleAsync(game.Town!.StorytellerRole!);
-                await user.RevokeRoleAsync(game.Town!.VillagerRole!);
-            }
-
-            foreach(var user in game.Villagers)
-            {
-                await user.RevokeRoleAsync(game.Town!.VillagerRole!);
+                await EndGameForUser(user, game.Town, logger);
             }
 
             return "Thank you for playing Blood on the Clocktower!";

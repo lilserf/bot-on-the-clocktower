@@ -11,5 +11,7 @@ namespace Bot.Api
 		public ulong Id { get; }
 
 		public IReadOnlyDictionary<ulong, IRole> Roles { get; }
+
+		public IReadOnlyDictionary<ulong, IMember> Members { get; }
 	}
 }

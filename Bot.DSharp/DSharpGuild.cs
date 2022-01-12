@@ -9,7 +9,11 @@ namespace Bot.DSharp
 		public ulong Id => Wrapped.Id;
 
 		public IReadOnlyDictionary<ulong, IRole> Roles => m_roles;
-		private readonly Dictionary<ulong, IRole> m_roles;
+
+        private readonly Dictionary<ulong, IRole> m_roles;
+
+		public IReadOnlyDictionary<ulong, IMember> Members => m_members;
+		private readonly Dictionary<ulong, IMember> m_members;
 
 		public DSharpGuild(DiscordGuild wrapped)
 			: base(wrapped)
@@ -19,6 +23,12 @@ namespace Bot.DSharp
 			{
 				m_roles[k] = new DSharpRole(v);
 			}
+
+			m_members = new();
+			foreach(var (k,v) in wrapped.Members)
+            {
+				m_members[k] = new DSharpMember(v);
+            }
 		}
 	}
 }

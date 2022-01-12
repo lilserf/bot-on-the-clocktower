@@ -9,5 +9,7 @@ namespace Bot.Api
         Task ConnectAsync(IServiceProvider serviceProvider);
 
         Task<ITown?> ResolveTownAsync(ITownRecord rec);
+
+        Task<IGuild> GetGuild(ulong guildId);
     }
 }

@@ -90,6 +90,11 @@ namespace Bot.DSharp
             return null;
         }
 
-		public class InvalidDiscordTokenException : Exception { }
+        public async Task<IGuild> GetGuild(ulong guildId)
+        {
+            return new DSharpGuild(await m_discord.GetGuildAsync(guildId));
+        }
+
+        public class InvalidDiscordTokenException : Exception { }
     }
 }
