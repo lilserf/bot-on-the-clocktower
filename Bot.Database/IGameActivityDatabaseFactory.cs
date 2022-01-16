@@ -1,14 +1,9 @@
 ﻿using Bot.Api.Database;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Database
 {
-    interface IGameActivityDatabaseFactory
+    public interface IGameActivityDatabaseFactory
     {
         IGameActivityDatabase CreateGameActivityDatabase(IMongoDatabase db);
     }
