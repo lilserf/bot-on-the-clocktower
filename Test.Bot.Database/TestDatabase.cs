@@ -101,6 +101,8 @@ namespace Test.Bot.Database
 			var mockDatabase = new Mock<IMongoDatabase>();
 			var mockTownLookup = new Mock<ITownDatabase>();
 			var mockTownLookupFactory = RegisterMock(new Mock<ITownDatabaseFactory>());
+			RegisterMock(new Mock<IGameActivityDatabaseFactory>());
+
 			mockTownLookupFactory.Setup(tlf => tlf.CreateTownLookup(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockTownLookup.Object);
 			DatabaseFactory db = new(GetServiceProvider());
 
