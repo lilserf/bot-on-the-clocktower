@@ -4,9 +4,9 @@ name: Run C# tests
 
 on:
   push:
-    branches: [ feature/csharp_port ]
+    branches: [ main, release, feature/csharp_port ]
   pull_request:
-    branches: [ feature/csharp_port ]
+    branches: [ main, release, feature/csharp_port ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
