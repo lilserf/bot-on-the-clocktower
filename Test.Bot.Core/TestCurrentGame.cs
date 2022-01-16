@@ -276,6 +276,13 @@ namespace Test.Bot.Core
             gameMock.Verify(m => m.RemoveVillager(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
         }
 
+        [Fact]
+        public void CurrentGame_NewPeople()
+        {
+            var ags = new ActiveGameService();
+            RegisterService(ags);
+        }
+
         private void RunCurrentGameAssertComplete()
         {
             BotGameplay gs = new(GetServiceProvider());

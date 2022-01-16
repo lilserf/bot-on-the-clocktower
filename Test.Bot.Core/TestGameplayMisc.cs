@@ -3,6 +3,7 @@ using Bot.Core;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -44,10 +45,25 @@ namespace Test.Bot.Core
         public void Night_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandNightAsync(context));
 
         [Fact]
-        public void Day_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandDayAsync(context));
+        public void Day_UnhandledException_NotifiesAuthorOfException()
+        {
+            TownSquareMock.SetupGet(t => t.Users).Returns(Enumerable.Empty<IMember>().ToList());
+            Cottage1Mock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object });
+            Cottage2Mock.SetupGet(t => t.Users).Returns(new[] { Villager1Mock.Object });
+            Cottage3Mock.SetupGet(t => t.Users).Returns(new[] { Villager2Mock.Object });
+            Cottage4Mock.SetupGet(t => t.Users).Returns(new[] { Villager3Mock.Object });
+
+            TestUnhandledExceptionForCommand((bg, context) => bg.CommandDayAsync(context));
+        }
 
         [Fact]
-        public void Vote_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandVoteAsync(context));
+        public void Vote_UnhandledException_NotifiesAuthorOfException()
+        {
+            TownSquareMock.SetupGet(t => t.Users).Returns(Enumerable.Empty<IMember>().ToList());
+            DarkAlleyMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
+
+            TestUnhandledExceptionForCommand((bg, context) => bg.CommandVoteAsync(context));
+        }
 
         [Fact]
         public void Game_UnhandledException_NotifiesAuthorOfException() => TestUnhandledExceptionForCommand((bg, context) => bg.CommandGameAsync(context));

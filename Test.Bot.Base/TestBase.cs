@@ -23,6 +23,7 @@ namespace Test.Bot.Base
             return mock;
         }
 
+  
         protected static Exception CreateException(Type exceptionType)
         {
             var exceptionConstructor = exceptionType.GetConstructor(Array.Empty<Type>());

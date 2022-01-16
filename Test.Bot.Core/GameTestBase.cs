@@ -26,12 +26,15 @@ namespace Test.Bot.Core
 
         protected readonly Mock<IGuild> GuildMock = new();
         protected readonly Mock<ITownDatabase> TownLookupMock = new();
+        protected readonly Mock<IDateTime> DateTimeMock = new();
+        protected readonly Mock<IGameActivityDatabase> GameActivityDatabaseMock = new();
         protected readonly Mock<ITown> TownMock = new();
         protected readonly Mock<ITownRecord> TownRecordMock = new();
         protected readonly Mock<IBotClient> ClientMock = new();
 
         protected readonly Mock<IChannel> ControlChannelMock = new();
         protected readonly Mock<IChannel> TownSquareMock = new();
+        protected readonly Mock<IChannel> DarkAlleyMock = new();
         protected readonly Mock<IChannel> DayCategoryMock = new();
         protected readonly Mock<IChannel> NightCategoryMock = new();
         protected readonly Mock<IChannel> ChatChannelMock = new();
@@ -39,7 +42,6 @@ namespace Test.Bot.Core
         protected readonly Mock<IRole> StorytellerRoleMock = new();
         protected readonly Mock<IRole> VillagerRoleMock = new();
 
-        protected readonly Mock<IChannel> DarkAlleyMock = new();
         protected readonly Mock<IChannel> Cottage1Mock = new();
         protected readonly Mock<IChannel> Cottage2Mock = new();
         protected readonly Mock<IChannel> Cottage3Mock = new();
@@ -61,6 +63,8 @@ namespace Test.Bot.Core
             RegisterMock(CallbackSchedulerFactoryMock);
             CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownRecordCallbackSchedulerMock.Object);
 
+            TownRecordCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
+
             Mock<IBotWebhookBuilder> builderMock = new();
             BotSystemMock.Setup(c => c.CreateWebhookBuilder()).Returns(WebhookBuilderMock.Object);
 
@@ -71,6 +75,8 @@ namespace Test.Bot.Core
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
             RegisterMock(TownLookupMock);
+            RegisterMock(DateTimeMock);
+            RegisterMock(GameActivityDatabaseMock);
             RegisterMock(ActiveGameServiceMock);
             RegisterMock(ComponentServiceMock);
             RegisterMock(ShuffleServiceMock);
@@ -114,6 +120,7 @@ namespace Test.Bot.Core
             var controlChannelName = "botc_mover_mock";
             var chatChannelName = "chat_mock";
             var townSquareName = "Town Square Mock";
+            var darkAlleyName = "Dark Alley Mock";
 
             VillagerRoleMock.SetupGet(r => r.Name).Returns(villagerRoleName);
             VillagerRoleMock.SetupGet(r => r.Mention).Returns($"@{villagerRoleName}");
@@ -121,10 +128,12 @@ namespace Test.Bot.Core
             SetupChannelMock(ControlChannelMock, controlChannelName, false);
             SetupChannelMock(ChatChannelMock, chatChannelName, false);
 
+
             SetupChannelMock(TownSquareMock, townSquareName);
             TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
+            SetupChannelMock(DarkAlleyMock, darkAlleyName);
 
-            DayCategoryMock.SetupGet(c => c.Channels).Returns(new[] { ControlChannelMock.Object, ChatChannelMock.Object, TownSquareMock.Object });
+            DayCategoryMock.SetupGet(c => c.Channels).Returns(new[] { ControlChannelMock.Object, ChatChannelMock.Object, TownSquareMock.Object, DarkAlleyMock.Object });
             
             SetupChannelMock(Cottage1Mock, "Cottage 1 Mock");
             SetupChannelMock(Cottage2Mock, "Cottage 2 Mock");

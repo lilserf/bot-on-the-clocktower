@@ -2,6 +2,7 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -22,6 +23,7 @@ namespace Test.Bot.Core
         public TestMembers()
         {
             ChannelMock.SetupGet(c => c.Name).Returns(MockChannelName);
+            ChannelMock.SetupGet(c => c.Users).Returns(Enumerable.Empty<IMember>().ToList());
             MemberMock.SetupGet(m => m.DisplayName).Returns(MockMemberName);
             RoleMock.SetupGet(r => r.Name).Returns(MockRoleName);
             ProcessLoggerMock.Setup(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()));

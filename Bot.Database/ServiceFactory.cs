@@ -10,8 +10,8 @@ namespace Bot.Database
             var childSp = new ServiceProvider(parentServices);
 
             childSp.AddService<ITownDatabaseFactory>(new TownDatabaseFactory());
+            childSp.AddService<IGameActivityDatabaseFactory>(new GameActivityDatabaseFactory());
             childSp.AddService<IMongoClientFactory>(new MongoClientFactory());
-
             return childSp;
         }
     }
