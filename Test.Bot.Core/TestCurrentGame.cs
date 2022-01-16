@@ -280,7 +280,15 @@ namespace Test.Bot.Core
         public void CurrentGame_NewPeople()
         {
             var ags = new ActiveGameService();
-            RegisterService(ags);
+            RegisterService<IActiveGameService>(ags);
+
+            TownSquareMock.SetupGet(c => c.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object });
+            RunCurrentGameAssertComplete();
+
+            TownSquareMock.SetupGet(c => c.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
+            RunCurrentGameAssertComplete();
+
+            Villager3Mock.Verify(m => m.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
         }
 
         private void RunCurrentGameAssertComplete()
