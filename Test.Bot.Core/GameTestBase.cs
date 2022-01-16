@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Test.Bot.Base;
+using Xunit;
 
 namespace Test.Bot.Core
 {
@@ -18,7 +19,7 @@ namespace Test.Bot.Core
         protected static TownKey MockTownKey = new TownKey(MockGuildId, MockControlChannelId);
         protected const string StorytellerDisplayName = "Peter Storyteller";
 
-        protected readonly Mock<ICallbackScheduler<TownKey>> TownRecordCallbackSchedulerMock = new(MockBehavior.Strict);
+        protected readonly Mock<ICallbackScheduler<TownKey>> TownKeyCallbackSchedulerMock = new(MockBehavior.Strict);
         protected readonly Mock<ICallbackSchedulerFactory> CallbackSchedulerFactoryMock = new(MockBehavior.Strict);
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
@@ -61,9 +62,9 @@ namespace Test.Bot.Core
         public GameTestBase()
         {
             RegisterMock(CallbackSchedulerFactoryMock);
-            CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownRecordCallbackSchedulerMock.Object);
+            CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyCallbackSchedulerMock.Object);
 
-            TownRecordCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
+            TownKeyCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
 
             Mock<IBotWebhookBuilder> builderMock = new();
             BotSystemMock.Setup(c => c.CreateWebhookBuilder()).Returns(WebhookBuilderMock.Object);
@@ -92,6 +93,7 @@ namespace Test.Bot.Core
 
             // ResolveTown expects the TownRecord and returns the Town
             ClientMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
+            ClientMock.Setup(c => c.GetGuild(It.Is<ulong>(x => x == MockGuildId))).ReturnsAsync(GuildMock.Object);
 
             // By default, the ActiveGameService won't find a game for this context
             IGame? defaultGame = null;
@@ -99,7 +101,14 @@ namespace Test.Bot.Core
 
             ProcessLoggerMock.Setup(c => c.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
+            var memberList = new Dictionary<ulong, IMember>();
+            memberList[101] = InteractionAuthorMock.Object;
+            memberList[102] = Villager1Mock.Object;
+            memberList[103] = Villager2Mock.Object;
+            memberList[104] = Villager3Mock.Object;
+
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
+            GuildMock.SetupGet(x => x.Members).Returns(memberList);
             ControlChannelMock.SetupGet(x => x.Id).Returns(MockControlChannelId);
 
             InteractionContextMock.SetupGet(x => x.Guild).Returns(GuildMock.Object);
@@ -117,6 +126,7 @@ namespace Test.Bot.Core
             TownMock.SetupGet(t => t.TownRecord).Returns(TownRecordMock.Object);
 
             var villagerRoleName = "BotC Villager Mock";
+            var storytellerRoleName = "BotC Storyteller Mock";
             var controlChannelName = "botc_mover_mock";
             var chatChannelName = "chat_mock";
             var townSquareName = "Town Square Mock";
@@ -124,6 +134,8 @@ namespace Test.Bot.Core
 
             VillagerRoleMock.SetupGet(r => r.Name).Returns(villagerRoleName);
             VillagerRoleMock.SetupGet(r => r.Mention).Returns($"@{villagerRoleName}");
+            VillagerRoleMock.Name = $"Role: {villagerRoleName}";
+            StorytellerRoleMock.Name = $"Role: {storytellerRoleName}";
 
             SetupChannelMock(ControlChannelMock, controlChannelName, false);
             SetupChannelMock(ChatChannelMock, chatChannelName, false);
@@ -160,6 +172,7 @@ namespace Test.Bot.Core
 
         protected static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
         {
+            channel.Name = name;
             channel.SetupGet(c => c.Users).Returns(Array.Empty<IMember>());
             channel.SetupGet(c => c.Name).Returns(name);
             channel.SetupGet(c => c.IsVoice).Returns(isVoice);
@@ -167,6 +180,7 @@ namespace Test.Bot.Core
 
         protected static void SetupUserMock(Mock<IMember> member, string name)
 		{
+            member.Name = name;
             member.SetupGet(x => x.DisplayName).Returns(name);
             member.SetupGet(x => x.Roles).Returns(Array.Empty<IRole>());
         }
@@ -217,6 +231,14 @@ namespace Test.Bot.Core
         protected BotGameplayInteractionHandler CreateGameplayInteractionHandler()
         {
             return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
+        }
+
+        protected void RunCurrentGameAssertComplete()
+        {
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
         }
     }
 }

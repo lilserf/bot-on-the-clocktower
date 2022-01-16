@@ -50,7 +50,7 @@ namespace Bot.Core
             m_callbackScheduler.ScheduleCallback(townKey, time);
         }
 
-        private async Task CleanupTown(TownKey key)
+        public async Task CleanupTown(TownKey key)
         {
             IGame? game = null;
             if(m_activeGameService.TryGetGame(key, out game))

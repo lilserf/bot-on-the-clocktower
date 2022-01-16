@@ -291,12 +291,6 @@ namespace Test.Bot.Core
             Villager3Mock.Verify(m => m.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
         }
 
-        private void RunCurrentGameAssertComplete()
-        {
-            BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-        }
+
     }
 }
