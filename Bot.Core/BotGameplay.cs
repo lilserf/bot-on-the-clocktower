@@ -316,8 +316,9 @@ namespace Bot.Core
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
 
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
-                foreach (var (cottage, user) in villagerPairs)
-                    await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
+                // This currently throws UnauthorizedException :/
+                //foreach (var (cottage, user) in villagerPairs)
+                //    await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
 
                 return "Moved all players from Town Square to Cottages!";
             }
