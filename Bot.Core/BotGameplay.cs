@@ -208,7 +208,7 @@ namespace Bot.Core
 
                 await TagStorytellers(game, logger);
 
-                var foundUsers = game.Town!.TownSquare!.Users.ToList();
+                var foundUsers = new List<IMember>();
 
                 foreach (var c in game.Town!.DayCategory!.Channels.Where(c => c.IsVoice))
                 {
