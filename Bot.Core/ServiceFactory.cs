@@ -32,6 +32,7 @@ namespace Bot.Core
             sp.AddService<IVoteHandler>(gameplay);
             var voteTimer = new BotVoteTimer(sp);
             sp.AddService<IBotGameplayInteractionHandler>(new BotGameplayInteractionHandler(sp, gameplay, voteTimer));
+            sp.AddService<IBotMessaging>(new BotMessaging(sp));
             return sp;
         }
     }

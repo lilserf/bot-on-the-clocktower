@@ -28,13 +28,18 @@
     <Compile Include="announce.py" />
     <Compile Include="bot.py" />
     <Compile Include="botctypes.py" />
+    <Compile Include="discordhelper.py" />
     <Compile Include="discordutil.py" />
     <Compile Include="gameplay.py" />
     <Compile Include="lookup.py" />
+    <Compile Include="messaging.py" />
+    <Compile Include="setup.py" />
     <Compile Include="test_announce.py" />
     <Compile Include="test_botctypes.py" />
+    <Compile Include="test_gameplay.py" />
     <Compile Include="test_lookups.py" />
     <Compile Include="test_votetimer.py" />
+    <Compile Include="towndb.py" />
     <Compile Include="version.py" />
     <Compile Include="votetimer.py" />
   </ItemGroup>
