@@ -16,7 +16,7 @@ namespace Bot.Api
 		Task SetDisplayName(string name);
 		public string DisplayName { get; }
 		public bool IsBot { get; }
-
+		public ulong Id { get; }
 		public IReadOnlyCollection<IRole> Roles { get; }
 	}
 }

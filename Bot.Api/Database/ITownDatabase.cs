@@ -9,6 +9,8 @@ namespace Bot.Api.Database
 
 		// Get all Towns present on this guild
 		public Task<IEnumerable<ITownRecord>> GetTownRecords(ulong guildId);
+
+		public Task<bool> AddTown(ITown town, IMember author);
 	}
 
 	public static class ITownLookupExtensions

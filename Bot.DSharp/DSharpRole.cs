@@ -7,7 +7,7 @@ namespace Bot.DSharp
 	{
         public string Name => Wrapped.Name;
         public string Mention => Wrapped.Mention;
-
+        public ulong Id => Wrapped.Id;
         public DSharpRole(DiscordRole wrapped)
 			: base(wrapped)
 		{}

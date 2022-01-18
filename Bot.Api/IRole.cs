@@ -4,5 +4,7 @@
 	{
 		public string Name { get; }
 		public string Mention { get; }
+
+		public ulong Id { get; }
 	}
 }

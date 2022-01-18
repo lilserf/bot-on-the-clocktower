@@ -9,24 +9,60 @@ namespace Bot.Database
 {
     public class TownDatabase : ITownDatabase
 	{
-		public const string GuildInfoDbName = "GuildInfo";
+		public const string CollectionName = "GuildInfo";
 
-		private readonly IMongoCollection<MongoTownRecord> m_guildInfo;
+		private readonly IMongoCollection<MongoTownRecord> m_collection;
 
 		public TownDatabase(IMongoDatabase db)
 		{
-			m_guildInfo = db.GetCollection<MongoTownRecord>(GuildInfoDbName);
-			if (m_guildInfo == null) throw new MissingGuildInfoDatabaseException();
+			m_collection = db.GetCollection<MongoTownRecord>(CollectionName);
+			if (m_collection == null) throw new MissingGuildInfoDatabaseException();
 		}
 
-		public async Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId)
+		private static MongoTownRecord RecordFromTown(ITown town, IMember author)
+        {
+			return new MongoTownRecord()
+			{
+				GuildId = town.Guild?.Id ?? 0,
+				ControlChannel = town.ControlChannel?.Name,
+				ControlChannelId = town.ControlChannel?.Id ?? 0,
+				ChatChannel = town.ChatChannel?.Name,
+				ChatChannelId = town.ChatChannel?.Id ?? 0,
+				TownSquare = town.TownSquare?.Name,
+				TownSquareId = town.TownSquare?.Id ?? 0,
+				DayCategory = town.DayCategory?.Name,
+				DayCategoryId = town.DayCategory?.Id ?? 0,
+				NightCategory = town.NightCategory?.Name,
+				NightCategoryId = town.NightCategory?.Id ?? 0,
+				StorytellerRole = town.StorytellerRole?.Name,
+				StorytellerRoleId = town.StorytellerRole?.Id ?? 0,
+				VillagerRole = town.VillagerRole?.Name,
+				VillagerRoleId = town.VillagerRole?.Id ?? 0,
+				AuthorName = author.DisplayName,
+				Author = author.Id,
+				Timestamp = DateTime.Now,
+			};
+
+		}
+
+        public async Task<bool> AddTown(ITown town, IMember author)
+        {
+			var newRec = RecordFromTown(town, author);
+
+			// TODO: error check this record?
+			await m_collection.InsertOneAsync(newRec);
+
+			return true;
+        }
+
+        public async Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId)
 		{
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;
 			var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.ControlChannelId, channelId);
 
 			// Get the first match
-			var document = await m_guildInfo.Find(filter).FirstOrDefaultAsync();
+			var document = await m_collection.Find(filter).FirstOrDefaultAsync();
 			return document;
 		}
 
@@ -36,7 +72,7 @@ namespace Bot.Database
 			var builder = Builders<MongoTownRecord>.Filter;
 			var filter = builder.Eq(x => x.GuildId, guildId);
 
-			return await m_guildInfo.Find(filter).ToListAsync();
+			return await m_collection.Find(filter).ToListAsync();
 		}
 
 		public class MissingGuildInfoDatabaseException : Exception { }

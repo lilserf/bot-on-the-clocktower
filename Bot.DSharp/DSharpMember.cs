@@ -13,6 +13,7 @@ namespace Bot.DSharp
 
 		public string DisplayName => Wrapped.DisplayName;
 		public bool IsBot => Wrapped.IsBot;
+		public ulong Id => Wrapped.Id;
 
 		public IReadOnlyCollection<IRole> Roles => Wrapped.Roles.Select(x => new DSharpRole(x)).ToList();
 
