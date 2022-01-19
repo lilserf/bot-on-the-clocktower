@@ -1,7 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 
-namespace Bot.DSharp
+namespace Bot.Api
 {
     public class Town : ITown
 	{

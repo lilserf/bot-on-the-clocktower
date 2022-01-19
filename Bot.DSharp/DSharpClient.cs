@@ -75,7 +75,7 @@ namespace Bot.DSharp
             var guild = await GetGuildAsync(rec.GuildId);
             if (guild != null)
             {
-                var town = new DSharpTown(rec)
+                var town = new Town(rec)
                 {
                     Guild = guild,
                     ControlChannel = await GetChannelAsync(rec.ControlChannelId),
