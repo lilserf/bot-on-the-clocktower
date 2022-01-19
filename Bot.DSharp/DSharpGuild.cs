@@ -1,6 +1,8 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
@@ -30,5 +32,39 @@ namespace Bot.DSharp
 				m_members[k] = new DSharpMember(v);
             }
 		}
-	}
+
+        public async Task<IChannel> CreateVoiceChannelAsync(string name, IChannel? parent = null)
+        {
+            DiscordChannel? dc = null;
+            if (parent is DSharpChannel dp)
+                dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice, dp.Wrapped);
+            else
+                dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice);
+
+            return new DSharpChannel(dc);
+        }
+
+        public async Task<IChannel> CreateTextChannelAsync(string name, IChannel? parent = null)
+        {
+            DiscordChannel? dc = null;
+            if (parent is DSharpChannel dp)
+                dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text, dp.Wrapped);
+            else
+                dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text);
+
+            return new DSharpChannel(dc);
+        }
+
+        public async Task<IChannel> CreateCategoryAsync(string name)
+        {
+            var c = await Wrapped.CreateChannelCategoryAsync(name);
+            return new DSharpChannel(c);
+        }
+
+        public async Task<IRole> CreateRoleAsync(string name, Color color)
+        {
+            var r = await Wrapped.CreateRoleAsync(name, null, new DiscordColor(color.R, color.G, color.B));
+            return new DSharpRole(r);
+        }
+    }
 }

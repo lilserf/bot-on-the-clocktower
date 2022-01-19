@@ -8,15 +8,15 @@ namespace Bot.Api
 {
     public struct TownDescription
     {
-        IGuild Guild { get; set; }
-        string TownName { get; set; }
-        string? ControlChannelName { get; set; }
-        string? TownSquareName { get; set; }
-        string? DayCategoryName { get; set; }
-        string? NightCategoryName { get; set; }
-        string? StorytellerRoleName { get; set; }
-        string? VillagerRoleName { get; set; }
-        string? ChatChannelName { get; set; }
-        IMember Author { get; set; }
+        public IGuild Guild { get; set; }
+        public string TownName { get; set; }
+        public string? ControlChannelName { get; set; }
+        public string? TownSquareName { get; set; }
+        public string? DayCategoryName { get; set; }
+        public string? NightCategoryName { get; set; }
+        public string? StorytellerRoleName { get; set; }
+        public string? VillagerRoleName { get; set; }
+        public string? ChatChannelName { get; set; }
+        public IMember Author { get; set; }
     }
 }
