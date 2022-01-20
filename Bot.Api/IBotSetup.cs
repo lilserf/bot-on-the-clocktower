@@ -12,9 +12,9 @@ namespace Bot.Api
         public const string DefaultNightCategoryFormat = "{0} - Night";
         public const string DefaultStorytellerRoleFormat = "{0} Storyteller";
         public const string DefaultVillagerRoleFormat = "{0} Villager";
-        public const string DefaultControlChannelName = "{0} Control";
+        public const string DefaultControlChannelFormat = "{0} Control";
         public const string DefaultChatChannelName = "chat";
-        public const string DefaultTownSquareChannelName = "Town Square";
+        public const string DefaultTownSquareChannelFormat = "Town Square";
         public const string DefaultCottageName = "Cottage";
         public const int NumCottages = 20;
 

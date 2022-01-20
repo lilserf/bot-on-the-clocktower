@@ -162,26 +162,92 @@ namespace Test.Bot.Core
 
         }
 
+        private void VerifyRequiredRoles(IBotSetup bs)
+        {
+            GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == StorytellerName), It.IsAny<Color>()), Times.Once);
+            GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == VillagerName), It.IsAny<Color>()), Times.Once);
+        }
+
+        private void VerifyRequiredChannels(IBotSetup bs)
+        {
+            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == DayCatName)), Times.Once);
+            // TODO: how to make sure the calls happen with the correct parent channel
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == TownSquareName), It.IsAny<IChannel?>()), Times.Once);
+            foreach (var name in bs.DefaultExtraDayChannels)
+                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannel?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ControlChannelName), It.IsAny<IChannel?>()), Times.Once);
+        }
+
+        private void VerifyOptionalChannels(IBotSetup bs)
+        {
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannel?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Once);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Exactly(20));
+        }
+
         [Fact]
         public void CreateTown_FullDesc_ChannelsAndRolesCreated()
         {
             var bs = CreateTownAssertCompleted();
 
-            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == DayCatName)), Times.Once);
-            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Once);
-            // TODO: how to make sure the calls happen with the correct parent channel
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == TownSquareName), It.IsAny<IChannel?>()), Times.Once);
-            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannel?>()), Times.Once);
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Exactly(20));
-            foreach(var name in bs.DefaultExtraDayChannels)
-                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannel?>()), Times.Once);
-            GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == StorytellerName), It.IsAny<Color>()), Times.Once);
-            GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == VillagerName), It.IsAny<Color>()), Times.Once);
+            VerifyRequiredChannels(bs);
+            VerifyOptionalChannels(bs);
+            VerifyRequiredRoles(bs);
         }
 
+
+        [Fact]
+        public void CreateTown_NoNight()
+        {
+            TownDesc.NightCategoryName = null;
+
+            var bs = CreateTownAssertCompleted();
+
+            VerifyRequiredChannels(bs);
+            VerifyRequiredRoles(bs);
+            // Make sure night stuff DIDN'T happen
+            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Never);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Never);
+        }
+
+        [Fact]
+        public void CreateTown_TestDefaults()
+        {
+            // Set all the stuff that has a default to null and see if we get the defaults
+            TownDesc.DayCategoryName = null;
+            TownDesc.ControlChannelName = null;
+            TownDesc.ChatChannelName = null;
+            TownDesc.TownSquareName = null;
+            TownDesc.StorytellerRoleName = null;
+            TownDesc.VillagerRoleName = null;
+
+            var bs = CreateTownAssertCompleted();
+
+            // Check for default channel names
+            var dayCatName = string.Format(IBotSetup.DefaultDayCategoryFormat, TownDesc.TownName);
+            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == dayCatName)), Times.Once);
+            // TODO: how to make sure the calls happen with the correct parent channel
+            var tsName = string.Format(IBotSetup.DefaultTownSquareChannelFormat, TownDesc.TownName);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == tsName), It.IsAny<IChannel?>()), Times.Once);
+            foreach (var name in bs.DefaultExtraDayChannels)
+                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannel?>()), Times.Once);
+            var ctrlName = string.Format(IBotSetup.DefaultControlChannelFormat, TownDesc.TownName);
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ctrlName), It.IsAny<IChannel?>()), Times.Once);
+
+            // Chat should not have been created
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannel?>()), Times.Never);
+
+            // Might as well confirm Night still worked
+            GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Once);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Exactly(20));
+
+            // Check for default role names
+            var stName = string.Format(IBotSetup.DefaultStorytellerRoleFormat, TownDesc.TownName);
+            GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == stName), It.IsAny<Color>()), Times.Once);
+            var villagerName = string.Format(IBotSetup.DefaultVillagerRoleFormat, TownDesc.TownName);
+            GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == villagerName), It.IsAny<Color>()), Times.Once);
+        }
         // TODO:
-        // - no night category
-        // - leave off various bits and get the correct default
         // - leave off required bits and get exceptions
     }
 }
