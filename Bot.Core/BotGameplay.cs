@@ -306,7 +306,7 @@ namespace Bot.Core
                 var stPairs = game.Storytellers.Select(m => Tuple.Create(cottages.First(), m)).ToList();
 
                 // Put all the villagers into cottages first so the STs are the last to be auto-moved
-                var villagerPairs = cottages.Skip(numStCottages).Zip(game.Villagers.OrderBy(u => u.DisplayName), (c, u) => Tuple.Create(c, u)).ToList();
+                var villagerPairs = cottages.Skip(numStCottages).Zip(game.Villagers.OrderBy(u => MemberHelper.DisplayName(u)), (c, u) => Tuple.Create(c, u)).ToList();
 
                 foreach (var (cottage, user) in m_shuffle.Shuffle(villagerPairs))
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
