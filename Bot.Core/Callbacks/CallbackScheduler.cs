@@ -75,9 +75,14 @@ namespace Bot.Core.Callbacks
 
         private void CallCallback(TKey key)
         {
+            CallCallbackAsync(key).ConfigureAwait(true);
+        }
+
+        private async Task CallCallbackAsync(TKey key)
+        {
             try
             {
-                m_callback(key).ConfigureAwait(true);
+                await m_callback(key);
             }
             catch (Exception)
             {
