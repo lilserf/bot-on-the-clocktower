@@ -236,7 +236,7 @@ namespace Bot.Core
                 var delta = (endTime - now).TotalSeconds;
                 if (delta >= 0)
                 {
-                    int[] advance_seconds = new[] { 300, 60, 15, 0 };
+                    int[] advance_seconds = new[] { 240, 120, 60, 15, 0 };
                     foreach (var second in advance_seconds)
                     {
                         if (delta > second)
