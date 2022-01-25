@@ -20,14 +20,14 @@ namespace Bot.Core
 		public BotGameplay(IServiceProvider services)
             : base(services)
 		{
-            m_activeGameService = services.GetService<IActiveGameService>();
-            m_shuffle = services.GetService<IShuffleService>();
+            services.Inject(out m_activeGameService);
+            services.Inject(out m_shuffle);
 
             var callbackFactory = services.GetService<ICallbackSchedulerFactory>();
             m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CleanupTown, TimeSpan.FromHours(1));
 
-            m_dateTime = services.GetService<IDateTime>();
-            m_gameActivityDb = services.GetService<IGameActivityDatabase>();
+            services.Inject(out m_dateTime);
+            services.Inject(out m_gameActivityDb);
 
             // TODO: async startup-time call to do this
             //await ScheduleOutstandingCleanup();

@@ -25,10 +25,10 @@ namespace Bot.Database
         public DatabaseFactory(IServiceProvider serviceProvider)
         {
             m_serviceProvider = serviceProvider;
-            m_environment = serviceProvider.GetService<IEnvironment>();
-            m_mongoClientFactory = serviceProvider.GetService<IMongoClientFactory>();
-            m_townLookupFactory = serviceProvider.GetService<ITownDatabaseFactory>();
-            m_gameActivityDatabaseFactory = serviceProvider.GetService<IGameActivityDatabaseFactory>();
+            serviceProvider.Inject(out m_environment);
+            serviceProvider.Inject(out m_mongoClientFactory);
+            serviceProvider.Inject(out m_townLookupFactory);
+            serviceProvider.Inject(out m_gameActivityDatabaseFactory);
         }
 
         // TODO: This connect call should probably call out to a smaller class or two that handle this, via an interface, so we can

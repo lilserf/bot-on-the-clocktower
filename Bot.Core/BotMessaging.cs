@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -12,7 +11,7 @@ namespace Bot.Core
         private readonly IBotSystem m_system;
         public BotMessaging(IServiceProvider services)
         {
-            m_system = services.GetService<IBotSystem>();
+            services.Inject(out m_system);
         }
 
         private const string DemonGreeting = "{0}: You are the **demon**. ";

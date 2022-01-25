@@ -12,13 +12,13 @@ namespace Bot.Core.Callbacks
 
         private readonly Dictionary<TKey, DateTime> m_keysToCallbackTime = new();
 
-        private IDateTime DateTime { get; }
-        private ITask Task { get; }
+        private readonly IDateTime DateTime;
+        private readonly ITask Task;
 
         public CallbackScheduler(IServiceProvider serviceProvider, Func<TKey, Task> callback, TimeSpan period)
         {
-            DateTime = serviceProvider.GetService<IDateTime>();
-            Task = serviceProvider.GetService<ITask>();
+            serviceProvider.Inject(out DateTime);
+            serviceProvider.Inject(out Task);
 
             m_callback = callback;
             m_period = period;

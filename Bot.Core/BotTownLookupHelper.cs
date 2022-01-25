@@ -18,8 +18,8 @@ namespace Bot.Core
 
         public BotTownLookupHelper(IServiceProvider serviceProvider)
         {
-            m_client = serviceProvider.GetService<IBotClient>();
-            m_townLookup = serviceProvider.GetService<ITownDatabase>();
+            serviceProvider.Inject(out m_client);
+            serviceProvider.Inject(out m_townLookup);
         }
 
         protected Task<ITown?> GetValidTownOrLogErrorAsync(IBotInteractionContext context, IProcessLogger processLogger)

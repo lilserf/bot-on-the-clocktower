@@ -99,11 +99,11 @@ namespace Bot.Core
 
             public VoteTimerController(IServiceProvider serviceProvider)
             {
-                DateTime = serviceProvider.GetService<IDateTime>();
+                serviceProvider.Inject(out DateTime);
 
-                m_client = serviceProvider.GetService<IBotClient>();
-                m_townLookup = serviceProvider.GetService<ITownDatabase>();
-                m_voteHandler = serviceProvider.GetService<IVoteHandler>();
+                serviceProvider.Inject(out m_client);
+                serviceProvider.Inject(out m_townLookup);
+                serviceProvider.Inject(out m_voteHandler);
 
                 var callbackFactory = serviceProvider.GetService<ICallbackSchedulerFactory>();
                 m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(ScheduledCallbackAsync, TimeSpan.FromSeconds(1));

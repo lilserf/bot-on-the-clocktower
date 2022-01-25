@@ -36,8 +36,8 @@ namespace Bot.Core
             m_gameplay = gameplay;
             m_voteTimer = voteTimer;
 
-            m_system = serviceProvider.GetService<IBotSystem>();
-            m_componentService = serviceProvider.GetService<IComponentService>();
+            serviceProvider.Inject(out m_system);
+            serviceProvider.Inject(out m_componentService);
 
             m_nightButton = CreateButton(GameplayButton.Night, "Night", pressMethod: NightButtonPressed, emoji: "🌙");
             m_dayButton = CreateButton(GameplayButton.Day, "Day", pressMethod: DayButtonPressed, IBotSystem.ButtonType.Success, emoji: "☀️");

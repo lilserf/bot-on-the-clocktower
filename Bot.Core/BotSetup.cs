@@ -17,7 +17,7 @@ namespace Bot.Core
 
         public BotSetup(IServiceProvider sp)
         {
-            m_townDb = sp.GetService<ITownDatabase>();
+            sp.Inject(out m_townDb);
         }
 
         public Task AddTown(ITown town, IMember author)

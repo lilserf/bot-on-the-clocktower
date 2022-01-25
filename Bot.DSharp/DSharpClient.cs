@@ -15,7 +15,7 @@ namespace Bot.DSharp
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
-            m_componentService = serviceProvider.GetService<IComponentService>();
+            serviceProvider.Inject(out m_componentService);
 
             var environment = serviceProvider.GetService<IEnvironment>();
             var token = environment.GetEnvironmentVariable("DISCORD_TOKEN");
