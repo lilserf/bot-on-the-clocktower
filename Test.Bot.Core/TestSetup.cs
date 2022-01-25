@@ -2,12 +2,8 @@
 using Bot.Api.Database;
 using Bot.Core;
 using Moq;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
 
@@ -25,13 +21,12 @@ namespace Test.Bot.Core
         const string VillagerName = "Clockburg Villager";
 
         const string TownAuthor = "Town Author";
+        readonly ulong MockGuildId = 1337;
 
-        ulong MockGuildId = 1337;
-
-        private Mock<ITown> TownMock;
-        private Mock<IMember> AuthorMock;
-        private Mock<IGuild> GuildMock;
-        private Mock<ITownDatabase> TownDatabaseMock;
+        private readonly Mock<ITown> TownMock;
+        private readonly Mock<IMember> AuthorMock;
+        private readonly Mock<IGuild> GuildMock;
+        private readonly Mock<ITownDatabase> TownDatabaseMock;
         private TownDescription TownDesc;
 
         public TestSetup()
@@ -47,27 +42,32 @@ namespace Test.Bot.Core
             RegisterMock(TownDatabaseMock);
         }
 
-        private Mock<IChannel> MakeChannel(string name, IChannel? parent = null)
+        private static Mock<IChannel> MakeChannel(string name, IChannel? parent = null)
         {
-            var chan = new Mock<IChannel>();
-            chan.Name = name;
+            Mock<IChannel> chan = new() { Name = name };
             chan.SetupGet(x => x.Name).Returns(name);
             chan.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
-            if(parent != null)
-                parent.Channels.Append(chan.Object);
+            if (parent != null)
+            {
+                // NOTE: This is incorrect. This Append() function here doesn't actually append anything because
+                // it just returns a new IEnumerable.
+                throw new System.InvalidOperationException("Can't actually append a channel to a parent here. What are we trying to do, exactly?");
+#pragma warning disable CS0162 // Unreachable code detected
+                _ = parent.Channels.Append(chan.Object);
+#pragma warning restore CS0162 // Unreachable code detected
+            }
             return chan;
         }
 
-        private Mock<IRole> MakeRole(string name)
+        private static Mock<IRole> MakeRole(string name)
         {
-            var role = new Mock<IRole>();
-            role.Name = name;
+            Mock<IRole> role = new() { Name = name };
             role.SetupGet(x => x.Name).Returns(name);
             role.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
             return role;
         }
 
-        public Mock<ITown> MakeTown()
+        public static Mock<ITown> MakeTown()
         {
             Mock<ITown> town = new();
             town.SetupGet(x => x.DayCategory).Returns(MakeChannel(DayCatName).Object);
@@ -80,7 +80,7 @@ namespace Test.Bot.Core
             return town;
         }
 
-        public Mock<IMember> MakeAuthor()
+        public static Mock<IMember> MakeAuthor()
         { 
             Mock<IMember> author = new();
             author.SetupGet(x => x.DisplayName).Returns(TownAuthor);
@@ -99,7 +99,7 @@ namespace Test.Bot.Core
             return guild;
         }
 
-        public TownDescription MakeDesc(IGuild guild, IMember author)
+        public static TownDescription MakeDesc(IGuild guild, IMember author)
         {
             TownDescription desc = new()
             {
@@ -128,7 +128,7 @@ namespace Test.Bot.Core
             townDb.Setup(x => x.AddTown(It.IsAny<ITown>(), It.IsAny<IMember>()));
             RegisterMock(townDb);
 
-            BotSetup bs = new BotSetup(GetServiceProvider());
+            BotSetup bs = new(GetServiceProvider());
             var t = bs.AddTown(town, author);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -138,7 +138,7 @@ namespace Test.Bot.Core
 
         private BotSetup CreateTownAssertCompleted()
         {
-            BotSetup bs = new BotSetup(GetServiceProvider());
+            BotSetup bs = new(GetServiceProvider());
             var t = bs.CreateTown(TownDesc);
             t.Wait(50);
             Assert.True(t.IsCompleted);
@@ -162,7 +162,7 @@ namespace Test.Bot.Core
 
         }
 
-        private void VerifyRequiredRoles(IBotSetup bs)
+        private void VerifyRequiredRoles(IBotSetup _)
         {
             GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == StorytellerName), It.IsAny<Color>()), Times.Once);
             GuildMock.Verify(x => x.CreateRoleAsync(It.Is<string>(s => s == VillagerName), It.IsAny<Color>()), Times.Once);
@@ -178,7 +178,7 @@ namespace Test.Bot.Core
             GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ControlChannelName), It.IsAny<IChannel?>()), Times.Once);
         }
 
-        private void VerifyOptionalChannels(IBotSetup bs)
+        private void VerifyOptionalChannels(IBotSetup _)
         {
             GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannel?>()), Times.Once);
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Once);
@@ -227,7 +227,7 @@ namespace Test.Bot.Core
             var dayCatName = string.Format(IBotSetup.DefaultDayCategoryFormat, TownDesc.TownName);
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == dayCatName)), Times.Once);
             // TODO: how to make sure the calls happen with the correct parent channel
-            var tsName = string.Format(IBotSetup.DefaultTownSquareChannelFormat, TownDesc.TownName);
+            var tsName = IBotSetup.DefaultTownSquareChannelName;
             GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == tsName), It.IsAny<IChannel?>()), Times.Once);
             foreach (var name in bs.DefaultExtraDayChannels)
                 GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannel?>()), Times.Once);

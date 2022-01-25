@@ -55,15 +55,14 @@ namespace Bot.Core
         public async Task CleanupTown(TownKey key)
         {
             Serilog.Log.Debug("CleanupTown for town {@townKey}", key);
-            IGame? game = null;
-            if(m_activeGameService.TryGetGame(key, out game))
+            if (m_activeGameService.TryGetGame(key, out IGame? game))
             {
                 try
                 {
                     var logger = new ProcessLogger();
                     await EndGameUnsafe(game, logger);
                 }
-                catch(Exception ex)
+                catch (Exception)
                 {
                     // Do what?
                 }
@@ -80,7 +79,7 @@ namespace Bot.Core
                     var logger = new ProcessLogger();
                     await EndGameUnsafe(key, logger);
                 }
-                catch(Exception ex)
+                catch (Exception)
                 {
 
                 }
@@ -141,7 +140,7 @@ namespace Bot.Core
             return success;
         }
 
-        private async Task TagStorytellers(IGame game, IProcessLogger logger)
+        private static async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
             Serilog.Log.Debug("TagStorytellers in game {game}", game);
             foreach (var u in game.Storytellers)
@@ -155,7 +154,7 @@ namespace Bot.Core
             }
         }
 
-        private async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
+        private static async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
             Serilog.Log.Debug("GrantAndRevokeRoles in game {game}", game);
             IRole storytellerRole = game!.Town!.StorytellerRole!;
@@ -292,8 +291,8 @@ namespace Bot.Core
                     game.AddVillager(v);
                 }
 
-                await GrantAndRevokeRoles (game, logger);
-                await TagStorytellers (game, logger);
+                await GrantAndRevokeRoles(game, logger);
+                await TagStorytellers(game, logger);
 
                 m_activeGameService.RegisterGame(town, game);
             }
@@ -336,21 +335,6 @@ namespace Bot.Core
             }
         }
 
-        // Clear all permissions for cottages based on who's in which one
-        private async Task ClearCottagePermissions(IGame game, IProcessLogger logger)
-        {
-            if (game.Town.NightCategory != null)
-            {
-                foreach (var chan in game.Town.NightCategory.Channels)
-                {
-                    foreach (var mem in chan.Users)
-                    {
-                        await MemberHelper.RemovePermissionsAsync(mem, chan, logger);
-                    }
-                }
-            }
-        }
-
         // TODO: should this be a method on Game itself? :thinking:
         // Helper for moving all players to Town Square (used by Day and Vote commands)
         private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
@@ -377,15 +361,14 @@ namespace Bot.Core
 
         public async Task PerformVoteAsync(TownKey townRecord)
         {
-            IGame? game;
-            if(m_activeGameService.TryGetGame(townRecord, out game))
+            if (m_activeGameService.TryGetGame(townRecord, out IGame? game))
             {
                 var logger = new ProcessLogger();
                 try
                 {
                     await PhaseVoteUnsafe(game, logger);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.LogException(ex, "trying to run a vote");
                 }
@@ -393,7 +376,7 @@ namespace Bot.Core
             }
         }
 
-        private async Task EndGameForUser(IMember user, ITown town, IProcessLogger logger)
+        private static async Task EndGameForUser(IMember user, ITown town, IProcessLogger logger)
         {
             await MemberHelper.RemoveStorytellerTag(user, logger);
             await user.RevokeRoleAsync(town!.StorytellerRole!);
@@ -477,9 +460,9 @@ namespace Bot.Core
                 game.AddStoryteller(user);
             }
             await GrantAndRevokeRoles(game, logger);
-            await TagStorytellers (game, logger);
+            await TagStorytellers(game, logger);
 
-            var verbage = foundUsers.Count() > 1 ? "New Storytellers are" : "New Storyteller is";
+            var verbage = foundUsers.Count > 1 ? "New Storytellers are" : "New Storyteller is";
             returnMsg += $"{verbage} {string.Join(", ", foundUsers.Select(x => MemberHelper.DisplayName(x)))}";
             return returnMsg;
         }

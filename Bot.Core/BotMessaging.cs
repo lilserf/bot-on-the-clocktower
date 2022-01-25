@@ -18,11 +18,11 @@ namespace Bot.Core
         private const string OtherDemons = "Your fellow demons are: {0}. ";
         private const string MinionsList = "Your minions are: {0}.";
 
-        private string BuildDemonMessage(IReadOnlyCollection<IMember> demons, IMember demon, IReadOnlyCollection<IMember> minions)
+        private static string BuildDemonMessage(IReadOnlyCollection<IMember> demons, IMember demon, IReadOnlyCollection<IMember> minions)
         {
             var greetMsg = string.Format(DemonGreeting, demon.DisplayName);
             var otherDemons = demons.Where(x => !x.Equals(demon)).Select(x => x.DisplayName);
-            var otherDemonsMsg = otherDemons.Count() > 0 
+            var otherDemonsMsg = otherDemons.Any()
                 ? string.Format(OtherDemons, string.Join(", ",otherDemons)) 
                 : "";
             var minionsMsg = string.Format(MinionsList, string.Join(", ", minions.Select(x => x.DisplayName)));
@@ -35,20 +35,20 @@ namespace Bot.Core
         private const string MultiDemonList = "Your demons are: {0}. ";
         private const string FellowMinionsList = "Your fellow minions are: {0}";
 
-        private string BuildMinionMessage(IReadOnlyCollection<IMember> demons, IMember minion, IReadOnlyCollection<IMember> otherMinions)
+        private static string BuildMinionMessage(IReadOnlyCollection<IMember> demons, IMember minion, IReadOnlyCollection<IMember> otherMinions)
         {
             var greetMsg = string.Format(MinionGreeting, minion.DisplayName);
-            var demonMsg = demons.Count() > 1 
+            var demonMsg = demons.Count > 1 
                 ? string.Format(MultiDemonList, string.Join(", ", demons.Select(x => x.DisplayName))) 
-                : (demons.Count() == 0 ? "" : string.Format(SingleDemonList, demons.Select(x => x.DisplayName).First()));
-            var fellowMinionMsg = otherMinions.Count() > 0
+                : (demons.Count == 0 ? "" : string.Format(SingleDemonList, demons.Select(x => x.DisplayName).First()));
+            var fellowMinionMsg = otherMinions.Count > 0
                 ? string.Format(FellowMinionsList, string.Join(", ", otherMinions.Select(m => m.DisplayName)))
                 : "";
 
             return $"{greetMsg}{demonMsg}{fellowMinionMsg}";
         }
 
-        private async Task SendDemonMessage(IReadOnlyCollection<IMember> demons, IReadOnlyCollection<IMember> minions, IProcessLogger logger)
+        private static async Task SendDemonMessage(IReadOnlyCollection<IMember> demons, IReadOnlyCollection<IMember> minions, IProcessLogger _)
         {
             foreach (var demon in demons)
             {
@@ -56,7 +56,7 @@ namespace Bot.Core
             }
         }
 
-        private async Task SendMinionMessages(IReadOnlyCollection<IMember> demons, IReadOnlyCollection<IMember> minions, IProcessLogger logger)
+        private static async Task SendMinionMessages(IReadOnlyCollection<IMember> demons, IReadOnlyCollection<IMember> minions, IProcessLogger _)
         {
             foreach(var m in minions)
             {
@@ -132,8 +132,8 @@ namespace Bot.Core
         {
             await ctx.DeferInteractionResponse();
 
-            string msg = "Unknown error.";
-            if(magician != null)
+            string msg;
+            if (magician != null)
             {
                 msg = await SendMagicianMessage(demon, minions, magician);
             }
@@ -149,9 +149,7 @@ namespace Bot.Core
         public async Task CommandLunaticMessageAsync(IBotInteractionContext ctx, IMember lunatic, IReadOnlyCollection<IMember> fakeMinions)
         {
             await ctx.DeferInteractionResponse();
-
-            string msg = "Unknown error.";
-            msg = await SendLunaticMessage(lunatic, fakeMinions);
+            string msg = await SendLunaticMessage(lunatic, fakeMinions);
 
             var builder = m_system.CreateWebhookBuilder().WithContent(msg);
             await ctx.EditResponseAsync(builder);
@@ -160,9 +158,7 @@ namespace Bot.Core
         public async Task CommandLegionMessageAsync(IBotInteractionContext ctx, IReadOnlyCollection<IMember> legions)
         {
             await ctx.DeferInteractionResponse();
-
-            string msg = "Unknown error.";
-            msg = await SendLegionMessage(legions);
+            string msg = await SendLegionMessage(legions);
 
             var builder = m_system.CreateWebhookBuilder().WithContent(msg);
             await ctx.EditResponseAsync(builder);

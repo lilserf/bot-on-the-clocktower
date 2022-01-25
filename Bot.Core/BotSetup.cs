@@ -3,8 +3,6 @@ using Bot.Api.Database;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -25,12 +23,12 @@ namespace Bot.Core
             return m_townDb.AddTown(town, author);
         }
 
-        private TownDescription FallbackToDefaults(TownDescription desc)
+        private static TownDescription FallbackToDefaults(TownDescription desc)
         {
             if (desc.DayCategoryName == null)
                 desc.DayCategoryName = string.Format(IBotSetup.DefaultDayCategoryFormat, desc.TownName);
             if (desc.TownSquareName == null)
-                desc.TownSquareName = string.Format(IBotSetup.DefaultTownSquareChannelFormat, desc.TownName);
+                desc.TownSquareName = IBotSetup.DefaultTownSquareChannelName;
             if (desc.ControlChannelName == null)
                 desc.ControlChannelName = string.Format(IBotSetup.DefaultControlChannelFormat, desc.TownName);
             if (desc.StorytellerRoleName == null)

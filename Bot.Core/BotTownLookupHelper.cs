@@ -38,7 +38,7 @@ namespace Bot.Core
             
             if (townRec == null)
             {
-                if (townRecordList.Count() == 0)
+                if (!townRecordList.Any())
                 {
                     processLogger.LogMessage(InvalidTownMessage);
                 }
