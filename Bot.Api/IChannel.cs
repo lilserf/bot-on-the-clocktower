@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-	public interface IChannel
+    public interface IChannel
 	{
 		public ulong Id { get; }
 

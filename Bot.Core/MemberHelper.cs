@@ -69,7 +69,7 @@ namespace Bot.Core
         public static string DisplayName(IMember m)
         {
             if (m.DisplayName.StartsWith(StorytellerTag))
-                return m.DisplayName.Substring(StorytellerTag.Length);
+                return m.DisplayName[StorytellerTag.Length..];
             else
                 return m.DisplayName;
         }
@@ -101,7 +101,7 @@ namespace Bot.Core
 
             try
             {
-                await member.SetDisplayName(member.DisplayName.Substring(StorytellerTag.Length));
+                await member.SetDisplayName(member.DisplayName[StorytellerTag.Length..]);
                 return true;
             }
             catch(Exception ex)
