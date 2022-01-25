@@ -18,6 +18,7 @@ namespace Bot.Core
         }
 
         private readonly IBotSystem m_system;
+        private readonly IComponentService m_componentService;
 
         private readonly BotGameplay m_gameplay;
         private readonly BotVoteTimer m_voteTimer;
@@ -36,19 +37,13 @@ namespace Bot.Core
             m_voteTimer = voteTimer;
 
             m_system = serviceProvider.GetService<IBotSystem>();
-            var componentService = serviceProvider.GetService<IComponentService>();
+            m_componentService = serviceProvider.GetService<IComponentService>();
 
-            m_nightButton = CreateButton(GameplayButton.Night, "Night", emoji: "🌙");
-            m_dayButton = CreateButton(GameplayButton.Day, "Day", IBotSystem.ButtonType.Success, emoji: "☀️");
-            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", IBotSystem.ButtonType.Danger, emoji: "💀");
-            m_moreButton = CreateButton(GameplayButton.More, "More", IBotSystem.ButtonType.Secondary, emoji: "⚙️");
-            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", IBotSystem.ButtonType.Secondary, emoji: "🛑");
-
-            componentService.RegisterComponent(m_nightButton, NightButtonPressed);
-            componentService.RegisterComponent(m_dayButton, DayButtonPressed);
-            componentService.RegisterComponent(m_voteButton, VoteButtonPressed);
-            componentService.RegisterComponent(m_moreButton, MoreButtonPressed);
-            componentService.RegisterComponent(m_endGameButton, EndGameButtonPressed);
+            m_nightButton = CreateButton(GameplayButton.Night, "Night", pressMethod: NightButtonPressed, emoji: "🌙");
+            m_dayButton = CreateButton(GameplayButton.Day, "Day", pressMethod: DayButtonPressed, IBotSystem.ButtonType.Success, emoji: "☀️");
+            m_voteButton = CreateButton(GameplayButton.Vote, "Vote", pressMethod: VoteButtonPressed, IBotSystem.ButtonType.Danger, emoji: "💀");
+            m_moreButton = CreateButton(GameplayButton.More, "More", pressMethod: MoreButtonPressed, IBotSystem.ButtonType.Secondary, emoji: "⚙️");
+            m_endGameButton = CreateButton(GameplayButton.EndGame, "End Game", pressMethod: EndGameButtonPressed, IBotSystem.ButtonType.Secondary, emoji: "🛑");
 
             var options = new[]
             {
@@ -70,12 +65,14 @@ namespace Bot.Core
             };
             m_voteTimerMenu = m_system.CreateSelectMenu($"gameplay_menu_votetimer", "Or instead, set a Vote Timer...", options);
 
-            componentService.RegisterComponent(m_voteTimerMenu, VoteTimerMenuSelected);
+            m_componentService.RegisterComponent(m_voteTimerMenu, VoteTimerMenuSelected);
         }
 
-        private IBotComponent CreateButton(GameplayButton id, string label, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary, string? emoji = null)
+        private IBotComponent CreateButton(GameplayButton id, string label, Func<IBotInteractionContext, Task> pressMethod, IBotSystem.ButtonType type = IBotSystem.ButtonType.Primary, string? emoji = null)
         {
-            return m_system.CreateButton($"gameplay_{id}", label, type, emoji: emoji);
+            var button = m_system.CreateButton($"gameplay_{id}", label, type, emoji: emoji);
+            m_componentService.RegisterComponent(button, pressMethod);
+            return button;
         }
 
         // Helper for editing the original interaction with a summarizing message when finished
