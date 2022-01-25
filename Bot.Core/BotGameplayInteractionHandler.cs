@@ -62,15 +62,10 @@ namespace Bot.Core
                 new IBotSystem.SelectMenuOption("4 min", "4m"),
                 new IBotSystem.SelectMenuOption("4 min 30 sec", "4m30s"),
                 new IBotSystem.SelectMenuOption("5 min", "5m"),
-                new IBotSystem.SelectMenuOption("5 min 30 sec", "5m30s"),
                 new IBotSystem.SelectMenuOption("6 min", "6m"),
-                new IBotSystem.SelectMenuOption("6 min 30 sec", "6m30s"),
                 new IBotSystem.SelectMenuOption("7 min", "7m"),
-                new IBotSystem.SelectMenuOption("7 min 30 sec", "7m30s"),
                 new IBotSystem.SelectMenuOption("8 min", "8m"),
-                new IBotSystem.SelectMenuOption("8 min 30 sec", "8m30s"),
                 new IBotSystem.SelectMenuOption("9 min", "9m"),
-                new IBotSystem.SelectMenuOption("9 min 30 sec", "9m30s"),
                 new IBotSystem.SelectMenuOption("10 min", "10m"),
             };
             m_voteTimerMenu = m_system.CreateSelectMenu($"gameplay_menu_votetimer", "Or instead, set a Vote Timer...", options);
