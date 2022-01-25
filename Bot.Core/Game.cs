@@ -28,5 +28,10 @@ namespace Bot.Core
 		public void AddStoryteller(IMember storyteller) => m_storytellers.Add(storyteller);
 		public void RemoveStoryteller(IMember storyteller) => m_storytellers.Remove(storyteller);
 
-	}
+        public override string ToString()
+        {
+			return $"Game in town {Town} with Storytellers {string.Join(",", Storytellers)}";
+        }
+
+    }
 }

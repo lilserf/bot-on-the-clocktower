@@ -36,6 +36,7 @@ namespace Bot.Core
         private async Task ScheduleOutstandingCleanup()
         {
             var recs = await m_gameActivityDb.GetAllActivityRecords();
+            Serilog.Log.Debug("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
             foreach(var rec in recs)
             {
                 ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId));
@@ -45,6 +46,7 @@ namespace Bot.Core
         // Schedule this town for a cleanup after a long time period
         private void ScheduleCleanup(TownKey townKey)
         {
+            Serilog.Log.Debug("ScheduleCleanup for town {@townKey}", townKey);
             m_gameActivityDb.RecordActivity(townKey);
             var time = m_dateTime.Now + TimeSpan.FromHours(HOURS_INACTIVITY);
             m_callbackScheduler.ScheduleCallback(townKey, time);
@@ -52,6 +54,7 @@ namespace Bot.Core
 
         public async Task CleanupTown(TownKey key)
         {
+            Serilog.Log.Debug("CleanupTown for town {@townKey}", key);
             IGame? game = null;
             if(m_activeGameService.TryGetGame(key, out game))
             {
@@ -140,6 +143,7 @@ namespace Bot.Core
 
         private async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
+            Serilog.Log.Debug("TagStorytellers in game {game}", game);
             foreach (var u in game.Storytellers)
             {
                 await MemberHelper.AddStorytellerTag(u, logger);
@@ -153,6 +157,7 @@ namespace Bot.Core
 
         private async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
+            Serilog.Log.Debug("GrantAndRevokeRoles in game {game}", game);
             IRole storytellerRole = game!.Town!.StorytellerRole!;
             IRole villagerRole = game!.Town!.VillagerRole!;
 
@@ -185,12 +190,14 @@ namespace Bot.Core
         // TODO: better name for this method, probably
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
+            Serilog.Log.Debug("CurrentGameAsync from context {context}", context);
             if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
-                if(!CheckIsTownViable(game.Town, logger))
+                if (!CheckIsTownViable(game.Town, logger))
                 {
                     return null;
                 }
+                Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {game}", game);
 
                 ScheduleCleanup(TownKey.FromTown(game.Town));
 
@@ -253,6 +260,7 @@ namespace Bot.Core
 
                 // No record, so create one
                 game = new Game(town!);
+                Serilog.Log.Debug("CurrentGameAsync created new game {game} from town {town}", game, town);
 
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
@@ -355,7 +363,8 @@ namespace Bot.Core
 
         public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
-            await ClearCottagePermissions(game, processLog);
+            // Doesn't currently work :(
+            //await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, processLog);
             return "Moved all players from Cottages back to Town Square!";
         }

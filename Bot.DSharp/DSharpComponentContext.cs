@@ -55,5 +55,9 @@ namespace Bot.DSharp
 			throw new InvalidOperationException("Passed an incorrect builder!");
 		}
 
-	}
+        public override string ToString()
+        {
+			return $"Component Context: Guild {Guild.Id} / Channel {Channel.Id} / Member {Member.Id} / ComponentCustomId {ComponentCustomId}";
+        }
+    }
 }

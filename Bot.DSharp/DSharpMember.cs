@@ -55,5 +55,10 @@ namespace Bot.DSharp
         {
 			await Wrapped.ModifyAsync(x => x.Nickname = newName);
         }
+
+        public override string ToString()
+        {
+			return $"Member {Id} / {DisplayName}";
+        }
     }
 }

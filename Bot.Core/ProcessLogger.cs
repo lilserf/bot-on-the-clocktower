@@ -36,11 +36,13 @@ namespace Bot.Core
                 message = $"Couldn't {goal} - something was not found!";
             }
             m_messages.Add(message);
+            Serilog.Log.Debug("ProcessLogger caught exception {ex} while {goal}", ex, goal);
         }
 
 		public void LogMessage(string msg)
 		{
             m_messages.Add(msg);
+            Serilog.Log.Debug("ProcessLogger message: {msg}", msg);
 		}
 
         public IReadOnlyCollection<string> Messages => m_messages;

@@ -21,6 +21,7 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
+                Serilog.Log.Error(ex, "MoveToChannel failed while moving {@user} to {@channel}", member, channel);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -38,6 +39,7 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
+                Serilog.Log.Error(ex, "GrantRole failed while granting {@user} role {@role}", member, role);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -55,6 +57,7 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
+                Serilog.Log.Error(ex, "GrantRole failed while revoking {@user} role {@role}", member, role);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -82,6 +85,7 @@ namespace Bot.Core
             }
             catch(Exception ex)
             {
+                Serilog.Log.Error(ex, "AddStorytellerTag failed while changing display name of {@member}", member);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -102,6 +106,7 @@ namespace Bot.Core
             }
             catch(Exception ex)
             {
+                Serilog.Log.Error(ex, "RemoveStorytellerTag failed while changing display name of {@member}", member);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -119,6 +124,7 @@ namespace Bot.Core
             }
             catch(Exception ex)
             {
+                Serilog.Log.Error(ex, "AddPermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -136,6 +142,7 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
+                Serilog.Log.Error(ex, "RemovePermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
                 if (!IsHandledException(ex))
                     throw;
 
