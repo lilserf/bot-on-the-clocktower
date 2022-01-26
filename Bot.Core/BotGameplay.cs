@@ -142,7 +142,7 @@ namespace Bot.Core
 
         private static async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
-            Serilog.Log.Debug("TagStorytellers in game {game}", game);
+            Serilog.Log.Debug("TagStorytellers in game {@game}", game);
             foreach (var u in game.Storytellers)
             {
                 await MemberHelper.AddStorytellerTag(u, logger);
@@ -156,7 +156,7 @@ namespace Bot.Core
 
         private static async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
         {
-            Serilog.Log.Debug("GrantAndRevokeRoles in game {game}", game);
+            Serilog.Log.Debug("GrantAndRevokeRoles in game {@game}", game);
             IRole storytellerRole = game!.Town!.StorytellerRole!;
             IRole villagerRole = game!.Town!.VillagerRole!;
 
@@ -189,14 +189,14 @@ namespace Bot.Core
         // TODO: better name for this method, probably
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
-            Serilog.Log.Debug("CurrentGameAsync from context {context}", context);
+            Serilog.Log.Debug("CurrentGameAsync from context {@context}", context);
             if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
                 if (!CheckIsTownViable(game.Town, logger))
                 {
                     return null;
                 }
-                Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {game}", game);
+                Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
 
                 ScheduleCleanup(TownKey.FromTown(game.Town));
 
@@ -259,7 +259,7 @@ namespace Bot.Core
 
                 // No record, so create one
                 game = new Game(town!);
-                Serilog.Log.Debug("CurrentGameAsync created new game {game} from town {town}", game, town);
+                Serilog.Log.Debug("CurrentGameAsync created new game {@game} from town {@town}", game, town);
 
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;

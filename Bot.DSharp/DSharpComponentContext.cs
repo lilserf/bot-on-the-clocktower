@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-    class DSharpComponentContext : DiscordWrapper<DiscordInteraction>, IBotInteractionContext
+    public class DSharpComponentContext : DiscordWrapper<DiscordInteraction>, IBotInteractionContext
 	{
 		private readonly DSharpGuild m_guild;
 		private readonly DSharpChannel m_channel;

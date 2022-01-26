@@ -31,6 +31,9 @@ namespace Bot.Core
 
         private readonly IBotComponent m_voteTimerMenu;
 
+        const string CommandLogMsg = "/{command} command on guild {@guild} by user {@user}";
+        const string ButtonLogMsg = "[{button}] button pressed on guild {@guild} by user {@user}";
+
         public BotGameplayInteractionHandler(IServiceProvider serviceProvider, BotGameplay gameplay, BotVoteTimer voteTimer)
         {
             m_gameplay = gameplay;
@@ -95,7 +98,7 @@ namespace Bot.Core
         public async Task CommandNightAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/night", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(CommandLogMsg, "night", context.Guild, context.Member);
 
             var message = await PhaseNightInternal(context);
             await EditOriginalMessage(context, message);
@@ -118,7 +121,7 @@ namespace Bot.Core
         public async Task CommandDayAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/day", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(CommandLogMsg, "day", context.Guild, context.Member);
 
             var message = await PhaseDayInternal(context);
             await EditOriginalMessage(context, message);
@@ -141,7 +144,7 @@ namespace Bot.Core
         public async Task CommandVoteAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/vote", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(CommandLogMsg, "vote", context.Guild, context.Member);
 
             var message = await PhaseVoteInternal(context);
             await EditOriginalMessage(context, message);
@@ -166,7 +169,7 @@ namespace Bot.Core
             await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
             {
                 await context.DeferInteractionResponse();
-                Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/game", context.Guild.Id, context.Member.Id);
+                Serilog.Log.Information(CommandLogMsg, "game", context.Guild, context.Member);
 
                 var game = await m_gameplay.CurrentGameAsync(context, processLog);
                 if (game == null)
@@ -186,7 +189,7 @@ namespace Bot.Core
         public async Task CommandEndGameAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/endGame", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(CommandLogMsg, "endGame", context.Guild, context.Member);
 
             var message = await EndGameInternal(context);
             await EditOriginalMessage(context, message);
@@ -208,7 +211,7 @@ namespace Bot.Core
         public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}: {@users}", "/storytellers", context.Guild.Id, context.Member.Id, users);
+            Serilog.Log.Information(CommandLogMsg+": {users}", "storytellers", context.Guild, context.Member, users);
 
             var message = await SetStorytellersInternal(context, users);
             await EditOriginalMessage(context, message);
@@ -222,7 +225,7 @@ namespace Bot.Core
         public async Task RunVoteTimerAsync(IBotInteractionContext context, string timeString)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/voteTimer", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(CommandLogMsg, "voteTimer", context.Guild, context.Member);
 
             var message = await RunVoteTimerInternal(context, timeString);
 
@@ -237,7 +240,7 @@ namespace Bot.Core
         public async Task RunStopVoteTimerAsync(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{command} command on guild {guildId} by user {userId}", "/stopVoteTimer", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(CommandLogMsg, "stopVoteTimer", context.Guild, context.Member);
 
             var message = await RunStopVoteTimerInternal(context);
 
@@ -254,7 +257,7 @@ namespace Bot.Core
         public async Task NightButtonPressed(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{button} button pressed on guild {guildId} by user {userId}", "[Night]", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(ButtonLogMsg, "Night", context.Guild, context.Member);
 
             var message = await PhaseNightInternal(context);
 
@@ -266,7 +269,7 @@ namespace Bot.Core
         public async Task DayButtonPressed(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{button} button pressed on guild {guildId} by user {userId}", "[Day]", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(ButtonLogMsg, "Day", context.Guild, context.Member);
 
             var message = await PhaseDayInternal(context);
 
@@ -279,7 +282,7 @@ namespace Bot.Core
         public async Task VoteButtonPressed(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{button} button pressed on guild {guildId} by user {userId}", "[Vote]", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(ButtonLogMsg, "Vote", context.Guild, context.Member);
 
             var message = await PhaseVoteInternal(context);
 
@@ -291,7 +294,7 @@ namespace Bot.Core
         public async Task MoreButtonPressed(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{button} button pressed on guild {guildId} by user {userId}", "[More]", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(ButtonLogMsg, "More", context.Guild, context.Member);
 
             var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
             builder = builder.AddComponents(m_nightButton, m_dayButton, m_voteButton, m_endGameButton);
@@ -302,7 +305,7 @@ namespace Bot.Core
         public async Task EndGameButtonPressed(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{button} button pressed on guild {guildId} by user {userId}", "[End Game]", context.Guild.Id, context.Member.Id);
+            Serilog.Log.Information(ButtonLogMsg, "End Game", context.Guild, context.Member);
 
             var message = await EndGameInternal(context);
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
@@ -312,7 +315,7 @@ namespace Bot.Core
         public async Task VoteTimerMenuSelected(IBotInteractionContext context)
         {
             await context.DeferInteractionResponse();
-            Serilog.Log.Information("{button} Menu selected on guild {guildId} by user {userId}: {value}", "[Vote Timer]", context.Guild.Id, context.Member.Id, context.ComponentValues.First());
+            Serilog.Log.Information("[{button}] Menu selected on guild {@guild} by user {@user}: {value}", "Vote Timer", context.Guild, context.Member, context.ComponentValues.First());
 
             var value = context.ComponentValues.First();
 

@@ -7,7 +7,7 @@ using System;
 namespace Bot.Database
 {
 	// Implementation of Bot.Api.ITown that serializes to MongoDb
-	class MongoTownRecord : ITownRecord
+	public class MongoTownRecord : ITownRecord
 	{
 		public ObjectId _id { get; set; }
 		[BsonElement("guild")]

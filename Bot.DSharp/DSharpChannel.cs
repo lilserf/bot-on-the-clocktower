@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-    class DSharpChannel : DiscordWrapper<DiscordChannel>, IChannel
+    public class DSharpChannel : DiscordWrapper<DiscordChannel>, IChannel
 	{
 		public DSharpChannel(DiscordChannel wrapped)
 			: base(wrapped)

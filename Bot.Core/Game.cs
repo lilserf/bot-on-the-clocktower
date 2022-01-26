@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Bot.Core
 {
-    class Game : IGame
+    public class Game : IGame
 	{
 		public ITown Town { get; }
 

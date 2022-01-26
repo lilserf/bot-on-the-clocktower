@@ -3,7 +3,7 @@ using DSharpPlus.Entities;
 
 namespace Bot.DSharp
 {
-    class DSharpRole : DiscordWrapper<DiscordRole>, IRole
+    public class DSharpRole : DiscordWrapper<DiscordRole>, IRole
 	{
         public string Name => Wrapped.Name;
         public string Mention => Wrapped.Mention;
