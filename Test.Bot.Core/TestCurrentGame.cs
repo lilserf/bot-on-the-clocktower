@@ -2,6 +2,7 @@
 using Bot.Core;
 using Moq;
 using System;
+using System.Linq;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -291,6 +292,19 @@ namespace Test.Bot.Core
             Villager3Mock.Verify(m => m.GrantRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
         }
 
+        [Fact]
+        public void CurrentGame_NotEnoughPlayers()
+        {
+            TownSquareMock.SetupGet(c => c.Users).Returns(Enumerable.Empty<IMember>().ToList());
+
+            BotGameplay gs = new(GetServiceProvider());
+            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+
+            IGame? result = t.Result;
+            Assert.Null(result);
+        }
 
     }
 }

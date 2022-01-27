@@ -174,15 +174,18 @@ namespace Bot.Core
                 var game = await m_gameplay.CurrentGameAsync(context, processLog);
                 if (game == null)
                 {
-                    // TODO: more error reporting here?
+                    var webhook = m_system.CreateWebhookBuilder().WithContent("Couldn't start a valid game in this town. Are there enough players online?");
+                    await context.EditResponseAsync(webhook);
                     return "Couldn't find an active game record for this town!";
                 }
-
-                var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
-                webhook = webhook.AddComponents(m_nightButton, m_dayButton, m_voteButton, m_endGameButton);
-                webhook = webhook.AddComponents(m_voteTimerMenu);
-                await context.EditResponseAsync(webhook);
-                return "";
+                else
+                {
+                    var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
+                    webhook = webhook.AddComponents(m_nightButton, m_dayButton, m_voteButton, m_endGameButton);
+                    webhook = webhook.AddComponents(m_voteTimerMenu);
+                    await context.EditResponseAsync(webhook);
+                    return "";
+                }
             });
         }
 

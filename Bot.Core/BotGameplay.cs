@@ -283,12 +283,22 @@ namespace Bot.Core
                 // Sanity check for bots
                 allUsers = allUsers.Where(u => !u.IsBot).ToList();
 
-                allUsers.Remove(storyteller);
+                bool storytellerInChannels = allUsers.Remove(storyteller);
 
                 // Make everyone else a villager
                 foreach (var v in allUsers)
                 {
                     game.AddVillager(v);
+                }
+
+                // Check that the storyteller is actually in one of the channels
+                if (!storytellerInChannels)
+                    return null;
+                // Check that the players of the game are actually in channels?
+                foreach(var user in game.Villagers)
+                {
+                    if(!allUsers.Contains(user))
+                        return null;
                 }
 
                 await GrantAndRevokeRoles(game, logger);
