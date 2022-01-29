@@ -93,6 +93,7 @@ class botcBot(commands.Bot):
         announcer = self.get_announce_cog()
         num_sent = await announcer.announce_latest_version()
         print(f'Sent announcements to {num_sent} towns.')
+        print(f'Bot is currently in {len(self.guilds)} guilds.')
 
 # Announcer cog
 class AnnouncerCog(commands.Cog, name='Version Announcements'):
