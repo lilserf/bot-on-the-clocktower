@@ -264,6 +264,7 @@ namespace Bot.Core
                 // Assume the author of the command is the Storyteller
                 var storyteller = context.Member;
                 game.AddStoryteller(storyteller);
+                Serilog.Log.Debug("CurrentGameAsync: Storyteller is {@storyteller}", storyteller);
 
                 var allUsers = new List<IMember>();
 
@@ -289,6 +290,7 @@ namespace Bot.Core
                 foreach (var v in allUsers)
                 {
                     game.AddVillager(v);
+                    Serilog.Log.Debug("CurrentGameAsync: Added villager {@villager}", v);
                 }
 
                 // Check that the storyteller is actually in one of the channels
