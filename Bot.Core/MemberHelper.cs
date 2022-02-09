@@ -11,6 +11,7 @@ namespace Bot.Core
 
         public static async Task<bool> MoveToChannelLoggingErrorsAsync(IMember member, IChannel channel, IProcessLogger logger)
         {
+            Serilog.Log.Debug("Moving {@user} to {@channel}", member, channel);
             try
             {
                 if (!channel.Users.Contains(member))
@@ -34,6 +35,7 @@ namespace Bot.Core
         {
             try
             {
+                Serilog.Log.Debug("Granting {@role} to {@user} ", role, member);
                 await member.GrantRoleAsync(role);
                 return true;
             }
@@ -52,6 +54,7 @@ namespace Bot.Core
         {
             try
             {
+                Serilog.Log.Debug("Revoking {@role} from {@user} ", role, member);
                 await member.RevokeRoleAsync(role);
                 return true;
             }
