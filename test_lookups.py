@@ -194,6 +194,11 @@ class TestLookups(unittest.TestCase):
         self.assertEqual('unofficial_author_2', found_main_role.roles_in_script_infos[2].script_info.author)
         self.assertEqual('unofficial_image_2', found_main_role.roles_in_script_infos[2].script_info.image)
 
+    def test_botc_wiki_link_correct(self):
+        role = 'Washerwoman'
+        url = lookup.BotcWiki.create_wiki_url(role)
+        self.assertEqual(f'https://wiki.bloodontheclocktower.com/{role}', url)
+
 
 class TestLookupImpl(unittest.IsolatedAsyncioTestCase):
 
