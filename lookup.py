@@ -10,7 +10,7 @@ import urllib
 class BotcWiki:
     def create_wiki_url(name):
         words = name.split(' ')
-        map(lambda x: x.capitalize(), words)
+        words = map(lambda x: x.capitalize(), words)
         final = "_".join(words)
         final = urllib.parse.quote(final)
         return f'https://wiki.bloodontheclocktower.com/{final}'
