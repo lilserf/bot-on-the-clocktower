@@ -123,7 +123,8 @@ namespace Test.Bot.Core
             InteractionAuthorMock.Verify(m => m.SetDisplayName(StorytellerDisplayName), Times.Once);
             Villager1Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
             Villager2Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
-            ActiveGameServiceMock.Verify(m => m.EndGame(TownMock.Object), Times.Once);
+            if(gameInProgress)
+                ActiveGameServiceMock.Verify(m => m.EndGame(TownMock.Object), Times.Once);
         }
 
         [Fact]

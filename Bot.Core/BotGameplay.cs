@@ -55,39 +55,22 @@ namespace Bot.Core
         public async Task CleanupTown(TownKey key)
         {
             Serilog.Log.Debug("CleanupTown for town {@townKey}", key);
-            if (m_activeGameService.TryGetGame(key, out IGame? game))
-            {
-                try
-                {
-                    var logger = new ProcessLogger();
-                    await EndGameUnsafe(game, logger);
-                }
-                catch (Exception)
-                {
-                    // Do what?
-                }
-                finally
-                {
-                    // Success or failure, clear the record
-                    await m_gameActivityDb.ClearActivity(key);
-                }
-            }
-            else
-            {
-                try
-                {
-                    var logger = new ProcessLogger();
-                    await EndGameUnsafe(key, logger);
-                }
-                catch (Exception)
-                {
 
-                }
-                finally
-                {
-                    await m_gameActivityDb.ClearActivity(key);
-                }
+            try
+            {
+                var logger = new ProcessLogger();
+                await EndGameUnsafe(key, logger);
             }
+            catch (Exception)
+            {
+                // Do what?
+            }
+            finally
+            {
+                // Success or failure, clear the record
+                await m_gameActivityDb.ClearActivity(key);
+            }
+
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -154,19 +137,20 @@ namespace Bot.Core
             }
         }
 
-        private static async Task GrantAndRevokeRoles(IGame game, IProcessLogger logger)
+        private static async Task GrantAndRevokeRoles(IGame game, ITown town, IProcessLogger logger)
         {
             Serilog.Log.Debug("GrantAndRevokeRoles in game {@game}", game);
-            IRole storytellerRole = game!.Town!.StorytellerRole!;
-            IRole villagerRole = game!.Town!.VillagerRole!;
+
+            IRole storytellerRole = town.StorytellerRole!;
+            IRole villagerRole = town.VillagerRole!;
 
             foreach(var u in game.Storytellers)
             {
-                if(!u.Roles.Contains(game.Town.StorytellerRole))
+                if(!u.Roles.Contains(town.StorytellerRole))
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 }
-                if (!u.Roles.Contains(game.Town.VillagerRole))
+                if (!u.Roles.Contains(town.VillagerRole))
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
                 }
@@ -174,11 +158,11 @@ namespace Bot.Core
 
             foreach (var u in game.Villagers)
             {
-                if(u.Roles.Contains(game.Town.StorytellerRole))
+                if(u.Roles.Contains(town.StorytellerRole))
                 {
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 }
-                if(!u.Roles.Contains(game.Town.VillagerRole))
+                if(!u.Roles.Contains(town.VillagerRole))
                 {
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
                 }
@@ -190,15 +174,17 @@ namespace Bot.Core
         public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
         {
             Serilog.Log.Debug("CurrentGameAsync from context {@context}", context);
+            var town = await GetValidTownOrLogErrorAsync(context, logger);
+            if (town == null)
+                return null;
+            if (!CheckIsTownViable(town, logger))
+                return null;
+
             if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
-                if (!CheckIsTownViable(game.Town, logger))
-                {
-                    return null;
-                }
                 Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
 
-                ScheduleCleanup(TownKey.FromTown(game.Town));
+                ScheduleCleanup(TownKey.FromTown(town));
 
                 //Resolve a change in Storytellers
                 if (!game.Storytellers.Contains(context.Member))
@@ -216,14 +202,14 @@ namespace Bot.Core
 
                 var foundUsers = new List<IMember>();
 
-                foreach (var c in game.Town!.DayCategory!.Channels.Where(c => c.IsVoice))
+                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
                 {
                     foundUsers.AddRange(c.Users.ToList());
                 }
 
-                if (game.Town.NightCategory != null)
+                if (town.NightCategory != null)
                 {
-                    foreach (var c in game.Town.NightCategory.Channels.Where(c => c.IsVoice))
+                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
                     {
                         foundUsers.AddRange(c.Users.ToList());
                     }
@@ -244,21 +230,15 @@ namespace Bot.Core
                     game.RemoveVillager(p);
                 }
 
-                await GrantAndRevokeRoles(game, logger);
+                await GrantAndRevokeRoles(game, town, logger);
             }
             else
             {
-                var town = await GetValidTownOrLogErrorAsync(context, logger);
-                if (town == null)
-                    return null;
-
-                if (!CheckIsTownViable(town, logger))
-                    return null;
-
-                ScheduleCleanup(TownKey.FromTown(town));
+                var townKey = TownKey.FromTown(town);
+                ScheduleCleanup(townKey);
 
                 // No record, so create one
-                game = new Game(town!);
+                game = new Game(townKey);
                 Serilog.Log.Debug("CurrentGameAsync created new game {@game} from town {@town}", game, town);
 
                 // Assume the author of the command is the Storyteller
@@ -303,7 +283,7 @@ namespace Bot.Core
                         return null;
                 }
 
-                await GrantAndRevokeRoles(game, logger);
+                await GrantAndRevokeRoles(game, town, logger);
                 await TagStorytellers(game, logger);
 
                 m_activeGameService.RegisterGame(town, game);
@@ -314,10 +294,15 @@ namespace Bot.Core
 
         public async Task<string> PhaseNightUnsafe(IGame game, IProcessLogger processLog)
 		{
-            if (game.Town.NightCategory != null)
+            var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
+            if(town == null)
+            {
+                return "Failed to find a valid town!";
+            }
+            if (town.NightCategory != null)
             {
                 // First, put storytellers into the top cottages
-                var cottages = game.Town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
+                var cottages = town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
                 int numStCottages = game.Storytellers.Count > 0 ? 1 : 0;
                 if (cottages.Count < numStCottages + game.Villagers.Count)
                     return "Not enough night channels to move all players"; // TODO: Test
@@ -349,25 +334,36 @@ namespace Bot.Core
 
         // TODO: should this be a method on Game itself? :thinking:
         // Helper for moving all players to Town Square (used by Day and Vote commands)
-        private async Task MoveActivePlayersToTownSquare(IGame game, IProcessLogger logger)
+        private async Task MoveActivePlayersToTownSquare(IGame game, ITown town, IProcessLogger logger)
         {
             foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
             {
-                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, game.Town.TownSquare!, logger);
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, town.TownSquare!, logger);
             }
         }
 
         public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
+            var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
+            if (town == null)
+            {
+                return "Failed to find a valid town!";
+            }
             // Doesn't currently work :(
             //await ClearCottagePermissions(game, processLog);
-            await MoveActivePlayersToTownSquare(game, processLog);
+            await MoveActivePlayersToTownSquare(game, town, processLog);
             return "Moved all players from Cottages back to Town Square!";
         }
 
         public async Task<string> PhaseVoteUnsafe(IGame game, IProcessLogger processLog)
-        { 
-            await MoveActivePlayersToTownSquare(game, processLog);
+        {
+            var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
+            if (town == null)
+            {
+                return "Failed to find a valid town!";
+            }
+
+            await MoveActivePlayersToTownSquare(game, town, processLog);
             return "Moved all players to Town Square for voting!";
         }
 
@@ -376,6 +372,7 @@ namespace Bot.Core
             if (m_activeGameService.TryGetGame(townRecord, out IGame? game))
             {
                 var logger = new ProcessLogger();
+             
                 try
                 {
                     await PhaseVoteUnsafe(game, logger);
@@ -398,8 +395,20 @@ namespace Bot.Core
         public async Task<string> EndGameUnsafe(TownKey townKey, IProcessLogger logger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
+            if (town == null)
+                return "Failed to find a valid town for this command!";
 
-            if (town != null)
+            if (m_activeGameService.TryGetGame(townKey, out IGame? game))
+            {
+                m_activeGameService.EndGame(town);
+
+                foreach (var user in game.AllPlayers)
+                {
+                    await EndGameForUser(user, town, logger);
+                }
+                return "Thank you for playing Blood on the Clocktower!";
+            }
+            else
             {
                 var guild = await m_client.GetGuild(townKey.GuildId);
 
@@ -407,30 +416,24 @@ namespace Bot.Core
                 {
                     await EndGameForUser(user, town, logger);
                 }
+                return "Cleanup of inactive game complete";
             }
 
-            return "Cleanup of inactive game complete";
-        }
-
-        public async Task<string> EndGameUnsafe(IGame game, IProcessLogger logger)
-        {
-            m_activeGameService.EndGame(game.Town);
-
-            foreach (var user in game.AllPlayers)
-            {
-                await EndGameForUser(user, game.Town, logger);
-            }
-
-            return "Thank you for playing Blood on the Clocktower!";
         }
 
         public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<IMember> users, IProcessLogger logger)
         {
             IGame? game = await CurrentGameAsync(context, logger);
+            var town = await GetValidTownOrLogErrorAsync(context, logger);
+
             if (game == null)
             {
                 // TODO: more error reporting here?
                 return "Couldn't find an active game record for this town!";
+            }
+            if (town == null)
+            {
+                return "Couldn't find a valid town for this command!";
             }
 
             List<IMember> foundUsers = new();
@@ -471,7 +474,7 @@ namespace Bot.Core
                 game.RemoveVillager(user);
                 game.AddStoryteller(user);
             }
-            await GrantAndRevokeRoles(game, logger);
+            await GrantAndRevokeRoles(game, town, logger);
             await TagStorytellers(game, logger);
 
             var verbage = foundUsers.Count > 1 ? "New Storytellers are" : "New Storyteller is";

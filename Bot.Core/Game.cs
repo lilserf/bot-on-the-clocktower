@@ -6,8 +6,7 @@ namespace Bot.Core
 {
     public class Game : IGame
 	{
-		public ITown Town { get; }
-
+		public TownKey TownKey { get; }
 		public IReadOnlyCollection<IMember> Storytellers => m_storytellers;
 
 		private readonly List<IMember> m_storytellers = new();
@@ -18,9 +17,9 @@ namespace Bot.Core
 
 		public IReadOnlyCollection<IMember> AllPlayers => Storytellers.Concat(Villagers).ToList();
 
-		public Game(ITown town)
+		public Game(TownKey townKey)
 		{
-			Town = town;
+			TownKey = townKey;
 		}
 
 		public void AddVillager(IMember villager) => m_villagers.Add(villager);
@@ -30,7 +29,7 @@ namespace Bot.Core
 
         public override string ToString()
         {
-			return $"Game in town {Town} with Storytellers {string.Join(",", Storytellers)}";
+			return $"Game in town {TownKey} with Storytellers {string.Join(",", Storytellers)}";
         }
 
     }

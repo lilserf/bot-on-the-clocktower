@@ -4,8 +4,7 @@ namespace Bot.Api
 {
     public interface IGame
 	{
-		ITown Town { get; }
-
+		TownKey TownKey { get; }
 		IReadOnlyCollection<IMember> Storytellers { get; }
 
 		IReadOnlyCollection<IMember> Villagers { get; }

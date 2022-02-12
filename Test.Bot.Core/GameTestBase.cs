@@ -198,7 +198,7 @@ namespace Test.Bot.Core
         protected Mock<IGame> CreateGameMock()
         {
             Mock<IGame> gameMock = new();
-            gameMock.SetupGet(g => g.Town).Returns(TownMock.Object);
+            gameMock.SetupGet(g => g.TownKey).Returns(MockTownKey);
 
             // Actually back the Game mock with lists for storytellers and villagers :/
             var storytellers = new List<IMember>(new[] { InteractionAuthorMock.Object });

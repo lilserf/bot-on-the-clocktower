@@ -27,7 +27,7 @@ namespace Bot.Main
                 .Destructure.ByIgnoringProperties<DSharpComponentContext>(x => x.Wrapped)
                 .Destructure.ByTransforming<MongoTownRecord>(x => new { GuildId = x.GuildId, ControlChannelId = x.ControlChannelId, ControlChannelName = x.ControlChannel })
                 .Destructure.ByTransforming<Town>(x => new { Guild = x.Guild, ControlChannel = x.ControlChannel })
-                .Destructure.ByTransforming<Game>(x => new { Town = x.Town, Storytellers = x.Storytellers, VillagerCount = x.Villagers.Count })
+                .Destructure.ByTransforming<Game>(x => new { TownKey = x.TownKey, Storytellers = x.Storytellers, VillagerCount = x.Villagers.Count })
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
                 .WriteTo.File("logs/botc.log", rollingInterval:RollingInterval.Day)
