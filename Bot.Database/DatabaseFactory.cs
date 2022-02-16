@@ -13,6 +13,7 @@ namespace Bot.Database
         private readonly IMongoClientFactory m_mongoClientFactory;
         private readonly ITownDatabaseFactory m_townLookupFactory;
         private readonly IGameActivityDatabaseFactory m_gameActivityDatabaseFactory;
+        private readonly ILookupRoleDatabaseFactory m_lookupRoleDatabaseFactory;
 
         public const string MongoConnectEnvironmentVar = "MONGO_CONNECT";
         public const string MongoDbEnvironmentVar = "MONGO_DB";
@@ -29,6 +30,7 @@ namespace Bot.Database
             serviceProvider.Inject(out m_mongoClientFactory);
             serviceProvider.Inject(out m_townLookupFactory);
             serviceProvider.Inject(out m_gameActivityDatabaseFactory);
+            serviceProvider.Inject(out m_lookupRoleDatabaseFactory);
         }
 
         // TODO: This connect call should probably call out to a smaller class or two that handle this, via an interface, so we can
@@ -67,6 +69,7 @@ namespace Bot.Database
             var childSp = new ServiceProvider(m_serviceProvider);
             childSp.AddService(m_townLookupFactory.CreateTownLookup(mongoDatabase));
             childSp.AddService(m_gameActivityDatabaseFactory.CreateGameActivityDatabase(mongoDatabase));
+            childSp.AddService(m_lookupRoleDatabaseFactory.CreateLookupRoleDatabase(mongoDatabase));
             return childSp;
         }
 
