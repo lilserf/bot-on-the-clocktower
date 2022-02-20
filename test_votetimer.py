@@ -334,7 +334,7 @@ class TestVoteTimerAsync(unittest.IsolatedAsyncioTestCase):
         
         self.assertEqual(3, ts.add_count)
         self.assertEqual(town1, ts.add_town_town_info)
-        self.assertEqual(town1_end_time-datetime.timedelta(seconds=300), ts.add_town_end_time)
+        self.assertEqual(town1_end_time-datetime.timedelta(seconds=240), ts.add_town_end_time)
 
         self.assertEqual(4, tb.send_count)
         self.assertTrue('5 minutes, 50 seconds' in tb.last_message)
