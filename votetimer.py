@@ -89,7 +89,7 @@ class VoteTimerController(IVoteTimerController):
         next_time = end_time
         delta = (end_time - now).total_seconds()
         if delta >= 0:
-            advance_times = [300, 60, 15, 0]
+            advance_times = [240, 120, 60, 15, 0]
             for x in advance_times:
                 if delta > x:
                     next_time = end_time - datetime.timedelta(seconds=x)
