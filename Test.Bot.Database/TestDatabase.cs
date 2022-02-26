@@ -98,10 +98,16 @@ namespace Test.Bot.Database
 		[Fact]
 		public void CreateDbServices_CreatesTownLookup()
 		{
-			var mockDatabase = new Mock<IMongoDatabase>();
-			var mockTownLookup = new Mock<ITownDatabase>();
-			var mockTownLookupFactory = RegisterMock(new Mock<ITownDatabaseFactory>());
-			RegisterMock(new Mock<GameActivityDatabaseFactory>());
+			var mockDatabase = new Mock<IMongoDatabase>(MockBehavior.Strict);
+			var mockTownLookup = new Mock<ITownDatabase>(MockBehavior.Strict);
+			var mockGameActivityDb = new Mock<IGameActivityDatabase>(MockBehavior.Strict);
+			var mockLookupRoleDb = new Mock<ILookupRoleDatabase>(MockBehavior.Strict);
+			var mockLookupRoleDbFactory = RegisterMock(new Mock<ILookupRoleDatabaseFactory>(MockBehavior.Strict));
+			var mockTownLookupFactory = RegisterMock(new Mock<ITownDatabaseFactory>(MockBehavior.Strict));
+			var mockGameActivityDbFactory = RegisterMock(new Mock<IGameActivityDatabaseFactory>(MockBehavior.Strict));
+
+			mockGameActivityDbFactory.Setup(gadbf => gadbf.CreateGameActivityDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockGameActivityDb.Object);
+			mockLookupRoleDbFactory.Setup(lrdbf => lrdbf.CreateLookupRoleDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockLookupRoleDb.Object);
 
 			mockTownLookupFactory.Setup(tlf => tlf.CreateTownLookup(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockTownLookup.Object);
 			DatabaseFactory db = new(GetServiceProvider());
