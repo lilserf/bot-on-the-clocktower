@@ -16,8 +16,6 @@ namespace Bot.DSharp
 
 		public IReadOnlyCollection<IMember> Users => Wrapped.Users.Select(x => new DSharpMember(x)).ToList();
 
-		public IReadOnlyCollection<IChannel> Channels => Wrapped.Children.Select(x => new DSharpChannel(x)).ToList();
-
 		public int Position => Wrapped.Position;
 
 		public bool IsVoice => Wrapped.Type == DSharpPlus.ChannelType.Voice;

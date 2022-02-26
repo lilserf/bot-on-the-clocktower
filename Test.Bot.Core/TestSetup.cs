@@ -42,21 +42,20 @@ namespace Test.Bot.Core
             RegisterMock(TownDatabaseMock);
         }
 
-        private static Mock<IChannel> MakeChannel(string name, IChannel? parent = null)
+        private static Mock<IChannel> MakeChannel(string name)
         {
             Mock<IChannel> chan = new() { Name = name };
             chan.SetupGet(x => x.Name).Returns(name);
             chan.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
-            if (parent != null)
-            {
-                // NOTE: This is incorrect. This Append() function here doesn't actually append anything because
-                // it just returns a new IEnumerable.
-                throw new System.InvalidOperationException("Can't actually append a channel to a parent here. What are we trying to do, exactly?");
-#pragma warning disable CS0162 // Unreachable code detected
-                _ = parent.Channels.Append(chan.Object);
-#pragma warning restore CS0162 // Unreachable code detected
-            }
             return chan;
+        }
+
+        private static Mock<IChannelCategory> MakeChannelCategory(string name)
+        {
+            Mock<IChannelCategory> cat = new() { Name = name };
+            cat.SetupGet(x => x.Name).Returns(name);
+            cat.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
+            return cat;
         }
 
         private static Mock<IRole> MakeRole(string name)
@@ -70,8 +69,8 @@ namespace Test.Bot.Core
         public static Mock<ITown> MakeTown()
         {
             Mock<ITown> town = new();
-            town.SetupGet(x => x.DayCategory).Returns(MakeChannel(DayCatName).Object);
-            town.SetupGet(x => x.NightCategory).Returns(MakeChannel(NightCatName).Object);
+            town.SetupGet(x => x.DayCategory).Returns(MakeChannelCategory(DayCatName).Object);
+            town.SetupGet(x => x.NightCategory).Returns(MakeChannelCategory(NightCatName).Object);
             town.SetupGet(x => x.TownSquare).Returns(MakeChannel(TownSquareName).Object);
             town.SetupGet(x => x.ControlChannel).Returns(MakeChannel(ControlChannelName).Object);
             town.SetupGet(x => x.ChatChannel).Returns(MakeChannel(ChatChannelName).Object);

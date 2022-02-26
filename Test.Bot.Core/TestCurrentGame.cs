@@ -78,7 +78,7 @@ namespace Test.Bot.Core
                 MockGameInProgress();
 
             const string dayCategoryName = "Mock Murdertown";
-            TownMock.SetupGet(t => t.DayCategory).Returns((IChannel?)null);
+            TownMock.SetupGet(t => t.DayCategory).Returns((IChannelCategory?)null);
             TownRecordMock.SetupGet(t => t.DayCategory).Returns(dayCategoryName);
 
             RunCurrentGameAssertComplete();
@@ -95,7 +95,7 @@ namespace Test.Bot.Core
             if (gameInProgress)
                 MockGameInProgress();
 
-            TownMock.SetupGet(t => t.DayCategory).Returns((IChannel?)null);
+            TownMock.SetupGet(t => t.DayCategory).Returns((IChannelCategory?)null);
             TownRecordMock.SetupGet(t => t.DayCategory).Returns((string?)null);
 
             RunCurrentGameAssertComplete();
@@ -113,7 +113,7 @@ namespace Test.Bot.Core
                 MockGameInProgress();
 
             const string nightCategoryName = "Mock Murdertown - Night";
-            TownMock.SetupGet(t => t.NightCategory).Returns((IChannel?)null);
+            TownMock.SetupGet(t => t.NightCategory).Returns((IChannelCategory?)null);
             TownRecordMock.SetupGet(t => t.NightCategory).Returns(nightCategoryName);
 
             RunCurrentGameAssertComplete();

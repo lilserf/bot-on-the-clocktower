@@ -65,6 +65,11 @@ namespace Bot.DSharp
             return new DSharpChannel(await m_discord.GetChannelAsync(id));
 		}
 
+        public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id)
+		{
+            return new DSharpChannelCategory(await m_discord.GetChannelAsync(id));
+		}
+
 		public async Task<IGuild> GetGuildAsync(ulong id)
 		{
             return new DSharpGuild(await m_discord.GetGuildAsync(id));
@@ -79,8 +84,8 @@ namespace Bot.DSharp
                 {
                     Guild = guild,
                     ControlChannel = await GetChannelAsync(rec.ControlChannelId),
-                    DayCategory = await GetChannelAsync(rec.DayCategoryId),
-                    NightCategory = await GetChannelAsync(rec.NightCategoryId),
+                    DayCategory = await GetChannelCategoryAsync(rec.DayCategoryId),
+                    NightCategory = await GetChannelCategoryAsync(rec.NightCategoryId),
                     ChatChannel = await GetChannelAsync(rec.ChatChannelId),
                     TownSquare = await GetChannelAsync(rec.TownSquareId),
                     StorytellerRole = guild.Roles[rec.StorytellerRoleId],

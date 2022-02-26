@@ -36,8 +36,8 @@ namespace Test.Bot.Core
         protected readonly Mock<IChannel> ControlChannelMock = new();
         protected readonly Mock<IChannel> TownSquareMock = new();
         protected readonly Mock<IChannel> DarkAlleyMock = new();
-        protected readonly Mock<IChannel> DayCategoryMock = new();
-        protected readonly Mock<IChannel> NightCategoryMock = new();
+        protected readonly Mock<IChannelCategory> DayCategoryMock = new();
+        protected readonly Mock<IChannelCategory> NightCategoryMock = new();
         protected readonly Mock<IChannel> ChatChannelMock = new();
 
         protected readonly Mock<IRole> StorytellerRoleMock = new();
