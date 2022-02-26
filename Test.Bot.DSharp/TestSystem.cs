@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.DSharp;
+using DSharpPlus;
 using Moq;
 using Test.Bot.Base;
 using Xunit;
@@ -23,6 +24,10 @@ namespace Test.Bot.DSharp
         [Fact]
         public void System_CreateCalled_CreatesDSharpClient()
         {
+            var mockClient = new Mock<IDiscordClient>();
+            var mockFactory = RegisterMock(new Mock<IDiscordClientFactory>());
+            mockFactory.Setup(f => f.CreateClient(It.IsAny<DiscordConfiguration>())).Returns(mockClient.Object);
+
             var env = RegisterMock(new Mock<IEnvironment>());
             env.Setup(e => e.GetEnvironmentVariable(It.IsAny<string>())).Returns("env var");
 

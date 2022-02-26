@@ -44,6 +44,7 @@ namespace Bot.Main
 
             sp = Core.ServiceFactory.RegisterCoreServices(sp);
 
+            sp = DSharp.ServiceFactory.RegisterServices(sp);
             var dsharpRunner = new BotSystemRunner(sp, new DSharpSystem());
             await dsharpRunner.RunAsync(CancellationToken.None);
         }

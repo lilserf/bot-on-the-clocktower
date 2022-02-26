@@ -11,7 +11,7 @@ namespace Bot.DSharp
     {
         private readonly IComponentService m_componentService;
 
-        private readonly DiscordClient m_discord;
+        private readonly IDiscordClient m_discord;
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
@@ -27,7 +27,9 @@ namespace Bot.DSharp
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
             };
-            m_discord = new DiscordClient(config);
+
+            var discordFactory = serviceProvider.GetService<IDiscordClientFactory>();
+            m_discord = discordFactory.CreateClient(config);
         }
 
         public async Task ConnectAsync(IServiceProvider botServices)
@@ -55,7 +57,7 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
-		private Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
+		private Task ComponentInteractionCreated(IDiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
 		{
             return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
         }
