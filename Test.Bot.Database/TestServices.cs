@@ -15,6 +15,7 @@ namespace Test.Bot.Database
 
             Assert.IsType<MongoClientFactory>(factory);
         }
+
         [Fact]
         public void RegisterServices_CreatesTownLookupFactory()
         {
@@ -22,6 +23,15 @@ namespace Test.Bot.Database
             var factory = newSp.GetService<ITownDatabaseFactory>();
 
             Assert.IsType<TownDatabaseFactory>(factory);
+        }
+
+        [Fact]
+        public void RegisterServices_CreatesGameActivityDbFactory()
+        {
+            var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
+            var factory = newSp.GetService<IGameActivityDatabaseFactory>();
+
+            Assert.IsType<GameActivityDatabaseFactory>(factory);
         }
     }
 }
