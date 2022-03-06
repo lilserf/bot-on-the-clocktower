@@ -65,7 +65,7 @@ namespace Bot.DSharp
 
         public async Task<IChannel> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
 
-        public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelAsync(id);
+        public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
 
         public Task<IDiscordGuild> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 

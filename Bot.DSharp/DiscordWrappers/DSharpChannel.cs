@@ -1,6 +1,5 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,7 +39,5 @@ namespace Bot.DSharp.DiscordWrappers
         }
 
         public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);
-
-		IReadOnlyCollection<IChannel> IChannelCategory.Channels => throw new NotImplementedException();
 	}
 }

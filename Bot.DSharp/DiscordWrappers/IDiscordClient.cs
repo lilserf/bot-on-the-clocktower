@@ -16,6 +16,7 @@ namespace Bot.DSharp.DiscordWrappers
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
 
         Task<IDiscordChannel> GetChannelAsync(ulong id);
+        Task<IDiscordChannelCategory> GetChannelCategoryAsync(ulong id);
         Task<IDiscordGuild> GetGuildAsync(ulong id);
         Task ConnectAsync();
     }
@@ -47,6 +48,7 @@ namespace Bot.DSharp.DiscordWrappers
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
         public async Task<IDiscordChannel> GetChannelAsync(ulong id) => new DSharpChannel(await Wrapped.GetChannelAsync(id));
+        public async Task<IDiscordChannelCategory> GetChannelCategoryAsync(ulong id) => new DSharpChannelCategory(await Wrapped.GetChannelAsync(id));
         public async Task<IDiscordGuild> GetGuildAsync(ulong id) => new DSharpGuild(await Wrapped.GetGuildAsync(id));
         public Task ConnectAsync() => Wrapped.ConnectAsync();
 

@@ -13,7 +13,6 @@ namespace Test.Bot.DSharp
     public class TestTownResolution : TestBase
     {
         [Fact]
-        //[Fact(Skip="Working on creating mock for DiscordClient")]
         public void ResolveTown_ResolvesCategoryChannels()
         {
             var envMock = RegisterMock(new Mock<IEnvironment>());
@@ -34,12 +33,12 @@ namespace Test.Bot.DSharp
             ChannelMockHolder cottage1Mocks = new(cottage1Id, "Cottage");
             ChannelMockHolder cottage2Mocks = new(cottage2Id, "Cottage");
 
-            Mock<IDiscordChannel> dayCatMock = new(MockBehavior.Strict);
-            dayCatMock.As<IChannelCategory>().SetupGet(c => c.Id).Returns(dayCatId);
+            Mock<IDiscordChannelCategory> dayCatMock = new(MockBehavior.Strict);
+            dayCatMock.SetupGet(c => c.Id).Returns(dayCatId);
             dayCatMock.SetupGet(c => c.Channels).Returns(new[] { townSquareMocks.Unresolved.Object, darkAlleyMocks.Unresolved.Object });
 
-            Mock<IDiscordChannel> nightCatMock = new(MockBehavior.Strict);
-            nightCatMock.As<IChannelCategory>().SetupGet(c => c.Id).Returns(nightCatId);
+            Mock<IDiscordChannelCategory> nightCatMock = new(MockBehavior.Strict);
+            nightCatMock.SetupGet(c => c.Id).Returns(nightCatId);
             nightCatMock.SetupGet(c => c.Channels).Returns(new[] { cottage1Mocks.Unresolved.Object, cottage2Mocks.Unresolved.Object });
 
             Mock<ITownRecord> mockTownRecord = new();
@@ -49,12 +48,14 @@ namespace Test.Bot.DSharp
 
             Mock<IDiscordClient> mockDiscordClient = new(MockBehavior.Strict);
             mockDiscordClient.Setup(dc => dc.GetGuildAsync(It.Is<ulong>(l => l == guildId))).ReturnsAsync(guildMock.Object);
-            SetupGetChannel(mockDiscordClient, dayCatId, dayCatMock);
-            SetupGetChannel(mockDiscordClient, nightCatId, nightCatMock);
+            SetupGetChannelCategory(mockDiscordClient, dayCatId, dayCatMock);
+            SetupGetChannelCategory(mockDiscordClient, nightCatId, nightCatMock);
             SetupGetChannel(mockDiscordClient, townSquareId, townSquareMocks.Resolved);
             SetupGetChannel(mockDiscordClient, darkAlleyId, darkAlleyMocks.Resolved);
             SetupGetChannel(mockDiscordClient, cottage1Id, cottage1Mocks.Resolved);
             SetupGetChannel(mockDiscordClient, cottage2Id, cottage2Mocks.Resolved);
+            static void SetupGetChannelCategory(Mock<IDiscordClient> mockClient, ulong id, Mock<IDiscordChannelCategory> mockChannelCat) =>
+                mockClient.Setup(dc => dc.GetChannelCategoryAsync(It.Is<ulong>(l => l == id))).ReturnsAsync(mockChannelCat.Object);
             static void SetupGetChannel(Mock<IDiscordClient> mockClient, ulong id, Mock<IDiscordChannel> mockChannel) =>
                 mockClient.Setup(dc => dc.GetChannelAsync(It.Is<ulong>(l => l == id))).ReturnsAsync(mockChannel.Object);
 
@@ -77,11 +78,11 @@ namespace Test.Bot.DSharp
             public ChannelMockHolder(ulong id, string name, params IMember[] members)
             {
                 Unresolved = new(MockBehavior.Strict);
-                Unresolved.As<IChannel>().SetupGet(c => c.Id).Returns(id);
+                Unresolved.SetupGet(c => c.Id).Returns(id);
 
                 Resolved = new(MockBehavior.Strict);
-                Resolved.As<IChannel>().SetupGet(c => c.Id).Returns(id);
-                Resolved.As<IChannel>().SetupGet(c => c.Name).Returns(name);
+                Resolved.SetupGet(c => c.Id).Returns(id);
+                Resolved.SetupGet(c => c.Name).Returns(name);
                 Resolved.SetupGet(c => c.Users).Returns(members);
             }
         }

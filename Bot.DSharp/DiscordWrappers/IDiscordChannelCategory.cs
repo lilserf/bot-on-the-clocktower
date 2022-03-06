@@ -2,7 +2,7 @@
 
 namespace Bot.DSharp.DiscordWrappers
 {
-    public interface IDiscordChannel : IChannel
+    public interface IDiscordChannelCategory : IChannelCategory
     {
     }
 }
