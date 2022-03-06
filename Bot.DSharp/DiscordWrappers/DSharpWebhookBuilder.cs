@@ -3,7 +3,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Linq;
 
-namespace Bot.DSharp
+namespace Bot.DSharp.DiscordWrappers
 {
     public class DSharpWebhookBuilder : DiscordWrapper<DiscordWebhookBuilder>, IBotWebhookBuilder
     {

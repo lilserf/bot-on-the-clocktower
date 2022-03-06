@@ -1,5 +1,4 @@
 ﻿using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using Emzi0767.Utilities;
@@ -7,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Bot.DSharp
+namespace Bot.DSharp.DiscordWrappers
 {
     public interface IDiscordClient
     {
@@ -16,24 +15,21 @@ namespace Bot.DSharp
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
 
-        Task<DiscordChannel> GetChannelAsync(ulong id);
-        Task<DiscordGuild> GetGuildAsync(ulong id);
+        Task<IDiscordChannel> GetChannelAsync(ulong id);
+        Task<IDiscordGuild> GetGuildAsync(ulong id);
         Task ConnectAsync();
     }
 
-    public class DiscordClientWrapper : IDiscordClient
+    public class DiscordClientWrapper : DiscordWrapper<DiscordClient>, IDiscordClient
     {
-        private readonly DiscordClient mWrapped;
-
         private readonly AsyncEventWrapper<ReadyEventArgs> mReadyWrapper;
         private readonly AsyncEventWrapper<ComponentInteractionCreateEventArgs> mComponentInteractionCreatedWrapper;
 
         public DiscordClientWrapper(DiscordClient wrapped)
+            : base(wrapped)
         {
-            mWrapped = wrapped;
-
-            mReadyWrapper = new AsyncEventWrapper<ReadyEventArgs>(this, f => mWrapped.Ready += f, f => mWrapped.Ready -= f);
-            mComponentInteractionCreatedWrapper = new AsyncEventWrapper<ComponentInteractionCreateEventArgs>(this, f => mWrapped.ComponentInteractionCreated += f, f => mWrapped.ComponentInteractionCreated -= f);
+            mReadyWrapper = new AsyncEventWrapper<ReadyEventArgs>(this, f => Wrapped.Ready += f, f => Wrapped.Ready -= f);
+            mComponentInteractionCreatedWrapper = new AsyncEventWrapper<ComponentInteractionCreateEventArgs>(this, f => Wrapped.ComponentInteractionCreated += f, f => Wrapped.ComponentInteractionCreated -= f);
         }
 
 
@@ -49,10 +45,10 @@ namespace Bot.DSharp
             remove { mComponentInteractionCreatedWrapper.Event -= value; }
         }
 
-        public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => mWrapped.UseSlashCommands(config);
-        public Task<DiscordChannel> GetChannelAsync(ulong id) => mWrapped.GetChannelAsync(id);
-        public Task<DiscordGuild> GetGuildAsync(ulong id) => mWrapped.GetGuildAsync(id);
-        public Task ConnectAsync() => mWrapped.ConnectAsync();
+        public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
+        public async Task<IDiscordChannel> GetChannelAsync(ulong id) => new DSharpChannel(await Wrapped.GetChannelAsync(id));
+        public async Task<IDiscordGuild> GetGuildAsync(ulong id) => new DSharpGuild(await Wrapped.GetGuildAsync(id));
+        public Task ConnectAsync() => Wrapped.ConnectAsync();
 
 
 
@@ -101,7 +97,7 @@ namespace Bot.DSharp
 
             private Task Wrapped_Handler(DiscordClient sender, T e)
             {
-                if (!Equals(sender, mClientWrapper.mWrapped)) throw new InvalidCastException("Unexpected DiscordClient returned from event handler");
+                if (!Equals(sender, mClientWrapper.Wrapped)) throw new InvalidCastException("Unexpected DiscordClient returned from event handler");
 
                 AsyncEventHandler<IDiscordClient, T>[] ehCopy;
                 lock (mEventHandlers)

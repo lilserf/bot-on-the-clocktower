@@ -1,6 +1,6 @@
 ﻿using DSharpPlus;
 
-namespace Bot.DSharp
+namespace Bot.DSharp.DiscordWrappers
 {
     public interface IDiscordClientFactory
     {

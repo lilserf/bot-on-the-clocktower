@@ -1,14 +1,11 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Bot.DSharp
+namespace Bot.DSharp.DiscordWrappers
 {
-	class DSharpInteractionResponseBuilder : DiscordWrapper<DiscordInteractionResponseBuilder>, IInteractionResponseBuilder
+    class DSharpInteractionResponseBuilder : DiscordWrapper<DiscordInteractionResponseBuilder>, IInteractionResponseBuilder
 	{
 		public DSharpInteractionResponseBuilder(DiscordInteractionResponseBuilder wrapped)
 			: base(wrapped)

@@ -1,5 +1,5 @@
-﻿using Bot.Api;
-using Bot.Base;
+﻿using Bot.Base;
+using Bot.DSharp.DiscordWrappers;
 using System;
 
 namespace Bot.DSharp

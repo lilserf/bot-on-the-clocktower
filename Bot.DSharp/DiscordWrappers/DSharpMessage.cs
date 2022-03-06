@@ -1,7 +1,7 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 
-namespace Bot.DSharp
+namespace Bot.DSharp.DiscordWrappers
 {
     public class DSharpMessage : DiscordWrapper<DiscordMessage>, IMessage
     {

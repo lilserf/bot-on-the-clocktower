@@ -1,4 +1,5 @@
 ﻿using Bot.DSharp;
+using Bot.DSharp.DiscordWrappers;
 using System;
 using Test.Bot.Base;
 using Xunit;

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
 
-namespace Bot.DSharp
+namespace Bot.DSharp.DiscordWrappers
 {
-    public class DSharpGuild : DiscordWrapper<DiscordGuild>, IGuild
+    public class DSharpGuild : DiscordWrapper<DiscordGuild>, IDiscordGuild
 	{
 		public ulong Id => Wrapped.Id;
 

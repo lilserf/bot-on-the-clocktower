@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
+using Bot.DSharp.DiscordWrappers;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using System;
@@ -62,20 +63,11 @@ namespace Bot.DSharp
             return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
         }
 
-        public async Task<IChannel> GetChannelAsync(ulong id)
-		{
-            return new DSharpChannel(await m_discord.GetChannelAsync(id));
-		}
+        public async Task<IChannel> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
 
-        public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id)
-		{
-            return new DSharpChannelCategory(await m_discord.GetChannelAsync(id));
-		}
+        public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelAsync(id);
 
-		public async Task<IGuild> GetGuildAsync(ulong id)
-		{
-            return new DSharpGuild(await m_discord.GetGuildAsync(id));
-		}
+        public Task<IDiscordGuild> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 
         public async Task<ITown?> ResolveTownAsync(ITownRecord rec)
         {
@@ -98,10 +90,7 @@ namespace Bot.DSharp
             return null;
         }
 
-        public async Task<IGuild> GetGuild(ulong guildId)
-        {
-            return new DSharpGuild(await m_discord.GetGuildAsync(guildId));
-        }
+        public async Task<IGuild> GetGuild(ulong guildId) => await m_discord.GetGuildAsync(guildId);
 
         public class InvalidDiscordTokenException : Exception { }
     }
