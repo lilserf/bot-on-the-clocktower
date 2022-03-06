@@ -4,6 +4,7 @@ using DSharpPlus.SlashCommands;
 using Emzi0767.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp.DiscordWrappers
@@ -48,7 +49,17 @@ namespace Bot.DSharp.DiscordWrappers
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
         public async Task<IDiscordChannel> GetChannelAsync(ulong id) => new DSharpChannel(await Wrapped.GetChannelAsync(id));
-        public async Task<IDiscordChannelCategory> GetChannelCategoryAsync(ulong id) => new DSharpChannelCategory(await Wrapped.GetChannelAsync(id));
+        public async Task<IDiscordChannelCategory> GetChannelCategoryAsync(ulong id)
+        {
+            var categoryChannel = await Wrapped.GetChannelAsync(id);
+
+            var childIdTasks = categoryChannel.Children
+                .Select(c => Wrapped.GetChannelAsync(c.Id))
+                .ToList();
+            var childChannels = await Task.WhenAll(childIdTasks);
+
+            return new DSharpChannelCategory(categoryChannel, childChannels.Where(c => c != null));
+        }
         public async Task<IDiscordGuild> GetGuildAsync(ulong id) => new DSharpGuild(await Wrapped.GetGuildAsync(id));
         public Task ConnectAsync() => Wrapped.ConnectAsync();
 

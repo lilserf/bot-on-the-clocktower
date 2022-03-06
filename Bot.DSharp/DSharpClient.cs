@@ -82,11 +82,18 @@ namespace Bot.DSharp
                     NightCategory = await GetChannelCategoryAsync(rec.NightCategoryId),
                     ChatChannel = await GetChannelAsync(rec.ChatChannelId),
                     TownSquare = await GetChannelAsync(rec.TownSquareId),
-                    StorytellerRole = guild.Roles[rec.StorytellerRoleId],
-                    VillagerRole = guild.Roles[rec.VillagerRoleId],
+                    StorytellerRole = GetRoleForGuild(guild, rec.StorytellerRoleId),
+                    VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
                 };
                 return town;
             }
+            return null;
+        }
+
+        private static IRole? GetRoleForGuild(IDiscordGuild guild, ulong roleId)
+        {
+            if (guild.Roles.TryGetValue(roleId, out var role))
+                return role;
             return null;
         }
 
