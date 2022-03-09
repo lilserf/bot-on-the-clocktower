@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp.DiscordWrappers
 {
-    public class DSharpGuild : DiscordWrapper<DiscordGuild>, IDiscordGuild
+    public class DSharpGuild : DiscordWrapper<DiscordGuild>, IGuild
 	{
 		public ulong Id => Wrapped.Id;
 

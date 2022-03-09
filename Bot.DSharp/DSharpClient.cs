@@ -67,7 +67,7 @@ namespace Bot.DSharp
 
         public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
 
-        public Task<IDiscordGuild> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
+        public Task<IGuild> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 
         public async Task<ITown?> ResolveTownAsync(ITownRecord rec)
         {
@@ -90,7 +90,7 @@ namespace Bot.DSharp
             return null;
         }
 
-        private static IRole? GetRoleForGuild(IDiscordGuild guild, ulong roleId)
+        private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
         {
             if (guild.Roles.TryGetValue(roleId, out var role))
                 return role;

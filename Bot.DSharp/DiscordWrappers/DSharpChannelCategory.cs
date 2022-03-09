@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Bot.DSharp.DiscordWrappers
 {
-    public class DSharpChannelCategory : DiscordWrapper<DiscordChannel>, IDiscordChannelCategory
+    public class DSharpChannelCategory : DiscordWrapper<DiscordChannel>, IChannelCategory
 	{
 		private readonly IReadOnlyCollection<IChannel> mChildren;
 
