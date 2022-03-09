@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Test.Bot.Base
 {
-    public class MockServiceProvider : IServiceProvider
+    public class Mock : IServiceProvider
     {
         private readonly Dictionary<Type, object> m_mapping = new();
 
@@ -16,7 +16,7 @@ namespace Test.Bot.Base
                 // No service yet, create a strict-behaving mock as a placeholder
                 var mockType = typeof(Mock<>).MakeGenericType(serviceType);
                 var constr = mockType.GetConstructor(new[] { typeof(MockBehavior) });
-                Mock m = (Mock)constr!.Invoke(new object?[] { MockBehavior.Strict });
+                Moq.Mock m = (Moq.Mock)constr!.Invoke(new object?[] { MockBehavior.Strict });
                 ret = m.Object;
                 m_mapping.Add(serviceType, ret);
             }

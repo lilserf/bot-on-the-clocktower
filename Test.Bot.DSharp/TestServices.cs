@@ -11,9 +11,10 @@ namespace Test.Bot.Database
         public void RegisterServices_CreatesDiscordClientFactory()
         {
             var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var factory = newSp.GetService<IDiscordClientFactory>();
+            var service = newSp.GetService<IDiscordClientFactory>();
 
-            Assert.IsType<DiscordClientFactory>(factory);
+            Assert.NotNull(service);
+            Assert.IsType<DiscordClientFactory>(service);
         }
     }
 }
