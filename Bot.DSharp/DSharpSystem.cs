@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.DSharp;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using System;

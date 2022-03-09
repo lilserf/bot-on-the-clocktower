@@ -1,10 +1,8 @@
 ﻿using Bot.Api;
+using Bot.DSharp;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp

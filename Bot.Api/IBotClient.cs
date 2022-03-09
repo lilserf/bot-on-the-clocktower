@@ -10,6 +10,6 @@ namespace Bot.Api
 
         Task<ITown?> ResolveTownAsync(ITownRecord rec);
 
-        Task<IGuild> GetGuild(ulong guildId);
+        Task<IGuild?> GetGuild(ulong guildId);
     }
 }

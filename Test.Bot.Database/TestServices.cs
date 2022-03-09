@@ -7,31 +7,17 @@ namespace Test.Bot.Database
 {
     public class TestServices : TestBase
     {
-        [Fact]
-        public void RegisterServices_CreatesMongoFactory()
+        [Theory]
+        [InlineData(typeof(IMongoClientFactory), typeof(MongoClientFactory))]
+        [InlineData(typeof(ITownDatabaseFactory), typeof(TownDatabaseFactory))]
+        [InlineData(typeof(IGameActivityDatabaseFactory), typeof(GameActivityDatabaseFactory))]
+        [InlineData(typeof(ILookupRoleDatabaseFactory), typeof(LookupRoleDatabaseFactory))]
+        public void RegisterServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var factory = newSp.GetService<IMongoClientFactory>();
+            var factory = newSp.GetService(serviceInterface);
 
-            Assert.IsType<MongoClientFactory>(factory);
-        }
-
-        [Fact]
-        public void RegisterServices_CreatesTownLookupFactory()
-        {
-            var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var factory = newSp.GetService<ITownDatabaseFactory>();
-
-            Assert.IsType<TownDatabaseFactory>(factory);
-        }
-
-        [Fact]
-        public void RegisterServices_CreatesGameActivityDbFactory()
-        {
-            var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var factory = newSp.GetService<IGameActivityDatabaseFactory>();
-
-            Assert.IsType<GameActivityDatabaseFactory>(factory);
+            Assert.IsType(serviceImpl, factory);
         }
     }
 }

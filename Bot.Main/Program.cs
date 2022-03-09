@@ -5,7 +5,6 @@ using Bot.Database;
 using Bot.DSharp;
 using Destructurama;
 using Serilog;
-using Serilog.Formatting.Compact;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,6 +43,7 @@ namespace Bot.Main
 
             sp = Core.ServiceFactory.RegisterCoreServices(sp);
 
+            sp = DSharp.ServiceFactory.RegisterServices(sp);
             var dsharpRunner = new BotSystemRunner(sp, new DSharpSystem());
             await dsharpRunner.RunAsync(CancellationToken.None);
         }

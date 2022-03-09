@@ -1,7 +1,6 @@
 ﻿using Bot.Api;
 using Bot.DSharp;
 using Moq;
-using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
 

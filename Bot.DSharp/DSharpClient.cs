@@ -11,7 +11,7 @@ namespace Bot.DSharp
     {
         private readonly IComponentService m_componentService;
 
-        private readonly DiscordClient m_discord;
+        private readonly IDiscordClient m_discord;
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
@@ -27,7 +27,9 @@ namespace Bot.DSharp
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
             };
-            m_discord = new DiscordClient(config);
+
+            var discordFactory = serviceProvider.GetService<IDiscordClientFactory>();
+            m_discord = discordFactory.CreateClient(config);
         }
 
         public async Task ConnectAsync(IServiceProvider botServices)
@@ -55,25 +57,7 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
-		private Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
-		{
-            return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
-        }
-
-        public async Task<IChannel> GetChannelAsync(ulong id)
-		{
-            return new DSharpChannel(await m_discord.GetChannelAsync(id));
-		}
-
-        public async Task<IChannelCategory> GetChannelCategoryAsync(ulong id)
-		{
-            return new DSharpChannelCategory(await m_discord.GetChannelAsync(id));
-		}
-
-		public async Task<IGuild> GetGuildAsync(ulong id)
-		{
-            return new DSharpGuild(await m_discord.GetGuildAsync(id));
-		}
+        public Task<IGuild?> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 
         public async Task<ITown?> ResolveTownAsync(ITownRecord rec)
         {
@@ -88,17 +72,30 @@ namespace Bot.DSharp
                     NightCategory = await GetChannelCategoryAsync(rec.NightCategoryId),
                     ChatChannel = await GetChannelAsync(rec.ChatChannelId),
                     TownSquare = await GetChannelAsync(rec.TownSquareId),
-                    StorytellerRole = guild.Roles[rec.StorytellerRoleId],
-                    VillagerRole = guild.Roles[rec.VillagerRoleId],
+                    StorytellerRole = GetRoleForGuild(guild, rec.StorytellerRoleId),
+                    VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
                 };
                 return town;
             }
             return null;
         }
 
-        public async Task<IGuild> GetGuild(ulong guildId)
+        public async Task<IGuild?> GetGuild(ulong guildId) => await m_discord.GetGuildAsync(guildId);
+
+        private Task ComponentInteractionCreated(IDiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
         {
-            return new DSharpGuild(await m_discord.GetGuildAsync(guildId));
+            return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
+        }
+
+        private async Task<IChannel?> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
+
+        private async Task<IChannelCategory?> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
+
+        private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
+        {
+            if (guild.Roles.TryGetValue(roleId, out var role))
+                return role;
+            return null;
         }
 
         public class InvalidDiscordTokenException : Exception { }
