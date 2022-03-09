@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
 
-namespace Bot.DSharp.DiscordWrappers
+namespace Bot.DSharp
 {
     public class DSharpGuild : DiscordWrapper<DiscordGuild>, IGuild
 	{

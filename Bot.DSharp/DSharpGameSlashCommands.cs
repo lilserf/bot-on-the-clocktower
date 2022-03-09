@@ -1,5 +1,5 @@
 ﻿using Bot.Api;
-using Bot.DSharp.DiscordWrappers;
+using Bot.DSharp;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System.Linq;

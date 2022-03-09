@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bot.DSharp.DiscordWrappers
+namespace Bot.DSharp
 {
     public class DSharpInteractionContext : DiscordWrapper<InteractionContext>, IBotInteractionContext
     {

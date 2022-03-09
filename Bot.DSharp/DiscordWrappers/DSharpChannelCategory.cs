@@ -3,7 +3,7 @@ using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Bot.DSharp.DiscordWrappers
+namespace Bot.DSharp
 {
     public class DSharpChannelCategory : DiscordWrapper<DiscordChannel>, IChannelCategory
 	{

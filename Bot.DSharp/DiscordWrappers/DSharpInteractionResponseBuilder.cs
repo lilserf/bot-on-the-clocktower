@@ -3,7 +3,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Linq;
 
-namespace Bot.DSharp.DiscordWrappers
+namespace Bot.DSharp
 {
     class DSharpInteractionResponseBuilder : DiscordWrapper<DiscordInteractionResponseBuilder>, IInteractionResponseBuilder
 	{

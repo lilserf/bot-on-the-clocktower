@@ -1,4 +1,4 @@
-﻿namespace Bot.DSharp.DiscordWrappers
+﻿namespace Bot.DSharp
 {
     public class DiscordWrapper<T> where T : class
     {

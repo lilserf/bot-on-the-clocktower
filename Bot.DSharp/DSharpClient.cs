@@ -1,6 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
-using Bot.DSharp.DiscordWrappers;
+using Bot.DSharp;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using System;

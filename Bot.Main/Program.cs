@@ -3,7 +3,6 @@ using Bot.Base;
 using Bot.Core;
 using Bot.Database;
 using Bot.DSharp;
-using Bot.DSharp.DiscordWrappers;
 using Destructurama;
 using Serilog;
 using System;

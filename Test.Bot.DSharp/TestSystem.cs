@@ -1,6 +1,5 @@
 ﻿using Bot.Api;
 using Bot.DSharp;
-using Bot.DSharp.DiscordWrappers;
 using DSharpPlus;
 using Moq;
 using Test.Bot.Base;
