@@ -412,7 +412,7 @@ namespace Bot.Core
             {
                 var guild = await m_client.GetGuild(townKey.GuildId);
 
-                foreach (var (_, user) in guild.Members)
+                foreach (var (_, user) in guild!.Members)
                 {
                     await EndGameForUser(user, town, logger);
                 }
