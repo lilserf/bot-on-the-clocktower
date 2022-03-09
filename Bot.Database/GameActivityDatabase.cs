@@ -4,8 +4,6 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Database
@@ -36,20 +34,11 @@ namespace Bot.Database
             return await m_collection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords()
-        {
-            return await m_collection.Find(new BsonDocument()).ToListAsync();
-        }
+        public async Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords() => await m_collection.Find(new BsonDocument()).ToListAsync();
 
-        public async Task ClearActivity(TownKey townKey)
-        {
-            var filter = FilterFromKey(townKey);
+        public Task ClearActivityAsync(TownKey townKey) => m_collection.DeleteManyAsync(FilterFromKey(townKey));
 
-            await m_collection.DeleteManyAsync(filter);
-        }
-
-
-        public Task RecordActivity(TownKey townKey)
+        public Task RecordActivityAsync(TownKey townKey, DateTime activityTime)
         {
             var filter = FilterFromKey(townKey);
 
@@ -57,7 +46,7 @@ namespace Bot.Database
             {
                 GuildId = townKey.GuildId,
                 ChannelId = townKey.ControlChannelId,
-                LastActivity = DateTime.Now,
+                LastActivity = activityTime,
             };
 
             ReplaceOptions options = new()

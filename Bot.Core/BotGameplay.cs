@@ -1,4 +1,8 @@
-﻿using Bot.Api;
+﻿#if DEBUG
+#define TEST_RAPID_CLEANUP
+#endif
+
+using Bot.Api;
 using Bot.Api.Database;
 using Bot.Core.Callbacks;
 using System;
@@ -15,8 +19,8 @@ namespace Bot.Core
         private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
         private readonly IDateTime m_dateTime;
         private readonly IGameActivityDatabase m_gameActivityDb;
+        private readonly IBotClient m_botClient;
 
-        private const int HOURS_INACTIVITY = 5;
 		public BotGameplay(IServiceProvider services)
             : base(services)
 		{
@@ -24,13 +28,24 @@ namespace Bot.Core
             services.Inject(out m_shuffle);
 
             var callbackFactory = services.GetService<ICallbackSchedulerFactory>();
-            m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CleanupTown, TimeSpan.FromHours(1));
+
+#if TEST_RAPID_CLEANUP
+            TimeSpan cleanupCheckTime = TimeSpan.FromSeconds(5);
+#else
+            TimeSpan cleanupCheckTime = TimeSpan.FromHours(1);
+#endif
+            m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CleanupTown, cleanupCheckTime);
 
             services.Inject(out m_dateTime);
             services.Inject(out m_gameActivityDb);
+            services.Inject(out m_botClient);
 
-            // TODO: async startup-time call to do this
-            //await ScheduleOutstandingCleanup();
+            m_botClient.Connected += BotClient_Connected;
+        }
+
+        private void BotClient_Connected(object? sender, EventArgs e)
+        {
+            ScheduleOutstandingCleanup().ConfigureAwait(continueOnCapturedContext:true);
         }
 
         private async Task ScheduleOutstandingCleanup()
@@ -38,17 +53,26 @@ namespace Bot.Core
             var recs = await m_gameActivityDb.GetAllActivityRecords();
             Serilog.Log.Debug("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
             foreach(var rec in recs)
-            {
-                ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId));
-            }
+                ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId), rec.LastActivity);
         }
 
         // Schedule this town for a cleanup after a long time period
-        private void ScheduleCleanup(TownKey townKey)
+        private async Task RecordActivityAsync(TownKey townKey)
         {
-            Serilog.Log.Debug("ScheduleCleanup for town {@townKey}", townKey);
-            m_gameActivityDb.RecordActivity(townKey);
-            var time = m_dateTime.Now + TimeSpan.FromHours(HOURS_INACTIVITY);
+            Serilog.Log.Debug("RecordActivity for town {@townKey}", townKey);
+            var now = m_dateTime.Now;
+            await m_gameActivityDb.RecordActivityAsync(townKey, now);
+            ScheduleCleanup(townKey, now);
+        }
+
+        private void ScheduleCleanup(TownKey townKey, DateTime lastActivity)
+        {
+#if TEST_RAPID_CLEANUP
+            TimeSpan cleanupTime = TimeSpan.FromMinutes(1);
+#else
+            TimeSpan cleanupTime = TimeSpan.FromHours(5);
+#endif
+            var time = lastActivity + cleanupTime;
             m_callbackScheduler.ScheduleCallback(townKey, time);
         }
 
@@ -68,7 +92,7 @@ namespace Bot.Core
             finally
             {
                 // Success or failure, clear the record
-                await m_gameActivityDb.ClearActivity(key);
+                await m_gameActivityDb.ClearActivityAsync(key);
             }
 
         }
@@ -180,11 +204,13 @@ namespace Bot.Core
             if (!CheckIsTownViable(town, logger))
                 return null;
 
+            Task activityRecordTask = Task.CompletedTask;
+
             if (m_activeGameService.TryGetGame(context, out IGame? game))
             {
                 Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
 
-                ScheduleCleanup(TownKey.FromTown(town));
+                activityRecordTask = RecordActivityAsync(TownKey.FromTown(town));
 
                 //Resolve a change in Storytellers
                 if (!game.Storytellers.Contains(context.Member))
@@ -235,7 +261,7 @@ namespace Bot.Core
             else
             {
                 var townKey = TownKey.FromTown(town);
-                ScheduleCleanup(townKey);
+                activityRecordTask = RecordActivityAsync(townKey);
 
                 // No record, so create one
                 game = new Game(townKey);
@@ -253,9 +279,9 @@ namespace Bot.Core
                     allUsers.AddRange(c.Users);
                 }
 
-                if(town.NightCategory != null)
+                if (town.NightCategory != null)
                 {
-                    foreach(var c in town.NightCategory.Channels.Where(c => c.IsVoice))
+                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
                     {
                         allUsers.AddRange(c.Users);
                     }
@@ -277,9 +303,9 @@ namespace Bot.Core
                 if (!storytellerInChannels)
                     return null;
                 // Check that the players of the game are actually in channels?
-                foreach(var user in game.Villagers)
+                foreach (var user in game.Villagers)
                 {
-                    if(!allUsers.Contains(user))
+                    if (!allUsers.Contains(user))
                         return null;
                 }
 
@@ -288,6 +314,8 @@ namespace Bot.Core
 
                 m_activeGameService.RegisterGame(town, game);
             }
+
+            await activityRecordTask;
 
             return game;
         }

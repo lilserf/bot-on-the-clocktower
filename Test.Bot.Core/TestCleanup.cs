@@ -2,11 +2,6 @@
 using Bot.Core;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Test.Bot.Base;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -21,9 +16,8 @@ namespace Test.Bot.Core
 
             RunCurrentGameAssertComplete();
 
-            GameActivityDatabaseMock.Verify(x => x.RecordActivity(It.Is<TownKey>(tk => tk == MockTownKey)), Times.Once);
+            GameActivityDatabaseMock.Verify(x => x.RecordActivityAsync(It.Is<TownKey>(tk => tk == MockTownKey), It.IsAny<DateTime>()), Times.Once);
             TownKeyCallbackSchedulerMock.Verify(x => x.ScheduleCallback(It.Is<TownKey>(tk => tk == MockTownKey), It.IsAny<DateTime>()), Times.Once);
-
         }
 
         [Theory]
@@ -50,7 +44,7 @@ namespace Test.Bot.Core
             Villager2Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
             Villager3Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
 
-            GameActivityDatabaseMock.Verify(x => x.ClearActivity(It.Is<TownKey>(t => t == MockTownKey)), Times.Once);
+            GameActivityDatabaseMock.Verify(x => x.ClearActivityAsync(It.Is<TownKey>(t => t == MockTownKey)), Times.Once);
         }
 
     }

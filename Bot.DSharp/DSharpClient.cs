@@ -13,6 +13,8 @@ namespace Bot.DSharp
 
         private readonly IDiscordClient m_discord;
 
+        public event EventHandler<EventArgs>? Connected;
+
         public DSharpClient(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_componentService);
@@ -46,7 +48,8 @@ namespace Bot.DSharp
 
             m_discord.Ready += (_, _) =>
             {
-                readyTcs.TrySetResult();
+                if (readyTcs.TrySetResult())
+                    Connected?.Invoke(this, EventArgs.Empty);
                 return Task.CompletedTask;
             };
 
