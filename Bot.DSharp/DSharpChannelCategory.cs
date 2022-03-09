@@ -7,17 +7,13 @@ namespace Bot.DSharp
 {
     public class DSharpChannelCategory : DiscordWrapper<DiscordChannel>, IChannelCategory
 	{
-		private readonly IReadOnlyCollection<IChannel> mChildren;
-
-		public DSharpChannelCategory(DiscordChannel wrapped, IEnumerable<DiscordChannel> childChannels)
+		public DSharpChannelCategory(DiscordChannel wrapped)
 			: base(wrapped)
-		{
-			mChildren = childChannels.Select(c => new DSharpChannel(c)).ToList();
-		}
+		{}
 
 		public ulong Id => Wrapped.Id;
 
-		public IReadOnlyCollection<IChannel> Channels => mChildren;
+		public IReadOnlyCollection<IChannel> Channels => Wrapped.Children.Select(x => new DSharpChannel(x)).ToList();
 
 		public string Name => Wrapped.Name;
 	}
