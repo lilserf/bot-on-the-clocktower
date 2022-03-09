@@ -34,12 +34,13 @@ namespace Bot.Database
             return await m_collection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords() => await m_collection.Find(new BsonDocument()).ToListAsync();
+        public async Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords() => await m_collection.Find(_ => true).ToListAsync();
 
         public Task ClearActivityAsync(TownKey townKey) => m_collection.DeleteManyAsync(FilterFromKey(townKey));
 
         public Task RecordActivityAsync(TownKey townKey, DateTime activityTime)
         {
+            Serilog.Log.Debug("Recording activity for {townKey} at {time}", townKey, activityTime);
             var filter = FilterFromKey(townKey);
 
             MongoGameActivityRecord rec = new()

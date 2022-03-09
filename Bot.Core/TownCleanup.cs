@@ -63,6 +63,7 @@ namespace Bot.Core
             TimeSpan cleanupTime = TimeSpan.FromHours(5);
 #endif
             var time = lastActivity + cleanupTime;
+            Serilog.Log.Debug("ScheduleCleanup: {townKey} should be cleaned up at {time}", townKey, time);
             m_callbackScheduler.ScheduleCallback(townKey, time);
         }
 

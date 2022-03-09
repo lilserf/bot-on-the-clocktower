@@ -4,6 +4,7 @@ using System;
 
 namespace Bot.Database
 {
+    [BsonIgnoreExtraElements]
     class MongoGameActivityRecord : IGameActivityRecord
     {
         [BsonElement("guild")]
@@ -14,8 +15,5 @@ namespace Bot.Database
 
         [BsonElement("lastActivity")]
         public DateTime LastActivity { get; set; }
-
-        [BsonElement("_id")]
-        private ulong RecordId { get; }
     }
 }
