@@ -1,5 +1,4 @@
 ﻿using Bot.Api;
-using Bot.DSharp;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System.Linq;
@@ -7,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-    class DSharpMessagingSlashCommands : SlashCommandModule
+    class DSharpMessagingSlashCommands : ApplicationCommandModule
     {
         public IBotMessaging? BotMessaging{ get; set; }
 

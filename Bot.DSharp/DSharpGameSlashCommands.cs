@@ -1,5 +1,4 @@
 ﻿using Bot.Api;
-using Bot.DSharp;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System.Linq;
@@ -7,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-    internal class EmptyCommands : SlashCommandModule
+    internal class EmptyCommands : ApplicationCommandModule
     {
     }
 
-    internal class DSharpGameSlashCommands : SlashCommandModule
+    internal class DSharpGameSlashCommands : ApplicationCommandModule
     {
         public IBotGameplayInteractionHandler? BotGameplayHandler { get; set; }
 
