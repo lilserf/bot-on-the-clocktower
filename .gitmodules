@@ -1,0 +1,4 @@
+[submodule "DSharpPlus"]
+	path = DSharpPlus
+	url = https://github.com/lilserf/DSharpPlus.git
+	branch = release/4.1
