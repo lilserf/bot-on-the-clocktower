@@ -19,6 +19,7 @@ namespace Bot.Core
 
         private readonly IBotSystem m_system;
         private readonly IComponentService m_componentService;
+        private readonly ITownCommandQueue m_townCommandQueue;
 
         private readonly BotGameplay m_gameplay;
         private readonly BotVoteTimer m_voteTimer;
@@ -41,6 +42,7 @@ namespace Bot.Core
 
             serviceProvider.Inject(out m_system);
             serviceProvider.Inject(out m_componentService);
+            serviceProvider.Inject(out m_townCommandQueue);
 
             m_nightButton = CreateButton(GameplayButton.Night, "Night", pressMethod: NightButtonPressed, emoji: "🌙");
             m_dayButton = CreateButton(GameplayButton.Day, "Day", pressMethod: DayButtonPressed, IBotSystem.ButtonType.Success, emoji: "☀️");
@@ -95,20 +97,11 @@ namespace Bot.Core
         }
 
         #region Callbacks from system with interaction context
-        public async Task CommandNightAsync(IBotInteractionContext context)
+        public async Task<string> PhaseNightInternal(TownKey townKey, IMember requester)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg, "night", context.Guild, context.Member);
-
-            var message = await PhaseNightInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> PhaseNightInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
@@ -118,20 +111,11 @@ namespace Bot.Core
             });
         }
 
-        public async Task CommandDayAsync(IBotInteractionContext context)
+        private async Task<string> PhaseDayInternal(TownKey townKey, IMember requester)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg, "day", context.Guild, context.Member);
-
-            var message = await PhaseDayInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> PhaseDayInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
@@ -141,20 +125,11 @@ namespace Bot.Core
             });
         }
 
-        public async Task CommandVoteAsync(IBotInteractionContext context)
+        private async Task<string> PhaseVoteInternal(TownKey townKey, IMember requester)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg, "vote", context.Guild, context.Member);
-
-            var message = await PhaseVoteInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here?
@@ -164,45 +139,23 @@ namespace Bot.Core
             });
         }
 
-        public async Task CommandGameAsync(IBotInteractionContext context)
+        private async Task<(string, bool)> PerformGameInternal(TownKey townKey, IMember requester)
         {
-            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            bool success = true;
+            var message = await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                await context.DeferInteractionResponse();
-                Serilog.Log.Information(CommandLogMsg, "game", context.Guild, context.Member);
-
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
-                if (game == null)
-                {
-                    var webhook = m_system.CreateWebhookBuilder().WithContent("Couldn't start a valid game in this town. Are there enough players online?");
-                    await context.EditResponseAsync(webhook);
-                    return "Couldn't find an active game record for this town!";
-                }
-                else
-                {
-                    var webhook = m_system.CreateWebhookBuilder().WithContent("Welcome to Blood on the Clocktower!");
-                    webhook = webhook.AddComponents(m_nightButton, m_dayButton, m_voteButton, m_endGameButton);
-                    webhook = webhook.AddComponents(m_voteTimerMenu);
-                    await context.EditResponseAsync(webhook);
-                    return "";
-                }
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
+                success = game != null;
+                return success ? "Welcome to Blood on the Clocktower!" : "Couldn't find an active game record for this town!";
             });
+            return (message, success);
         }
 
-        public async Task CommandEndGameAsync(IBotInteractionContext context)
+        private async Task<string> EndGameInternal(TownKey townKey, IMember requester)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg, "endGame", context.Guild, context.Member);
-
-            var message = await EndGameInternal(context);
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> EndGameInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     return "Couldn't find a current game to end!";
@@ -211,122 +164,122 @@ namespace Bot.Core
             });
         }
 
-        public async Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
+        public async Task<string> SetStorytellersInternal(TownKey townKey, IMember requester, IEnumerable<IMember> users)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg+": {users}", "storytellers", context.Guild, context.Member, users);
-
-            var message = await SetStorytellersInternal(context, users);
-            await EditOriginalMessage(context, message);
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, (processLog) => m_gameplay.SetStorytellersUnsafe(townKey, requester, users, processLog));
         }
 
-        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<IMember> users)
+        public async Task<string> RunVoteTimerInternal(TownKey townKey, IMember requester, string timeString)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => m_gameplay.SetStorytellersUnsafe(context, users, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunVoteTimerUnsafe(townKey, timeString, processLoggger));
         }
 
-        public async Task RunVoteTimerAsync(IBotInteractionContext context, string timeString)
+        public async Task<string> RunStopVoteTimerInternal(TownKey townKey, IMember requester)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg, "voteTimer", context.Guild, context.Member);
-
-            var message = await RunVoteTimerInternal(context, timeString);
-
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> RunVoteTimerInternal(IBotInteractionContext context, string timeString)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, processLoggger => m_voteTimer.RunVoteTimerUnsafe(context, timeString, processLoggger));
-        }
-
-        public async Task RunStopVoteTimerAsync(IBotInteractionContext context)
-        {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(CommandLogMsg, "stopVoteTimer", context.Guild, context.Member);
-
-            var message = await RunStopVoteTimerInternal(context);
-
-            await EditOriginalMessage(context, message);
-        }
-
-        public async Task<string> RunStopVoteTimerInternal(IBotInteractionContext context)
-        {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, processLoggger => m_voteTimer.RunStopVoteTimerUnsafe(context, processLoggger));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunStopVoteTimerUnsafe(townKey, processLoggger));
         }
         #endregion
 
-        #region Button handlers
-        public async Task NightButtonPressed(IBotInteractionContext context)
+        #region Command handlers
+        public Task CommandGameAsync(IBotInteractionContext context)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(ButtonLogMsg, "Night", context.Guild, context.Member);
-
-            var message = await PhaseNightInternal(context);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_dayButton, m_moreButton);
-            await context.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Starting game...", context, async () =>
+            {
+                Serilog.Log.Information(CommandLogMsg, "game", context.Guild, context.Member);
+                (var message, bool success) = await PerformGameInternal(context.GetTownKey(), context.Member);
+                return new QueuedCommandResult(message, success, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu });
+            });
         }
 
-        public async Task DayButtonPressed(IBotInteractionContext context)
+        public Task CommandNightAsync(IBotInteractionContext context) => QueueNightCommandAsync(context, false);
+        public Task NightButtonPressed(IBotInteractionContext context) => QueueNightCommandAsync(context, true);
+
+        private Task QueueNightCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(ButtonLogMsg, "Day", context.Guild, context.Member);
-
-            var message = await PhaseDayInternal(context);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_voteButton, m_endGameButton,  m_moreButton);
-            builder = builder.AddComponents(m_voteTimerMenu);
-            await context.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Sending players to nighttime...", context, async () =>
+            {
+                Serilog.Log.Information(ButtonLogMsg, "Night", context.Guild, context.Member);
+                var message = await PhaseNightInternal(context.GetTownKey(), context.Member);
+                return new QueuedCommandResult(message, includeComponents, new[] { m_dayButton, m_moreButton });
+            });
         }
 
-        public async Task VoteButtonPressed(IBotInteractionContext context)
+        public Task CommandDayAsync(IBotInteractionContext context) => QueueDayCommandAsync(context, false);
+        public Task DayButtonPressed(IBotInteractionContext context) => QueueDayCommandAsync(context, true);
+        private Task QueueDayCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(ButtonLogMsg, "Vote", context.Guild, context.Member);
-
-            var message = await PhaseVoteInternal(context);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_nightButton, m_endGameButton, m_moreButton);
-            await context.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Sending players to daytime...", context, async () =>
+            {
+                Serilog.Log.Information(ButtonLogMsg, "Day", context.Guild, context.Member);
+                var message = await PhaseDayInternal(context.GetTownKey(), context.Member);
+                return new QueuedCommandResult(message, includeComponents, new[] { m_voteButton, m_endGameButton, m_moreButton }, new[] { m_voteTimerMenu });
+            });
         }
 
-        public async Task MoreButtonPressed(IBotInteractionContext context)
+        public Task CommandVoteAsync(IBotInteractionContext context) => QueueVoteCommandAsync(context, false);
+        public Task VoteButtonPressed(IBotInteractionContext context) => QueueVoteCommandAsync(context, true);
+        private Task QueueVoteCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(ButtonLogMsg, "More", context.Guild, context.Member);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent("Here are all the options again!");
-            builder = builder.AddComponents(m_nightButton, m_dayButton, m_voteButton, m_endGameButton);
-            builder = builder.AddComponents(m_voteTimerMenu);
-            await context.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Calling players for a vote...", context, async () =>
+            {
+                Serilog.Log.Information(ButtonLogMsg, "Vote", context.Guild, context.Member);
+                var message = await PhaseVoteInternal(context.GetTownKey(), context.Member);
+                return new QueuedCommandResult(message, includeComponents, new[] { m_nightButton, m_endGameButton, m_moreButton });
+            });
         }
 
-        public async Task EndGameButtonPressed(IBotInteractionContext context)
+        public Task MoreButtonPressed(IBotInteractionContext context)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information(ButtonLogMsg, "End Game", context.Guild, context.Member);
-
-            var message = await EndGameInternal(context);
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            await context.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Expanding options...", context, async () =>
+            {
+                Serilog.Log.Information(ButtonLogMsg, "More", context.Guild, context.Member);
+                var message = "Here are all the options again!";
+                return new QueuedCommandResult(message, true, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu  });
+            });
         }
 
-        public async Task VoteTimerMenuSelected(IBotInteractionContext context)
+        public Task CommandEndGameAsync(IBotInteractionContext context) => QueueEndGameCommandAsync(context);
+        public Task EndGameButtonPressed(IBotInteractionContext context) => QueueEndGameCommandAsync(context);
+        private Task QueueEndGameCommandAsync(IBotInteractionContext context)
         {
-            await context.DeferInteractionResponse();
-            Serilog.Log.Information("[{button}] Menu selected on guild {@guild} by user {@user}: {value}", "Vote Timer", context.Guild, context.Member, context.ComponentValues.First());
+            return m_townCommandQueue.QueueCommandAsync("Ending the game...", context, async () =>
+            {
+                Serilog.Log.Information(ButtonLogMsg, "End Game", context.Guild, context.Member);
+                var message = await EndGameInternal(context.GetTownKey(), context.Member);
+                return new QueuedCommandResult(message);
+            });
+        }
 
-            var value = context.ComponentValues.First();
+        public Task RunVoteTimerAsync(IBotInteractionContext context, string timeString) => QueueVoteTimerCommandAsync(context, timeString, false);
+        public Task VoteTimerMenuSelected(IBotInteractionContext context) => QueueVoteTimerCommandAsync(context, context.ComponentValues.First(), true);
+        private Task QueueVoteTimerCommandAsync(IBotInteractionContext context, string timeString, bool includeComponents)
+        {
+            return m_townCommandQueue.QueueCommandAsync("Setting a timer before a vote happens...", context, async () =>
+            {
+                Serilog.Log.Information("[{button}] Menu selected on guild {@guild} by user {@user}: {value}", "Vote Timer", context.Guild, context.Member, timeString);
+                var message = await RunVoteTimerInternal(context.GetTownKey(), context.Member, timeString);
+                return new QueuedCommandResult(message, includeComponents, new[] { m_nightButton, m_moreButton }, new[] { m_voteTimerMenu });
+            });
+        }
 
-            var message = await RunVoteTimerInternal(context, value);
-            var builder = m_system.CreateWebhookBuilder().WithContent(message);
-            builder = builder.AddComponents(m_nightButton, m_moreButton);
-            builder = builder.AddComponents(m_voteTimerMenu);
-            await context.EditResponseAsync(builder);
+        public Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
+        {
+            return m_townCommandQueue.QueueCommandAsync("Settings storytellers...", context, async () =>
+            {
+                Serilog.Log.Information(CommandLogMsg + ": {users}", "storytellers", context.Guild, context.Member, users);
+                var message = await SetStorytellersInternal(context.GetTownKey(), context.Member, users);
+                return new QueuedCommandResult(message);
+            });
+        }
+
+        public Task RunStopVoteTimerAsync(IBotInteractionContext context)
+        {
+            return m_townCommandQueue.QueueCommandAsync("Stopping vote timer...", context, async () =>
+            {
+                Serilog.Log.Information(CommandLogMsg, "stopVoteTimer", context.Guild, context.Member);
+                var message = await RunStopVoteTimerInternal(context.GetTownKey(), context.Member);
+                return new QueuedCommandResult(message);
+            });
         }
         #endregion
     }

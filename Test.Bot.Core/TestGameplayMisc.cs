@@ -33,9 +33,9 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            BotSystemMock.Verify(c => c.CreateWebhookBuilder(), Times.Once);
-            WebhookBuilderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.Once);
-            InteractionContextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == WebhookBuilderMock.Object)), Times.Once);
+            BotSystemMock.Verify(c => c.CreateWebhookBuilder(), Times.AtLeastOnce);
+            WebhookBuilderMock.Verify(r => r.WithContent(It.IsAny<string>()), Times.AtLeastOnce);
+            InteractionContextMock.Verify(c => c.EditResponseAsync(It.Is<IBotWebhookBuilder>(b => b == WebhookBuilderMock.Object)), Times.AtLeastOnce);
 
             VerifyContext();
         }
@@ -73,7 +73,7 @@ namespace Test.Bot.Core
 
             // Could add other exceptions here for other types of commands, if needed
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
-            BotSystemMock.Setup(s => s.CreateWebhookBuilder()).Throws(thrownException);
+            TownLookupMock.Setup(tl => tl.GetTownRecords(It.IsAny<ulong>())).Throws(thrownException);
             var gs = CreateGameplayInteractionHandler();
             var t = gameCommandTestFunc(gs, InteractionContextMock.Object);
             t.Wait(5);
@@ -134,7 +134,7 @@ namespace Test.Bot.Core
             var sts = new[] { InteractionAuthorMock.Object, Villager1Mock.Object };
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
+            var t = gs.SetStorytellersUnsafe(MockTownKey, InteractionAuthorMock.Object, sts, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -152,7 +152,7 @@ namespace Test.Bot.Core
             var sts = new[] { Villager1Mock.Object, Villager2Mock.Object };
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
+            var t = gs.SetStorytellersUnsafe(MockTownKey, InteractionAuthorMock.Object, sts, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 

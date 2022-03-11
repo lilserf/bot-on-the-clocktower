@@ -265,10 +265,9 @@ namespace Test.Bot.Core
         public void CurrentGame_StorytellerSwitch()
         {
             var gameMock = MockGameInProgress();
-            // Make Villager1 send the message, not IAuthor
-            InteractionContextMock.SetupGet(m => m.Member).Returns(Villager1Mock.Object);
 
-            RunCurrentGameAssertComplete();
+            // Make Villager1 send the message, not IAuthor
+            RunCurrentGameAssertComplete(Villager1Mock.Object);
 
             // Should have removed IAuthor as the ST and added Villager1, and vice versa for the Villager list
             gameMock.Verify(m => m.RemoveStoryteller(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
@@ -298,7 +297,7 @@ namespace Test.Bot.Core
             TownSquareMock.SetupGet(c => c.Users).Returns(Enumerable.Empty<IMember>().ToList());
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            var t = gs.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 

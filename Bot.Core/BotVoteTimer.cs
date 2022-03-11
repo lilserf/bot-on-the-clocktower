@@ -18,9 +18,9 @@ namespace Bot.Core
             m_voteTimerController = new(serviceProvider);
         }
 
-        public async Task<string> RunVoteTimerUnsafe(IBotInteractionContext context, string timeString, IProcessLogger processLoggger)
+        public async Task<string> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
         {
-            var town = await GetValidTownOrLogErrorAsync(context, processLoggger);
+            var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
             if (town == null)
                 return "Failed to run command";
 
@@ -46,9 +46,9 @@ namespace Bot.Core
             return $"Vote timer started for {GetTimeString(span.Value, false)}!";
         }
 
-        public async Task<string> RunStopVoteTimerUnsafe(IBotInteractionContext context, IProcessLogger processLoggger)
+        public async Task<string> RunStopVoteTimerUnsafe(TownKey townKey, IProcessLogger processLoggger)
         {
-            var town = await GetValidTownOrLogErrorAsync(context, processLoggger);
+            var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
             if (town == null)
                 return "Failed to run command";
 

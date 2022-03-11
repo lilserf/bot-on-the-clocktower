@@ -26,6 +26,7 @@ namespace Bot.Core
         public static IServiceProvider RegisterBotServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
+            sp.AddService<ITownCommandQueue>(new TownCommandQueue(sp));
             sp.AddService<ITownCleanup>(new TownCleanup(sp));
             var gameplay = new BotGameplay(sp);
             sp.AddService<IVoteHandler>(gameplay);

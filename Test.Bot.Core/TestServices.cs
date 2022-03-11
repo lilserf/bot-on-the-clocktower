@@ -39,21 +39,21 @@ namespace Test.Bot.Core
         }
 
         [Theory]
-        [InlineData(typeof(ITownCleanup), typeof(TownCleanup))]
         [InlineData(typeof(IVoteHandler), typeof(BotGameplay))]
         [InlineData(typeof(IBotGameplayInteractionHandler), typeof(BotGameplayInteractionHandler))]
         [InlineData(typeof(IBotMessaging), typeof(BotMessaging))]
-        public void RegisterBotServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
+        [InlineData(typeof(ITownCommandQueue), typeof(TownCommandQueue))]		
+        [InlineData(typeof(ITownCleanup), typeof(TownCleanup))]
+        public void CreateBotServices_CreatesAllRequiredServices(Type serviceInterfaceType, Type serviceImplType)
         {
             RegisterMock(new Mock<IBotSystem>());
             RegisterMock(new Mock<ICallbackSchedulerFactory>());
             RegisterMock(new Mock<IComponentService>());
 
             var newSp = ServiceFactory.RegisterBotServices(GetServiceProvider());
-            var service = newSp.GetService(serviceInterface);
+            var impl = newSp.GetService(serviceInterfaceType);
 
-            Assert.NotNull(service);
-            Assert.IsType(serviceImpl, service);
+            Assert.IsType(serviceImplType, impl);
         }
     }
 }

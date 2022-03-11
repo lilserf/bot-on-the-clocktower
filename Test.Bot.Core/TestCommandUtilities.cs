@@ -13,11 +13,12 @@ namespace Test.Bot.Core
         [Fact]
         public void InteractionWrapper_NoException_InnerFuncCalled()
         {
-            Mock<IBotInteractionContext> mockContext = new();
+            TownKey mockTownKey = new(123, 456);
+            Mock<IMember> mockRequester = new();
 
             Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
-            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockTownKey, mockRequester.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -27,11 +28,12 @@ namespace Test.Bot.Core
         [Fact]
         public void InteractionWrapper_NoException_InnerFuncPassedProcessLogger()
         {
-            Mock<IBotInteractionContext> mockContext = new();
+            TownKey mockTownKey = new(123, 456);
+            Mock<IMember> mockRequester = new();
 
             Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
-            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockTownKey, mockRequester.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -43,25 +45,21 @@ namespace Test.Bot.Core
         public void InteractionWrapper_UnhandledException_AuthorSentErrorMessage()
         {
             Mock<IMember> mockAuthor = new();
-            Mock<IBotInteractionContext> mockContext = new();
             Mock<IGuild> mockGuild = new();
             Mock<IChannel> mockChannel = new();
             ulong mockGuildId = 12345;
             ulong mockChannelId = 67890;
+            TownKey mockTownKey = new(mockGuildId, mockChannelId);
 
             mockGuild.SetupGet(g => g.Id).Returns(mockGuildId);
             mockChannel.SetupGet(g => g.Id).Returns(mockChannelId);
-
-            mockContext.SetupGet(c => c.Member).Returns(mockAuthor.Object);
-            mockContext.SetupGet(c => c.Guild).Returns(mockGuild.Object);
-            mockContext.SetupGet(c => c.Channel).Returns(mockChannel.Object);
 
             Mock<Func<IProcessLogger, Task<string>>> mockFunc = new();
 
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
 
-            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockTownKey, mockAuthor.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -77,9 +75,7 @@ namespace Test.Bot.Core
         public void InteractionWrapper_UnhandledException_ExceptionSendingToAuthor_ContinuesAnyway()
         {
             Mock<IMember> mockAuthor = new();
-            Mock<IBotInteractionContext> mockContext = new();
-
-            mockContext.SetupGet(c => c.Member).Returns(mockAuthor.Object);
+            TownKey mockTownKey = new(123, 456);
 
             mockAuthor.Setup(m => m.SendMessageAsync(It.IsAny<string>())).ThrowsAsync(new ApplicationException());
 
@@ -88,7 +84,7 @@ namespace Test.Bot.Core
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
 
-            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockContext.Object, mockFunc.Object);
+            var t = InteractionWrapper.TryProcessReportingErrorsAsync(mockTownKey, mockAuthor.Object, mockFunc.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }

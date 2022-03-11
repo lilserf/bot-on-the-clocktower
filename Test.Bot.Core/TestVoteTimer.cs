@@ -142,7 +142,7 @@ namespace Test.Bot.Core
         {
             var vt = new BotVoteTimer(GetServiceProvider());
 
-            var t = vt.RunVoteTimerUnsafe(InteractionContextMock.Object, timeString, ProcessLoggerMock.Object);
+            var t = vt.RunVoteTimerUnsafe(MockTownKey, timeString, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
             Assert.False(string.IsNullOrWhiteSpace(t.Result));
