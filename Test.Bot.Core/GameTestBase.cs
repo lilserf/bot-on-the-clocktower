@@ -237,6 +237,7 @@ namespace Test.Bot.Core
 
         protected BotGameplayInteractionHandler CreateGameplayInteractionHandler()
         {
+            RegisterService<ITownCommandQueue>(new TownCommandQueue(GetServiceProvider()));
             return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
         }
 
