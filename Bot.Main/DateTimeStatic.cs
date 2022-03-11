@@ -5,6 +5,6 @@ namespace Bot.Main
 {
     public class DateTimeStatic : IDateTime
     {
-        public DateTime Now => DateTime.Now;
+        public DateTime Now => DateTime.UtcNow;
     }
 }

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-	class ShuffleService : IShuffleService
+    public class ShuffleService : IShuffleService
 	{
 		private static Random rng = new Random();
 		// Okay this should be a Fisher-Yates-Durstenfeld shuffle

@@ -6,7 +6,7 @@ namespace Test.Bot.Base
 {
     public class TestBase
     {
-        private readonly MockServiceProvider m_mockServiceProvider = new();
+        private readonly Mock m_mockServiceProvider = new();
         protected IServiceProvider GetServiceProvider() => m_mockServiceProvider;
 
         protected T RegisterService<T>(T service) where T : class

@@ -2,28 +2,43 @@
 using Bot.Core;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Test.Bot.Base;
 using Xunit;
 
 namespace Test.Bot.Core
 {
     public class TestCleanup : GameTestBase
     {
+        [Fact]
+        public void ActivityRecorded_CleanupScheduled()
+        {
+            var tc = new TownCleanup(GetServiceProvider());
+
+            var t = tc.RecordActivityAsync(MockTownKey);
+            t.Wait(50);
+            Assert.True(t.IsCompleted);
+
+            TownKeyCallbackSchedulerMock.Verify(x => x.ScheduleCallback(It.Is<TownKey>(tk => tk == MockTownKey), It.IsAny<DateTime>()), Times.Once);
+        }
 
         [Fact]
-        public void CurrGame_CleanupScheduled()
+        public void CleanupHappened_ActivityCleared()
+        {
+            var tc = new TownCleanup(GetServiceProvider());
+
+            Assert.NotNull(TownKeyCallback);
+            TownKeyCallback!(MockTownKey);
+
+            GameActivityDatabaseMock.Verify(x => x.ClearActivityAsync(It.Is<TownKey>(t => t == MockTownKey)), Times.Once);
+        }
+
+        [Fact]
+        public void CurrGame_CleanupRecorded()
         {
             MockGameInProgress();
 
             RunCurrentGameAssertComplete();
 
-            GameActivityDatabaseMock.Verify(x => x.RecordActivity(It.Is<TownKey>(tk => tk == MockTownKey)), Times.Once);
-            TownKeyCallbackSchedulerMock.Verify(x => x.ScheduleCallback(It.Is<TownKey>(tk => tk == MockTownKey), It.IsAny<DateTime>()), Times.Once);
-
+            TownCleanupMock.Verify(x => x.RecordActivityAsync(It.Is<TownKey>(tk => tk == MockTownKey)), Times.Once);
         }
 
         [Theory]
@@ -39,9 +54,7 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            var c = gs.CleanupTown(MockTownKey);
-            c.Wait(50);
-            Assert.True(c.IsCompleted);
+            TownCleanupMock.Raise(tc => tc.CleanupRequested += null, new TownCleanupRequestedArgs(MockTownKey));
 
             if(gameInProgress)
                 ActiveGameServiceMock.Verify(x => x.EndGame(It.Is<ITown>(t => t == TownMock.Object)), Times.Once);
@@ -49,9 +62,6 @@ namespace Test.Bot.Core
             Villager1Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
             Villager2Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
             Villager3Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-
-            GameActivityDatabaseMock.Verify(x => x.ClearActivity(It.Is<TownKey>(t => t == MockTownKey)), Times.Once);
         }
-
     }
 }

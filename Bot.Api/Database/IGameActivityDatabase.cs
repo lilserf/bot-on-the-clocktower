@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Api.Database
@@ -12,8 +10,8 @@ namespace Bot.Api.Database
 
         public Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords();
 
-        public Task RecordActivity(TownKey townKey);
+        public Task RecordActivityAsync(TownKey townKey, DateTime activityTime);
 
-        public Task ClearActivity(TownKey townKey);
+        public Task ClearActivityAsync(TownKey townKey);
     }
 }

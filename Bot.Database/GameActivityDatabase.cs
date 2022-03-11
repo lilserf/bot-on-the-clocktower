@@ -4,8 +4,6 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Database
@@ -36,28 +34,20 @@ namespace Bot.Database
             return await m_collection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords()
+        public async Task<IEnumerable<IGameActivityRecord>> GetAllActivityRecords() => await m_collection.Find(_ => true).ToListAsync();
+
+        public Task ClearActivityAsync(TownKey townKey) => m_collection.DeleteManyAsync(FilterFromKey(townKey));
+
+        public Task RecordActivityAsync(TownKey townKey, DateTime activityTime)
         {
-            return await m_collection.Find(new BsonDocument()).ToListAsync();
-        }
-
-        public async Task ClearActivity(TownKey townKey)
-        {
-            var filter = FilterFromKey(townKey);
-
-            await m_collection.DeleteManyAsync(filter);
-        }
-
-
-        public Task RecordActivity(TownKey townKey)
-        {
+            Serilog.Log.Debug("Recording activity for {townKey} at {time}", townKey, activityTime);
             var filter = FilterFromKey(townKey);
 
             MongoGameActivityRecord rec = new()
             {
                 GuildId = townKey.GuildId,
                 ChannelId = townKey.ControlChannelId,
-                LastActivity = DateTime.Now,
+                LastActivity = activityTime,
             };
 
             ReplaceOptions options = new()
