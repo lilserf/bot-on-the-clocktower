@@ -1,5 +1,5 @@
 ﻿#if DEBUG
-#define TEST_RAPID_CLEANUP
+//#define TEST_RAPID_CLEANUP
 #endif
 
 using Bot.Api;
