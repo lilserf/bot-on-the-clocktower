@@ -8,10 +8,11 @@ namespace Bot.Core
 {
     public class BotMessaging : IBotMessaging
     {
-        private readonly IBotSystem m_system;
+        private readonly ITownCommandQueue m_townCommandQueue;
+
         public BotMessaging(IServiceProvider services)
         {
-            services.Inject(out m_system);
+            services.Inject(out m_townCommandQueue);
         }
 
         private const string DemonGreeting = "{0}: You are the **demon**. ";
@@ -51,17 +52,13 @@ namespace Bot.Core
         private static async Task SendDemonMessage(IReadOnlyCollection<IMember> demons, IReadOnlyCollection<IMember> minions, IProcessLogger _)
         {
             foreach (var demon in demons)
-            {
                 await demon.SendMessageAsync(BuildDemonMessage(demons, demon, minions));
-            }
         }
 
         private static async Task SendMinionMessages(IReadOnlyCollection<IMember> demons, IReadOnlyCollection<IMember> minions, IProcessLogger _)
         {
             foreach(var m in minions)
-            {
                 await m.SendMessageAsync(BuildMinionMessage(demons, m, minions.Where(x => !x.Equals(m)).ToList()));
-            }
         }
 
         public async Task<string> SendEvilMessage(IMember demon, IReadOnlyCollection<IMember> minions)
@@ -128,40 +125,33 @@ namespace Bot.Core
             return "The Evil team has been informed, misleadingly.";
         }
 
-        public async Task CommandEvilMessageAsync(IBotInteractionContext ctx, IMember demon, IReadOnlyCollection<IMember> minions, IMember? magician)
+        public Task CommandEvilMessageAsync(IBotInteractionContext ctx, IMember demon, IReadOnlyCollection<IMember> minions, IMember? magician)
         {
-            await ctx.DeferInteractionResponse();
-
-            string msg;
-            if (magician != null)
+            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
             {
-                msg = await SendMagicianMessage(demon, minions, magician);
-            }
-            else
-            {
-                msg = await SendEvilMessage(demon, minions);
-            }
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(msg);
-            await ctx.EditResponseAsync(builder);
+                string msg = (magician != null)
+                    ? await SendMagicianMessage(demon, minions, magician)
+                    : await SendEvilMessage(demon, minions);
+                return new QueuedCommandResult(msg);
+            });
         }
 
-        public async Task CommandLunaticMessageAsync(IBotInteractionContext ctx, IMember lunatic, IReadOnlyCollection<IMember> fakeMinions)
+        public Task CommandLunaticMessageAsync(IBotInteractionContext ctx, IMember lunatic, IReadOnlyCollection<IMember> fakeMinions)
         {
-            await ctx.DeferInteractionResponse();
-            string msg = await SendLunaticMessage(lunatic, fakeMinions);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(msg);
-            await ctx.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            {
+                string msg = await SendLunaticMessage(lunatic, fakeMinions);
+                return new QueuedCommandResult(msg);
+            });
         }
 
-        public async Task CommandLegionMessageAsync(IBotInteractionContext ctx, IReadOnlyCollection<IMember> legions)
+        public Task CommandLegionMessageAsync(IBotInteractionContext ctx, IReadOnlyCollection<IMember> legions)
         {
-            await ctx.DeferInteractionResponse();
-            string msg = await SendLegionMessage(legions);
-
-            var builder = m_system.CreateWebhookBuilder().WithContent(msg);
-            await ctx.EditResponseAsync(builder);
+            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            {
+                string msg = await SendLegionMessage(legions);
+                return new QueuedCommandResult(msg);
+            });
         }
     }
 }
