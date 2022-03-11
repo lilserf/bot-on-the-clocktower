@@ -12,10 +12,12 @@ namespace Bot.Core
     public class QueuedCommandResult
     {
         public string Message { get; }
+        public bool IncludeComponents { get; }
         public IBotComponent[][] ComponentSets { get; }
-        public QueuedCommandResult(string message, params IBotComponent[][] componentSets)
+        public QueuedCommandResult(string message, bool includeComponents=false, params IBotComponent[][] componentSets)
         {
             Message = message;
+            IncludeComponents = includeComponents;
             ComponentSets = componentSets;
         }
     }
