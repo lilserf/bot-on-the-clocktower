@@ -100,15 +100,15 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg, "night", context.Guild, context.Member);
 
-            var message = await PhaseNightInternal(context);
+            var message = await PhaseNightInternal(context.GetTownKey(), context.Member);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> PhaseNightInternal(IBotInteractionContext context)
+        public async Task<string> PhaseNightInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
@@ -123,15 +123,15 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg, "day", context.Guild, context.Member);
 
-            var message = await PhaseDayInternal(context);
+            var message = await PhaseDayInternal(context.GetTownKey(), context.Member);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> PhaseDayInternal(IBotInteractionContext context)
+        public async Task<string> PhaseDayInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
@@ -146,15 +146,15 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg, "vote", context.Guild, context.Member);
 
-            var message = await PhaseVoteInternal(context);
+            var message = await PhaseVoteInternal(context.GetTownKey(), context.Member);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> PhaseVoteInternal(IBotInteractionContext context)
+        public async Task<string> PhaseVoteInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     // TODO: more error reporting here?
@@ -166,12 +166,12 @@ namespace Bot.Core
 
         public async Task CommandGameAsync(IBotInteractionContext context)
         {
-            await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            await InteractionWrapper.TryProcessReportingErrorsAsync(context.GetTownKey(), context.Member, async (processLog) =>
             {
                 await context.DeferInteractionResponse();
                 Serilog.Log.Information(CommandLogMsg, "game", context.Guild, context.Member);
 
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(context.GetTownKey(), context.Member, processLog);
                 if (game == null)
                 {
                     var webhook = m_system.CreateWebhookBuilder().WithContent("Couldn't start a valid game in this town. Are there enough players online?");
@@ -194,15 +194,15 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg, "endGame", context.Guild, context.Member);
 
-            var message = await EndGameInternal(context);
+            var message = await EndGameInternal(context.GetTownKey(), context.Member);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> EndGameInternal(IBotInteractionContext context)
+        public async Task<string> EndGameInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, async (processLog) =>
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                var game = await m_gameplay.CurrentGameAsync(context, processLog);
+                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
                 {
                     return "Couldn't find a current game to end!";
@@ -216,13 +216,13 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg+": {users}", "storytellers", context.Guild, context.Member, users);
 
-            var message = await SetStorytellersInternal(context, users);
+            var message = await SetStorytellersInternal(context.GetTownKey(), context.Member, users);
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> SetStorytellersInternal(IBotInteractionContext context, IEnumerable<IMember> users)
+        public async Task<string> SetStorytellersInternal(TownKey townKey, IMember requester, IEnumerable<IMember> users)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, (processLog) => m_gameplay.SetStorytellersUnsafe(context, users, processLog));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, (processLog) => m_gameplay.SetStorytellersUnsafe(townKey, requester, users, processLog));
         }
 
         public async Task RunVoteTimerAsync(IBotInteractionContext context, string timeString)
@@ -230,14 +230,14 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg, "voteTimer", context.Guild, context.Member);
 
-            var message = await RunVoteTimerInternal(context, timeString);
+            var message = await RunVoteTimerInternal(context.GetTownKey(), context.Member, timeString);
 
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> RunVoteTimerInternal(IBotInteractionContext context, string timeString)
+        public async Task<string> RunVoteTimerInternal(TownKey townKey, IMember requester, string timeString)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, processLoggger => m_voteTimer.RunVoteTimerUnsafe(context, timeString, processLoggger));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunVoteTimerUnsafe(townKey, timeString, processLoggger));
         }
 
         public async Task RunStopVoteTimerAsync(IBotInteractionContext context)
@@ -245,14 +245,14 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(CommandLogMsg, "stopVoteTimer", context.Guild, context.Member);
 
-            var message = await RunStopVoteTimerInternal(context);
+            var message = await RunStopVoteTimerInternal(context.GetTownKey(), context.Member);
 
             await EditOriginalMessage(context, message);
         }
 
-        public async Task<string> RunStopVoteTimerInternal(IBotInteractionContext context)
+        public async Task<string> RunStopVoteTimerInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(context, processLoggger => m_voteTimer.RunStopVoteTimerUnsafe(context, processLoggger));
+            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunStopVoteTimerUnsafe(townKey, processLoggger));
         }
         #endregion
 
@@ -262,7 +262,7 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(ButtonLogMsg, "Night", context.Guild, context.Member);
 
-            var message = await PhaseNightInternal(context);
+            var message = await PhaseNightInternal(context.GetTownKey(), context.Member);
 
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_dayButton, m_moreButton);
@@ -274,7 +274,7 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(ButtonLogMsg, "Day", context.Guild, context.Member);
 
-            var message = await PhaseDayInternal(context);
+            var message = await PhaseDayInternal(context.GetTownKey(), context.Member);
 
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_voteButton, m_endGameButton,  m_moreButton);
@@ -287,7 +287,7 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(ButtonLogMsg, "Vote", context.Guild, context.Member);
 
-            var message = await PhaseVoteInternal(context);
+            var message = await PhaseVoteInternal(context.GetTownKey(), context.Member);
 
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_nightButton, m_endGameButton, m_moreButton);
@@ -310,7 +310,7 @@ namespace Bot.Core
             await context.DeferInteractionResponse();
             Serilog.Log.Information(ButtonLogMsg, "End Game", context.Guild, context.Member);
 
-            var message = await EndGameInternal(context);
+            var message = await EndGameInternal(context.GetTownKey(), context.Member);
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             await context.EditResponseAsync(builder);
         }
@@ -322,7 +322,7 @@ namespace Bot.Core
 
             var value = context.ComponentValues.First();
 
-            var message = await RunVoteTimerInternal(context, value);
+            var message = await RunVoteTimerInternal(context.GetTownKey(), context.Member, value);
             var builder = m_system.CreateWebhookBuilder().WithContent(message);
             builder = builder.AddComponents(m_nightButton, m_moreButton);
             builder = builder.AddComponents(m_voteTimerMenu);

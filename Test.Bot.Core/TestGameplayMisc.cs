@@ -134,7 +134,7 @@ namespace Test.Bot.Core
             var sts = new[] { InteractionAuthorMock.Object, Villager1Mock.Object };
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
+            var t = gs.SetStorytellersUnsafe(MockTownKey, InteractionAuthorMock.Object, sts, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
@@ -152,7 +152,7 @@ namespace Test.Bot.Core
             var sts = new[] { Villager1Mock.Object, Villager2Mock.Object };
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.SetStorytellersUnsafe(InteractionContextMock.Object, sts, ProcessLoggerMock.Object);
+            var t = gs.SetStorytellersUnsafe(MockTownKey, InteractionAuthorMock.Object, sts, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 

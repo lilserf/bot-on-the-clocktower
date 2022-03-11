@@ -16,7 +16,7 @@ namespace Test.Bot.Core
     {
         protected const ulong MockGuildId = 1337;
         protected const ulong MockControlChannelId = 42;
-        protected static TownKey MockTownKey = new TownKey(MockGuildId, MockControlChannelId);
+        protected readonly static TownKey MockTownKey = new(MockGuildId, MockControlChannelId);
         protected const string StorytellerDisplayName = "Peter Storyteller";
 
         protected readonly Mock<ICallbackScheduler<TownKey>> TownKeyCallbackSchedulerMock = new(MockBehavior.Strict);
@@ -101,11 +101,13 @@ namespace Test.Bot.Core
 
             ProcessLoggerMock.Setup(c => c.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
-            var memberList = new Dictionary<ulong, IMember>();
-            memberList[101] = InteractionAuthorMock.Object;
-            memberList[102] = Villager1Mock.Object;
-            memberList[103] = Villager2Mock.Object;
-            memberList[104] = Villager3Mock.Object;
+            var memberList = new Dictionary<ulong, IMember>
+            {
+                [101] = InteractionAuthorMock.Object,
+                [102] = Villager1Mock.Object,
+                [103] = Villager2Mock.Object,
+                [104] = Villager3Mock.Object
+            };
 
             GuildMock.SetupGet(x => x.Id).Returns(MockGuildId);
             GuildMock.SetupGet(x => x.Members).Returns(memberList);
@@ -233,10 +235,12 @@ namespace Test.Bot.Core
             return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
         }
 
-        protected void RunCurrentGameAssertComplete()
+        protected void RunCurrentGameAssertComplete(IMember? requester = null)
         {
+            requester ??= InteractionAuthorMock.Object;
+
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            var t = gs.CurrentGameAsync(MockTownKey, requester, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
         }

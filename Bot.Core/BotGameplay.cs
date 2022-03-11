@@ -169,33 +169,30 @@ namespace Bot.Core
             }
         }
 
-
-        // TODO: better name for this method, probably
-        public async Task<IGame?> CurrentGameAsync(IBotInteractionContext context, IProcessLogger logger)
+        public async Task<IGame?> CurrentGameAsync(TownKey townKey, IMember requester, IProcessLogger logger)
         {
-            Serilog.Log.Debug("CurrentGameAsync from context {@context}", context);
-            var town = await GetValidTownOrLogErrorAsync(context, logger);
+            Serilog.Log.Debug("CurrentGameAsync from town {@townKey}", townKey);
+            var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
                 return null;
             if (!CheckIsTownViable(town, logger))
                 return null;
-
-            if (m_activeGameService.TryGetGame(context, out IGame? game))
+            
+            ScheduleCleanup(townKey);
+            if (m_activeGameService.TryGetGame(townKey, out IGame? game))
             {
                 Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
 
-                ScheduleCleanup(TownKey.FromTown(town));
-
                 //Resolve a change in Storytellers
-                if (!game.Storytellers.Contains(context.Member))
+                if (!game.Storytellers.Contains(requester))
                 {
                     foreach (var user in game.Storytellers.ToList())
                     {
                         game.AddVillager(user);
                         game.RemoveStoryteller(user);
                     }
-                    game.RemoveVillager(context.Member);
-                    game.AddStoryteller(context.Member);
+                    game.RemoveVillager(requester);
+                    game.AddStoryteller(requester);
                 }
 
                 await TagStorytellers(game, logger);
@@ -234,15 +231,12 @@ namespace Bot.Core
             }
             else
             {
-                var townKey = TownKey.FromTown(town);
-                ScheduleCleanup(townKey);
-
                 // No record, so create one
                 game = new Game(townKey);
                 Serilog.Log.Debug("CurrentGameAsync created new game {@game} from town {@town}", game, town);
 
                 // Assume the author of the command is the Storyteller
-                var storyteller = context.Member;
+                var storyteller = requester;
                 game.AddStoryteller(storyteller);
                 Serilog.Log.Debug("CurrentGameAsync: Storyteller is {@storyteller}", storyteller);
 
@@ -253,9 +247,9 @@ namespace Bot.Core
                     allUsers.AddRange(c.Users);
                 }
 
-                if(town.NightCategory != null)
+                if (town.NightCategory != null)
                 {
-                    foreach(var c in town.NightCategory.Channels.Where(c => c.IsVoice))
+                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
                     {
                         allUsers.AddRange(c.Users);
                     }
@@ -277,9 +271,9 @@ namespace Bot.Core
                 if (!storytellerInChannels)
                     return null;
                 // Check that the players of the game are actually in channels?
-                foreach(var user in game.Villagers)
+                foreach (var user in game.Villagers)
                 {
-                    if(!allUsers.Contains(user))
+                    if (!allUsers.Contains(user))
                         return null;
                 }
 
@@ -421,10 +415,10 @@ namespace Bot.Core
 
         }
 
-        public async Task<string> SetStorytellersUnsafe(IBotInteractionContext context, IEnumerable<IMember> users, IProcessLogger logger)
+        public async Task<string> SetStorytellersUnsafe(TownKey townKey, IMember requester, IEnumerable<IMember> users, IProcessLogger logger)
         {
-            IGame? game = await CurrentGameAsync(context, logger);
-            var town = await GetValidTownOrLogErrorAsync(context, logger);
+            IGame? game = await CurrentGameAsync(townKey, requester, logger);
+            var town = await GetValidTownOrLogErrorAsync(townKey, logger);
 
             if (game == null)
             {

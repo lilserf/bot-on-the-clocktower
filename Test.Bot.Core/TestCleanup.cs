@@ -35,7 +35,7 @@ namespace Test.Bot.Core
                 MockGameInProgress();
             
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(InteractionContextMock.Object, ProcessLoggerMock.Object);
+            var t = gs.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
