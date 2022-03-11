@@ -28,7 +28,8 @@ namespace Test.Bot.Core
         [InlineData(typeof(IVoteHandler), typeof(BotGameplay))]
         [InlineData(typeof(IBotGameplayInteractionHandler), typeof(BotGameplayInteractionHandler))]
         [InlineData(typeof(IBotMessaging), typeof(BotMessaging))]
-        [InlineData(typeof(ITownCommandQueue), typeof(TownCommandQueue))]
+        [InlineData(typeof(ITownCommandQueue), typeof(TownCommandQueue))]		
+        [InlineData(typeof(ITownCleanup), typeof(TownCleanup))]
         public void CreateBotServices_CreatesAllRequiredServices(Type serviceInterfaceType, Type serviceImplType)
         {
             RegisterMock(new Mock<IBotSystem>());

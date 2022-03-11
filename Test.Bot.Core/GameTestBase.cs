@@ -21,6 +21,7 @@ namespace Test.Bot.Core
 
         protected readonly Mock<ICallbackScheduler<TownKey>> TownKeyCallbackSchedulerMock = new(MockBehavior.Strict);
         protected readonly Mock<ICallbackSchedulerFactory> CallbackSchedulerFactoryMock = new(MockBehavior.Strict);
+        protected Func<TownKey, Task>? TownKeyCallback;
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
         protected readonly Mock<IBotWebhookBuilder> WebhookBuilderMock = new();
@@ -29,6 +30,7 @@ namespace Test.Bot.Core
         protected readonly Mock<ITownDatabase> TownLookupMock = new();
         protected readonly Mock<IDateTime> DateTimeMock = new();
         protected readonly Mock<IGameActivityDatabase> GameActivityDatabaseMock = new();
+        protected readonly Mock<ITownCleanup> TownCleanupMock = new();
         protected readonly Mock<ITown> TownMock = new();
         protected readonly Mock<ITownRecord> TownRecordMock = new();
         protected readonly Mock<IBotClient> ClientMock = new();
@@ -62,7 +64,9 @@ namespace Test.Bot.Core
         public GameTestBase()
         {
             RegisterMock(CallbackSchedulerFactoryMock);
-            CallbackSchedulerFactoryMock.Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyCallbackSchedulerMock.Object);
+            CallbackSchedulerFactoryMock
+                .Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyCallbackSchedulerMock.Object)
+                .Callback<Func<TownKey, Task>, TimeSpan>((cb, _) => TownKeyCallback = cb);
 
             TownKeyCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
 
@@ -78,6 +82,7 @@ namespace Test.Bot.Core
             RegisterMock(TownLookupMock);
             RegisterMock(DateTimeMock);
             RegisterMock(GameActivityDatabaseMock);
+            RegisterMock(TownCleanupMock);
             RegisterMock(ActiveGameServiceMock);
             RegisterMock(ComponentServiceMock);
             RegisterMock(ShuffleServiceMock);

@@ -15,9 +15,10 @@ namespace Test.Bot.Database
         public void RegisterServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var factory = newSp.GetService(serviceInterface);
+            var service = newSp.GetService(serviceInterface);
 
-            Assert.IsType(serviceImpl, factory);
+            Assert.NotNull(service);
+            Assert.IsType(serviceImpl, service);
         }
     }
 }

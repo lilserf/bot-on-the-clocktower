@@ -1,6 +1,4 @@
 ﻿using Bot.Api;
-using Bot.Api.Database;
-using Bot.Core.Callbacks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,65 +10,16 @@ namespace Bot.Core
     {
         private readonly IActiveGameService m_activeGameService;
         private readonly IShuffleService m_shuffle;
-        private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
-        private readonly IDateTime m_dateTime;
-        private readonly IGameActivityDatabase m_gameActivityDb;
+        private readonly ITownCleanup m_townCleanup;
 
-        private const int HOURS_INACTIVITY = 5;
 		public BotGameplay(IServiceProvider services)
             : base(services)
 		{
             services.Inject(out m_activeGameService);
             services.Inject(out m_shuffle);
+            services.Inject(out m_townCleanup);
 
-            var callbackFactory = services.GetService<ICallbackSchedulerFactory>();
-            m_callbackScheduler = callbackFactory.CreateScheduler<TownKey>(CleanupTown, TimeSpan.FromHours(1));
-
-            services.Inject(out m_dateTime);
-            services.Inject(out m_gameActivityDb);
-
-            // TODO: async startup-time call to do this
-            //await ScheduleOutstandingCleanup();
-        }
-
-        private async Task ScheduleOutstandingCleanup()
-        {
-            var recs = await m_gameActivityDb.GetAllActivityRecords();
-            Serilog.Log.Debug("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
-            foreach(var rec in recs)
-            {
-                ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId));
-            }
-        }
-
-        // Schedule this town for a cleanup after a long time period
-        private void ScheduleCleanup(TownKey townKey)
-        {
-            Serilog.Log.Debug("ScheduleCleanup for town {@townKey}", townKey);
-            m_gameActivityDb.RecordActivity(townKey);
-            var time = m_dateTime.Now + TimeSpan.FromHours(HOURS_INACTIVITY);
-            m_callbackScheduler.ScheduleCallback(townKey, time);
-        }
-
-        public async Task CleanupTown(TownKey key)
-        {
-            Serilog.Log.Debug("CleanupTown for town {@townKey}", key);
-
-            try
-            {
-                var logger = new ProcessLogger();
-                await EndGameUnsafe(key, logger);
-            }
-            catch (Exception)
-            {
-                // Do what?
-            }
-            finally
-            {
-                // Success or failure, clear the record
-                await m_gameActivityDb.ClearActivity(key);
-            }
-
+            m_townCleanup.CleanupRequested += TownCleanup_CleanupRequested;
         }
 
         public static bool CheckIsTownViable(ITown? town, IProcessLogger logger)
@@ -121,6 +70,12 @@ namespace Bot.Core
             }
 
             return success;
+        }
+
+        private void TownCleanup_CleanupRequested(object? sender, TownCleanupRequestedArgs e)
+        {
+            var logger = new ProcessLogger();
+            EndGameUnsafe(e.TownKey, logger).ConfigureAwait(continueOnCapturedContext: true);
         }
 
         private static async Task TagStorytellers(IGame game, IProcessLogger logger)
@@ -178,7 +133,7 @@ namespace Bot.Core
             if (!CheckIsTownViable(town, logger))
                 return null;
             
-            ScheduleCleanup(townKey);
+            Task activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
             if (m_activeGameService.TryGetGame(townKey, out IGame? game))
             {
                 Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
@@ -282,6 +237,8 @@ namespace Bot.Core
 
                 m_activeGameService.RegisterGame(town, game);
             }
+
+            await activityRecordTask;
 
             return game;
         }
