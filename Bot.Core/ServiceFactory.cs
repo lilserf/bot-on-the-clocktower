@@ -15,7 +15,6 @@ namespace Bot.Core
             ServiceProvider sp = new(parentServices);
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
 
-
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
@@ -28,6 +27,7 @@ namespace Bot.Core
         public static IServiceProvider RegisterBotServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
+            sp.AddService<ITownCommandQueue>(new TownCommandQueue(sp));
             var gameplay = new BotGameplay(sp);
             sp.AddService<IVoteHandler>(gameplay);
             var voteTimer = new BotVoteTimer(sp);
