@@ -206,7 +206,7 @@ namespace Bot.Core
 
         public Task CommandDayAsync(IBotInteractionContext context) => QueueDayCommandAsync(context, false);
         public Task DayButtonPressed(IBotInteractionContext context) => QueueDayCommandAsync(context, true);
-        public Task QueueDayCommandAsync(IBotInteractionContext context, bool includeComponents)
+        private Task QueueDayCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
             return m_townCommandQueue.QueueCommandAsync("Sending players to daytime...", context, async () =>
             {
@@ -218,7 +218,7 @@ namespace Bot.Core
 
         public Task CommandVoteAsync(IBotInteractionContext context) => QueueVoteCommandAsync(context, false);
         public Task VoteButtonPressed(IBotInteractionContext context) => QueueVoteCommandAsync(context, true);
-        public Task QueueVoteCommandAsync(IBotInteractionContext context, bool includeComponents)
+        private Task QueueVoteCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
             return m_townCommandQueue.QueueCommandAsync("Calling players for a vote...", context, async () =>
             {
@@ -240,7 +240,7 @@ namespace Bot.Core
 
         public Task CommandEndGameAsync(IBotInteractionContext context) => QueueEndGameCommandAsync(context);
         public Task EndGameButtonPressed(IBotInteractionContext context) => QueueEndGameCommandAsync(context);
-        public Task QueueEndGameCommandAsync(IBotInteractionContext context)
+        private Task QueueEndGameCommandAsync(IBotInteractionContext context)
         {
             return m_townCommandQueue.QueueCommandAsync("Ending the game...", context, async () =>
             {
@@ -252,7 +252,7 @@ namespace Bot.Core
 
         public Task RunVoteTimerAsync(IBotInteractionContext context, string timeString) => QueueVoteTimerCommandAsync(context, timeString, false);
         public Task VoteTimerMenuSelected(IBotInteractionContext context) => QueueVoteTimerCommandAsync(context, context.ComponentValues.First(), true);
-        public Task QueueVoteTimerCommandAsync(IBotInteractionContext context, string timeString, bool includeComponents)
+        private Task QueueVoteTimerCommandAsync(IBotInteractionContext context, string timeString, bool includeComponents)
         {
             return m_townCommandQueue.QueueCommandAsync("Setting a timer before a vote happens...", context, async () =>
             {
