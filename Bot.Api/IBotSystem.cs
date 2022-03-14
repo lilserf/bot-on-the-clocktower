@@ -39,5 +39,7 @@ namespace Bot.Api
         }
         
         IBotComponent CreateSelectMenu(string customId, string placeholder, IEnumerable<SelectMenuOption> options, bool disabled = false, int minOptions = 1, int maxOptions = 1);
+
+        IBotComponent CreateTextInput(string customId, string label, string? placeholder = null, string? value = null, bool required = true);
     }
 }

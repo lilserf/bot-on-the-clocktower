@@ -41,5 +41,12 @@ namespace Bot.DSharp
 
         public IInteractionResponseBuilder CreateInteractionResponseBuilder() => new DSharpInteractionResponseBuilder(new DiscordInteractionResponseBuilder());
 
+
+        public IBotComponent CreateTextInput(string customId, string label, string? placeholder=null, string? value=null, bool required=true)
+        {
+            var text1 = new TextInputComponent(label, customId, placeholder, value, required);
+            return new DSharpComponent(text1);
+        }
+
     }
 }

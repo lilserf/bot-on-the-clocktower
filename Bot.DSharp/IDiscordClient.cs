@@ -16,6 +16,7 @@ namespace Bot.DSharp
 
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
+        event AsyncEventHandler<IDiscordClient, ModalSubmitEventArgs> ModalSubmitted;
 
         Task<IChannel?> GetChannelAsync(ulong id);
         Task<IChannelCategory?> GetChannelCategoryAsync(ulong id);
@@ -27,12 +28,14 @@ namespace Bot.DSharp
     {
         private readonly AsyncEventWrapper<ReadyEventArgs> mReadyWrapper;
         private readonly AsyncEventWrapper<ComponentInteractionCreateEventArgs> mComponentInteractionCreatedWrapper;
+        private readonly AsyncEventWrapper<ModalSubmitEventArgs> mModalSubmitWrapper;
 
         public DiscordClientWrapper(DiscordClient wrapped)
             : base(wrapped)
         {
             mReadyWrapper = new AsyncEventWrapper<ReadyEventArgs>(this, f => Wrapped.Ready += f, f => Wrapped.Ready -= f);
             mComponentInteractionCreatedWrapper = new AsyncEventWrapper<ComponentInteractionCreateEventArgs>(this, f => Wrapped.ComponentInteractionCreated += f, f => Wrapped.ComponentInteractionCreated -= f);
+            mModalSubmitWrapper = new AsyncEventWrapper<ModalSubmitEventArgs>(this, f => Wrapped.ModalSubmitted += f, f => Wrapped.ModalSubmitted -= f);
         }
 
 
@@ -46,6 +49,12 @@ namespace Bot.DSharp
         {
             add { mComponentInteractionCreatedWrapper.Event += value; }
             remove { mComponentInteractionCreatedWrapper.Event -= value; }
+        }
+
+        public event AsyncEventHandler<IDiscordClient, ModalSubmitEventArgs> ModalSubmitted
+        {
+            add { mModalSubmitWrapper.Event += value; }
+            remove {  mModalSubmitWrapper.Event -= value;}
         }
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);

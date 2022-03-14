@@ -28,5 +28,18 @@ namespace Bot.DSharp
 			return this;
 		}
 
-	}
+        public IInteractionResponseBuilder WithTitle(string title)
+        {
+			var w2 = Wrapped.WithTitle(title);
+			if (w2 != Wrapped) throw new ApplicationException("Unexpected chained call did not return itself");
+			return this;
+		}
+
+        public IInteractionResponseBuilder WithCustomId(string customId)
+        {
+			var w2 = Wrapped.WithCustomId(customId);
+			if (w2 != Wrapped) throw new ApplicationException("Unexpected chained call did not return itself");
+			return this;
+		}
+    }
 }

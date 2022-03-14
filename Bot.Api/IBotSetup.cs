@@ -20,5 +20,7 @@ namespace Bot.Api
         public Task AddTown(ITown town, IMember author);
 
         public Task CreateTown(TownDescription townDesc);
+
+        public Task CommandCreateTown(IBotInteractionContext ctx);
     }
 }
