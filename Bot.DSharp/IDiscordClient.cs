@@ -5,7 +5,6 @@ using DSharpPlus.SlashCommands;
 using Emzi0767.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -17,8 +16,8 @@ namespace Bot.DSharp
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
 
-        Task<IChannel?> GetChannelAsync(ulong id);
-        Task<IChannelCategory?> GetChannelCategoryAsync(ulong id);
+        Task<GetChannelResult> GetChannelAsync(ulong id);
+        Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id);
         Task<IGuild?> GetGuildAsync(ulong id);
         Task ConnectAsync();
     }
@@ -49,12 +48,21 @@ namespace Bot.DSharp
         }
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
-        public async Task<IChannel?> GetChannelAsync(ulong id) => new DSharpChannel(await Wrapped.GetChannelAsync(id));
-        public async Task<IChannelCategory?> GetChannelCategoryAsync(ulong id) => new DSharpChannelCategory(await Wrapped.GetChannelAsync(id));
+
+        public async Task<GetChannelResult> GetChannelAsync(ulong id)
+        {
+            var channel = await Wrapped.GetChannelAsync(id);
+            return new GetChannelResult(channel != null ? new DSharpChannel(channel) : null, ChannelUpdateRequired.None);
+        }
+
+        public async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id)
+        {
+            var channel = await Wrapped.GetChannelAsync(id);
+            return new GetChannelCategoryResult(channel != null ? new DSharpChannelCategory(channel) : null, ChannelUpdateRequired.None);
+        }
+
         public async Task<IGuild?> GetGuildAsync(ulong id) => new DSharpGuild(await Wrapped.GetGuildAsync(id));
         public Task ConnectAsync() => Wrapped.ConnectAsync();
-
-
 
         private class AsyncEventWrapper<T> where T : DiscordEventArgs
         {
@@ -114,6 +122,38 @@ namespace Bot.DSharp
                     tasks.Add(eh.Invoke(mClientWrapper, e));
                 return Task.WhenAll(tasks);
             }
+        }
+    }
+
+    public enum ChannelUpdateRequired
+    {
+        None,
+        Id,
+        Name,
+    }
+
+    public class GetChannelResult : GetChannelResultBase<IChannel>
+    {
+        public GetChannelResult(IChannel? channel, ChannelUpdateRequired updateRequired)
+            : base(channel, updateRequired)
+        {}
+    }
+    public class GetChannelCategoryResult : GetChannelResultBase<IChannelCategory>
+    {
+        public GetChannelCategoryResult(IChannelCategory? channel, ChannelUpdateRequired updateRequired)
+            : base(channel, updateRequired)
+        {}
+    }
+
+    public class GetChannelResultBase<T> where T : class
+    {
+        public ChannelUpdateRequired UpdateRequired { get; }
+        public T? Channel { get; }
+
+        public GetChannelResultBase(T? channel, ChannelUpdateRequired updateRequired)
+        {
+            UpdateRequired = updateRequired;
+            Channel = channel;
         }
     }
 }

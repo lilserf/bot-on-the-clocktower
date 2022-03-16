@@ -67,14 +67,20 @@ namespace Bot.DSharp
             var guild = await GetGuildAsync(rec.GuildId);
             if (guild != null)
             {
+                var controlChannelResult = await GetChannelAsync(rec.ControlChannelId);
+                var dayCategoryResult = await GetChannelCategoryAsync(rec.DayCategoryId);
+                var nightCategoryResult = await GetChannelCategoryAsync(rec.NightCategoryId);
+                var chatChannelResult = await GetChannelAsync(rec.ChatChannelId);
+                var townSquareResult = await GetChannelAsync(rec.TownSquareId);
+
                 var town = new Town(rec)
                 {
                     Guild = guild,
-                    ControlChannel = await GetChannelAsync(rec.ControlChannelId),
-                    DayCategory = await GetChannelCategoryAsync(rec.DayCategoryId),
-                    NightCategory = await GetChannelCategoryAsync(rec.NightCategoryId),
-                    ChatChannel = await GetChannelAsync(rec.ChatChannelId),
-                    TownSquare = await GetChannelAsync(rec.TownSquareId),
+                    ControlChannel = controlChannelResult.Channel,
+                    DayCategory = dayCategoryResult.Channel,
+                    NightCategory = nightCategoryResult.Channel,
+                    ChatChannel = chatChannelResult.Channel,
+                    TownSquare = townSquareResult.Channel,
                     StorytellerRole = GetRoleForGuild(guild, rec.StorytellerRoleId),
                     VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
                 };
@@ -90,9 +96,9 @@ namespace Bot.DSharp
             return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
         }
 
-        private async Task<IChannel?> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
+        private async Task<GetChannelResult> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
 
-        private async Task<IChannelCategory?> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
+        private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
 
         private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
         {
