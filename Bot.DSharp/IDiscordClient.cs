@@ -9,12 +9,6 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
-    public enum ChannelType
-    {
-        Text,
-        Voice,
-    }
-
     public interface IDiscordClient
     {
         SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config);
@@ -22,7 +16,7 @@ namespace Bot.DSharp
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
 
-        Task<GetChannelResult> GetChannelAsync(ulong id, string? name, ChannelType type);
+        Task<GetChannelResult> GetChannelAsync(ulong id, string? name, BotChannelType type);
         Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id, string? name);
         Task<IGuild?> GetGuildAsync(ulong id);
         Task ConnectAsync();
@@ -55,7 +49,7 @@ namespace Bot.DSharp
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
 
-        public async Task<GetChannelResult> GetChannelAsync(ulong id, string? name, ChannelType type)
+        public async Task<GetChannelResult> GetChannelAsync(ulong id, string? name, BotChannelType type)
         {
             var channel = await Wrapped.GetChannelAsync(id);
             return new GetChannelResult(channel != null ? new DSharpChannel(channel) : null, ChannelUpdateRequired.None);
@@ -128,38 +122,6 @@ namespace Bot.DSharp
                     tasks.Add(eh.Invoke(mClientWrapper, e));
                 return Task.WhenAll(tasks);
             }
-        }
-    }
-
-    public enum ChannelUpdateRequired
-    {
-        None,
-        Id,
-        Name,
-    }
-
-    public class GetChannelResult : GetChannelResultBase<IChannel>
-    {
-        public GetChannelResult(IChannel? channel, ChannelUpdateRequired updateRequired)
-            : base(channel, updateRequired)
-        {}
-    }
-    public class GetChannelCategoryResult : GetChannelResultBase<IChannelCategory>
-    {
-        public GetChannelCategoryResult(IChannelCategory? channel, ChannelUpdateRequired updateRequired)
-            : base(channel, updateRequired)
-        {}
-    }
-
-    public class GetChannelResultBase<T> where T : class
-    {
-        public ChannelUpdateRequired UpdateRequired { get; }
-        public T? Channel { get; }
-
-        public GetChannelResultBase(T? channel, ChannelUpdateRequired updateRequired)
-        {
-            UpdateRequired = updateRequired;
-            Channel = channel;
         }
     }
 }

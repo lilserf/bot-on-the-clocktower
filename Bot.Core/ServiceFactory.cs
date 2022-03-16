@@ -28,6 +28,7 @@ namespace Bot.Core
             ServiceProvider sp = new(parentServices);
             sp.AddService<ITownCommandQueue>(new TownCommandQueue(sp));
             sp.AddService<ITownCleanup>(new TownCleanup(sp));
+            sp.AddService<ITownResolver>(new TownResolver(sp));
             var gameplay = new BotGameplay(sp);
             sp.AddService<IVoteHandler>(gameplay);
             var voteTimer = new BotVoteTimer(sp);

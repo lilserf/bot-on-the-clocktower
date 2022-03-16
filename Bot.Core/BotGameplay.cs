@@ -9,6 +9,7 @@ namespace Bot.Core
     public class BotGameplay : BotTownLookupHelper, IVoteHandler
     {
         private readonly IActiveGameService m_activeGameService;
+        private readonly IBotClient m_client;
         private readonly IShuffleService m_shuffle;
         private readonly ITownCleanup m_townCleanup;
 
@@ -16,6 +17,7 @@ namespace Bot.Core
             : base(services)
 		{
             services.Inject(out m_activeGameService);
+            services.Inject(out m_client);
             services.Inject(out m_shuffle);
             services.Inject(out m_townCleanup);
 
@@ -361,7 +363,7 @@ namespace Bot.Core
             }
             else
             {
-                var guild = await m_client.GetGuild(townKey.GuildId);
+                var guild = await m_client.GetGuildAsync(townKey.GuildId);
 
                 foreach (var (_, user) in guild!.Members)
                 {

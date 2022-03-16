@@ -230,11 +230,11 @@ namespace Bot.Core
 
         public Task MoreButtonPressed(IBotInteractionContext context)
         {
-            return m_townCommandQueue.QueueCommandAsync("Expanding options...", context, async () =>
+            return m_townCommandQueue.QueueCommandAsync("Expanding options...", context, () =>
             {
                 Serilog.Log.Information(ButtonLogMsg, "More", context.Guild, context.Member);
                 var message = "Here are all the options again!";
-                return new QueuedCommandResult(message, true, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu  });
+                return Task.FromResult(new QueuedCommandResult(message, true, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu  }));
             });
         }
 

@@ -31,6 +31,7 @@ namespace Test.Bot.Core
         protected readonly Mock<IDateTime> DateTimeMock = new();
         protected readonly Mock<IGameActivityDatabase> GameActivityDatabaseMock = new();
         protected readonly Mock<ITownCleanup> TownCleanupMock = new();
+        protected readonly Mock<ITownResolver> TownResolverMock = new();
         protected readonly Mock<ITown> TownMock = new();
         protected readonly Mock<ITownRecord> TownRecordMock = new();
         protected readonly Mock<IBotClient> ClientMock = new();
@@ -80,6 +81,7 @@ namespace Test.Bot.Core
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
             RegisterMock(TownLookupMock);
+            RegisterMock(TownResolverMock);
             RegisterMock(DateTimeMock);
             RegisterMock(GameActivityDatabaseMock);
             RegisterMock(TownCleanupMock);
@@ -97,8 +99,9 @@ namespace Test.Bot.Core
             TownLookupMock.Setup(tl => tl.GetTownRecords(It.Is<ulong>(a => a == MockGuildId))).ReturnsAsync(new[] { TownRecordMock.Object });
 
             // ResolveTown expects the TownRecord and returns the Town
-            ClientMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
-            ClientMock.Setup(c => c.GetGuild(It.Is<ulong>(x => x == MockGuildId))).ReturnsAsync(GuildMock.Object);
+            TownResolverMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
+
+            ClientMock.Setup(c => c.GetGuildAsync(It.Is<ulong>(x => x == MockGuildId))).ReturnsAsync(GuildMock.Object);
 
             // By default, the ActiveGameService won't find a game for this context
             IGame? defaultGame = null;

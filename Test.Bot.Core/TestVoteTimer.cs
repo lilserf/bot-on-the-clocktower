@@ -55,7 +55,7 @@ namespace Test.Bot.Core
         [Fact]
         public void NoTownFound_SendsErrorMessage()
         {
-            ClientMock.Setup(c => c.ResolveTownAsync(It.IsAny<ITownRecord>())).ReturnsAsync(() => (ITown?)null);
+            TownResolverMock.Setup(c => c.ResolveTownAsync(It.IsAny<ITownRecord>())).ReturnsAsync(() => (ITown?)null);
 
             RunVoteTimerVerifyCompleted();
 
