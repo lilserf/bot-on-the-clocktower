@@ -67,11 +67,11 @@ namespace Bot.DSharp
             var guild = await GetGuildAsync(rec.GuildId);
             if (guild != null)
             {
-                var controlChannelResult = await GetChannelAsync(rec.ControlChannelId);
-                var dayCategoryResult = await GetChannelCategoryAsync(rec.DayCategoryId);
-                var nightCategoryResult = await GetChannelCategoryAsync(rec.NightCategoryId);
-                var chatChannelResult = await GetChannelAsync(rec.ChatChannelId);
-                var townSquareResult = await GetChannelAsync(rec.TownSquareId);
+                var controlChannelResult = await GetChannelAsync(rec.ControlChannelId, rec.ControlChannel, ChannelType.Text);
+                var dayCategoryResult = await GetChannelCategoryAsync(rec.DayCategoryId, rec.DayCategory);
+                var nightCategoryResult = await GetChannelCategoryAsync(rec.NightCategoryId, rec.NightCategory);
+                var chatChannelResult = await GetChannelAsync(rec.ChatChannelId, rec.ChatChannel, ChannelType.Text);
+                var townSquareResult = await GetChannelAsync(rec.TownSquareId, rec.TownSquare, ChannelType.Voice);
 
                 var town = new Town(rec)
                 {
@@ -96,9 +96,9 @@ namespace Bot.DSharp
             return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
         }
 
-        private async Task<GetChannelResult> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
+        private async Task<GetChannelResult> GetChannelAsync(ulong id, string? name, ChannelType type) => await m_discord.GetChannelAsync(id, name, type);
 
-        private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
+        private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id, string? name) => await m_discord.GetChannelCategoryAsync(id, name);
 
         private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
         {

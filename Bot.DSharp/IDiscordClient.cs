@@ -9,6 +9,12 @@ using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
+    public enum ChannelType
+    {
+        Text,
+        Voice,
+    }
+
     public interface IDiscordClient
     {
         SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config);
@@ -16,8 +22,8 @@ namespace Bot.DSharp
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
 
-        Task<GetChannelResult> GetChannelAsync(ulong id);
-        Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id);
+        Task<GetChannelResult> GetChannelAsync(ulong id, string? name, ChannelType type);
+        Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id, string? name);
         Task<IGuild?> GetGuildAsync(ulong id);
         Task ConnectAsync();
     }
@@ -49,13 +55,13 @@ namespace Bot.DSharp
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
 
-        public async Task<GetChannelResult> GetChannelAsync(ulong id)
+        public async Task<GetChannelResult> GetChannelAsync(ulong id, string? name, ChannelType type)
         {
             var channel = await Wrapped.GetChannelAsync(id);
             return new GetChannelResult(channel != null ? new DSharpChannel(channel) : null, ChannelUpdateRequired.None);
         }
 
-        public async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id)
+        public async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id, string? name)
         {
             var channel = await Wrapped.GetChannelAsync(id);
             return new GetChannelCategoryResult(channel != null ? new DSharpChannelCategory(channel) : null, ChannelUpdateRequired.None);
