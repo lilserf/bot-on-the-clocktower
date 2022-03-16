@@ -29,7 +29,7 @@ namespace Bot.Core
 
         protected async Task<ITown?> GetValidTownOrLogErrorAsync(ulong guildId, ulong controlChannelId, IProcessLogger processLogger)
         {
-            var townRecordList = await m_townLookup.GetTownRecords(guildId);
+            var townRecordList = await m_townLookup.GetTownRecordsAsync(guildId);
             var townRec = townRecordList.Where(x => x.ControlChannelId == controlChannelId).FirstOrDefault();
             
             if (townRec == null)

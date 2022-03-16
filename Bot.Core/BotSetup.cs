@@ -20,7 +20,7 @@ namespace Bot.Core
 
         public Task AddTown(ITown town, IMember author)
         {
-            return m_townDb.AddTown(town, author);
+            return m_townDb.AddTownAsync(town, author);
         }
 
         private static TownDescription FallbackToDefaults(TownDescription desc)

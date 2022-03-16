@@ -38,7 +38,7 @@ namespace Test.Bot.Core
             TownDesc = MakeDesc(GuildMock.Object, AuthorMock.Object);
 
             TownDatabaseMock = new();
-            TownDatabaseMock.Setup(x => x.AddTown(It.IsAny<ITown>(), It.IsAny<IMember>()));
+            TownDatabaseMock.Setup(x => x.AddTownAsync(It.IsAny<ITown>(), It.IsAny<IMember>()));
             RegisterMock(TownDatabaseMock);
         }
 
@@ -124,7 +124,7 @@ namespace Test.Bot.Core
             IMember author = AuthorMock.Object;
 
             Mock<ITownDatabase> townDb = new();
-            townDb.Setup(x => x.AddTown(It.IsAny<ITown>(), It.IsAny<IMember>()));
+            townDb.Setup(x => x.AddTownAsync(It.IsAny<ITown>(), It.IsAny<IMember>()));
             RegisterMock(townDb);
 
             BotSetup bs = new(GetServiceProvider());
@@ -132,7 +132,7 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            townDb.Verify(x => x.AddTown(It.Is<ITown>(y => y == town), It.Is<IMember>(z => z == author)));
+            townDb.Verify(x => x.AddTownAsync(It.Is<ITown>(y => y == town), It.Is<IMember>(z => z == author)));
         }
 
         private BotSetup CreateTownAssertCompleted()
@@ -149,7 +149,7 @@ namespace Test.Bot.Core
         {
             CreateTownAssertCompleted();
 
-            TownDatabaseMock.Verify(x => x.AddTown(
+            TownDatabaseMock.Verify(x => x.AddTownAsync(
                 It.Is<ITown>(y => y.DayCategory!.Id == (ulong)DayCatName.GetHashCode() &&
                                   y.NightCategory!.Id == (ulong)NightCatName.GetHashCode() &&
                                   y.ControlChannel!.Id == (ulong)ControlChannelName.GetHashCode() &&

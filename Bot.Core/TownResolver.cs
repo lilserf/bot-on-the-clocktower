@@ -8,9 +8,12 @@ namespace Bot.Core
     public class TownResolver : ITownResolver
     {
         private readonly IBotClient m_client;
+        private readonly ITownDatabase m_townDb;
+
         public TownResolver(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_client);
+            serviceProvider.Inject(out m_townDb);
         }
 
         public async Task<ITown?> ResolveTownAsync(ITownRecord rec)

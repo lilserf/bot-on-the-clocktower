@@ -42,10 +42,9 @@ namespace Bot.Database
 				Author = author.Id,
 				Timestamp = DateTime.Now,
 			};
-
 		}
 
-        public async Task<bool> AddTown(ITown town, IMember author)
+        public async Task<bool> AddTownAsync(ITown town, IMember author)
         {
 			var newRec = RecordFromTown(town, author);
 
@@ -55,7 +54,7 @@ namespace Bot.Database
 			return true;
         }
 
-        public async Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId)
+        public async Task<ITownRecord?> GetTownRecordAsync(ulong guildId, ulong channelId)
 		{
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;
@@ -66,7 +65,7 @@ namespace Bot.Database
 			return document;
 		}
 
-		public async Task<IEnumerable<ITownRecord>> GetTownRecords(ulong guildId)
+		public async Task<IEnumerable<ITownRecord>> GetTownRecordsAsync(ulong guildId)
         {
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;

@@ -73,7 +73,7 @@ namespace Test.Bot.Core
 
             // Could add other exceptions here for other types of commands, if needed
             Villager1Mock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
-            TownLookupMock.Setup(tl => tl.GetTownRecords(It.IsAny<ulong>())).Throws(thrownException);
+            TownLookupMock.Setup(tl => tl.GetTownRecordsAsync(It.IsAny<ulong>())).Throws(thrownException);
             var gs = CreateGameplayInteractionHandler();
             var t = gameCommandTestFunc(gs, InteractionContextMock.Object);
             t.Wait(5);
