@@ -51,8 +51,7 @@ namespace Bot.Database
 			var newRec = RecordFromTown(town, author);
 
 			// TODO: error check this record?
-			await m_collection.InsertOneAsync(newRec);
-
+			await UpdateRecordAsync(newRec, false);
 			return true;
         }
 
@@ -65,23 +64,35 @@ namespace Bot.Database
                 return false;
 
             var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
+			newRec._id = oldRec._id;
 
-			await m_collection.InsertOneAsync(newRec);
+			await UpdateRecordAsync(newRec, true);
 			return true;
 		}
 
+		private Task UpdateRecordAsync(MongoTownRecord record, bool upsert)
+        {
+			return m_collection.ReplaceOneAsync(GetTownMatchFilter(record.GuildId, record.ControlChannelId), record, new ReplaceOptions() { IsUpsert = upsert });
+        }
+
 		public async Task<ITownRecord?> GetTownRecordAsync(ulong guildId, ulong channelId)
-		{
-			// Build a filter for the specific document we want
-			var builder = Builders<MongoTownRecord>.Filter;
-			var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.ControlChannelId, channelId);
+        {
+            FilterDefinition<MongoTownRecord> filter = GetTownMatchFilter(guildId, channelId);
 
-			// Get the first match
-			var document = await m_collection.Find(filter).FirstOrDefaultAsync();
-			return document;
-		}
+            // Get the first match
+            var document = await m_collection.Find(filter).FirstOrDefaultAsync();
+            return document;
+        }
 
-		public async Task<IEnumerable<ITownRecord>> GetTownRecordsAsync(ulong guildId)
+        private static FilterDefinition<MongoTownRecord> GetTownMatchFilter(ulong guildId, ulong channelId)
+        {
+            // Build a filter for the specific document we want
+            var builder = Builders<MongoTownRecord>.Filter;
+            var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.ControlChannelId, channelId);
+            return filter;
+        }
+
+        public async Task<IEnumerable<ITownRecord>> GetTownRecordsAsync(ulong guildId)
         {
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;
