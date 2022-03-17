@@ -59,8 +59,6 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
-        public Task<IChannel?> GetChannelAsync(ulong id) => m_discord.GetChannelAsync(id);
-        public Task<IChannelCategory?> GetChannelCategoryAsync(ulong id) => m_discord.GetChannelCategoryAsync(id);
         public Task<IGuild?> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 
         private Task ComponentInteractionCreated(IDiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)

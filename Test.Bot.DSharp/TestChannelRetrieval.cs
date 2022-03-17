@@ -1,10 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using Bot.Core;
-using Bot.DSharp;
-using DSharpPlus;
 using Moq;
-using System;
 using System.Collections.Generic;
 using Test.Bot.Base;
 using Xunit;
@@ -51,11 +48,11 @@ namespace Test.Bot.DSharp
             var env = RegisterMock(new Mock<IEnvironment>());
             env.Setup(e => e.GetEnvironmentVariable(It.IsAny<string>())).Returns("env var");
 
-            SetupChannelMock(m_mockClient, m_mockControlChannel, ControlId, ControlName, false);
-            SetupChannelMock(m_mockClient, m_mockTownSquareChannel, TownSquareId, TownSquareName, true);
-            SetupChannelMock(m_mockClient, m_mockChatChannel, ChatId, ChatName, false);
-            SetupChannelCategoryMock(m_mockClient, m_mockDayChannelCategory, DayCategoryId, DayCategoryName);
-            SetupChannelCategoryMock(m_mockClient, m_mockNightChannelCategory, NightCategoryId, NightCategoryName);
+            SetupChannelMock(m_mockGuild, m_mockControlChannel, ControlId, ControlName, false);
+            SetupChannelMock(m_mockGuild, m_mockTownSquareChannel, TownSquareId, TownSquareName, true);
+            SetupChannelMock(m_mockGuild, m_mockChatChannel, ChatId, ChatName, false);
+            SetupChannelCategoryMock(m_mockGuild, m_mockDayChannelCategory, DayCategoryId, DayCategoryName);
+            SetupChannelCategoryMock(m_mockGuild, m_mockNightChannelCategory, NightCategoryId, NightCategoryName);
 
             m_mockTownRecord.SetupGet(tr => tr.ControlChannel).Returns(ControlName);
             m_mockTownRecord.SetupGet(tr => tr.ControlChannelId).Returns(ControlId);
@@ -71,19 +68,19 @@ namespace Test.Bot.DSharp
             m_mockTownRecord.SetupGet(tr => tr.VillagerRoleId).Returns(VillagerRoleId);
             m_mockTownRecord.SetupGet(tr => tr.GuildId).Returns(GuildId);
 
-            static void SetupChannelMock(Mock<IBotClient> clientMock, Mock<IChannel> channelMock, ulong channelId, string channelName, bool expectedVoice)
+            static void SetupChannelMock(Mock<IGuild> guildMock, Mock<IChannel> channelMock, ulong channelId, string channelName, bool expectedVoice)
             {
                 channelMock.SetupGet(c => c.Id).Returns(channelId);
                 channelMock.SetupGet(c => c.Name).Returns(channelName);
                 channelMock.SetupGet(c => c.IsVoice).Returns(expectedVoice);
-                clientMock.Setup(c => c.GetChannelAsync(It.Is<ulong>(id => id == channelId))).ReturnsAsync(channelMock.Object);
+                guildMock.Setup(c => c.GetChannel(It.Is<ulong>(id => id == channelId))).Returns(channelMock.Object);
             }
 
-            static void SetupChannelCategoryMock(Mock<IBotClient> clientMock, Mock<IChannelCategory> channelMock, ulong channelId, string channelName)
+            static void SetupChannelCategoryMock(Mock<IGuild> guildMock, Mock<IChannelCategory> channelMock, ulong channelId, string channelName)
             {
                 channelMock.SetupGet(c => c.Id).Returns(channelId);
                 channelMock.SetupGet(c => c.Name).Returns(channelName);
-                clientMock.Setup(c => c.GetChannelCategoryAsync(It.Is<ulong>(id => id == channelId))).ReturnsAsync(channelMock.Object);
+                guildMock.Setup(c => c.GetChannelCategory(It.Is<ulong>(id => id == channelId))).Returns(channelMock.Object);
             }
 
             m_mockClient.Setup(c => c.GetGuildAsync(It.Is<ulong>(id => id == GuildId))).ReturnsAsync(m_mockGuild.Object);

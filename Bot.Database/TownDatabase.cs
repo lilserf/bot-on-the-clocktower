@@ -61,11 +61,10 @@ namespace Bot.Database
 			if (town.Guild == null || town.ControlChannel == null)
 				return false;
 
-			var oldRec = await GetTownRecordAsync(town.Guild.Id, town.ControlChannel.Id) as MongoTownRecord;
-			if (oldRec == null)
-				return false;
+            if (await GetTownRecordAsync(town.Guild.Id, town.ControlChannel.Id) is not MongoTownRecord oldRec)
+                return false;
 
-			var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
+            var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
 
 			await m_collection.InsertOneAsync(newRec);
 			return true;

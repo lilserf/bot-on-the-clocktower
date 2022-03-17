@@ -22,11 +22,11 @@ namespace Bot.Core
             var guild = await m_client.GetGuildAsync(rec.GuildId);
             if (guild != null)
             {
-                var controlChannelResult = await GetChannelAsync(rec.ControlChannelId, rec.ControlChannel, false);
-                var dayCategoryResult = await GetChannelCategoryAsync(rec.DayCategoryId, rec.DayCategory);
-                var nightCategoryResult = await GetChannelCategoryAsync(rec.NightCategoryId, rec.NightCategory);
-                var chatChannelResult = await GetChannelAsync(rec.ChatChannelId, rec.ChatChannel, false);
-                var townSquareResult = await GetChannelAsync(rec.TownSquareId, rec.TownSquare, true);
+                var controlChannelResult = GetChannel(guild, rec.ControlChannelId, rec.ControlChannel, false);
+                var dayCategoryResult = GetChannelCategory(guild, rec.DayCategoryId, rec.DayCategory);
+                var nightCategoryResult = GetChannelCategory(guild, rec.NightCategoryId, rec.NightCategory);
+                var chatChannelResult = GetChannel(guild, rec.ChatChannelId, rec.ChatChannel, false);
+                var townSquareResult = GetChannel(guild, rec.TownSquareId, rec.TownSquare, true);
 
                 var town = new Town(rec)
                 {
@@ -53,24 +53,24 @@ namespace Bot.Core
             return null;
         }
 
-        private bool AnyUpdatesRequired(params GetChannelResultBase[] results) => results.Any(r => r.UpdateRequired != ChannelUpdateRequired.None);
+        private static bool AnyUpdatesRequired(params GetChannelResultBase[] results) => results.Any(r => r.UpdateRequired != ChannelUpdateRequired.None);
 
-        private async Task<GetChannelResult> GetChannelAsync(ulong channelId, string? channelName, bool isVoice)
+        private static GetChannelResult GetChannel(IGuild guild, ulong channelId, string? channelName, bool isVoice)
         {
             ChannelUpdateRequired update = ChannelUpdateRequired.None;
 
-            var channel = await m_client.GetChannelAsync(channelId);
+            var channel = guild.GetChannel(channelId);
             if (channel != null && channel.Name != channelName)
                 update = ChannelUpdateRequired.Name;
 
             return new GetChannelResult(channel, update);
         }
 
-        private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong channelId, string? channelName)
+        private static GetChannelCategoryResult GetChannelCategory(IGuild guild, ulong channelId, string? channelName)
         {
             ChannelUpdateRequired update = ChannelUpdateRequired.None;
 
-            var channelCategory = await m_client.GetChannelCategoryAsync(channelId);
+            var channelCategory = guild.GetChannelCategory(channelId);
 
             if (channelCategory != null && channelCategory.Name != channelName)
                 update = ChannelUpdateRequired.Name;

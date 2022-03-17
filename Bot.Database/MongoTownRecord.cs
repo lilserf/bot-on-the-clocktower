@@ -1,15 +1,16 @@
-﻿using Bot.Api;
-using Bot.Api.Database;
+﻿using Bot.Api.Database;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Bot.Database
 {
-	// Implementation of Bot.Api.ITown that serializes to MongoDb
-	public class MongoTownRecord : ITownRecord
+    // Implementation of Bot.Api.ITown that serializes to MongoDb
+    public class MongoTownRecord : ITownRecord
 	{
-		public ObjectId _id { get; set; }
+        [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
+        public ObjectId _id { get; set; }
 		[BsonElement("guild")]
 		public ulong GuildId { get; set; }
 		[BsonElement("controlChannel")]

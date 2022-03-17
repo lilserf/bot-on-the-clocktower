@@ -35,7 +35,7 @@ namespace Bot.DSharp
 
         public async Task<IChannel?> CreateVoiceChannelAsync(string name, IChannelCategory? parent = null)
         {
-            DiscordChannel? dc = null;
+            DiscordChannel? dc;
             if (parent is DSharpChannel dp)
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice, dp.Wrapped);
             else
@@ -46,7 +46,7 @@ namespace Bot.DSharp
 
         public async Task<IChannel?> CreateTextChannelAsync(string name, IChannelCategory? parent = null)
         {
-            DiscordChannel? dc = null;
+            DiscordChannel? dc;
             if (parent is DSharpChannel dp)
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text, dp.Wrapped);
             else
@@ -65,6 +65,22 @@ namespace Bot.DSharp
         {
             var r = await Wrapped.CreateRoleAsync(name, null, new DiscordColor(color.R, color.G, color.B));
             return r != null ? new DSharpRole(r) : null;
+        }
+
+        public IChannel? GetChannel(ulong id)
+        {
+            var channel = Wrapped.GetChannel(id);
+            if (channel != null && (channel.Type == DSharpPlus.ChannelType.Text || channel.Type == DSharpPlus.ChannelType.Voice))
+                return new DSharpChannel(channel);
+            return null;
+        }
+
+        public IChannelCategory? GetChannelCategory(ulong id)
+        {
+            var channel = Wrapped.GetChannel(id);
+            if (channel != null && (channel.Type == DSharpPlus.ChannelType.Category))
+                return new DSharpChannelCategory(channel);
+            return null;
         }
     }
 }
