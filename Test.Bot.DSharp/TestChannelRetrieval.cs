@@ -106,9 +106,33 @@ namespace Test.Bot.DSharp
         }
 
         [Fact]
-        public void TownResolveChatNameOff_RequestsUpdate()
+        public void TownResolve_ChatNameOff_RequestsUpdate() => TestResolve_ChannelNameOff(m_mockChatChannel);
+        [Fact]
+        public void TownResolve_TownSquareNameOff_RequestsUpdate() => TestResolve_ChannelNameOff(m_mockTownSquareChannel);
+        [Fact]
+        public void TownResolve_ControlNameOff_RequestsUpdate() => TestResolve_ChannelNameOff(m_mockControlChannel);
+        [Fact]
+        public void TownResolve_DayCategoryNameOff_RequestsUpdate() => TestResolve_ChannelCategoryNameOff(m_mockDayChannelCategory);
+        [Fact]
+        public void TownResolve_NightCategoryNameOff_RequestsUpdate() => TestResolve_ChannelCategoryNameOff(m_mockNightChannelCategory);
+
+
+        private void TestResolve_ChannelNameOff(Mock<IChannel> channel)
         {
-            m_mockChatChannel.SetupGet(c => c.Name).Returns(MismatchedName);
+            channel.SetupGet(c => c.Name).Returns(MismatchedName);
+            TestResolve_VerifyTownUpdated();
+        }
+
+        private void TestResolve_ChannelCategoryNameOff(Mock<IChannelCategory> channelCategory)
+        {
+            channelCategory.SetupGet(c => c.Name).Returns(MismatchedName);
+            TestResolve_VerifyTownUpdated();
+        }
+
+        [Fact]
+        public void TownResolveTownSquareNameOff_RequestsUpdate()
+        {
+            m_mockTownSquareChannel.SetupGet(c => c.Name).Returns(MismatchedName);
             TestResolve_VerifyTownUpdated();
         }
 

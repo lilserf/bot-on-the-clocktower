@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -39,13 +40,20 @@ namespace Bot.Core
                     VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
                 };
 
-                if (chatChannelResult.UpdateRequired != ChannelUpdateRequired.None)
+                if (AnyUpdatesRequired(
+                    controlChannelResult,
+                    dayCategoryResult,
+                    nightCategoryResult, 
+                    chatChannelResult,
+                    townSquareResult))
                     await m_townDb.UpdateTownAsync(town);
 
                 return town;
             }
             return null;
         }
+
+        private bool AnyUpdatesRequired(params GetChannelResultBase[] results) => results.Any(r => r.UpdateRequired != ChannelUpdateRequired.None);
 
         private async Task<GetChannelResult> GetChannelAsync(ulong channelId, string? channelName, bool isVoice)
         {
@@ -60,8 +68,14 @@ namespace Bot.Core
 
         private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong channelId, string? channelName)
         {
+            ChannelUpdateRequired update = ChannelUpdateRequired.None;
+
             var channelCategory = await m_client.GetChannelCategoryAsync(channelId);
-            return new GetChannelCategoryResult(channelCategory, ChannelUpdateRequired.None);
+
+            if (channelCategory != null && channelCategory.Name != channelName)
+                update = ChannelUpdateRequired.Name;
+
+            return new GetChannelCategoryResult(channelCategory, update);
         }
 
         private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
@@ -92,15 +106,23 @@ namespace Bot.Core
             { }
         }
 
-        private class GetChannelResultBase<T> where T : class
+        private class GetChannelResultBase<T> : GetChannelResultBase where T : class
         {
-            public ChannelUpdateRequired UpdateRequired { get; }
             public T? Channel { get; }
 
             public GetChannelResultBase(T? channel, ChannelUpdateRequired updateRequired)
+                :base(updateRequired)
+            {
+                Channel = channel;
+            }
+        }
+
+        private class GetChannelResultBase
+        {
+            public ChannelUpdateRequired UpdateRequired { get; }
+            public GetChannelResultBase(ChannelUpdateRequired updateRequired)
             {
                 UpdateRequired = updateRequired;
-                Channel = channel;
             }
         }
     }
