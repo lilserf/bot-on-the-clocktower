@@ -16,8 +16,8 @@ namespace Bot.DSharp
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
 
-        Task<GetChannelResult> GetChannelAsync(ulong id, string? name, BotChannelType type);
-        Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id, string? name);
+        Task<IChannel?> GetChannelAsync(ulong id);
+        Task<IChannelCategory?> GetChannelCategoryAsync(ulong id);
         Task<IGuild?> GetGuildAsync(ulong id);
         Task ConnectAsync();
     }
@@ -49,16 +49,16 @@ namespace Bot.DSharp
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
 
-        public async Task<GetChannelResult> GetChannelAsync(ulong id, string? name, BotChannelType type)
+        public async Task<IChannel?> GetChannelAsync(ulong id)
         {
             var channel = await Wrapped.GetChannelAsync(id);
-            return new GetChannelResult(channel != null ? new DSharpChannel(channel) : null, ChannelUpdateRequired.None);
+            return channel != null ? new DSharpChannel(channel) : null;
         }
 
-        public async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong id, string? name)
+        public async Task<IChannelCategory?> GetChannelCategoryAsync(ulong id)
         {
             var channel = await Wrapped.GetChannelAsync(id);
-            return new GetChannelCategoryResult(channel != null ? new DSharpChannelCategory(channel) : null, ChannelUpdateRequired.None);
+            return channel != null ? new DSharpChannelCategory(channel) : null;
         }
 
         public async Task<IGuild?> GetGuildAsync(ulong id) => new DSharpGuild(await Wrapped.GetGuildAsync(id));

@@ -19,7 +19,7 @@ namespace Bot.Database
 			if (m_collection == null) throw new MissingGuildInfoDatabaseException();
 		}
 
-		private static MongoTownRecord RecordFromTown(ITown town, IMember author)
+		private static MongoTownRecord RecordFromTownAndAuthorInfo(ITown town, ulong authorId, string? authorName)
         {
 			return new MongoTownRecord()
 			{
@@ -38,11 +38,13 @@ namespace Bot.Database
 				StorytellerRoleId = town.StorytellerRole?.Id ?? 0,
 				VillagerRole = town.VillagerRole?.Name,
 				VillagerRoleId = town.VillagerRole?.Id ?? 0,
-				AuthorName = author.DisplayName,
-				Author = author.Id,
+				AuthorName = authorName,
+				Author = authorId,
 				Timestamp = DateTime.Now,
 			};
 		}
+
+		private static MongoTownRecord RecordFromTown(ITown town, IMember author) => RecordFromTownAndAuthorInfo(town, author.Id, author.DisplayName);
 
         public async Task<bool> AddTownAsync(ITown town, IMember author)
         {
@@ -54,7 +56,22 @@ namespace Bot.Database
 			return true;
         }
 
-        public async Task<ITownRecord?> GetTownRecordAsync(ulong guildId, ulong channelId)
+		public async Task<bool> UpdateTownAsync(ITown town)
+        {
+			if (town.Guild == null || town.ControlChannel == null)
+				return false;
+
+			var oldRec = await GetTownRecordAsync(town.Guild.Id, town.ControlChannel.Id) as MongoTownRecord;
+			if (oldRec == null)
+				return false;
+
+			var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
+
+			await m_collection.InsertOneAsync(newRec);
+			return true;
+		}
+
+		public async Task<ITownRecord?> GetTownRecordAsync(ulong guildId, ulong channelId)
 		{
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;

@@ -21,11 +21,11 @@ namespace Bot.Core
             var guild = await m_client.GetGuildAsync(rec.GuildId);
             if (guild != null)
             {
-                var controlChannelResult = await m_client.GetChannelAsync(rec.ControlChannelId, rec.ControlChannel, BotChannelType.Text);
-                var dayCategoryResult = await m_client.GetChannelCategoryAsync(rec.DayCategoryId, rec.DayCategory);
-                var nightCategoryResult = await m_client.GetChannelCategoryAsync(rec.NightCategoryId, rec.NightCategory);
-                var chatChannelResult = await m_client.GetChannelAsync(rec.ChatChannelId, rec.ChatChannel, BotChannelType.Text);
-                var townSquareResult = await m_client.GetChannelAsync(rec.TownSquareId, rec.TownSquare, BotChannelType.Voice);
+                var controlChannelResult = await GetChannelAsync(rec.ControlChannelId, rec.ControlChannel, false);
+                var dayCategoryResult = await GetChannelCategoryAsync(rec.DayCategoryId, rec.DayCategory);
+                var nightCategoryResult = await GetChannelCategoryAsync(rec.NightCategoryId, rec.NightCategory);
+                var chatChannelResult = await GetChannelAsync(rec.ChatChannelId, rec.ChatChannel, false);
+                var townSquareResult = await GetChannelAsync(rec.TownSquareId, rec.TownSquare, true);
 
                 var town = new Town(rec)
                 {
@@ -43,11 +43,56 @@ namespace Bot.Core
             return null;
         }
 
+        private async Task<GetChannelResult> GetChannelAsync(ulong channelId, string? channelName, bool isVoice)
+        {
+            var channel = await m_client.GetChannelAsync(channelId);
+            return new GetChannelResult(channel, ChannelUpdateRequired.None);
+        }
+
+        private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong channelId, string? channelName)
+        {
+            var channelCategory = await m_client.GetChannelCategoryAsync(channelId);
+            return new GetChannelCategoryResult(channelCategory, ChannelUpdateRequired.None);
+        }
+
         private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
         {
             if (guild.Roles.TryGetValue(roleId, out var role))
                 return role;
             return null;
+        }
+
+        private enum ChannelUpdateRequired
+        {
+            None,
+            Id,
+            Name,
+        }
+
+        private class GetChannelResult : GetChannelResultBase<IChannel>
+        {
+            public GetChannelResult(IChannel? channel, ChannelUpdateRequired updateRequired)
+                : base(channel, updateRequired)
+            { }
+        }
+
+        private class GetChannelCategoryResult : GetChannelResultBase<IChannelCategory>
+        {
+            public GetChannelCategoryResult(IChannelCategory? channel, ChannelUpdateRequired updateRequired)
+                : base(channel, updateRequired)
+            { }
+        }
+
+        private class GetChannelResultBase<T> where T : class
+        {
+            public ChannelUpdateRequired UpdateRequired { get; }
+            public T? Channel { get; }
+
+            public GetChannelResultBase(T? channel, ChannelUpdateRequired updateRequired)
+            {
+                UpdateRequired = updateRequired;
+                Channel = channel;
+            }
         }
     }
 }
