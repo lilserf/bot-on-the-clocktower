@@ -38,6 +38,10 @@ namespace Bot.Core
                     StorytellerRole = GetRoleForGuild(guild, rec.StorytellerRoleId),
                     VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
                 };
+
+                if (chatChannelResult.UpdateRequired != ChannelUpdateRequired.None)
+                    await m_townDb.UpdateTownAsync(town);
+
                 return town;
             }
             return null;
@@ -45,8 +49,13 @@ namespace Bot.Core
 
         private async Task<GetChannelResult> GetChannelAsync(ulong channelId, string? channelName, bool isVoice)
         {
+            ChannelUpdateRequired update = ChannelUpdateRequired.None;
+
             var channel = await m_client.GetChannelAsync(channelId);
-            return new GetChannelResult(channel, ChannelUpdateRequired.None);
+            if (channel != null && channel.Name != channelName)
+                update = ChannelUpdateRequired.Name;
+
+            return new GetChannelResult(channel, update);
         }
 
         private async Task<GetChannelCategoryResult> GetChannelCategoryAsync(ulong channelId, string? channelName)
