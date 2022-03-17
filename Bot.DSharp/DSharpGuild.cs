@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -70,7 +71,7 @@ namespace Bot.DSharp
         public IChannel? GetChannel(ulong id)
         {
             var channel = Wrapped.GetChannel(id);
-            if (channel != null && (channel.Type == DSharpPlus.ChannelType.Text || channel.Type == DSharpPlus.ChannelType.Voice))
+            if (channel != null && IsStandardChannel(channel))
                 return new DSharpChannel(channel);
             return null;
         }
@@ -78,9 +79,23 @@ namespace Bot.DSharp
         public IChannelCategory? GetChannelCategory(ulong id)
         {
             var channel = Wrapped.GetChannel(id);
-            if (channel != null && (channel.Type == DSharpPlus.ChannelType.Category))
+            if (channel != null && IsChannelCategory(channel))
                 return new DSharpChannelCategory(channel);
             return null;
+        }
+
+        public IReadOnlyCollection<IChannel> Channels => Wrapped.Channels.Values.Where(IsStandardChannel).Select(c => new DSharpChannel(c)).ToArray();
+
+        public IReadOnlyCollection<IChannelCategory> ChannelCategories => Wrapped.Channels.Values.Where(IsChannelCategory).Select(c => new DSharpChannelCategory(c)).ToArray();
+
+        private static bool IsStandardChannel(DiscordChannel channel)
+        {
+            return channel.Type == DSharpPlus.ChannelType.Text || channel.Type == DSharpPlus.ChannelType.Voice;
+        }
+
+        private static bool IsChannelCategory(DiscordChannel channel)
+        {
+            return channel.Type == DSharpPlus.ChannelType.Category;
         }
     }
 }

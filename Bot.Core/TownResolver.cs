@@ -60,8 +60,14 @@ namespace Bot.Core
             ChannelUpdateRequired update = ChannelUpdateRequired.None;
 
             var channel = guild.GetChannel(channelId);
-            if (channel != null && channel.Name != channelName)
-                update = ChannelUpdateRequired.Name;
+            if (channel == null)
+                channel = guild.Channels.FirstOrDefault(c => c.Name == channelName);
+
+            if (channel != null)
+                if (channel.Name != channelName)
+                    update = ChannelUpdateRequired.Name;
+                else if (channel.Id != channelId)
+                    update = ChannelUpdateRequired.Id;
 
             return new GetChannelResult(channel, update);
         }
@@ -71,9 +77,14 @@ namespace Bot.Core
             ChannelUpdateRequired update = ChannelUpdateRequired.None;
 
             var channelCategory = guild.GetChannelCategory(channelId);
+            if (channelCategory == null)
+                channelCategory = guild.ChannelCategories.FirstOrDefault(c => c.Name == channelName);
 
-            if (channelCategory != null && channelCategory.Name != channelName)
-                update = ChannelUpdateRequired.Name;
+            if (channelCategory != null)
+                if (channelCategory.Name != channelName)
+                    update = ChannelUpdateRequired.Name;
+                else if (channelCategory.Id != channelId)
+                    update = ChannelUpdateRequired.Id;
 
             return new GetChannelCategoryResult(channelCategory, update);
         }

@@ -21,5 +21,8 @@ namespace Bot.Api
         IChannel? GetChannel(ulong id);
 
 		IChannelCategory? GetChannelCategory(ulong id);
+
+		IReadOnlyCollection<IChannel> Channels { get; }
+		IReadOnlyCollection<IChannelCategory> ChannelCategories { get; }
     }
 }
