@@ -55,7 +55,7 @@ namespace Bot.Core
 
         private static bool AnyUpdatesRequired(params GetChannelResultBase[] results) => results.Any(r => r.UpdateRequired != ChannelUpdateRequired.None);
 
-        private static GetChannelResult GetChannel(IGuild guild, ulong channelId, string? channelName, bool isVoice)
+        private static GetChannelResult GetChannel(IGuild guild, ulong channelId, string? channelName, bool expectedIsVoice)
         {
             ChannelUpdateRequired update = ChannelUpdateRequired.None;
 
@@ -64,7 +64,9 @@ namespace Bot.Core
                 channel = guild.Channels.FirstOrDefault(c => c.Name == channelName);
 
             if (channel != null)
-                if (channel.Name != channelName)
+                if (channel.IsVoice != expectedIsVoice)
+                    channel = null;
+                else if (channel.Name != channelName)
                     update = ChannelUpdateRequired.Name;
                 else if (channel.Id != channelId)
                     update = ChannelUpdateRequired.Id;

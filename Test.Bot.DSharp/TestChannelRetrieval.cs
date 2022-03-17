@@ -156,14 +156,46 @@ namespace Test.Bot.DSharp
         private void TestResolve_VerifyTownUpdated() => TestResolve_VerifyTownUpdatedTimes(Times.Once());
         private void TestResolve_VerifyTownNotUpdated() => TestResolve_VerifyTownUpdatedTimes(Times.Never());
 
+        [Fact]
+        public void TestResolve_ChatVoiceMismatch_NullChat()
+        {
+            m_mockChatChannel.SetupGet(c => c.IsVoice).Returns(true);
+            var town = PerformResolve();
+            Assert.NotNull(town);
+            Assert.Null(town!.ChatChannel);
+        }
+
+        [Fact]
+        public void TestResolve_ControlVoiceMismatch_NullChat()
+        {
+            m_mockControlChannel.SetupGet(c => c.IsVoice).Returns(true);
+            var town = PerformResolve();
+            Assert.NotNull(town);
+            Assert.Null(town!.ControlChannel);
+        }
+
+        [Fact]
+        public void TestResolve_TownSquareVoiceMismatch_NullChat()
+        {
+            m_mockTownSquareChannel.SetupGet(c => c.IsVoice).Returns(false);
+            var town = PerformResolve();
+            Assert.NotNull(town);
+            Assert.Null(town!.TownSquare);
+        }
+
         private void TestResolve_VerifyTownUpdatedTimes(Times numTimes)
+        {
+            PerformResolve();
+            m_mockTownDb.Verify(db => db.UpdateTownAsync(It.Is<ITown>(t => UpdatedTownMatches(t))), numTimes);
+        }
+
+        private ITown? PerformResolve()
         {
             var tr = new TownResolver(GetServiceProvider());
             var resolveTask = tr.ResolveTownAsync(m_mockTownRecord.Object);
             resolveTask.Wait(50);
             Assert.True(resolveTask.IsCompleted);
-
-            m_mockTownDb.Verify(db => db.UpdateTownAsync(It.Is<ITown>(t => UpdatedTownMatches(t))), numTimes);
+            return resolveTask.Result;
         }
 
         private bool UpdatedTownMatches(ITown update)
