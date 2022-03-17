@@ -49,5 +49,13 @@ namespace Bot.DSharp
 
             throw new InvalidOperationException("Passed an incorrect builder!");
 		}
+
+        public Task ShowModalAsync(IInteractionResponseBuilder builder)
+        {
+            if (builder is DSharpInteractionResponseBuilder d)
+                return ExceptionWrap.WrapExceptionsAsync(() => Wrapped.CreateResponseAsync(InteractionResponseType.Modal, d.Wrapped));
+
+            throw new InvalidOperationException("Passed an incorrect builder!");
+        }
     }
 }

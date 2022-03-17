@@ -27,6 +27,7 @@ namespace Test.Bot.Core
         private readonly Mock<IMember> AuthorMock;
         private readonly Mock<IGuild> GuildMock;
         private readonly Mock<ITownDatabase> TownDatabaseMock;
+        private readonly Mock<IBotSystem> SystemMock;
         private TownDescription TownDesc;
 
         public TestSetup()
@@ -40,6 +41,10 @@ namespace Test.Bot.Core
             TownDatabaseMock = new();
             TownDatabaseMock.Setup(x => x.AddTownAsync(It.IsAny<ITown>(), It.IsAny<IMember>()));
             RegisterMock(TownDatabaseMock);
+
+            SystemMock = new();
+            SystemMock.Setup(x => x.CreateTextInput(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>())).Returns(new Mock<IBotComponent>().Object);
+            RegisterMock(SystemMock);
         }
 
         private static Mock<IChannel> MakeChannel(string name)

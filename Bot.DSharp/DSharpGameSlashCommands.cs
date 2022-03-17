@@ -13,6 +13,7 @@ namespace Bot.DSharp
     internal class DSharpGameSlashCommands : ApplicationCommandModule
     {
         public IBotGameplayInteractionHandler? BotGameplayHandler { get; set; }
+        public IBotSetup? BotSetup { get; set; }
 
         [SlashCommand("game", "Starts up a game of Blood on the Clocktower")]
         public Task GameCommand(InteractionContext ctx) => BotGameplayHandler!.CommandGameAsync(new DSharpInteractionContext(ctx));
@@ -49,6 +50,17 @@ namespace Bot.DSharp
             var allUsers = new[] { user1, user2, user3, user4, user5 };
 
             return BotGameplayHandler!.CommandSetStorytellersAsync(new DSharpInteractionContext(ctx), allUsers.Where(x => x != null).Cast<DiscordMember>().Select(x => new DSharpMember(x)).ToList());
+        }
+
+        [SlashCommand("createTown", "Create a new Town on this server")]
+        public async Task CreateTownCommand(InteractionContext ctx)
+        {
+            await BotSetup!.CommandCreateTown(new DSharpInteractionContext(ctx));
+
+            //var modal = new DiscordInteractionResponseBuilder().WithTitle("Modal").WithCustomId("modal1")
+            //    .AddComponents(new TextInputComponent("Text1", "text1", "placeholder", "value"));
+
+            //await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.Modal, modal);
         }
     }
 }

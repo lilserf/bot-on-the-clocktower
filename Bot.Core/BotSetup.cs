@@ -12,10 +12,41 @@ namespace Bot.Core
         public IEnumerable<string> DefaultExtraDayChannels => new[] { "Dark Alley", "Library", "Graveyard", "Pie Shop" };
 
         private readonly ITownDatabase m_townDb;
+        private readonly IBotSystem m_botSystem;
+        private readonly IComponentService m_componentService;
+
+        IBotComponent m_townNameText;
+        IBotComponent m_controlChannelText;
+        IBotComponent m_townSquareText;
+        IBotComponent m_dayCategoryText;
+        IBotComponent m_nightCategoryText;
+        IBotComponent m_storytellerRoleText;
+        IBotComponent m_villagerRoleText;
 
         public BotSetup(IServiceProvider sp)
         {
             sp.Inject(out m_townDb);
+            sp.Inject(out m_botSystem);
+            sp.Inject(out m_componentService);
+
+            m_townNameText = m_botSystem.CreateTextInput("text-town-name", "Town Name", "Ravenswood Bluff", "Ravenswood Bluff");
+            m_controlChannelText = m_botSystem.CreateTextInput("text-control-channel", "Control Channel Name", "botc-control");
+            m_townSquareText = m_botSystem.CreateTextInput("text-town-square", "Town Square Channel Name", "Town Square");
+            m_dayCategoryText = m_botSystem.CreateTextInput("text-day-category", "Day Category Name", "Ravenswood Bluff - Day");
+            m_nightCategoryText = m_botSystem.CreateTextInput("text-night-category", "Night Category Name", "Ravenswood Bluff - Night");
+        }
+
+        public async Task CommandCreateTown(IBotInteractionContext ctx)
+        {
+            var builder = m_botSystem.CreateInteractionResponseBuilder().WithTitle("Create A Town").WithCustomId("create-town");
+            builder.AddComponents(m_townNameText);
+            builder.AddComponents(m_controlChannelText);
+            builder.AddComponents(m_townSquareText);
+            builder.AddComponents(m_dayCategoryText);
+            builder.AddComponents(m_nightCategoryText);
+            // Modals can only have 5 inputs to we just don't ask about role names
+
+            await ctx.ShowModalAsync(builder);
         }
 
         public Task AddTown(ITown town, IMember author)

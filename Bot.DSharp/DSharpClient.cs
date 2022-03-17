@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using DSharpPlus;
+using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Threading.Tasks;
@@ -53,6 +54,7 @@ namespace Bot.DSharp
             };
 
 			m_discord.ComponentInteractionCreated += ComponentInteractionCreated;
+            m_discord.ModalSubmitted += ModalSubmitted;
 
             await m_discord.ConnectAsync();
 
@@ -64,6 +66,11 @@ namespace Bot.DSharp
         private Task ComponentInteractionCreated(IDiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
         {
             return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
+        }
+
+        private Task ModalSubmitted(IDiscordClient sender, ModalSubmitEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         public class InvalidDiscordTokenException : Exception { }

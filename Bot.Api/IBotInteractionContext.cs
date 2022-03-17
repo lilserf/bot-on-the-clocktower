@@ -13,6 +13,7 @@ namespace Bot.Api
         Task DeferInteractionResponse();
         Task EditResponseAsync(IBotWebhookBuilder webhookBuilder);
         Task UpdateOriginalMessageAsync(IInteractionResponseBuilder builder);
+        Task ShowModalAsync(IInteractionResponseBuilder builder);
     }
 
     public static class IBotInteractionContextExtensions
