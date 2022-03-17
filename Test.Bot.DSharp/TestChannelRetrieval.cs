@@ -157,7 +157,7 @@ namespace Test.Bot.DSharp
         private void TestResolve_VerifyTownNotUpdated() => TestResolve_VerifyTownUpdatedTimes(Times.Never());
 
         [Fact]
-        public void TestResolve_ChatVoiceMismatch_NullChat()
+        public void TestResolve_ChatVoiceMismatch_NullChannel()
         {
             m_mockChatChannel.SetupGet(c => c.IsVoice).Returns(true);
             var town = PerformResolve();
@@ -166,7 +166,7 @@ namespace Test.Bot.DSharp
         }
 
         [Fact]
-        public void TestResolve_ControlVoiceMismatch_NullChat()
+        public void TestResolve_ControlVoiceMismatch_NullChannel()
         {
             m_mockControlChannel.SetupGet(c => c.IsVoice).Returns(true);
             var town = PerformResolve();
@@ -175,7 +175,7 @@ namespace Test.Bot.DSharp
         }
 
         [Fact]
-        public void TestResolve_TownSquareVoiceMismatch_NullChat()
+        public void TestResolve_TownSquareVoiceMismatch_NullChannel()
         {
             m_mockTownSquareChannel.SetupGet(c => c.IsVoice).Returns(false);
             var town = PerformResolve();
