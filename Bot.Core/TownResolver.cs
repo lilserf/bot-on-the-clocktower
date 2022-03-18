@@ -22,11 +22,11 @@ namespace Bot.Core
             var guild = await m_client.GetGuildAsync(rec.GuildId);
             if (guild != null)
             {
-                var controlChannelResult = GetChannel(guild, rec.ControlChannelId, rec.ControlChannel, false);
                 var dayCategoryResult = GetChannelCategory(guild, rec.DayCategoryId, rec.DayCategory);
                 var nightCategoryResult = GetChannelCategory(guild, rec.NightCategoryId, rec.NightCategory);
-                var chatChannelResult = GetChannel(guild, rec.ChatChannelId, rec.ChatChannel, false);
-                var townSquareResult = GetChannel(guild, rec.TownSquareId, rec.TownSquare, true);
+                var controlChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ControlChannelId, rec.ControlChannel, false);
+                var chatChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ChatChannelId, rec.ChatChannel, false);
+                var townSquareResult = GetChannel(guild, dayCategoryResult.Channel, rec.TownSquareId, rec.TownSquare, true);
 
                 var town = new Town(rec)
                 {
@@ -55,13 +55,13 @@ namespace Bot.Core
 
         private static bool AnyUpdatesRequired(params GetChannelResultBase[] results) => results.Any(r => r.UpdateRequired != ChannelUpdateRequired.None);
 
-        private static GetChannelResult GetChannel(IGuild guild, ulong channelId, string? channelName, bool expectedIsVoice)
+        private static GetChannelResult GetChannel(IGuild guild, IChannelCategory? parentCategory, ulong channelId, string? channelName, bool expectedIsVoice)
         {
             ChannelUpdateRequired update = ChannelUpdateRequired.None;
 
             var channel = guild.GetChannel(channelId);
-            if (channel == null)
-                channel = guild.Channels.FirstOrDefault(c => c.Name == channelName);
+            if (channel == null && parentCategory != null)
+                channel = parentCategory!.Channels.FirstOrDefault(c => c.Name == channelName);
 
             if (channel != null)
                 if (channel.IsVoice != expectedIsVoice)

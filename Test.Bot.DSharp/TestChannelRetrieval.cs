@@ -94,7 +94,7 @@ namespace Test.Bot.DSharp
             m_mockGuild.SetupGet(g => g.Roles).Returns(roleDict);
             IChannel[] channels = new[] { m_mockChatChannel.Object, m_mockControlChannel.Object, m_mockTownSquareChannel.Object };
             IChannelCategory[] channelCategories = new[] { m_mockDayChannelCategory.Object, m_mockNightChannelCategory.Object };
-            m_mockGuild.SetupGet(g => g.Channels).Returns(channels);
+            m_mockDayChannelCategory.SetupGet(cc => cc.Channels).Returns(channels);
             m_mockGuild.SetupGet(g => g.ChannelCategories).Returns(channelCategories);
 
             m_mockTownDb.Setup(db => db.UpdateTownAsync(It.IsAny<ITown>())).ReturnsAsync(true);
@@ -130,25 +130,27 @@ namespace Test.Bot.DSharp
         }
 
         [Fact]
-        public void TownResolve_ChatIdOff_RequestsUpdate() => TestResolve_ChannelIdOff(m_mockChatChannel);
+        public void TownResolve_ChatIdOff_RequestsUpdate() => TestResolve_ChannelIdOff(ChatId, m_mockChatChannel);
         [Fact]
-        public void TownResolve_TownSquareIdOff_RequestsUpdate() => TestResolve_ChannelIdOff(m_mockTownSquareChannel);
+        public void TownResolve_TownSquareIdOff_RequestsUpdate() => TestResolve_ChannelIdOff(TownSquareId, m_mockTownSquareChannel);
         [Fact]
-        public void TownResolve_ControlIdOff_RequestsUpdate() => TestResolve_ChannelIdOff(m_mockControlChannel);
+        public void TownResolve_ControlIdOff_RequestsUpdate() => TestResolve_ChannelIdOff(ControlId, m_mockControlChannel);
         [Fact]
-        public void TownResolve_DayCategoryIdOff_RequestsUpdate() => TestResolve_ChannelCategoryIdOff(m_mockDayChannelCategory);
+        public void TownResolve_DayCategoryIdOff_RequestsUpdate() => TestResolve_ChannelCategoryIdOff(DayCategoryId, m_mockDayChannelCategory);
         [Fact]
-        public void TownResolve_NightCategoryIdOff_RequestsUpdate() => TestResolve_ChannelCategoryIdOff(m_mockNightChannelCategory);
+        public void TownResolve_NightCategoryIdOff_RequestsUpdate() => TestResolve_ChannelCategoryIdOff(NightCategoryId, m_mockNightChannelCategory);
 
 
-        private void TestResolve_ChannelIdOff(Mock<IChannel> channel)
+        private void TestResolve_ChannelIdOff(ulong originalId, Mock<IChannel> channel)
         {
+            m_mockGuild.Setup(g => g.GetChannel(It.Is<ulong>(l => l == originalId))).Returns((IChannel?)null);
             channel.SetupGet(c => c.Id).Returns(MismatchedId);
             TestResolve_VerifyTownUpdated();
         }
 
-        private void TestResolve_ChannelCategoryIdOff(Mock<IChannelCategory> channelCategory)
+        private void TestResolve_ChannelCategoryIdOff(ulong originalId, Mock<IChannelCategory> channelCategory)
         {
+            m_mockGuild.Setup(g => g.GetChannelCategory(It.Is<ulong>(l => l == originalId))).Returns((IChannelCategory?)null);
             channelCategory.SetupGet(c => c.Id).Returns(MismatchedId);
             TestResolve_VerifyTownUpdated();
         }
