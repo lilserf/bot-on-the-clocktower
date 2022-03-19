@@ -104,14 +104,14 @@ namespace Bot.Core
             foreach(var u in game.Storytellers)
             {
                 if (storytellerRole != null && !u.Roles.Contains(storytellerRole))
-                        await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
+                    await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 if (villagerRole != null && !u.Roles.Contains(villagerRole))
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
             }
 
             foreach (var u in game.Villagers)
             {
-                if (storytellerRole != null && !u.Roles.Contains(storytellerRole))
+                if (storytellerRole != null && u.Roles.Contains(storytellerRole))
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 if (villagerRole != null && !u.Roles.Contains(villagerRole))
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
