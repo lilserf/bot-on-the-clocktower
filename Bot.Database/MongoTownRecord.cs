@@ -6,11 +6,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Bot.Database
 {
-    // Implementation of Bot.Api.ITown that serializes to MongoDb
-    public class MongoTownRecord : ITownRecord
+	// Implementation of Bot.Api.ITown that serializes to MongoDb
+	[BsonIgnoreExtraElements]
+	public class MongoTownRecord : ITownRecord
 	{
-        [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
-        public ObjectId _id { get; set; }
 		[BsonElement("guild")]
 		public ulong GuildId { get; set; }
 		[BsonElement("controlChannel")]

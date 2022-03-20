@@ -64,7 +64,6 @@ namespace Bot.Database
                 return false;
 
             var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
-			newRec._id = oldRec._id;
 
 			await UpdateRecordAsync(newRec, true);
 			return true;
