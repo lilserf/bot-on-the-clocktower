@@ -51,7 +51,7 @@ namespace Bot.Database
 			var newRec = RecordFromTown(town, author);
 
 			// TODO: error check this record?
-			await UpdateRecordAsync(newRec, false);
+			await UpdateRecordAsync(newRec);
 			return true;
         }
 
@@ -65,13 +65,13 @@ namespace Bot.Database
 
             var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
 
-			await UpdateRecordAsync(newRec, true);
+			await UpdateRecordAsync(newRec);
 			return true;
 		}
 
-		private Task UpdateRecordAsync(MongoTownRecord record, bool upsert)
+		private Task UpdateRecordAsync(MongoTownRecord record)
         {
-			return m_collection.ReplaceOneAsync(GetTownMatchFilter(record.GuildId, record.ControlChannelId), record, new ReplaceOptions() { IsUpsert = upsert });
+			return m_collection.ReplaceOneAsync(GetTownMatchFilter(record.GuildId, record.ControlChannelId), record, new ReplaceOptions() { IsUpsert = true });
         }
 
 		public async Task<ITownRecord?> GetTownRecordAsync(ulong guildId, ulong channelId)
