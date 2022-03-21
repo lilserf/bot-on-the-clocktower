@@ -2,7 +2,7 @@
 
 namespace Bot.Api
 {
-    public interface IChannelCategory
+    public interface IChannelCategory : IBaseChannel
 	{
 		public ulong Id { get; }
 

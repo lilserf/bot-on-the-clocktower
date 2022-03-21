@@ -118,41 +118,41 @@ namespace Bot.Core
             }
         }
 
-        public static async Task<bool> AddPermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
-        {
-            try
-            {
-                await channel.AddPermissionsAsync(member);
-                return true;
-            }
-            catch(Exception ex)
-            {
-                Serilog.Log.Error(ex, "AddPermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
-                if (!IsHandledException(ex))
-                    throw;
+        //public static async Task<bool> AddPermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
+        //{
+        //    try
+        //    {
+        //        await channel.AddOverwriteAsync(member);
+        //        return true;
+        //    }
+        //    catch(Exception ex)
+        //    {
+        //        Serilog.Log.Error(ex, "AddPermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
+        //        if (!IsHandledException(ex))
+        //            throw;
 
-                logger.LogException(ex, $"grant '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
-                return false;
-            }
-        }
+        //        logger.LogException(ex, $"grant '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
+        //        return false;
+        //    }
+        //}
 
-        public static async Task<bool> RemovePermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
-        {
-            try
-            {
-                await channel.RemovePermissionsAsync(member);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Error(ex, "RemovePermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
-                if (!IsHandledException(ex))
-                    throw;
+        //public static async Task<bool> RemovePermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
+        //{
+        //    try
+        //    {
+        //        await channel.RemoveOverwriteAsync(member);
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Serilog.Log.Error(ex, "RemovePermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
+        //        if (!IsHandledException(ex))
+        //            throw;
 
-                logger.LogException(ex, $"remove '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
-                return false;
-            }
-        }
+        //        logger.LogException(ex, $"remove '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
+        //        return false;
+        //    }
+        //}
 
         private static bool IsHandledException(Exception ex)
         {
