@@ -19,7 +19,7 @@ namespace Bot.Database
 			if (m_collection == null) throw new MissingGuildInfoDatabaseException();
 		}
 
-		private static MongoTownRecord RecordFromTown(ITown town, IMember author)
+		private static MongoTownRecord RecordFromTownAndAuthorInfo(ITown town, ulong authorId, string? authorName)
         {
 			return new MongoTownRecord()
 			{
@@ -38,35 +38,60 @@ namespace Bot.Database
 				StorytellerRoleId = town.StorytellerRole?.Id ?? 0,
 				VillagerRole = town.VillagerRole?.Name,
 				VillagerRoleId = town.VillagerRole?.Id ?? 0,
-				AuthorName = author.DisplayName,
-				Author = author.Id,
+				AuthorName = authorName,
+				Author = authorId,
 				Timestamp = DateTime.Now,
 			};
-
 		}
 
-        public async Task<bool> AddTown(ITown town, IMember author)
+		private static MongoTownRecord RecordFromTown(ITown town, IMember author) => RecordFromTownAndAuthorInfo(town, author.Id, author.DisplayName);
+
+        public async Task<bool> AddTownAsync(ITown town, IMember author)
         {
 			var newRec = RecordFromTown(town, author);
 
 			// TODO: error check this record?
-			await m_collection.InsertOneAsync(newRec);
-
+			await UpdateRecordAsync(newRec);
 			return true;
         }
 
-        public async Task<ITownRecord?> GetTownRecord(ulong guildId, ulong channelId)
-		{
-			// Build a filter for the specific document we want
-			var builder = Builders<MongoTownRecord>.Filter;
-			var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.ControlChannelId, channelId);
+		public async Task<bool> UpdateTownAsync(ITown town)
+        {
+			if (town.Guild == null || town.ControlChannel == null)
+				return false;
 
-			// Get the first match
-			var document = await m_collection.Find(filter).FirstOrDefaultAsync();
-			return document;
+            if (await GetTownRecordAsync(town.Guild.Id, town.ControlChannel.Id) is not MongoTownRecord oldRec)
+                return false;
+
+            var newRec = RecordFromTownAndAuthorInfo(town, oldRec.Author, oldRec.AuthorName);
+
+			await UpdateRecordAsync(newRec);
+			return true;
 		}
 
-		public async Task<IEnumerable<ITownRecord>> GetTownRecords(ulong guildId)
+		private Task UpdateRecordAsync(MongoTownRecord record)
+        {
+			return m_collection.ReplaceOneAsync(GetTownMatchFilter(record.GuildId, record.ControlChannelId), record, new ReplaceOptions() { IsUpsert = true });
+        }
+
+		public async Task<ITownRecord?> GetTownRecordAsync(ulong guildId, ulong channelId)
+        {
+            FilterDefinition<MongoTownRecord> filter = GetTownMatchFilter(guildId, channelId);
+
+            // Get the first match
+            var document = await m_collection.Find(filter).FirstOrDefaultAsync();
+            return document;
+        }
+
+        private static FilterDefinition<MongoTownRecord> GetTownMatchFilter(ulong guildId, ulong channelId)
+        {
+            // Build a filter for the specific document we want
+            var builder = Builders<MongoTownRecord>.Filter;
+            var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.ControlChannelId, channelId);
+            return filter;
+        }
+
+        public async Task<IEnumerable<ITownRecord>> GetTownRecordsAsync(ulong guildId)
         {
 			// Build a filter for the specific document we want
 			var builder = Builders<MongoTownRecord>.Filter;

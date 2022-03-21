@@ -9,6 +9,7 @@ namespace Bot.Core
     public class BotGameplay : BotTownLookupHelper, IVoteHandler
     {
         private readonly IActiveGameService m_activeGameService;
+        private readonly IBotClient m_client;
         private readonly IShuffleService m_shuffle;
         private readonly ITownCleanup m_townCleanup;
 
@@ -16,6 +17,7 @@ namespace Bot.Core
             : base(services)
 		{
             services.Inject(out m_activeGameService);
+            services.Inject(out m_client);
             services.Inject(out m_shuffle);
             services.Inject(out m_townCleanup);
 
@@ -96,31 +98,23 @@ namespace Bot.Core
         {
             Serilog.Log.Debug("GrantAndRevokeRoles in game {@game}", game);
 
-            IRole storytellerRole = town.StorytellerRole!;
-            IRole villagerRole = town.VillagerRole!;
+            IRole? storytellerRole = town.StorytellerRole;
+            IRole? villagerRole = town.VillagerRole;
 
             foreach(var u in game.Storytellers)
             {
-                if(!u.Roles.Contains(town.StorytellerRole))
-                {
+                if (storytellerRole != null && !u.Roles.Contains(storytellerRole))
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, storytellerRole, logger);
-                }
-                if (!u.Roles.Contains(town.VillagerRole))
-                {
+                if (villagerRole != null && !u.Roles.Contains(villagerRole))
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
-                }
             }
 
             foreach (var u in game.Villagers)
             {
-                if(u.Roles.Contains(town.StorytellerRole))
-                {
+                if (storytellerRole != null && u.Roles.Contains(storytellerRole))
                     await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
-                }
-                if(!u.Roles.Contains(town.VillagerRole))
-                {
+                if (villagerRole != null && !u.Roles.Contains(villagerRole))
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
-                }
             }
         }
 
@@ -287,19 +281,16 @@ namespace Bot.Core
         // Helper for moving all players to Town Square (used by Day and Vote commands)
         private async Task MoveActivePlayersToTownSquare(IGame game, ITown town, IProcessLogger logger)
         {
-            foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
-            {
-                await MemberHelper.MoveToChannelLoggingErrorsAsync(member, town.TownSquare!, logger);
-            }
+            if (town.TownSquare != null)
+                foreach (var member in m_shuffle.Shuffle(game.AllPlayers))
+                    await MemberHelper.MoveToChannelLoggingErrorsAsync(member, town.TownSquare, logger);
         }
 
         public async Task<string> PhaseDayUnsafe(IGame game, IProcessLogger processLog)
 		{
             var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
             if (town == null)
-            {
                 return "Failed to find a valid town!";
-            }
             // Doesn't currently work :(
             //await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, town, processLog);
@@ -310,9 +301,7 @@ namespace Bot.Core
         {
             var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
             if (town == null)
-            {
                 return "Failed to find a valid town!";
-            }
 
             await MoveActivePlayersToTownSquare(game, town, processLog);
             return "Moved all players to Town Square for voting!";
@@ -339,8 +328,10 @@ namespace Bot.Core
         private static async Task EndGameForUser(IMember user, ITown town, IProcessLogger logger)
         {
             await MemberHelper.RemoveStorytellerTag(user, logger);
-            await user.RevokeRoleAsync(town!.StorytellerRole!);
-            await user.RevokeRoleAsync(town!.VillagerRole!);
+            if (town.StorytellerRole != null)
+                await user.RevokeRoleAsync(town.StorytellerRole);
+            if (town.VillagerRole != null)
+                await user.RevokeRoleAsync(town.VillagerRole);
         }
 
         public async Task<string> EndGameUnsafe(TownKey townKey, IProcessLogger logger)
@@ -354,19 +345,15 @@ namespace Bot.Core
                 m_activeGameService.EndGame(town);
 
                 foreach (var user in game.AllPlayers)
-                {
                     await EndGameForUser(user, town, logger);
-                }
                 return "Thank you for playing Blood on the Clocktower!";
             }
             else
             {
-                var guild = await m_client.GetGuild(townKey.GuildId);
-
-                foreach (var (_, user) in guild!.Members)
-                {
-                    await EndGameForUser(user, town, logger);
-                }
+                var guild = await m_client.GetGuildAsync(townKey.GuildId);
+                if (guild != null)
+                    foreach (var (_, user) in guild.Members)
+                        await EndGameForUser(user, town, logger);
                 return "Cleanup of inactive game complete";
             }
 

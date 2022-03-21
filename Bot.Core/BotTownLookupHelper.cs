@@ -11,15 +11,15 @@ namespace Bot.Core
     /// </summary>
     public abstract class BotTownLookupHelper
     {
-        protected readonly IBotClient m_client;
         protected readonly ITownDatabase m_townLookup;
+        protected readonly ITownResolver m_townResolver;
 
         protected const string InvalidTownMessage = "Couldn't find a registered town for this server and channel. Consider re-creating the town with `/createTown` or `/addTown`.";
 
         public BotTownLookupHelper(IServiceProvider serviceProvider)
         {
-            serviceProvider.Inject(out m_client);
             serviceProvider.Inject(out m_townLookup);
+            serviceProvider.Inject(out m_townResolver);
         }
 
         protected Task<ITown?> GetValidTownOrLogErrorAsync(TownKey townKey, IProcessLogger processLogger)
@@ -29,7 +29,7 @@ namespace Bot.Core
 
         protected async Task<ITown?> GetValidTownOrLogErrorAsync(ulong guildId, ulong controlChannelId, IProcessLogger processLogger)
         {
-            var townRecordList = await m_townLookup.GetTownRecords(guildId);
+            var townRecordList = await m_townLookup.GetTownRecordsAsync(guildId);
             var townRec = townRecordList.Where(x => x.ControlChannelId == controlChannelId).FirstOrDefault();
             
             if (townRec == null)
@@ -47,12 +47,9 @@ namespace Bot.Core
                 return null;
             }
 
-            var town = await m_client.ResolveTownAsync(townRec);
+            var town = await m_townResolver.ResolveTownAsync(townRec);
             if (town == null)
-            {
                 processLogger.LogMessage(InvalidTownMessage);
-                return null;
-            }
 
             return town;
         }

@@ -1,5 +1,4 @@
 ﻿using Bot.Api;
-using Bot.Api.Database;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
@@ -64,29 +63,6 @@ namespace Bot.DSharp
 
         public Task<IGuild?> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 
-        public async Task<ITown?> ResolveTownAsync(ITownRecord rec)
-        {
-            var guild = await GetGuildAsync(rec.GuildId);
-            if (guild != null)
-            {
-                var town = new Town(rec)
-                {
-                    Guild = guild,
-                    ControlChannel = await GetChannelAsync(rec.ControlChannelId),
-                    DayCategory = await GetChannelCategoryAsync(rec.DayCategoryId),
-                    NightCategory = await GetChannelCategoryAsync(rec.NightCategoryId),
-                    ChatChannel = await GetChannelAsync(rec.ChatChannelId),
-                    TownSquare = await GetChannelAsync(rec.TownSquareId),
-                    StorytellerRole = GetRoleForGuild(guild, rec.StorytellerRoleId),
-                    VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
-                };
-                return town;
-            }
-            return null;
-        }
-
-        public async Task<IGuild?> GetGuild(ulong guildId) => await m_discord.GetGuildAsync(guildId);
-
         private Task ComponentInteractionCreated(IDiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
         {
             return m_componentService.CallAsync(new DSharpComponentContext(e.Interaction));
@@ -95,17 +71,6 @@ namespace Bot.DSharp
         private Task ModalSubmitted(IDiscordClient sender, ModalSubmitEventArgs e)
         {
             throw new NotImplementedException();
-        }
-
-        private async Task<IChannel?> GetChannelAsync(ulong id) => await m_discord.GetChannelAsync(id);
-
-        private async Task<IChannelCategory?> GetChannelCategoryAsync(ulong id) => await m_discord.GetChannelCategoryAsync(id);
-
-        private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
-        {
-            if (guild.Roles.TryGetValue(roleId, out var role))
-                return role;
-            return null;
         }
 
         public class InvalidDiscordTokenException : Exception { }

@@ -91,8 +91,8 @@ namespace Bot.Core
             private readonly IDateTime DateTime;
 
             private readonly ICallbackScheduler<TownKey> m_callbackScheduler;
-            private readonly IBotClient m_client;
             private readonly ITownDatabase m_townLookup;
+            private readonly ITownResolver m_townResolver;
             private readonly IVoteHandler m_voteHandler;
 
             private readonly Dictionary<TownKey, DateTime> m_townKeyToVoteTime = new();
@@ -101,8 +101,8 @@ namespace Bot.Core
             {
                 serviceProvider.Inject(out DateTime);
 
-                serviceProvider.Inject(out m_client);
                 serviceProvider.Inject(out m_townLookup);
+                serviceProvider.Inject(out m_townResolver);
                 serviceProvider.Inject(out m_voteHandler);
 
                 var callbackFactory = serviceProvider.GetService<ICallbackSchedulerFactory>();
@@ -131,10 +131,10 @@ namespace Bot.Core
 
                 if (hadTown)
                 {
-                    var townRecord = await m_townLookup.GetTownRecord(townKey);
+                    var townRecord = await m_townLookup.GetTownRecordAsync(townKey);
                     if (townRecord != null)
                     {
-                        var town = await m_client.ResolveTownAsync(townRecord);
+                        var town = await m_townResolver.ResolveTownAsync(townRecord);
                         if (town != null && town.VillagerRole != null)
                         {
                             var message = $"{town.VillagerRole.Mention} - Vote countdown stopped!";
@@ -199,11 +199,11 @@ namespace Bot.Core
 
             private async Task<string> SendTimeRemainingMessageAsync(TownKey townKey, DateTime endTime, DateTime now)
             {
-                var townRecord = await m_townLookup.GetTownRecord(townKey);
+                var townRecord = await m_townLookup.GetTownRecordAsync(townKey);
                 if (townRecord == null)
                     return "Could not find town";
 
-                var town = await m_client.ResolveTownAsync(townRecord);
+                var town = await m_townResolver.ResolveTownAsync(townRecord);
                 if (town == null)
                     return "Could not find town";
 
@@ -218,11 +218,11 @@ namespace Bot.Core
 
             private async Task<string> SendTimeToVoteMessageAsync(TownKey townKey)
             {
-                var townRecord = await m_townLookup.GetTownRecord(townKey);
+                var townRecord = await m_townLookup.GetTownRecordAsync(townKey);
                 if (townRecord == null)
                     return "Could not find town";
 
-                var town = await m_client.ResolveTownAsync(townRecord);
+                var town = await m_townResolver.ResolveTownAsync(townRecord);
                 if (town == null)
                     return "Could not find town";
 

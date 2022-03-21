@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -33,38 +34,68 @@ namespace Bot.DSharp
             }
 		}
 
-        public async Task<IChannel> CreateVoiceChannelAsync(string name, IChannel? parent = null)
+        public async Task<IChannel?> CreateVoiceChannelAsync(string name, IChannelCategory? parent = null)
         {
-            DiscordChannel? dc = null;
+            DiscordChannel? dc;
             if (parent is DSharpChannel dp)
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice, dp.Wrapped);
             else
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice);
 
-            return new DSharpChannel(dc);
+            return dc != null ? new DSharpChannel(dc) : null;
         }
 
-        public async Task<IChannel> CreateTextChannelAsync(string name, IChannel? parent = null)
+        public async Task<IChannel?> CreateTextChannelAsync(string name, IChannelCategory? parent = null)
         {
-            DiscordChannel? dc = null;
+            DiscordChannel? dc;
             if (parent is DSharpChannel dp)
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text, dp.Wrapped);
             else
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text);
 
-            return new DSharpChannel(dc);
+            return dc != null ? new DSharpChannel(dc) : null;
         }
 
-        public async Task<IChannel> CreateCategoryAsync(string name)
+        public async Task<IChannelCategory?> CreateCategoryAsync(string name)
         {
             var c = await Wrapped.CreateChannelCategoryAsync(name);
-            return new DSharpChannel(c);
+            return c != null ? new DSharpChannelCategory(c) : null;
         }
 
-        public async Task<IRole> CreateRoleAsync(string name, Color color)
+        public async Task<IRole?> CreateRoleAsync(string name, Color color)
         {
             var r = await Wrapped.CreateRoleAsync(name, null, new DiscordColor(color.R, color.G, color.B));
-            return new DSharpRole(r);
+            return r != null ? new DSharpRole(r) : null;
+        }
+
+        public IChannel? GetChannel(ulong id)
+        {
+            var channel = Wrapped.GetChannel(id);
+            if (channel != null && IsStandardChannel(channel))
+                return new DSharpChannel(channel);
+            return null;
+        }
+
+        public IChannelCategory? GetChannelCategory(ulong id)
+        {
+            var channel = Wrapped.GetChannel(id);
+            if (channel != null && IsChannelCategory(channel))
+                return new DSharpChannelCategory(channel);
+            return null;
+        }
+
+        public IReadOnlyCollection<IChannel> Channels => Wrapped.Channels.Values.Where(IsStandardChannel).Select(c => new DSharpChannel(c)).ToArray();
+
+        public IReadOnlyCollection<IChannelCategory> ChannelCategories => Wrapped.Channels.Values.Where(IsChannelCategory).Select(c => new DSharpChannelCategory(c)).ToArray();
+
+        private static bool IsStandardChannel(DiscordChannel channel)
+        {
+            return channel.Type == DSharpPlus.ChannelType.Text || channel.Type == DSharpPlus.ChannelType.Voice;
+        }
+
+        private static bool IsChannelCategory(DiscordChannel channel)
+        {
+            return channel.Type == DSharpPlus.ChannelType.Category;
         }
     }
 }

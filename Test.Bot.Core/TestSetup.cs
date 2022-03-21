@@ -39,7 +39,7 @@ namespace Test.Bot.Core
             TownDesc = MakeDesc(GuildMock.Object, AuthorMock.Object);
 
             TownDatabaseMock = new();
-            TownDatabaseMock.Setup(x => x.AddTown(It.IsAny<ITown>(), It.IsAny<IMember>()));
+            TownDatabaseMock.Setup(x => x.AddTownAsync(It.IsAny<ITown>(), It.IsAny<IMember>()));
             RegisterMock(TownDatabaseMock);
 
             SystemMock = new();
@@ -96,8 +96,8 @@ namespace Test.Bot.Core
         {
             Mock<IGuild> guild = new();
             guild.SetupGet(x => x.Id).Returns(MockGuildId);
-            guild.Setup(x => x.CreateTextChannelAsync(It.IsAny<string>(), It.IsAny<IChannel?>())); // TODO: make this actually do something?
-            guild.Setup(x => x.CreateVoiceChannelAsync(It.IsAny<string>(), It.IsAny<IChannel?>())); // TODO: make this actually do something?
+            guild.Setup(x => x.CreateTextChannelAsync(It.IsAny<string>(), It.IsAny<IChannelCategory?>())); // TODO: make this actually do something?
+            guild.Setup(x => x.CreateVoiceChannelAsync(It.IsAny<string>(), It.IsAny<IChannelCategory?>())); // TODO: make this actually do something?
             guild.Setup(x => x.CreateCategoryAsync(It.IsAny<string>())); // TODO: make this actually do something?
             guild.Setup(x => x.CreateRoleAsync(It.IsAny<string>(), It.IsAny<Color>())); // TODO: make this actually do something?
             return guild;
@@ -129,7 +129,7 @@ namespace Test.Bot.Core
             IMember author = AuthorMock.Object;
 
             Mock<ITownDatabase> townDb = new();
-            townDb.Setup(x => x.AddTown(It.IsAny<ITown>(), It.IsAny<IMember>()));
+            townDb.Setup(x => x.AddTownAsync(It.IsAny<ITown>(), It.IsAny<IMember>()));
             RegisterMock(townDb);
 
             BotSetup bs = new(GetServiceProvider());
@@ -137,7 +137,7 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            townDb.Verify(x => x.AddTown(It.Is<ITown>(y => y == town), It.Is<IMember>(z => z == author)));
+            townDb.Verify(x => x.AddTownAsync(It.Is<ITown>(y => y == town), It.Is<IMember>(z => z == author)));
         }
 
         private BotSetup CreateTownAssertCompleted()
@@ -154,7 +154,7 @@ namespace Test.Bot.Core
         {
             CreateTownAssertCompleted();
 
-            TownDatabaseMock.Verify(x => x.AddTown(
+            TownDatabaseMock.Verify(x => x.AddTownAsync(
                 It.Is<ITown>(y => y.DayCategory!.Id == (ulong)DayCatName.GetHashCode() &&
                                   y.NightCategory!.Id == (ulong)NightCatName.GetHashCode() &&
                                   y.ControlChannel!.Id == (ulong)ControlChannelName.GetHashCode() &&
@@ -176,17 +176,17 @@ namespace Test.Bot.Core
         {
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == DayCatName)), Times.Once);
             // TODO: how to make sure the calls happen with the correct parent channel
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == TownSquareName), It.IsAny<IChannel?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == TownSquareName), It.IsAny<IChannelCategory?>()), Times.Once);
             foreach (var name in bs.DefaultExtraDayChannels)
-                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannel?>()), Times.Once);
-            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ControlChannelName), It.IsAny<IChannel?>()), Times.Once);
+                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannelCategory?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ControlChannelName), It.IsAny<IChannelCategory?>()), Times.Once);
         }
 
         private void VerifyOptionalChannels(IBotSetup _)
         {
-            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannel?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannelCategory?>()), Times.Once);
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Once);
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Exactly(20));
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannelCategory?>()), Times.Exactly(20));
         }
 
         [Fact]
@@ -211,7 +211,7 @@ namespace Test.Bot.Core
             VerifyRequiredRoles(bs);
             // Make sure night stuff DIDN'T happen
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Never);
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Never);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannelCategory?>()), Times.Never);
         }
 
         [Fact]
@@ -232,18 +232,18 @@ namespace Test.Bot.Core
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == dayCatName)), Times.Once);
             // TODO: how to make sure the calls happen with the correct parent channel
             var tsName = IBotSetup.DefaultTownSquareChannelName;
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == tsName), It.IsAny<IChannel?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == tsName), It.IsAny<IChannelCategory?>()), Times.Once);
             foreach (var name in bs.DefaultExtraDayChannels)
-                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannel?>()), Times.Once);
+                GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == name), It.IsAny<IChannelCategory?>()), Times.Once);
             var ctrlName = string.Format(IBotSetup.DefaultControlChannelFormat, TownDesc.TownName);
-            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ctrlName), It.IsAny<IChannel?>()), Times.Once);
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ctrlName), It.IsAny<IChannelCategory?>()), Times.Once);
 
             // Chat should not have been created
-            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannel?>()), Times.Never);
+            GuildMock.Verify(x => x.CreateTextChannelAsync(It.Is<string>(s => s == ChatChannelName), It.IsAny<IChannelCategory?>()), Times.Never);
 
             // Might as well confirm Night still worked
             GuildMock.Verify(x => x.CreateCategoryAsync(It.Is<string>(s => s == NightCatName)), Times.Once);
-            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannel?>()), Times.Exactly(20));
+            GuildMock.Verify(x => x.CreateVoiceChannelAsync(It.Is<string>(s => s == IBotSetup.DefaultCottageName), It.IsAny<IChannelCategory?>()), Times.Exactly(20));
 
             // Check for default role names
             var stName = string.Format(IBotSetup.DefaultStorytellerRoleFormat, TownDesc.TownName);
