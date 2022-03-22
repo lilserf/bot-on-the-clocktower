@@ -4,6 +4,6 @@ namespace Bot.Api.Lookup
 {
     public interface ICharacterLookup
     {
-        Task<LookupCharacterResult?> LookupCharacterAsync(ulong guildId, string charString);
+        Task<LookupCharacterResult> LookupCharacterAsync(ulong guildId, string charString);
     }
 }
