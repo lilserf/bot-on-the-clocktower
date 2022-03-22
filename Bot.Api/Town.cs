@@ -19,6 +19,11 @@ namespace Bot.Api
 			TownRecord = townRecord;
         }
 
+		public Town()
+        {
+
+        }
+
         public override string ToString()
         {
 			return $"Guild {Guild?.Id} / Control {ControlChannel?.Id}";

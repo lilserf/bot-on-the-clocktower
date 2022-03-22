@@ -10,7 +10,7 @@ namespace Bot.Core
 {
     public class BotSetup : IBotSetup
     {
-        public IEnumerable<string> DefaultExtraDayChannels => new[] { "Dark Alley" };//, "Library", "Graveyard", "Pie Shop" };
+        public IEnumerable<string> DefaultExtraDayChannels => new[] { "Dark Alley" , "Library", "Graveyard", "Pie Shop" };
 
         private readonly ITownDatabase m_townDb;
         private readonly IBotSystem m_botSystem;
@@ -35,7 +35,7 @@ namespace Bot.Core
             if (useNight)
                 tdesc.NightCategoryName = string.Format(IBotSetup.DefaultNightCategoryFormat, townName);
 
-            await CreateTown(tdesc, guildStRole, guildPlayerRole);
+            await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
 
             var builder = m_botSystem.CreateWebhookBuilder().WithContent($"Created new town **{townName}**!");
             await ctx.EditResponseAsync(builder);
@@ -69,10 +69,12 @@ namespace Bot.Core
             // TODO
         }
 
-        public async Task CreateTown(TownDescription townDesc, IRole? guildStRole = null, IRole? guildPlayerRole = null)
+        public async Task CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole = null, IRole? guildPlayerRole = null)
         {
-            // TODO: make sure this all works correctly if roles/channels/etc with these names already exist
             IGuild guild = townDesc.Guild;
+
+            Town newTown = new Town();
+            newTown.Guild = guild;
 
             // Get bot role
             var botRole = guild.BotRole;
@@ -81,45 +83,45 @@ namespace Bot.Core
             townDesc = FallbackToDefaults(townDesc);
 
             // First create the roles for this town
-            var gameStRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName!, Color.Magenta);
-            var gameVillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName!, Color.DarkMagenta);
+            newTown.StorytellerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName!, Color.Magenta);
+            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName!, Color.DarkMagenta);
 
             // Create Day Category and set up visibility
-            var dayCat = await ChannelHelper.GetOrCreateCategory(guild, townDesc.DayCategoryName!);
-            await dayCat.AddOverwriteAsync(gameVillagerRole, Permissions.AccessChannels);
-            await dayCat.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
+            newTown.DayCategory = await ChannelHelper.GetOrCreateCategory(guild, townDesc.DayCategoryName!);
+            await newTown.DayCategory.AddOverwriteAsync(newTown.VillagerRole, Permissions.AccessChannels);
+            await newTown.DayCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
 
-            var controlChan = await ChannelHelper.GetOrCreateTextChannel(guild, dayCat, townDesc.ControlChannelName!);
-            await controlChan.AddOverwriteAsync(botRole, Permissions.AccessChannels);
-            await controlChan.AddOverwriteAsync(gameVillagerRole, allow: Permissions.None, deny: Permissions.AccessChannels);
+            newTown.ControlChannel = await ChannelHelper.GetOrCreateTextChannel(guild, newTown.DayCategory, townDesc.ControlChannelName!);
+            await newTown.ControlChannel.AddOverwriteAsync(botRole, Permissions.AccessChannels);
+            await newTown.ControlChannel.AddOverwriteAsync(newTown.VillagerRole, allow: Permissions.None, deny: Permissions.AccessChannels);
 
             if(guildStRole != null)
             {
-                await controlChan.AddOverwriteAsync(guildStRole, Permissions.AccessChannels);
-                await controlChan.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
+                await newTown.ControlChannel.AddOverwriteAsync(guildStRole, Permissions.AccessChannels);
+                await newTown.ControlChannel.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
 
-            var townSquareChan = await ChannelHelper.GetOrCreateVoiceChannel(guild, dayCat, townDesc.TownSquareName!);
+            newTown.TownSquare = await ChannelHelper.GetOrCreateVoiceChannel(guild, newTown.DayCategory, townDesc.TownSquareName!);
 
             if (guildPlayerRole != null)
             {
-                await townSquareChan.AddOverwriteAsync(guildPlayerRole, Permissions.AccessChannels);
-                await dayCat.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
+                await newTown.TownSquare.AddOverwriteAsync(guildPlayerRole, Permissions.AccessChannels);
+                await newTown.DayCategory.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
 
             // Chat channel is optional
             if (townDesc.ChatChannelName != null)
             {
-                var chatChan = await ChannelHelper.GetOrCreateVoiceChannel(guild, dayCat, townDesc.ChatChannelName);
-                await chatChan.AddOverwriteAsync(botRole, Permissions.AccessChannels);
+                newTown.ChatChannel = await ChannelHelper.GetOrCreateTextChannel(guild, newTown.DayCategory, townDesc.ChatChannelName);
+                await newTown.ChatChannel.AddOverwriteAsync(botRole, Permissions.AccessChannels);
 
                 if (guildPlayerRole == null)
-                    await chatChan.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
+                    await newTown.ChatChannel.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
             
             foreach(var chanName in DefaultExtraDayChannels)
             {
-                var newChan = await ChannelHelper.GetOrCreateVoiceChannel(guild, dayCat, chanName);
+                var newChan = await ChannelHelper.GetOrCreateVoiceChannel(guild, newTown.DayCategory, chanName);
                 if (guildPlayerRole == null)
                     await newChan.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
@@ -127,16 +129,18 @@ namespace Bot.Core
             // Night category is optional
             if(townDesc.NightCategoryName != null)
             {
-                var nightCat = await ChannelHelper.GetOrCreateCategory(guild, townDesc.NightCategoryName);
-                await nightCat.AddOverwriteAsync(gameStRole, Permissions.AccessChannels);
-                await nightCat.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
-                await nightCat.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
+                newTown.NightCategory = await ChannelHelper.GetOrCreateCategory(guild, townDesc.NightCategoryName);
+                await newTown.NightCategory.AddOverwriteAsync(newTown.StorytellerRole, Permissions.AccessChannels);
+                await newTown.NightCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
+                await newTown.NightCategory.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
 
                 for(int i=0; i < IBotSetup.NumCottages; i++)
                 {
-                    await ChannelHelper.GetOrCreateVoiceChannel(guild, nightCat, IBotSetup.DefaultCottageName);
+                    await ChannelHelper.GetOrCreateVoiceChannel(guild, newTown.NightCategory, IBotSetup.DefaultCottageName);
                 }
             }
+
+            await AddTown(newTown, author);
         }
     }
 }

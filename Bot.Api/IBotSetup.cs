@@ -19,7 +19,7 @@ namespace Bot.Api
 
         public Task AddTown(ITown town, IMember author);
 
-        public Task CreateTown(TownDescription townDesc, IRole? guildStRole, IRole? guildPlayerRole);
+        public Task CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole, IRole? guildPlayerRole);
 
         public Task CommandCreateTown(IBotInteractionContext ctx, string townName, IRole? playerRole, IRole? stRole, bool useNight);
     }
