@@ -17,11 +17,14 @@ namespace Bot.Core.Lookup
 
         public async Task<LookupCharacterResult> LookupCharacterAsync(ulong guildId, string charString)
         {
-            var officialChars = await m_storage.GetOfficialCharactersAsync();
+            var officialCharResult = await m_storage.GetOfficialScriptCharactersAsync();
+            var customCharResult = await m_storage.GetCustomScriptCharactersAsync(guildId);
 
-            var matchingCharacters = FilterMatchingCharacterItems(officialChars.Items, charString);
+            var allChars = officialCharResult.Items.Concat(customCharResult.Items);
+            var matchingCharacters = FilterMatchingCharacterItems(allChars, charString);
+            var mergedCharacters = MergeCharacterItems(matchingCharacters);
 
-            return new LookupCharacterResult(matchingCharacters.Select(c => new LookupCharacterItem(c.Character, c.Scripts)));
+            return new LookupCharacterResult(mergedCharacters.Select(c => new LookupCharacterItem(c.Character, c.Scripts)));
         }
 
         private IEnumerable<GetCharactersItem> FilterMatchingCharacterItems(IEnumerable<GetCharactersItem> characterItems, string charString)
@@ -29,6 +32,48 @@ namespace Bot.Core.Lookup
             foreach (var item in characterItems)
                 if (0 == string.Compare(item.Character.Name, charString, StringComparison.InvariantCultureIgnoreCase))
                     yield return item;
+        }
+
+        private IReadOnlyCollection<GetCharactersItem> MergeCharacterItems(IEnumerable<GetCharactersItem> items)
+        {
+            Dictionary<(string, string, CharacterTeam), (CharacterData, List<ScriptData>)> merged = new();
+            List<(string, string, CharacterTeam)> order = new();
+
+            foreach (var item in items)
+                MergeCharactersItem(merged, order, item);
+
+            return order.Select(t =>
+            {
+                var d = merged[t];
+                return new GetCharactersItem(d.Item1, d.Item2);
+            }).ToArray();
+
+
+            static void MergeCharactersItem(Dictionary<(string, string, CharacterTeam), (CharacterData, List<ScriptData>)> merged, List<(string, string, CharacterTeam)> order, GetCharactersItem item)
+            {
+                var c = item.Character;
+                var id = (Sanitize(c.Name), Sanitize(c.Ability), c.Team);
+
+                if (!merged.TryGetValue(id, out var data))
+                {
+                    data = (new CharacterData(c.Name, c.Ability, c.Team, c.IsOfficial), new List<ScriptData>());
+                    merged.Add(id, data);
+                    order.Add(id);
+                }
+                MergeCharacterItemIntoData(data, item);
+            }
+
+            static void MergeCharacterItemIntoData((CharacterData, List<ScriptData>) data, GetCharactersItem item)
+            {
+                data.Item1.ImageUrl ??= item.Character.ImageUrl;
+                data.Item1.FlavorText ??= item.Character.FlavorText;
+                data.Item2.AddRange(item.Scripts);
+            }
+
+            static string Sanitize(string s)
+            {
+                return new string(s.ToLowerInvariant().Where(c => !char.IsWhiteSpace(c)).ToArray());
+            }
         }
     }
 }
