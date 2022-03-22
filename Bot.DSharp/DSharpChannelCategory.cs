@@ -27,11 +27,11 @@ namespace Bot.DSharp
 			}
 		}
 
-		public async Task AddOverwriteAsync(IRole m, IChannel.Permissions allow, Permissions deny = Permissions.None)
+		public async Task AddOverwriteAsync(IRole r, IChannel.Permissions allow, Permissions deny = Permissions.None)
 		{
-			if (m is DSharpMember member)
+			if (r is DSharpRole role)
 			{
-				await Wrapped.AddOverwriteAsync(member.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny);
+				await Wrapped.AddOverwriteAsync(role.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny);
 			}
 		}
 
@@ -43,11 +43,11 @@ namespace Bot.DSharp
 			}
 		}
 
-		public async Task RemoveOverwriteAsync(IRole m)
+		public async Task RemoveOverwriteAsync(IRole r)
 		{
-			if (m is DSharpMember member)
+			if (r is DSharpRole role)
 			{
-				await Wrapped.DeleteOverwriteAsync(member.Wrapped);
+				await Wrapped.DeleteOverwriteAsync(role.Wrapped);
 			}
 		}
 	}
