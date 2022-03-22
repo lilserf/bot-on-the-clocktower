@@ -31,7 +31,7 @@ namespace Test.Bot.Core
 
         public TestCharacterLookup()
         {
-            m_officialWasherWoman = new("Washerwoman", "You start knowing that 1 or 2 players is a particular Townsfolk", CharacterTeam.Townsfolk, isOfficial: true);
+            m_officialWasherWoman = new("Washerwoman", "You start knowing that 1 or 2 players is a particular Townsfolk.", CharacterTeam.Townsfolk, isOfficial: true);
             m_officialImp = new("Imp", "Each night*, choose a player: they die. If you kill yourself this way, a Minion becomes the Imp.", CharacterTeam.Demon, isOfficial: true);
             m_officialImp.ImageUrl = "imp image url";
             m_officialPoisoner = new("Poisoner", "Each night, choose a player: they are poisoned tonight and tomorrow day.", CharacterTeam.Minion, isOfficial: true);

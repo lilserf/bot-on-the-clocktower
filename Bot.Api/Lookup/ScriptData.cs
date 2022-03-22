@@ -1,6 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-
 namespace Bot.Api.Lookup
 {
     public class ScriptData
@@ -12,11 +9,6 @@ namespace Bot.Api.Lookup
         {
             Name = name;
             IsOfficial = isOfficial;
-        }
-
-        public IReadOnlyCollection<ScriptData>? ToArray()
-        {
-            throw new NotImplementedException();
         }
     }
 }
