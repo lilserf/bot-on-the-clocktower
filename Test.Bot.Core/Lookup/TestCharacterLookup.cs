@@ -5,7 +5,7 @@ using System.Linq;
 using Test.Bot.Base;
 using Xunit;
 
-namespace Test.Bot.Core
+namespace Test.Bot.Core.Lookup
 {
     public class TestCharacterLookup : TestBase
     {
