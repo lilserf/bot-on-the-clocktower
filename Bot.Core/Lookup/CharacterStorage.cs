@@ -18,7 +18,7 @@ namespace Bot.Core.Lookup
             //var official = await m_scriptCache.GetOfficialScriptsAsync();
 
             //foreach (var char in official)
-            // TODO: Merge capability should be shared
+            // TODO Create items for each character (no merging! that's handled elsewhere!)
 
             //return new GetCharactersResult()
         }
