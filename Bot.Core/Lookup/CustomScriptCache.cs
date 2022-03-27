@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Core.Lookup
@@ -11,7 +12,7 @@ namespace Bot.Core.Lookup
 
         public Task<GetCustomScriptResult> GetCustomScriptAsync(string url)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(new GetCustomScriptResult(Enumerable.Empty<ScriptWithCharacters>()));
         }
     }
 }
