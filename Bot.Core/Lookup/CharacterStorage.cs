@@ -1,12 +1,26 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Bot.Core.Lookup
 {
     public class CharacterStorage : ICharacterStorage
     {
-        public Task<GetCharactersResult> GetOfficialScriptCharactersAsync()
+        private readonly IScriptCache m_scriptCache;
+
+        public CharacterStorage(IServiceProvider serviceProvider)
+        {
+            //serviceProvider.Inject(out m_scriptCache);
+        }
+
+        public async Task<GetCharactersResult> GetOfficialScriptCharactersAsync()
         {
             throw new System.NotImplementedException();
+            //var official = await m_scriptCache.GetOfficialScriptsAsync();
+
+            //foreach (var char in official)
+            // TODO: Merge capability should be shared
+
+            //return new GetCharactersResult()
         }
         public Task<GetCharactersResult> GetCustomScriptCharactersAsync(ulong guildId)
         {

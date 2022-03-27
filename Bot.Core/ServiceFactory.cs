@@ -19,7 +19,7 @@ namespace Bot.Core
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
-            sp.AddService<ICharacterStorage>(new CharacterStorage());
+            sp.AddService<ICharacterStorage>(new CharacterStorage(sp));
             sp.AddService<ICharacterLookup>(new CharacterLookup(sp));
             return sp;
         }
