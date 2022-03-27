@@ -1,30 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Core.Lookup
 {
     public class CharacterStorage : ICharacterStorage
     {
-        private readonly IScriptCache m_scriptCache;
+        private readonly IOfficialCharacterCache m_officialCache;
 
         public CharacterStorage(IServiceProvider serviceProvider)
         {
-            //serviceProvider.Inject(out m_scriptCache);
+            serviceProvider.Inject(out m_officialCache);
         }
 
-        public async Task<GetCharactersResult> GetOfficialScriptCharactersAsync()
+        public async Task<GetCharactersResult> GetCharactersAsync(ulong guildId)
         {
-            throw new System.NotImplementedException();
-            //var official = await m_scriptCache.GetOfficialScriptsAsync();
+            List<GetCharactersItem> items = new();
+            var result = await m_officialCache.GetOfficialCharactersAsync();
 
-            //foreach (var char in official)
-            // TODO Create items for each character (no merging! that's handled elsewhere!)
+            foreach (var i in result.Items)
+                items.Add(new GetCharactersItem(i.Character, i.Scripts));
 
-            //return new GetCharactersResult()
-        }
-        public Task<GetCharactersResult> GetCustomScriptCharactersAsync(ulong guildId)
-        {
-            throw new System.NotImplementedException();
+            return new GetCharactersResult(items);
         }
     }
 }

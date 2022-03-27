@@ -17,11 +17,8 @@ namespace Bot.Core.Lookup
 
         public async Task<LookupCharacterResult> LookupCharacterAsync(ulong guildId, string charString)
         {
-            var officialCharResult = await m_storage.GetOfficialScriptCharactersAsync();
-            var customCharResult = await m_storage.GetCustomScriptCharactersAsync(guildId);
-
-            var allChars = officialCharResult.Items.Concat(customCharResult.Items);
-            var matchingCharacters = FilterMatchingCharacterItems(allChars, charString);
+            var charResult = await m_storage.GetCharactersAsync(guildId);
+            var matchingCharacters = FilterMatchingCharacterItems(charResult.Items, charString);
             var mergedCharacters = MergeCharacterItems(matchingCharacters);
 
             return new LookupCharacterResult(mergedCharacters.Select(c => new LookupCharacterItem(c.Character, c.Scripts)));

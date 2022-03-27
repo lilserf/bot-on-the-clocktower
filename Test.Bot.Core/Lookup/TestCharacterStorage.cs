@@ -8,24 +8,26 @@ namespace Test.Bot.Core.Lookup
 {
     public class TestCharacterStorage : TestBase
     {
-        private readonly Mock<IScriptCache> m_mockScriptCache = new(MockBehavior.Strict);
+        private readonly Mock<IOfficialCharacterCache> m_mockOfficialCache = new(MockBehavior.Strict);
 
         public TestCharacterStorage()
         {
-            RegisterMock(m_mockScriptCache);
+            RegisterMock(m_mockOfficialCache);
+
+
         }
 
-        [Fact(Skip="NYI")]
+        [Fact]
         public void CharacterSotrage_GetOfficalScripts_ReturnsCharacterWithScript()
         {
             var expectedScript = new ScriptData("test script", isOfficial: true);
             var expectedChar = new CharacterData("test char", "test ability", CharacterTeam.Minion, isOfficial: true);
 
-            m_mockScriptCache.Setup(sc => sc.GetOfficialScriptsAsync()).ReturnsAsync(new GetScriptsResult(new[] { new ScriptWithCharacters(expectedScript, new[] { expectedChar }) }));
+            m_mockOfficialCache.Setup(sc => sc.GetOfficialCharactersAsync()).ReturnsAsync(new GetOfficialCharactersResult(new[] { new GetOfficialCharactersItem(expectedChar, new[] { expectedScript }) }));
 
             var cs = new CharacterStorage(GetServiceProvider());
 
-            var actualResult = AssertCompletedTask(() => cs.GetOfficialScriptCharactersAsync());
+            var actualResult = AssertCompletedTask(() => cs.GetCharactersAsync(It.IsAny<ulong>()));
 
             Assert.Collection(actualResult.Items,
                 i =>

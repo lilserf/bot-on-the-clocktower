@@ -33,6 +33,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(IShuffleService), typeof(ShuffleService))]
         [InlineData(typeof(ICharacterStorage), typeof(CharacterStorage))]
         [InlineData(typeof(ICharacterLookup), typeof(CharacterLookup))]
+        [InlineData(typeof(IOfficialCharacterCache), typeof(OfficialCharacterCache))]
         public void RegisterCoreServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider());

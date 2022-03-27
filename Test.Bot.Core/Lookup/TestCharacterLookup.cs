@@ -49,15 +49,12 @@ namespace Test.Bot.Core.Lookup
             m_customScript2 = new("Custom Script 2", false);
             m_customScript3 = new("Custom Script 3", false);
 
-            m_mockCharacterStorage.Setup(s => s.GetOfficialScriptCharactersAsync()).ReturnsAsync(
+            m_mockCharacterStorage.Setup(s => s.GetCharactersAsync(It.Is<ulong>(id => id == GuildId))).ReturnsAsync(
                 new GetCharactersResult(new[] {
                     new GetCharactersItem(m_officialWasherWoman, new[] { m_troubleBrewing }),
                     new GetCharactersItem(m_officialPoisoner, new[] { m_troubleBrewing }),
                     new GetCharactersItem(m_officialImp, new[] { m_troubleBrewing }),
                     new GetCharactersItem(m_officialCultLeader, Enumerable.Empty<ScriptData>()),
-                }));
-            m_mockCharacterStorage.Setup(s => s.GetCustomScriptCharactersAsync(It.Is<ulong>(id => id == GuildId))).ReturnsAsync(
-                new GetCharactersResult(new[] {
                     new GetCharactersItem(m_officialPoisoner, new[] { m_customScript1 }),
                     new GetCharactersItem(m_customIcarus, new[] { m_customScript1, m_customScript2 }),
                     new GetCharactersItem(m_customImp, new[] { m_customScript2 }),
