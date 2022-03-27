@@ -20,6 +20,7 @@ namespace Bot.Core
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
 
+            sp.AddService<ICustomScriptCache>(new CustomScriptCache(sp));
             sp.AddService<IOfficialCharacterCache>(new OfficialCharacterCache(sp));
             sp.AddService<ICharacterStorage>(new CharacterStorage(sp));
             sp.AddService<ICharacterLookup>(new CharacterLookup(sp));

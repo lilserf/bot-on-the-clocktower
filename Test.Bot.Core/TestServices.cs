@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Api.Lookup;
 using Bot.Base;
 using Bot.Core;
@@ -14,9 +15,10 @@ namespace Test.Bot.Core
     public class TestServices : TestBase
     {
         [Fact]
-        public static void CreateCoreServices_ConstructsType()
+        public void CreateCoreServices_ConstructsType()
         {
-            var sp = ServiceFactory.RegisterCoreServices(null);
+            RegisterMock(new Mock<ILookupRoleDatabase>());
+            var sp = ServiceFactory.RegisterCoreServices(GetServiceProvider());
             Assert.IsType<ServiceProvider>(sp);
         }
 
@@ -34,6 +36,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(ICharacterStorage), typeof(CharacterStorage))]
         [InlineData(typeof(ICharacterLookup), typeof(CharacterLookup))]
         [InlineData(typeof(IOfficialCharacterCache), typeof(OfficialCharacterCache))]
+        [InlineData(typeof(ICustomScriptCache), typeof(CustomScriptCache))]
         public void RegisterCoreServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider());

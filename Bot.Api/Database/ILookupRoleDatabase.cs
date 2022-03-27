@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Api.Database
 {
     public interface ILookupRoleDatabase
     {
-        Task<IEnumerable<string>> GetScriptUrls(IGuild guild);
+        Task<IEnumerable<string>> GetScriptUrlsAsync(ulong guildId);
 
-        Task AddScriptUrl(IGuild guild, string url);
+        Task AddScriptUrlAsync(ulong guildId, string url);
 
-        Task RemoveScriptUrl(IGuild guild, string url);
+        Task RemoveScriptUrlAsync(ulong guildId, string url);
     }
 }

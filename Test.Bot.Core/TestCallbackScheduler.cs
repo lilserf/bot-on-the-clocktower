@@ -45,15 +45,6 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public void CoreServices_RegistersCallbackSchedulerFactory()
-        {
-            var sp = ServiceFactory.RegisterCoreServices(null);
-            var csf = sp.GetService<ICallbackSchedulerFactory>();
-
-            Assert.IsType<CallbackSchedulerFactory>(csf);
-        }
-
-        [Fact]
         public void SchedulerFactory_CallwithCallback_ProvidesCallbackScheduler()
         {
             Mock<Func<object, Task>> mockCb = new();
