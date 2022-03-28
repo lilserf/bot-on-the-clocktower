@@ -32,10 +32,10 @@ namespace Bot.Core.Lookup
                     continue;
 
                 CharacterData? cd = null;
-                if (GetObjectStringProp(obj, "id") == "_meta")
-                    scriptData = ParseScriptData(obj);
+                if (JsonParseUtil.GetObjectStringProp(obj, "id") == "_meta")
+                    scriptData = ParseScriptMetaData(obj);
                 else
-                    cd = ParseCharacterData(obj);
+                    cd = JsonParseUtil.ParseCharacterData(obj);
 
                 if (cd != null)
                     characters.Add(cd);
@@ -47,33 +47,15 @@ namespace Bot.Core.Lookup
             return new GetCustomScriptResult(new[] { new ScriptWithCharacters(scriptData, characters) });
         }
 
-        private string? GetObjectStringProp(JObject obj, string propName)
+        private ScriptData? ParseScriptMetaData(JObject obj)
         {
-            if (obj.TryGetValue(propName, out var token) && token != null && token.Type == JTokenType.String)
-                return token.Value<string>();
-            return null;
-        }
-
-        private ScriptData? ParseScriptData(JObject obj)
-        {
-            string? name = GetObjectStringProp(obj, "name");
+            string? name = JsonParseUtil.GetObjectStringProp(obj, "name");
             if (name == null)
                 return null;
 
             ScriptData sd = new(name, isOfficial: false);
-            sd.AlmanacUrl = GetObjectStringProp(obj, "almanac");
+            sd.AlmanacUrl = JsonParseUtil.GetObjectStringProp(obj, "almanac");
             return sd;
-        }
-
-        private CharacterData? ParseCharacterData(JObject obj)
-        {
-            string? name = GetObjectStringProp(obj, "name");
-            string? ability = GetObjectStringProp(obj, "ability");
-            string? team = GetObjectStringProp(obj, "team");
-            if (name == null || ability == null || team == null)
-                return null;
-
-            return new CharacterData(name!, ability!, CharacterTeam.Townsfolk, isOfficial: false);
         }
     }
 }

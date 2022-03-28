@@ -15,16 +15,16 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void CustomScript_ErrorRetieving_ReturnsNoResults()
+        public void CustomCache_ErrorRetieving_ReturnsNoResults()
         {
             SetupDownload(null);
 
-            var result = PerformGet();
+            var result = PerformCustomGet();
 
             Assert.Empty(result.ScriptsWithCharacters);
         }
 
-        private GetCustomScriptResult PerformGet()
+        private GetCustomScriptResult PerformCustomGet()
         {
             var csc = new CustomScriptCache(GetServiceProvider());
             return AssertCompletedTask(() => csc.GetCustomScriptAsync("url"));

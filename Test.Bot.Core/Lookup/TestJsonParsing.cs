@@ -11,7 +11,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void CustomScript_NoMeta_ReturnsNoResults()
         {
-            var result = PerformParse("[]");
+            var result = PerformCustomParse("[]");
 
             Assert.Empty(result.ScriptsWithCharacters);
         }
@@ -19,7 +19,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void CustomScript_UnnamedMeta_ReturnsNoResults()
         {
-            var result = PerformParse("[{{\"id\":\"_meta\"}}]");
+            var result = PerformCustomParse("[{{\"id\":\"_meta\"}}]");
 
             Assert.Empty(result.ScriptsWithCharacters);
         }
@@ -30,7 +30,7 @@ namespace Test.Bot.Core.Lookup
             string scriptName = "script name";
             string almanacUrl = "almanac url";
 
-            var result = PerformParse($"[{{\"id\":\"_meta\",\"name\":\"{scriptName}\",\"almanac\":\"{almanacUrl}\"}}]");
+            var result = PerformCustomParse($"[{{\"id\":\"_meta\",\"name\":\"{scriptName}\",\"almanac\":\"{almanacUrl}\"}}]");
 
             Assert.Collection(result.ScriptsWithCharacters,
                 swc =>
@@ -47,7 +47,7 @@ namespace Test.Bot.Core.Lookup
         [InlineData("{\"name\":\"this is not a valid array, it's an object\"}")]
         public void CustomScript_NotValidArray_EmptyResult(string json)
         {
-            var result = PerformParse(json);
+            var result = PerformCustomParse(json);
 
             Assert.Empty(result.ScriptsWithCharacters);
         }
@@ -63,7 +63,7 @@ namespace Test.Bot.Core.Lookup
             string char1Json = $"{{\"name\":\"{char1Name}\",\"ability\":\"{char1Ability}\",\"team\":\"townsfolk\"}}";
             string char2Json = $"{{\"name\":\"{char2Name}\",\"ability\":\"{char2Ability}\",\"team\":\"townsfolk\"}}";
 
-            var result = PerformParse($"[{ValidMetaJson},{char1Json},{char2Json}]");
+            var result = PerformCustomParse($"[{ValidMetaJson},{char1Json},{char2Json}]");
 
             Assert.Collection(result.ScriptsWithCharacters,
                 swc =>
@@ -90,7 +90,7 @@ namespace Test.Bot.Core.Lookup
         [InlineData("{\"name\":\"some name\",\"ability\":\"some ability\"}")]
         public void CustomScript_CharMissingRequiredData_NoChars(string charJson)
         {
-            var result = PerformParse($"[{ValidMetaJson},{charJson}]");
+            var result = PerformCustomParse($"[{ValidMetaJson},{charJson}]");
 
             Assert.Collection(result.ScriptsWithCharacters,
                 swc =>
@@ -106,7 +106,7 @@ namespace Test.Bot.Core.Lookup
         public string? ImageUrl { get; set; }
         */
 
-        private static GetCustomScriptResult PerformParse(string json)
+        private static GetCustomScriptResult PerformCustomParse(string json)
         {
             var csp = new CustomScriptParser();
             return csp.ParseScript(json);
