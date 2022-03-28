@@ -24,6 +24,18 @@ namespace Test.Bot.Core.Lookup
             Assert.Empty(result.ScriptsWithCharacters);
         }
 
+        [Fact(Skip ="TODO")]
+        public void CustomCache_MultipleCalls_DownloadsOnce()
+        {
+
+        }
+
+        [Fact(Skip ="TODO")]
+        public void CustomCache_MultipleCallsOverTime_DownloadsAfterCacheExpires()
+        {
+
+        }
+
         private GetCustomScriptResult PerformCustomGet()
         {
             var csc = new CustomScriptCache(GetServiceProvider());
