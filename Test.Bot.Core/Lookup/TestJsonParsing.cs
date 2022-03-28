@@ -174,13 +174,6 @@ namespace Test.Bot.Core.Lookup
             return result!;
         }
 
-        /*
-         * TODO: Test these properly 
-        public CharacterTeam Team { get; }  <-- Theory: all types work
-        public string? FlavorText { get; set; }
-        public string? ImageUrl { get; set; }
-        */
-
         private static GetCustomScriptResult PerformCustomParse(string json)
         {
             var csp = new CustomScriptParser();
