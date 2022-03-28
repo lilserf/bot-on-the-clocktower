@@ -94,7 +94,7 @@ namespace Test.Bot.Core.Lookup
         [InlineData("{\"name\":\"some name\",\"ability\":\"some ability\"}")]
         public void CharParse_CharMissingRequiredData_NoChars(string charJson)
         {
-            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson));
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: false);
 
             Assert.Null(result);
         }
@@ -110,7 +110,7 @@ namespace Test.Bot.Core.Lookup
         {
             var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"{teamStr}\"}}";
 
-            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson));
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: false);
 
             Assert.NotNull(result);
             Assert.Equal(expectedTeam, result!.Team);
@@ -121,9 +121,57 @@ namespace Test.Bot.Core.Lookup
         {
             var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"invalidteam\"}}";
 
-            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson));
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: false);
 
             Assert.Null(result);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CharParse_IsOfficial_Set(bool isOfficial)
+        {
+            var result = ParseSimpleCharacter(isOfficial: isOfficial);
+            Assert.Equal(isOfficial, result.IsOfficial);
+        }
+
+        [Fact]
+        public void CharParse_NoFlavor_FlavorNull()
+        {
+            var result = ParseSimpleCharacter(isOfficial: false);
+            Assert.Null(result.FlavorText);
+        }
+
+        [Fact]
+        public void CharParse_NoImage_ImageNull()
+        {
+            var result = ParseSimpleCharacter(isOfficial: false);
+            Assert.Null(result.ImageUrl);
+        }
+
+        [Fact]
+        public void CharParse_FlavorProvided_IsSet()
+        {
+            var flavor = "some flavor text";
+            var result = ParseSimpleCharacter(isOfficial: false, $"\"flavor\":\"{flavor}\"");
+            Assert.Equal(flavor, result.FlavorText);
+        }
+
+        [Fact]
+        public void CharParse_ImageProvided_IsSet()
+        {
+            var imageUrl = "some image url";
+            var result = ParseSimpleCharacter(isOfficial: false, $"\"image\":\"{imageUrl}\"");
+            Assert.Equal(imageUrl, result.ImageUrl);
+        }
+
+        private static CharacterData ParseSimpleCharacter(bool isOfficial, string? addition=null)
+        {
+            var append = (addition != null) ? $",{addition}" : string.Empty;
+            var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"townsfolk\"{append}}}";
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: isOfficial);
+            Assert.NotNull(result);
+            return result!;
         }
 
         /*

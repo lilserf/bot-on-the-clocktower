@@ -35,7 +35,7 @@ namespace Bot.Core.Lookup
                 if (JsonParseUtil.GetObjectStringProp(obj, "id") == "_meta")
                     scriptData = ParseScriptMetaData(obj);
                 else
-                    cd = JsonParseUtil.ParseCharacterData(obj);
+                    cd = JsonParseUtil.ParseCharacterData(obj, isOfficial:false);
 
                 if (cd != null)
                     characters.Add(cd);

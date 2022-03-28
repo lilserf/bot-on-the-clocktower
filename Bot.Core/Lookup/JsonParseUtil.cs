@@ -13,7 +13,7 @@ namespace Bot.Core.Lookup
             return null;
         }
 
-        public static CharacterData? ParseCharacterData(JObject obj)
+        public static CharacterData? ParseCharacterData(JObject obj, bool isOfficial)
         {
             string? name = GetObjectStringProp(obj, "name");
             string? ability = GetObjectStringProp(obj, "ability");
@@ -23,7 +23,13 @@ namespace Bot.Core.Lookup
             if (!Enum.TryParse<CharacterTeam>(GetObjectStringProp(obj, "team"), ignoreCase:true, out var team))
                 return null;
 
-            return new CharacterData(name, ability, team, isOfficial: false);
+            CharacterData cd = new(name, ability, team, isOfficial: isOfficial);
+
+
+            cd.FlavorText = GetObjectStringProp(obj, "flavor");
+            cd.ImageUrl = GetObjectStringProp(obj, "image");
+
+            return cd;
         }
     }
 }
