@@ -42,6 +42,7 @@ namespace Bot.Main
             sp = dbp.Connect();
 
             sp = Core.ServiceFactory.RegisterCoreServices(sp);
+            sp = Core.Lookup.LookupServiceFactory.RegisterLookupServices(sp);
 
             sp = DSharp.ServiceFactory.RegisterServices(sp);
             var dsharpRunner = new BotSystemRunner(sp, new DSharpSystem());
