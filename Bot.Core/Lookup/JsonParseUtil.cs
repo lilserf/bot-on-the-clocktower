@@ -1,5 +1,6 @@
 ﻿using Bot.Api.Lookup;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace Bot.Core.Lookup
 {
@@ -16,11 +17,13 @@ namespace Bot.Core.Lookup
         {
             string? name = GetObjectStringProp(obj, "name");
             string? ability = GetObjectStringProp(obj, "ability");
-            string? team = GetObjectStringProp(obj, "team");
-            if (name == null || ability == null || team == null)
+            if (name == null || ability == null)
                 return null;
 
-            return new CharacterData(name!, ability!, CharacterTeam.Townsfolk, isOfficial: false);
+            if (!Enum.TryParse<CharacterTeam>(GetObjectStringProp(obj, "team"), ignoreCase:true, out var team))
+                return null;
+
+            return new CharacterData(name, ability, team, isOfficial: false);
         }
     }
 }

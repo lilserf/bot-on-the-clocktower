@@ -1,4 +1,6 @@
-﻿using Bot.Core.Lookup;
+﻿using Bot.Api.Lookup;
+using Bot.Core.Lookup;
+using Newtonsoft.Json.Linq;
 using Test.Bot.Base;
 using Xunit;
 
@@ -73,12 +75,14 @@ namespace Test.Bot.Core.Lookup
                         {
                             Assert.Equal(char1Name, c.Name);
                             Assert.Equal(char1Ability, c.Ability);
+                            Assert.Equal(CharacterTeam.Townsfolk, c.Team);
                             Assert.False(c.IsOfficial);
                         },
                         c =>
                         {
                             Assert.Equal(char2Name, c.Name);
                             Assert.Equal(char2Ability, c.Ability);
+                            Assert.Equal(CharacterTeam.Townsfolk, c.Team);
                             Assert.False(c.IsOfficial);
                         });
                 });
@@ -88,15 +92,38 @@ namespace Test.Bot.Core.Lookup
         [InlineData("{\"ability\":\"some ability\",\"team\":\"townsfolk\"}")]
         [InlineData("{\"name\":\"some name\",\"team\":\"townsfolk\"}")]
         [InlineData("{\"name\":\"some name\",\"ability\":\"some ability\"}")]
-        public void CustomScript_CharMissingRequiredData_NoChars(string charJson)
+        public void CharParse_CharMissingRequiredData_NoChars(string charJson)
         {
-            var result = PerformCustomParse($"[{ValidMetaJson},{charJson}]");
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson));
 
-            Assert.Collection(result.ScriptsWithCharacters,
-                swc =>
-                {
-                    Assert.Empty(swc.Characters);
-                });
+            Assert.Null(result);
+        }
+
+        [Theory]
+        [InlineData("townsfolk", CharacterTeam.Townsfolk)]
+        [InlineData("outsider", CharacterTeam.Outsider)]
+        [InlineData("minion", CharacterTeam.Minion)]
+        [InlineData("demon", CharacterTeam.Demon)]
+        [InlineData("traveler", CharacterTeam.Traveler)]
+        [InlineData("fabled", CharacterTeam.Fabled)]
+        public void CharParse_CharWithTeam_MatchesEnum(string teamStr, CharacterTeam expectedTeam)
+        {
+            var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"{teamStr}\"}}";
+
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson));
+
+            Assert.NotNull(result);
+            Assert.Equal(expectedTeam, result!.Team);
+        }
+
+        [Fact]
+        public void CharParse_InvalidTeam_NullChar()
+        {
+            var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"invalidteam\"}}";
+
+            var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson));
+
+            Assert.Null(result);
         }
 
         /*
