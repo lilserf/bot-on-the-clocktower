@@ -2,9 +2,9 @@
 
 namespace Bot.Core.Lookup
 {
-    public interface IUrlDownloader
+    public interface IStringDownloader
     {
-        Task<DownloadResult> DownloadUrlAsync(string url);
+        Task<DownloadResult> DownloadStringAsync(string url);
     }
 
     public class DownloadResult

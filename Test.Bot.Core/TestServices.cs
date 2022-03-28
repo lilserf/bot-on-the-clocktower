@@ -33,7 +33,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(IActiveGameService), typeof(ActiveGameService))]
         [InlineData(typeof(IComponentService), typeof(ComponentService))]
         [InlineData(typeof(IShuffleService), typeof(ShuffleService))]
-        [InlineData(typeof(IUrlDownloader), typeof(UrlDownloader))]
+        [InlineData(typeof(IStringDownloader), typeof(StringDownloader))]
         [InlineData(typeof(ICharacterStorage), typeof(CharacterStorage))]
         [InlineData(typeof(ICharacterLookup), typeof(CharacterLookup))]
         [InlineData(typeof(IOfficialCharacterCache), typeof(OfficialCharacterCache))]
