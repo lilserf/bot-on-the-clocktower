@@ -2,7 +2,6 @@
 using Bot.Api.Lookup;
 using Bot.Base;
 using Bot.Core.Callbacks;
-using Bot.Core.Lookup;
 using System;
 
 namespace Bot.Core
@@ -19,12 +18,6 @@ namespace Bot.Core
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
-
-            sp.AddService<IStringDownloader>(new StringDownloader(sp));
-            sp.AddService<ICustomScriptCache>(new CustomScriptCache(sp));
-            sp.AddService<IOfficialCharacterCache>(new OfficialCharacterCache(sp));
-            sp.AddService<ICharacterStorage>(new CharacterStorage(sp));
-            sp.AddService<ICharacterLookup>(new CharacterLookup(sp));
             return sp;
         }
 
