@@ -31,14 +31,16 @@ namespace Test.Bot.Core.Lookup
         {
             string scriptName = "script name";
             string almanacUrl = "almanac url";
+            string author = "author name";
 
-            var result = PerformCustomParse($"[{{\"id\":\"_meta\",\"name\":\"{scriptName}\",\"almanac\":\"{almanacUrl}\"}}]");
+            var result = PerformCustomParse($"[{{\"id\":\"_meta\",\"name\":\"{scriptName}\",\"almanac\":\"{almanacUrl}\",\"author\":\"{author}\"}}]");
 
             Assert.Collection(result.ScriptsWithCharacters,
                 swc =>
                 {
                     Assert.Equal(scriptName, swc.Script.Name);
                     Assert.Equal(almanacUrl, swc.Script.AlmanacUrl);
+                    Assert.Equal(author, swc.Script.Author);
                     Assert.False(swc.Script.IsOfficial);
                     Assert.Empty(swc.Characters);
                 });
@@ -87,6 +89,149 @@ namespace Test.Bot.Core.Lookup
                         });
                 });
         }
+
+        private const string TbId = "tb";
+        private const string TbName = "Trouble Brewing";
+        private const string OfficialAuthor = "Trouble Brewing";
+        private const string TbAlmanac = OfficialScriptParser.AlmanacPrefix + "Trouble_Brewing";
+        private static readonly string TbJson = $"{{\"id\":\"{TbId}\",\"name\":\"{TbName}\",\"author\":\"{OfficialAuthor}\",\"roles\":[]}}";
+
+        private const string PoisonerId = "poisoner";
+        private const string PoisonerName = "Poisoner";
+        private const string PoisonerAbility = "Each night, choose a player: they are poisoned tonight and tomorrow day.";
+        private static readonly string PoisonerJson = $"{{\"id\":\"{PoisonerId}\",\"name\":\"{PoisonerName}\",\"ability\":\"{PoisonerAbility}\",\"team\":\"minion\",\"edition\":\"{TbId}\"}}";
+
+        private const string SavantId = "savant";
+        private const string SavantName = "Savant";
+        private const string SavantAbility = "Each day, you may visit the Storyteller to learn 2 things in private: 1 is true & 1 is false.";
+        private static readonly string SavantJson = $"{{\"id\":\"{SavantId}\",\"name\":\"{SavantName}\",\"ability\":\"{SavantAbility}\",\"team\":\"townsfolk\",\"edition\":\"{TbId}\"}}";
+
+        private const string LufId = "luf";
+        private const string LufName = "Laissez un Faire";
+        private static readonly string LufJson = $"{{\"id\":\"{LufId}\",\"name\":\"{LufName}\",\"author\":\"{OfficialAuthor}\",\"roles\":[\"{SavantId}\"]}}";
+
+        private const string UnofficialName = "Unofficial";
+        private static readonly string UnofficialJson = $"{{\"name\":\"{UnofficialName}\",\"isOfficial\":false,\"roles\":[\"{SavantId}\"]}}";
+
+
+        [Fact]
+        public void OfficialParse_JustCharacters_ReturnsCharacters()
+        {
+            var op = new OfficialScriptParser();
+            var result = op.ParseOfficialData(new string[] { }, new[] { $"[{PoisonerJson}]", $"[{SavantJson}]" });
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    Assert.Equal(PoisonerName, i.Character.Name);
+                    Assert.Equal(PoisonerAbility, i.Character.Ability);
+                    Assert.Equal(CharacterTeam.Minion, i.Character.Team);
+                    Assert.True(i.Character.IsOfficial);
+                    Assert.Empty(i.Scripts);
+                },
+                i =>
+                {
+                    Assert.Equal(SavantName, i.Character.Name);
+                    Assert.Equal(SavantAbility, i.Character.Ability);
+                    Assert.Equal(CharacterTeam.Townsfolk, i.Character.Team);
+                    Assert.True(i.Character.IsOfficial);
+                    Assert.Empty(i.Scripts);
+                });
+        }
+
+        [Fact]
+        public void OfficialParse_CharacterInScript_ReturnsCharacterInScript()
+        {
+            var op = new OfficialScriptParser();
+            var result = op.ParseOfficialData(new[] { $"[{TbJson}]" }, new[] { $"[{PoisonerJson}]" });
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    Assert.Equal(PoisonerName, i.Character.Name);
+                    Assert.Collection(i.Scripts,
+                        s =>
+                        {
+                            Assert.True(s.IsOfficial);
+                            Assert.Equal(TbName, s.Name);
+                            Assert.Equal(TbAlmanac, s.AlmanacUrl);
+                            Assert.Equal(OfficialAuthor, s.Author);
+                        });
+                });
+        }
+
+        [Fact]
+        public void OfficialParse_InvalidScriptJson_Continues()
+        {
+            var op = new OfficialScriptParser();
+            var result = op.ParseOfficialData(new[] { $"[\"this is invalid data\"]" }, new[] { $"[{PoisonerJson}]" });
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    Assert.Equal(PoisonerName, i.Character.Name);
+                });
+        }
+
+        [Fact]
+        public void OfficialParse_InvalidCharacterJson_Continues()
+        {
+            var op = new OfficialScriptParser();
+            var result = op.ParseOfficialData(new string[] {}, new[] { $"[\"invalid role json\",{PoisonerJson},\"another invalid role json\"]" });
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    Assert.Equal(PoisonerName, i.Character.Name);
+                });
+        }
+
+        [Fact]
+        public void OfficialParse_TeensyvilleScript_FindsCharacter()
+        {
+            var op = new OfficialScriptParser();
+            var result = op.ParseOfficialData(new[] { $"[{LufJson}]" }, new[] { $"[{SavantJson}]" });
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    Assert.Equal(SavantName, i.Character.Name);
+                    Assert.Equal(SavantAbility, i.Character.Ability);
+                    Assert.Equal(CharacterTeam.Townsfolk, i.Character.Team);
+                    Assert.True(i.Character.IsOfficial);
+
+                    Assert.Collection(i.Scripts,
+                        s =>
+                        {
+                            Assert.Equal(LufName, s.Name);
+                            Assert.Equal(OfficialAuthor, s.Author);
+                            Assert.True(s.IsOfficial);
+                            Assert.Null(s.AlmanacUrl);
+                        });
+                });
+        }
+
+        [Fact]
+        public void OfficialParse_UnofficialScript_MarkedUnofficial()
+        {
+            var op = new OfficialScriptParser();
+            var result = op.ParseOfficialData(new[] { $"[{UnofficialJson}]" }, new[] { $"[{SavantJson}]" });
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    Assert.Equal(SavantName, i.Character.Name);
+                    Assert.Collection(i.Scripts,
+                        s =>
+                        {
+                            Assert.Equal(UnofficialName, s.Name);
+                            Assert.False(s.IsOfficial);
+                            Assert.Null(s.Author);
+                            Assert.Null(s.AlmanacUrl);
+                        });
+                });
+        }
+
 
         [Theory]
         [InlineData("{\"ability\":\"some ability\",\"team\":\"townsfolk\"}")]

@@ -27,8 +27,6 @@ namespace Test.Bot.Core.Lookup
 
         private readonly Mock<ICharacterStorage> m_mockCharacterStorage = new();
 
-        //private readonly string m_tbJson = "{ \"id\": \"washerwoman\", \"name\": \"Washerwoman\", \"edition\": \"tb\", \"team\": \"townsfolk\", \"firstNight\": 32, \"firstNightReminder\": \"Show the character token of a Townsfolk in play. Point to two players, one of which is that character.\", \"otherNight\": 0, \"otherNightReminder\": \"\", \"reminders\": [\"Townsfolk\", \"Wrong\"], \"setup\": false, \"ability\": \"You start knowing that 1 of 2 players is a particular Townsfolk.\" }, { \"id\": \"poisoner\", \"name\": \"Poisoner\", \"edition\": \"tb\", \"team\": \"minion\", \"firstNight\": 17, \"firstNightReminder\": \"The Poisoner points to a player. That player is poisoned.\", \"otherNight\": 8, \"otherNightReminder\": \"The previously poisoned player is no longer poisoned. The Poisoner points to a player. That player is poisoned.\", \"reminders\": [\"Poisoned\"], \"setup\": false, \"ability\": \"Each night, choose a player: they are poisoned tonight and tomorrow day.\" }";
-
         public TestCharacterLookup()
         {
             m_officialWasherWoman = new("Washerwoman", "You start knowing that 1 or 2 players is a particular Townsfolk.", CharacterTeam.Townsfolk, isOfficial: true);

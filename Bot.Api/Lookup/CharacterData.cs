@@ -1,4 +1,6 @@
-﻿namespace Bot.Api.Lookup
+﻿using System.Collections.Generic;
+
+namespace Bot.Api.Lookup
 {
     public enum CharacterTeam
     {

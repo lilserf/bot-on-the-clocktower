@@ -13,6 +13,24 @@ namespace Bot.Core.Lookup
             return null;
         }
 
+        public static bool TryGetObjectBoolProp(JObject obj, string propName, out bool value)
+        {
+            value = false;
+            if (obj.TryGetValue(propName, out var token) && token != null && token.Type == JTokenType.Boolean)
+            {
+                value = token.Value<bool>();
+                return true;
+            }
+            return false;
+        }
+
+        public static JArray? GetObjectArrayProp(JObject obj, string propName)
+        {
+            if (obj.TryGetValue(propName, out var token))
+                return token as JArray;
+            return null;
+        }
+
         public static CharacterData? ParseCharacterData(JObject obj, bool isOfficial)
         {
             string? name = GetObjectStringProp(obj, "name");
@@ -24,7 +42,6 @@ namespace Bot.Core.Lookup
                 return null;
 
             CharacterData cd = new(name, ability, team, isOfficial: isOfficial);
-
 
             cd.FlavorText = GetObjectStringProp(obj, "flavor");
             cd.ImageUrl = GetObjectStringProp(obj, "image");
