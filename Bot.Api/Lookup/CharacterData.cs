@@ -26,5 +26,7 @@
             Team = team;
             IsOfficial = isOfficial;
         }
+
+        public override string ToString() => Name;
     }
 }

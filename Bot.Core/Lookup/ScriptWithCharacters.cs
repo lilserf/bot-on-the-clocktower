@@ -14,5 +14,7 @@ namespace Bot.Core.Lookup
             Script = script;
             Characters = characters.ToArray();
         }
+
+        public override string ToString() => $"{Script} [{Characters.Aggregate(string.Empty, (s,c) => $"{s},{c}")}]";
     }
 }

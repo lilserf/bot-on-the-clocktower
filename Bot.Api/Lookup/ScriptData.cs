@@ -10,5 +10,7 @@ namespace Bot.Api.Lookup
             Name = name;
             IsOfficial = isOfficial;
         }
+
+        public override string ToString() => $"{Name} {(IsOfficial ? "(official)" : "(custom)")}";
     }
 }
