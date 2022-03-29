@@ -10,6 +10,8 @@ namespace Bot.Core.Lookup
         {
             ServiceProvider sp = new(parentServices);
 
+            sp.AddService<IOfficialUrlProvider>(new OfficialUrlProvider());
+            sp.AddService<IOfficialScriptParser>(new OfficialScriptParser());
             sp.AddService<ICustomScriptParser>(new CustomScriptParser());
             sp.AddService<IStringDownloader>(new StringDownloader(sp));
             sp.AddService<ICustomScriptCache>(new CustomScriptCache(sp));

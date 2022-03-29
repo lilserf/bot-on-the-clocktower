@@ -15,6 +15,8 @@ namespace Test.Bot.Core.Lookup
         [InlineData(typeof(ICharacterLookup), typeof(CharacterLookup))]
         [InlineData(typeof(IOfficialCharacterCache), typeof(OfficialCharacterCache))]
         [InlineData(typeof(ICustomScriptCache), typeof(CustomScriptCache))]
+        [InlineData(typeof(IOfficialUrlProvider), typeof(OfficialUrlProvider))]
+        [InlineData(typeof(IOfficialScriptParser), typeof(OfficialScriptParser))]
         public void RegisterLookupServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = LookupServiceFactory.RegisterLookupServices(GetServiceProvider());

@@ -122,14 +122,14 @@ namespace Test.Bot.Core
 
             AdvanceTime(TimeSpan.FromSeconds(2));
             m_delayReset.Set();
-            await Task.Delay(2);
+            await Task.Delay(5);
             Assert.Equal(0, helper.CallbackCount);
 
             helper.ScheduleCallback(GetTimeAfter(TimeSpan.FromSeconds(10)));
 
             AdvanceTime(TimeSpan.FromSeconds(2));
             m_delayReset.Set();
-            await Task.Delay(2);
+            await Task.Delay(5);
             Assert.Equal(0, helper.CallbackCount);
 
             AdvanceTime(TimeSpan.FromSeconds(20));
