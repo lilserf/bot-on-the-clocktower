@@ -52,6 +52,7 @@ namespace Bot.DSharp
             return BotGameplayHandler!.CommandSetStorytellersAsync(new DSharpInteractionContext(ctx), allUsers.Where(x => x != null).Cast<DiscordMember>().Select(x => new DSharpMember(x)).ToList());
         }
 
+        // TODO move to a new DSharpSetupSlashCommands class
         [SlashCommand("createTown", "Create a new Town on this server")]
         public async Task CreateTownCommand(InteractionContext ctx,
             [Option("townName", "Town Name")] string townName,
