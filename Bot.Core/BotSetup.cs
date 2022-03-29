@@ -10,7 +10,7 @@ namespace Bot.Core
 {
     public class BotSetup : IBotSetup
     {
-        public IEnumerable<string> DefaultExtraDayChannels => new[] { "Dark Alley" , "Library", "Graveyard", "Pie Shop" };
+        public IEnumerable<string> DefaultExtraDayChannels => new[] { "Dark Alley", "Library", "Graveyard", "Pie Shop" };
 
         private readonly ITownDatabase m_townDb;
         private readonly IBotSystem m_botSystem;
@@ -78,30 +78,44 @@ namespace Bot.Core
 
             // Get bot role
             var botRole = guild.BotRole;
+            if (botRole == null)
+                throw new CreateTownException($"Could not find bot role!");
             var everyoneRole = guild.EveryoneRole;
 
             townDesc = FallbackToDefaults(townDesc);
 
             // First create the roles for this town
             newTown.StorytellerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName!, Color.Magenta);
+            if (newTown.StorytellerRole == null)
+                throw new CreateTownException($"Could not find or create Storyteller role '{townDesc.StorytellerRoleName}'");
+
             newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName!, Color.DarkMagenta);
+            if (newTown.VillagerRole == null)
+                throw new CreateTownException($"Could not find or create Villager role '{townDesc.VillagerRoleName}'");
+
 
             // Create Day Category and set up visibility
             newTown.DayCategory = await ChannelHelper.GetOrCreateCategory(guild, townDesc.DayCategoryName!);
+            if (newTown.DayCategory == null)
+                throw new CreateTownException($"Could not find or create day category '{townDesc.DayCategoryName}'");
             await newTown.DayCategory.AddOverwriteAsync(newTown.VillagerRole, Permissions.AccessChannels);
             await newTown.DayCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
 
             newTown.ControlChannel = await ChannelHelper.GetOrCreateTextChannel(guild, newTown.DayCategory, townDesc.ControlChannelName!);
+            if (newTown.ControlChannel == null)
+                throw new CreateTownException($"Could not find or create control channel '{townDesc.ControlChannelName}'");
             await newTown.ControlChannel.AddOverwriteAsync(botRole, Permissions.AccessChannels);
             await newTown.ControlChannel.AddOverwriteAsync(newTown.VillagerRole, allow: Permissions.None, deny: Permissions.AccessChannels);
 
-            if(guildStRole != null)
+            if (guildStRole != null)
             {
                 await newTown.ControlChannel.AddOverwriteAsync(guildStRole, Permissions.AccessChannels);
                 await newTown.ControlChannel.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
 
             newTown.TownSquare = await ChannelHelper.GetOrCreateVoiceChannel(guild, newTown.DayCategory, townDesc.TownSquareName!);
+            if (newTown.TownSquare == null)
+                throw new CreateTownException($"Could not find or create town square '{townDesc.TownSquareName}'");
 
             if (guildPlayerRole != null)
             {
@@ -113,34 +127,51 @@ namespace Bot.Core
             if (townDesc.ChatChannelName != null)
             {
                 newTown.ChatChannel = await ChannelHelper.GetOrCreateTextChannel(guild, newTown.DayCategory, townDesc.ChatChannelName);
+                if (newTown.ChatChannel == null)
+                    throw new CreateTownException($"Could not find or create chat channel '{townDesc.ChatChannelName}'");
+
                 await newTown.ChatChannel.AddOverwriteAsync(botRole, Permissions.AccessChannels);
 
                 if (guildPlayerRole == null)
                     await newTown.ChatChannel.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
-            
-            foreach(var chanName in DefaultExtraDayChannels)
+
+            foreach (var chanName in DefaultExtraDayChannels)
             {
                 var newChan = await ChannelHelper.GetOrCreateVoiceChannel(guild, newTown.DayCategory, chanName);
+                if (newChan == null)
+                    throw new CreateTownException($"Could not find or create extra day channel '{chanName}'");
+
                 if (guildPlayerRole == null)
                     await newChan.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
             }
 
             // Night category is optional
-            if(townDesc.NightCategoryName != null)
+            if (townDesc.NightCategoryName != null)
             {
                 newTown.NightCategory = await ChannelHelper.GetOrCreateCategory(guild, townDesc.NightCategoryName);
+                if (newTown.NightCategory == null)
+                    throw new CreateTownException($"Could not find or create night category '{townDesc.NightCategoryName}'");
+
                 await newTown.NightCategory.AddOverwriteAsync(newTown.StorytellerRole, Permissions.AccessChannels);
                 await newTown.NightCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
                 await newTown.NightCategory.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
 
-                for(int i=0; i < IBotSetup.NumCottages; i++)
+                for (int i = 0; i < IBotSetup.NumCottages; i++)
                 {
                     await ChannelHelper.GetOrCreateVoiceChannel(guild, newTown.NightCategory, IBotSetup.DefaultCottageName);
                 }
             }
 
             await AddTown(newTown, author);
+        }
+    }
+
+    public class CreateTownException : Exception
+    {
+        public CreateTownException(string message)
+            : base(message)
+        {
         }
     }
 }

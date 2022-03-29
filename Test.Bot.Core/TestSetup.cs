@@ -2,6 +2,7 @@
 using Bot.Api.Database;
 using Bot.Core;
 using Moq;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Test.Bot.Base;
@@ -94,12 +95,22 @@ namespace Test.Bot.Core
 
         public Mock<IGuild> MakeGuild()
         {
-            Mock<IGuild> guild = new();
+            Mock<IGuild> guild = new(MockBehavior.Strict);
             guild.SetupGet(x => x.Id).Returns(MockGuildId);
-            guild.Setup(x => x.CreateTextChannelAsync(It.IsAny<string>(), It.IsAny<IChannelCategory?>())); // TODO: make this actually do something?
-            guild.Setup(x => x.CreateVoiceChannelAsync(It.IsAny<string>(), It.IsAny<IChannelCategory?>())); // TODO: make this actually do something?
-            guild.Setup(x => x.CreateCategoryAsync(It.IsAny<string>())); // TODO: make this actually do something?
-            guild.Setup(x => x.CreateRoleAsync(It.IsAny<string>(), It.IsAny<Color>())); // TODO: make this actually do something?
+            guild.Setup(x => x.CreateTextChannelAsync(It.IsAny<string>(), It.IsAny<IChannelCategory?>())).ReturnsAsync((string name, IChannelCategory cat) => MakeChannel(name).Object); 
+            guild.Setup(x => x.CreateVoiceChannelAsync(It.IsAny<string>(), It.IsAny<IChannelCategory?>())).ReturnsAsync((string name, IChannelCategory cat) => MakeChannel(name).Object);
+            guild.Setup(x => x.CreateCategoryAsync(It.IsAny<string>())).ReturnsAsync((string name) => MakeChannelCategory(name).Object);
+            guild.Setup(x => x.CreateRoleAsync(It.IsAny<string>(), It.IsAny<Color>())).ReturnsAsync((string name, Color c) => MakeRole(name).Object);
+            guild.SetupGet(x => x.EveryoneRole).Returns(MakeRole("Everyone").Object);
+
+            guild.SetupGet(x => x.ChannelCategories).Returns(new List<IChannelCategory>());
+            guild.SetupGet(x => x.Channels).Returns(new List<IChannel>());
+
+            Mock<IRole> botRole = MakeRole("Bot on the Clocktower");
+            guild.SetupGet(x => x.BotRole).Returns(botRole.Object);
+
+            var roleList = new Dictionary<ulong, IRole> { { botRole.Object.Id, botRole.Object } };
+            guild.SetupGet(x => x.Roles).Returns(roleList);
             return guild;
         }
 
@@ -143,7 +154,7 @@ namespace Test.Bot.Core
         private BotSetup CreateTownAssertCompleted()
         {
             BotSetup bs = new(GetServiceProvider());
-            var t = bs.CreateTown(TownDesc);
+            var t = bs.CreateTown(TownDesc, AuthorMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
             return bs;
