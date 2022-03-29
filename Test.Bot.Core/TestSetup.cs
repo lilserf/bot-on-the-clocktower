@@ -5,6 +5,7 @@ using Moq;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
 
@@ -50,23 +51,28 @@ namespace Test.Bot.Core
 
         private static Mock<IChannel> MakeChannel(string name)
         {
-            Mock<IChannel> chan = new() { Name = name };
+            Mock<IChannel> chan = new(MockBehavior.Strict) { Name = name };
             chan.SetupGet(x => x.Name).Returns(name);
             chan.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
+            chan.Setup(x => x.AddOverwriteAsync(It.IsAny<IMember>(), It.IsAny<IBaseChannel.Permissions>(), It.IsAny<IBaseChannel.Permissions>())).Returns(Task.CompletedTask);
+            chan.Setup(x => x.AddOverwriteAsync(It.IsAny<IRole>(), It.IsAny<IBaseChannel.Permissions>(), It.IsAny<IBaseChannel.Permissions>())).Returns(Task.CompletedTask);
             return chan;
         }
 
         private static Mock<IChannelCategory> MakeChannelCategory(string name)
         {
-            Mock<IChannelCategory> cat = new() { Name = name };
+            Mock<IChannelCategory> cat = new(MockBehavior.Strict) { Name = name };
             cat.SetupGet(x => x.Name).Returns(name);
             cat.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
+            cat.Setup(x => x.AddOverwriteAsync(It.IsAny<IMember>(), It.IsAny<IBaseChannel.Permissions>(), It.IsAny<IBaseChannel.Permissions>())).Returns(Task.CompletedTask);
+            cat.Setup(x => x.AddOverwriteAsync(It.IsAny<IRole>(), It.IsAny<IBaseChannel.Permissions>(), It.IsAny<IBaseChannel.Permissions>())).Returns(Task.CompletedTask);
+            cat.SetupGet(x => x.Channels).Returns(new List<IChannel>());
             return cat;
         }
 
         private static Mock<IRole> MakeRole(string name)
         {
-            Mock<IRole> role = new() { Name = name };
+            Mock<IRole> role = new(MockBehavior.Strict) { Name = name };
             role.SetupGet(x => x.Name).Returns(name);
             role.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
             return role;
@@ -160,7 +166,7 @@ namespace Test.Bot.Core
             return bs;
         }
 
-        [Fact(Skip ="Can't test this until the rest of it is in place, adding to the DB is last")]
+        [Fact]
         public void CreateTown_CallsTownDb()
         {
             CreateTownAssertCompleted();
