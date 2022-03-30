@@ -45,9 +45,9 @@ jobs:
         with:
           command: |
             cd /usr/botc
-            ls -a
-            exit 1
+            ./new-deploy.sh
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          args: -tt
 
