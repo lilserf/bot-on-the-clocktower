@@ -9,13 +9,13 @@ using Xunit;
 
 namespace Test.Bot.Core
 {
-    public class ShutdownTests : TestBase
+    public class TestShutdown : TestBase
     {
         private readonly Mock<IShutdownPreventionService> m_mockShutdownPrevention = new(MockBehavior.Strict);
         private readonly List<Task> m_registeredPreventerTasks = new();
 
 
-        public ShutdownTests()
+        public TestShutdown()
         {
             RegisterMock(m_mockShutdownPrevention);
 
