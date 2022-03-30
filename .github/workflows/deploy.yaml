@@ -40,7 +40,7 @@ jobs:
       - name: Deploy with rsync
         run: rsync -avz . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/usr/botc/
         
-      - name: Do an SSH thing
+      - name: Run the 'new deploy' script on the server
         uses: fifsky/ssh-action@master
         with:
           command: |
