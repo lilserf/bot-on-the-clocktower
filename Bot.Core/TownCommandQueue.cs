@@ -16,7 +16,7 @@ namespace Bot.Core
         private readonly TaskCompletionSource m_readyToShutdown = new();
         private bool m_shutdownRequested = false;
 
-        const string ShutdownRequestedMessage = "Bot on the Clocktower is waiting to restart. Please wait a few moments, then try again.";
+        const string ShutdownRequestedMessage = "Bot on the Clocktower is restarting. Please wait a few moments, then try again.";
 
         public TownCommandQueue(IServiceProvider serviceProvider)
         {
