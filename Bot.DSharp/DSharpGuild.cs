@@ -37,7 +37,7 @@ namespace Bot.DSharp
         public async Task<IChannel?> CreateVoiceChannelAsync(string name, IChannelCategory? parent = null)
         {
             DiscordChannel? dc;
-            if (parent is DSharpChannel dp)
+            if (parent is DSharpChannelCategory dp)
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice, dp.Wrapped);
             else
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Voice);
@@ -48,7 +48,7 @@ namespace Bot.DSharp
         public async Task<IChannel?> CreateTextChannelAsync(string name, IChannelCategory? parent = null)
         {
             DiscordChannel? dc;
-            if (parent is DSharpChannel dp)
+            if (parent is DSharpChannelCategory dp)
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text, dp.Wrapped);
             else
                 dc = await Wrapped.CreateChannelAsync(name, DSharpPlus.ChannelType.Text);
@@ -87,6 +87,18 @@ namespace Bot.DSharp
         public IReadOnlyCollection<IChannel> Channels => Wrapped.Channels.Values.Where(IsStandardChannel).Select(c => new DSharpChannel(c)).ToArray();
 
         public IReadOnlyCollection<IChannelCategory> ChannelCategories => Wrapped.Channels.Values.Where(IsChannelCategory).Select(c => new DSharpChannelCategory(c)).ToArray();
+
+        public IRole? BotRole
+        {
+            get
+            {
+                // TODO: how do we get the bot user name instead of magic-stringing this
+                var role = Wrapped.Roles.Where(kvp => kvp.Value.IsManaged == true && kvp.Value.Name.Equals("Bot on the Clocktower")).Select(kvp => kvp.Value).FirstOrDefault();
+                return role == null ? null : new DSharpRole(role);
+            }
+        }
+
+        public IRole EveryoneRole => new DSharpRole(Wrapped.EveryoneRole);
 
         private static bool IsStandardChannel(DiscordChannel channel)
         {

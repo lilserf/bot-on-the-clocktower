@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-    public interface IChannel
+    public interface IChannel : IBaseChannel
 	{
 		public ulong Id { get; }
 
@@ -17,7 +18,6 @@ namespace Bot.Api
 
 		public Task SendMessageAsync(string msg);
 
-		public Task AddPermissionsAsync(IMember member);
-		public Task RemovePermissionsAsync(IMember member);
+
 	}
 }

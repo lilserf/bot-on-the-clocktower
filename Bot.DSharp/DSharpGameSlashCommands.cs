@@ -52,15 +52,18 @@ namespace Bot.DSharp
             return BotGameplayHandler!.CommandSetStorytellersAsync(new DSharpInteractionContext(ctx), allUsers.Where(x => x != null).Cast<DiscordMember>().Select(x => new DSharpMember(x)).ToList());
         }
 
+        // TODO move to a new DSharpSetupSlashCommands class
         [SlashCommand("createTown", "Create a new Town on this server")]
-        public async Task CreateTownCommand(InteractionContext ctx)
+        public async Task CreateTownCommand(InteractionContext ctx,
+            [Option("townName", "Town Name")] string townName,
+            [Option("playerRole", "Server Player Role - only they can see the town")] DiscordRole? playerRole = null,
+            [Option("storytellerRole", "Server Storyteller Role - only they can see control channels")] DiscordRole? stRole = null,
+            [Option("useNight", "If true, a Night category full of cottages will be created")] bool useNight = true)
         {
-            await BotSetup!.CommandCreateTown(new DSharpInteractionContext(ctx));
+            var wrappedPlayerRole = playerRole == null ? null : new DSharpRole(playerRole);
+            var wrappedStRole = stRole == null ? null : new DSharpRole(stRole);
 
-            //var modal = new DiscordInteractionResponseBuilder().WithTitle("Modal").WithCustomId("modal1")
-            //    .AddComponents(new TextInputComponent("Text1", "text1", "placeholder", "value"));
-
-            //await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.Modal, modal);
+            await BotSetup!.CommandCreateTown(new DSharpInteractionContext(ctx), townName, wrappedPlayerRole, wrappedStRole, useNight);
         }
     }
 }
