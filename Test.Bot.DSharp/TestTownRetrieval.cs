@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Test.Bot.DSharp
 {
-    public class TestChannelRetrieval : TestBase
+    public class TestTownRetrieval : TestBase
     {
         private readonly Mock<IBotClient> m_mockClient = new(MockBehavior.Strict);
 
@@ -23,12 +23,16 @@ namespace Test.Bot.DSharp
         private readonly Mock<IRole> m_mockStorytellerRole = new(MockBehavior.Strict);
         private readonly Mock<IRole> m_mockVillagerRole = new(MockBehavior.Strict);
 
+        private readonly Dictionary<ulong, IRole> m_roleDict = new();
+
         private const string MismatchedName = "mismatched name";
         private const string ControlName = "control chan";
         private const string TownSquareName = "TS chan";
         private const string ChatName = "chat chan";
         private const string DayCategoryName = "day cat";
         private const string NightCategoryName = "night cat";
+        private const string StorytellerRoleName = "storyteller role";
+        private const string VillagerRoleName = "villager role";
 
         private const ulong MismatchedId = 0;
         private const ulong ControlId = 1;
@@ -40,7 +44,7 @@ namespace Test.Bot.DSharp
         private const ulong VillagerRoleId = 7;
         private const ulong GuildId = 77;
 
-        public TestChannelRetrieval()
+        public TestTownRetrieval()
         {
             RegisterMock(m_mockClient);
             RegisterMock(m_mockTownDb);
@@ -53,6 +57,8 @@ namespace Test.Bot.DSharp
             SetupChannelMock(m_mockGuild, m_mockChatChannel, ChatId, ChatName, false);
             SetupChannelCategoryMock(m_mockGuild, m_mockDayChannelCategory, DayCategoryId, DayCategoryName);
             SetupChannelCategoryMock(m_mockGuild, m_mockNightChannelCategory, NightCategoryId, NightCategoryName);
+            SetupRoleMock(m_roleDict, m_mockStorytellerRole, StorytellerRoleId, StorytellerRoleName);
+            SetupRoleMock(m_roleDict, m_mockVillagerRole, VillagerRoleId, VillagerRoleName);
 
             m_mockTownRecord.SetupGet(tr => tr.ControlChannel).Returns(ControlName);
             m_mockTownRecord.SetupGet(tr => tr.ControlChannelId).Returns(ControlId);
@@ -64,7 +70,9 @@ namespace Test.Bot.DSharp
             m_mockTownRecord.SetupGet(tr => tr.DayCategoryId).Returns(DayCategoryId);
             m_mockTownRecord.SetupGet(tr => tr.NightCategory).Returns(NightCategoryName);
             m_mockTownRecord.SetupGet(tr => tr.NightCategoryId).Returns(NightCategoryId);
+            m_mockTownRecord.SetupGet(tr => tr.StorytellerRole).Returns(StorytellerRoleName);
             m_mockTownRecord.SetupGet(tr => tr.StorytellerRoleId).Returns(StorytellerRoleId);
+            m_mockTownRecord.SetupGet(tr => tr.VillagerRole).Returns(VillagerRoleName);
             m_mockTownRecord.SetupGet(tr => tr.VillagerRoleId).Returns(VillagerRoleId);
             m_mockTownRecord.SetupGet(tr => tr.GuildId).Returns(GuildId);
 
@@ -83,15 +91,17 @@ namespace Test.Bot.DSharp
                 guildMock.Setup(c => c.GetChannelCategory(It.Is<ulong>(id => id == channelId))).Returns(channelMock.Object);
             }
 
-            m_mockClient.Setup(c => c.GetGuildAsync(It.Is<ulong>(id => id == GuildId))).ReturnsAsync(m_mockGuild.Object);
-
-            Dictionary<ulong, IRole> roleDict = new()
+            static void SetupRoleMock(IDictionary<ulong, IRole> roleDict, Mock<IRole> roleMock, ulong roleId, string roleName)
             {
-                { StorytellerRoleId, m_mockStorytellerRole.Object },
-                { VillagerRoleId, m_mockVillagerRole.Object },
-            };
+                roleMock.SetupGet(r => r.Name).Returns(roleName);
+                roleMock.SetupGet(r => r.Id).Returns(roleId);
+                roleDict.Add(roleId, roleMock.Object);
+            }
+
+            m_mockClient.Setup(c => c.GetGuildAsync(It.Is<ulong>(id => id == GuildId))).ReturnsAsync(m_mockGuild.Object);
             m_mockGuild.SetupGet(g => g.Id).Returns(GuildId);
-            m_mockGuild.SetupGet(g => g.Roles).Returns(roleDict);
+            m_mockGuild.SetupGet(g => g.Roles).Returns(m_roleDict);
+
             IChannel[] channels = new[] { m_mockChatChannel.Object, m_mockControlChannel.Object, m_mockTownSquareChannel.Object };
             IChannelCategory[] channelCategories = new[] { m_mockDayChannelCategory.Object, m_mockNightChannelCategory.Object };
             m_mockDayChannelCategory.SetupGet(cc => cc.Channels).Returns(channels);
@@ -117,6 +127,11 @@ namespace Test.Bot.DSharp
         [Fact]
         public void TownResolve_NightCategoryNameOff_RequestsUpdate() => TestResolve_ChannelCategoryNameOff(m_mockNightChannelCategory);
 
+        [Fact]
+        public void TownResolve_StorytellerRoleNameOff_RequestsUpdate() => TestResolve_RoleNameOff(m_mockStorytellerRole);
+        [Fact]
+        public void TownResolve_VillagerRoleNameOff_RequestsUpdate() => TestResolve_RoleNameOff(m_mockVillagerRole);
+
         private void TestResolve_ChannelNameOff(Mock<IChannel> channel)
         {
             channel.SetupGet(c => c.Name).Returns(MismatchedName);
@@ -126,6 +141,12 @@ namespace Test.Bot.DSharp
         private void TestResolve_ChannelCategoryNameOff(Mock<IChannelCategory> channelCategory)
         {
             channelCategory.SetupGet(c => c.Name).Returns(MismatchedName);
+            TestResolve_VerifyTownUpdated();
+        }
+        
+        private void TestResolve_RoleNameOff(Mock<IRole> role)
+        {
+            role.SetupGet(c => c.Name).Returns(MismatchedName);
             TestResolve_VerifyTownUpdated();
         }
 
@@ -140,6 +161,10 @@ namespace Test.Bot.DSharp
         [Fact]
         public void TownResolve_NightCategoryIdOff_RequestsUpdate() => TestResolve_ChannelCategoryIdOff(NightCategoryId, m_mockNightChannelCategory);
 
+        [Fact]
+        public void TownResolve_StorytellerIdOff_RequestsUpdate() => TestResolve_RoleIdOff(m_mockStorytellerRole);
+        [Fact]
+        public void TownResolve_VillagerIdOff_RequestsUpdate() => TestResolve_RoleIdOff(m_mockVillagerRole);
 
         private void TestResolve_ChannelIdOff(ulong originalId, Mock<IChannel> channel)
         {
@@ -152,6 +177,15 @@ namespace Test.Bot.DSharp
         {
             m_mockGuild.Setup(g => g.GetChannelCategory(It.Is<ulong>(l => l == originalId))).Returns((IChannelCategory?)null);
             channelCategory.SetupGet(c => c.Id).Returns(MismatchedId);
+            TestResolve_VerifyTownUpdated();
+        }
+
+        private void TestResolve_RoleIdOff(Mock<IRole> roleMock)
+        {
+            ulong originalId = roleMock.Object.Id;
+            m_roleDict.Remove(originalId);
+            m_roleDict.Add(MismatchedId, roleMock.Object);
+            roleMock.SetupGet(r => r.Id).Returns(MismatchedId);
             TestResolve_VerifyTownUpdated();
         }
 
