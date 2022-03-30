@@ -32,6 +32,7 @@ namespace Bot.Core
         {
             if (!m_shutdownRequested)
             {
+                Serilog.Log.Debug("A shutdown has been requested.");
                 m_shutdownRequested = true;
                 ShutdownRequested?.Invoke(this, EventArgs.Empty);
 
