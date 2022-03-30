@@ -8,3 +8,4 @@ package-lock.json
 */bin/
 */obj/
 vultr.txt
+secrets.txt
