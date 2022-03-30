@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -27,6 +28,8 @@ namespace Bot.Core
                 var controlChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ControlChannelId, rec.ControlChannel, false);
                 var chatChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ChatChannelId, rec.ChatChannel, false);
                 var townSquareResult = GetChannel(guild, dayCategoryResult.Channel, rec.TownSquareId, rec.TownSquare, true);
+                var storytellerRoleResult = GetRoleForGuild(guild, rec.StorytellerRoleId, rec.StorytellerRole);
+                var villagerRoleResult = GetRoleForGuild(guild, rec.VillagerRoleId, rec.VillagerRole);
 
                 var town = new Town(rec)
                 {
@@ -36,16 +39,22 @@ namespace Bot.Core
                     NightCategory = nightCategoryResult.Channel,
                     ChatChannel = chatChannelResult.Channel,
                     TownSquare = townSquareResult.Channel,
-                    StorytellerRole = GetRoleForGuild(guild, rec.StorytellerRoleId),
-                    VillagerRole = GetRoleForGuild(guild, rec.VillagerRoleId),
+                    StorytellerRole = storytellerRoleResult.Item1,
+                    VillagerRole = villagerRoleResult.Item1,
                 };
 
-                if (AnyUpdatesRequired(
-                    controlChannelResult,
-                    dayCategoryResult,
-                    nightCategoryResult, 
-                    chatChannelResult,
-                    townSquareResult))
+                bool updatesRequired = AnyUpdatesRequired(
+                    SelectUpdatesRequired(
+                        controlChannelResult,
+                        dayCategoryResult,
+                        nightCategoryResult,
+                        chatChannelResult,
+                        townSquareResult)
+                    .Concat(new[] {
+                        storytellerRoleResult.Item2,
+                        villagerRoleResult.Item2 }));
+
+                if (updatesRequired)
                     await m_townDb.UpdateTownAsync(town);
 
                 return town;
@@ -53,11 +62,12 @@ namespace Bot.Core
             return null;
         }
 
-        private static bool AnyUpdatesRequired(params GetChannelResultBase[] results) => results.Any(r => r.UpdateRequired != ChannelUpdateRequired.None);
+        private static IEnumerable<UpdateRequired> SelectUpdatesRequired(params GetChannelResultBase[] results) => results.Select(r => r.UpdateRequired);
+        private static bool AnyUpdatesRequired(IEnumerable<UpdateRequired> updates) => updates.Any(u => u != UpdateRequired.None);
 
         private static GetChannelResult GetChannel(IGuild guild, IChannelCategory? parentCategory, ulong channelId, string? channelName, bool expectedIsVoice)
         {
-            ChannelUpdateRequired update = ChannelUpdateRequired.None;
+            UpdateRequired update = UpdateRequired.None;
 
             var channel = guild.GetChannel(channelId);
             if (channel == null && parentCategory != null)
@@ -67,16 +77,16 @@ namespace Bot.Core
                 if (channel.IsVoice != expectedIsVoice)
                     channel = null;
                 else if (channel.Name != channelName)
-                    update = ChannelUpdateRequired.Name;
+                    update = UpdateRequired.Name;
                 else if (channel.Id != channelId)
-                    update = ChannelUpdateRequired.Id;
+                    update = UpdateRequired.Id;
 
             return new GetChannelResult(channel, update);
         }
 
         private static GetChannelCategoryResult GetChannelCategory(IGuild guild, ulong channelId, string? channelName)
         {
-            ChannelUpdateRequired update = ChannelUpdateRequired.None;
+            UpdateRequired update = UpdateRequired.None;
 
             var channelCategory = guild.GetChannelCategory(channelId);
             if (channelCategory == null)
@@ -84,21 +94,30 @@ namespace Bot.Core
 
             if (channelCategory != null)
                 if (channelCategory.Name != channelName)
-                    update = ChannelUpdateRequired.Name;
+                    update = UpdateRequired.Name;
                 else if (channelCategory.Id != channelId)
-                    update = ChannelUpdateRequired.Id;
+                    update = UpdateRequired.Id;
 
             return new GetChannelCategoryResult(channelCategory, update);
         }
 
-        private static IRole? GetRoleForGuild(IGuild guild, ulong roleId)
+        private static (IRole?, UpdateRequired) GetRoleForGuild(IGuild guild, ulong roleId, string? roleName)
         {
-            if (guild.Roles.TryGetValue(roleId, out var role))
-                return role;
-            return null;
+            UpdateRequired update = UpdateRequired.None;
+
+            if (!guild.Roles.TryGetValue(roleId, out var role))
+                role = guild.Roles.Values.FirstOrDefault(r => r.Name== roleName);
+
+            if (role != null)
+                if (role.Name != roleName)
+                    update = UpdateRequired.Name;
+                else if (role.Id != roleId)
+                    update = UpdateRequired.Id;
+
+            return (role, update);
         }
 
-        private enum ChannelUpdateRequired
+        private enum UpdateRequired
         {
             None,
             Id,
@@ -107,14 +126,14 @@ namespace Bot.Core
 
         private class GetChannelResult : GetChannelResultBase<IChannel>
         {
-            public GetChannelResult(IChannel? channel, ChannelUpdateRequired updateRequired)
+            public GetChannelResult(IChannel? channel, UpdateRequired updateRequired)
                 : base(channel, updateRequired)
             { }
         }
 
         private class GetChannelCategoryResult : GetChannelResultBase<IChannelCategory>
         {
-            public GetChannelCategoryResult(IChannelCategory? channel, ChannelUpdateRequired updateRequired)
+            public GetChannelCategoryResult(IChannelCategory? channel, UpdateRequired updateRequired)
                 : base(channel, updateRequired)
             { }
         }
@@ -123,7 +142,7 @@ namespace Bot.Core
         {
             public T? Channel { get; }
 
-            public GetChannelResultBase(T? channel, ChannelUpdateRequired updateRequired)
+            public GetChannelResultBase(T? channel, UpdateRequired updateRequired)
                 :base(updateRequired)
             {
                 Channel = channel;
@@ -132,8 +151,8 @@ namespace Bot.Core
 
         private class GetChannelResultBase
         {
-            public ChannelUpdateRequired UpdateRequired { get; }
-            public GetChannelResultBase(ChannelUpdateRequired updateRequired)
+            public UpdateRequired UpdateRequired { get; }
+            public GetChannelResultBase(UpdateRequired updateRequired)
             {
                 UpdateRequired = updateRequired;
             }
