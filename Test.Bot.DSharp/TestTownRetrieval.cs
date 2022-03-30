@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Test.Bot.DSharp
 {
-    public class TestChannelRetrieval : TestBase
+    public class TestTownRetrieval : TestBase
     {
         private readonly Mock<IBotClient> m_mockClient = new(MockBehavior.Strict);
 
@@ -40,7 +40,7 @@ namespace Test.Bot.DSharp
         private const ulong VillagerRoleId = 7;
         private const ulong GuildId = 77;
 
-        public TestChannelRetrieval()
+        public TestTownRetrieval()
         {
             RegisterMock(m_mockClient);
             RegisterMock(m_mockTownDb);
