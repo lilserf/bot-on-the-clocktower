@@ -60,7 +60,7 @@ namespace Bot.Core.Lookup
                     continue;
 
                 var name = JsonParseUtil.GetObjectStringProp(obj, "name");
-                if (name == null)
+                if (string.IsNullOrWhiteSpace(name))
                     continue;
 
                 bool isOfficial = true;
@@ -71,7 +71,7 @@ namespace Bot.Core.Lookup
                 scripts.Add(sd);
 
                 var id = JsonParseUtil.GetObjectStringProp(obj, "id");
-                if (id != null)
+                if (!string.IsNullOrWhiteSpace(id))
                     scriptIdToScriptMap[id] = sd;
 
                 var roleArray = JsonParseUtil.GetObjectArrayProp(obj, "roles");
@@ -112,11 +112,11 @@ namespace Bot.Core.Lookup
                 charList.Add(cdws);
 
                 var id = JsonParseUtil.GetObjectStringProp(obj, "id");
-                if (id != null)
+                if (!string.IsNullOrWhiteSpace(id))
                     charIdToCharMap[id] = cdws; // NOTE: Not great support for duped ids. Not even sure what I would do. Expected no duped ids
 
                 var scriptId = JsonParseUtil.GetObjectStringProp(obj, "edition");
-                if (scriptId != null)
+                if (!string.IsNullOrWhiteSpace(scriptId))
                     if (scriptIdToScriptMap.TryGetValue(scriptId, out var script))
                         cdws.Scripts.Add(script);
             }

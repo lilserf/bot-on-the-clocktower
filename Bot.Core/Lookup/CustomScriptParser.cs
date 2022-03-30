@@ -50,7 +50,7 @@ namespace Bot.Core.Lookup
         private ScriptData? ParseScriptMetaData(JObject obj)
         {
             string? name = JsonParseUtil.GetObjectStringProp(obj, "name");
-            if (name == null)
+            if (string.IsNullOrWhiteSpace(name))
                 return null;
 
             ScriptData sd = new(name, isOfficial: false);
