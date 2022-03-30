@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -12,7 +13,8 @@ namespace Bot.Core
 
         private readonly Dictionary<TownKey, Queue<QueueItem>> m_townToCommandQueue = new();
 
-        private TaskCompletionSource m_readyToShutdown = new();
+        private readonly TaskCompletionSource m_readyToShutdown = new();
+        private bool m_shutdownRequested = false;
 
         public TownCommandQueue(IServiceProvider serviceProvider)
         {
@@ -77,10 +79,17 @@ namespace Bot.Core
                 }
                 m_townToCommandQueue.Remove(townKey);
             }
+            if (m_shutdownRequested && !m_townToCommandQueue.Any())
+                m_readyToShutdown.TrySetResult();
         }
 
         private void OnShutdownRequsted(object? sender, EventArgs e)
         {
+            m_shutdownRequested = true;
+
+            if (!m_townToCommandQueue.Any())
+                m_readyToShutdown.TrySetResult();
+
             m_shutdownPreventionService.ShutdownRequested -= OnShutdownRequsted;
         }
 
