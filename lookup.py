@@ -13,7 +13,7 @@ class BotcWiki:
         map(lambda x: x.capitalize(), words)
         final = "_".join(words)
         final = urllib.parse.quote(final)
-        return f'https://bloodontheclocktower.com/wiki/{final}'
+        return f'https://wiki.bloodontheclocktower.com/{final}'
 
 class LookupRole:
     def matches_other(self, other):
