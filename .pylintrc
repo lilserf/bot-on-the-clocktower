@@ -1,9 +1,0 @@
-[MASTER]
-
-disable=line-too-long,
-		too-many-instance-attributes,
-		trailing-newlines,
-		too-few-public-methods,
-		missing-module-docstring,
-		missing-class-docstring,
-		missing-function-docstring
