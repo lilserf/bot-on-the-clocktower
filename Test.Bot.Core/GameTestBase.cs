@@ -24,6 +24,7 @@ namespace Test.Bot.Core
         protected Func<TownKey, Task>? TownKeyCallback;
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
+        protected readonly Mock<IShutdownPreventionService> ShutdownPreventionMock = new();
         protected readonly Mock<IBotWebhookBuilder> WebhookBuilderMock = new();
 
         protected readonly Mock<IGuild> GuildMock = new();
@@ -80,6 +81,7 @@ namespace Test.Bot.Core
 
             RegisterMock(BotSystemMock);
             RegisterMock(ClientMock);
+            RegisterMock(ShutdownPreventionMock);
             RegisterMock(TownLookupMock);
             RegisterMock(TownResolverMock);
             RegisterMock(DateTimeMock);

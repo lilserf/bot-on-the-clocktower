@@ -29,6 +29,8 @@ namespace Test.Bot.Core
         [InlineData(typeof(IActiveGameService), typeof(ActiveGameService))]
         [InlineData(typeof(IComponentService), typeof(ComponentService))]
         [InlineData(typeof(IShuffleService), typeof(ShuffleService))]
+        [InlineData(typeof(IFinalShutdownService), typeof(ShutdownService))]
+        [InlineData(typeof(IShutdownPreventionService), typeof(ShutdownService))]
         public void RegisterCoreServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider());
@@ -49,6 +51,7 @@ namespace Test.Bot.Core
         {
             RegisterMock(new Mock<IBotSystem>());
             RegisterMock(new Mock<ICallbackSchedulerFactory>());
+            RegisterMock(new Mock<IShutdownPreventionService>());
             RegisterMock(new Mock<IComponentService>());
 
             var newSp = ServiceFactory.RegisterBotServices(GetServiceProvider());

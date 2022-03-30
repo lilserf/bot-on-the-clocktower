@@ -13,6 +13,11 @@ namespace Bot.Core
         public static IServiceProvider RegisterCoreServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
+
+            var shutdown = new ShutdownService();
+            sp.AddService<IFinalShutdownService>(shutdown);
+            sp.AddService<IShutdownPreventionService>(shutdown);
+
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());

@@ -8,12 +8,19 @@ namespace Bot.Core
     public class TownCommandQueue : ITownCommandQueue
     {
         private readonly IBotSystem m_botSystem;
+        private readonly IShutdownPreventionService m_shutdownPreventionService;
 
         private readonly Dictionary<TownKey, Queue<QueueItem>> m_townToCommandQueue = new();
+
+        private TaskCompletionSource m_readyToShutdown = new();
 
         public TownCommandQueue(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_botSystem);
+            serviceProvider.Inject(out m_shutdownPreventionService);
+
+            m_shutdownPreventionService.RegisterShutdownPreventer(m_readyToShutdown.Task);
+            m_shutdownPreventionService.ShutdownRequested += OnShutdownRequsted;
         }
 
         public async Task QueueCommandAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedCommandResult>> queuedTask)
@@ -70,6 +77,11 @@ namespace Bot.Core
                 }
                 m_townToCommandQueue.Remove(townKey);
             }
+        }
+
+        private void OnShutdownRequsted(object? sender, EventArgs e)
+        {
+            m_shutdownPreventionService.ShutdownRequested -= OnShutdownRequsted;
         }
 
         private class QueueItem

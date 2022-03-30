@@ -52,7 +52,7 @@ namespace Bot.Main
             sp = DSharp.ServiceFactory.RegisterServices(sp);
 
             var dsharpRunner = new BotSystemRunner(sp, new DSharpSystem());
-            await dsharpRunner.RunAsync(ct);
+            await dsharpRunner.RunAsync();
         }
 
         public static IServiceProvider RegisterServices()

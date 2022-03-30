@@ -61,6 +61,8 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
+        public Task DisconnectAsync() => m_discord.DisconnectAsync();
+
         public Task<IGuild?> GetGuildAsync(ulong id) => m_discord.GetGuildAsync(id);
 
         private Task ComponentInteractionCreated(IDiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
