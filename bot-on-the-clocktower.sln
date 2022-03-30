@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31129.286
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32319.34
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "botc", "botc.pyproj", "{52540CB4-0923-440E-8C2C-23982EC6724E}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Api", "Bot.Api\Bot.Api.csproj", "{AB97009B-4FD1-4E95-AE5F-EA15955C7F6E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot.Core", "Bot.Core\Bot.Core.csproj", "{8F3F3003-B0FF-41AC-884E-BE1DEEC86D61}"
@@ -37,8 +35,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{52540CB4-0923-440E-8C2C-23982EC6724E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{52540CB4-0923-440E-8C2C-23982EC6724E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB97009B-4FD1-4E95-AE5F-EA15955C7F6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AB97009B-4FD1-4E95-AE5F-EA15955C7F6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB97009B-4FD1-4E95-AE5F-EA15955C7F6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
