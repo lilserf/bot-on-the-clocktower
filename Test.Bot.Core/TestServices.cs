@@ -4,6 +4,7 @@ using Bot.Core;
 using Bot.Core.Callbacks;
 using Moq;
 using System;
+using System.Threading;
 using Test.Bot.Base;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Test.Bot.Core
         [Fact]
         public static void CreateCoreServices_ConstructsType()
         {
-            var sp = ServiceFactory.RegisterCoreServices(null);
+            var sp = ServiceFactory.RegisterCoreServices(null, CancellationToken.None);
             Assert.IsType<ServiceProvider>(sp);
         }
 
@@ -33,7 +34,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(IShutdownPreventionService), typeof(ShutdownService))]
         public void RegisterCoreServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
-            var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider());
+            var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider(), CancellationToken.None);
             var service = newSp.GetService(serviceInterface);
 
             Assert.NotNull(service);

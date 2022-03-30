@@ -3,6 +3,7 @@ using Bot.Core;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -66,7 +67,7 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public async Task ItemQueued_LearnsOfShutdown_WaitsForItem()
+        public void ItemQueued_LearnsOfShutdown_WaitsForItem()
         {
             string initialMessage = "some initial message";
             string completionMessage = "completion message";
@@ -97,10 +98,86 @@ namespace Test.Bot.Core
                 t => Assert.True(t.IsCompleted));
         }
 
-        [Fact(Skip ="NYI")]
+        [Fact]
         public void LearnsOfShutdown_ItemQueuedAfter_PoliteErrorAndQueuedItemNotCalled()
         {
-            Assert.True(false);
+            string initialMessage = "some initial message";
+
+            int queueFuncCallCount = 0;
+            Task<QueuedCommandResult> queueFunc()
+            {
+                ++queueFuncCallCount;
+                throw new InvalidOperationException("Should not be calling the queue function when cancel is requested");
+            }
+
+            var tcq = new TownCommandQueue(GetServiceProvider());
+
+            m_mockShutdownPrevention.Raise(sp => sp.ShutdownRequested += null, EventArgs.Empty);
+
+            var t = tcq.QueueCommandAsync(initialMessage, m_mockInteractionContext.Object, queueFunc);
+
+            Assert.True(t.IsCompleted);
+            m_mockInteractionContext.Verify(ic => ic.DeferInteractionResponse(), Times.Once);
+            m_mockWebhookBuilder.Verify(wb => wb.WithContent(It.Is<string>(s => s.Contains("please wait", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            m_mockInteractionContext.Verify(ic => ic.EditResponseAsync(It.Is<IBotWebhookBuilder>(wb => wb == m_mockWebhookBuilder.Object)), Times.Once);
+            m_mockWebhookBuilder.VerifyNoOtherCalls();
+            Assert.Equal(0, queueFuncCallCount);
+        }
+
+        [Fact]
+        public void ShutdownServiceNoPreventers_Cancelled_ReadyToShutdown()
+        {
+            using var cts = new CancellationTokenSource();
+
+            int shutdownRequestCount = 0;
+            void ShutdownRequestedFunc(object? sender, EventArgs e)
+            {
+                ++shutdownRequestCount;
+            }
+
+
+            var ss = new ShutdownService(cts.Token);
+            ss.ShutdownRequested += ShutdownRequestedFunc;
+
+            Assert.Equal(0, shutdownRequestCount);
+            Assert.False(ss.ReadyToShutdown.IsCompleted);
+
+            cts.Cancel();
+
+            Assert.Equal(1, shutdownRequestCount);
+            Assert.True(ss.ReadyToShutdown.IsCompleted);
+        }
+
+        [Fact]
+        public async Task ShutdownServiceWithPreventers_Cancelled_WaitsForPreventers()
+        {
+            using var cts = new CancellationTokenSource();
+
+            var tcs = new TaskCompletionSource();
+
+            int shutdownRequestCount = 0;
+            void ShutdownRequestedFunc(object? sender, EventArgs e)
+            {
+                ++shutdownRequestCount;
+            }
+
+            var ss = new ShutdownService(cts.Token);
+            ss.ShutdownRequested += ShutdownRequestedFunc;
+            ss.RegisterShutdownPreventer(tcs.Task);
+
+            Assert.Equal(0, shutdownRequestCount);
+            Assert.False(ss.ReadyToShutdown.IsCompleted);
+
+            cts.Cancel();
+
+            Assert.Equal(1, shutdownRequestCount);
+            Assert.False(ss.ReadyToShutdown.IsCompleted);
+
+            tcs.SetResult();
+
+            await Task.Delay(5); // ShutdownService uses async operation to mark ReadyToShutdown
+
+            Assert.True(ss.ReadyToShutdown.IsCompleted);
         }
     }
 }

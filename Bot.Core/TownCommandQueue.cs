@@ -16,6 +16,8 @@ namespace Bot.Core
         private readonly TaskCompletionSource m_readyToShutdown = new();
         private bool m_shutdownRequested = false;
 
+        const string ShutdownRequestedMessage = "Bot on the Clocktower is waiting to restart. Please wait a few moments, then try again.";
+
         public TownCommandQueue(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_botSystem);
@@ -30,8 +32,11 @@ namespace Bot.Core
             try
             {
                 await context.DeferInteractionResponse();
-                var webhook = m_botSystem.CreateWebhookBuilder().WithContent(initialMessage);
+                var webhook = m_botSystem.CreateWebhookBuilder().WithContent(m_shutdownRequested ? ShutdownRequestedMessage : initialMessage);
                 await context.EditResponseAsync(webhook);
+
+                if (m_shutdownRequested)
+                    return;
 
                 QueueItem newItem = new(context, queuedTask);
 
