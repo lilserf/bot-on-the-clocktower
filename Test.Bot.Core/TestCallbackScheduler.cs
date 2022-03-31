@@ -3,6 +3,7 @@ using Bot.Core;
 using Bot.Core.Callbacks;
 using Moq;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;

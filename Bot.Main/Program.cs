@@ -17,7 +17,7 @@ namespace Bot.Main
         {
             // Setup the global Serilog logger instance; if we want more granularity or not to use a single static logger, we can
             // instantiate individual loggers and put them into our services instead
-            Log.Logger = new LoggerConfiguration()
+            var logConfig = new LoggerConfiguration()
                 .Destructure.ByIgnoringProperties<DSharpMember>(x => x.Wrapped, x => x.Roles, x => x.IsBot)
                 .Destructure.ByIgnoringProperties<DSharpRole>(x => x.Wrapped, x => x.Mention)
                 .Destructure.ByIgnoringProperties<DSharpGuild>(x => x.Wrapped, x => x.Roles, x => x.Members)
@@ -28,25 +28,41 @@ namespace Bot.Main
                 .Destructure.ByTransforming<MongoTownRecord>(x => new { GuildId = x.GuildId, ControlChannelId = x.ControlChannelId, ControlChannelName = x.ControlChannel })
                 .Destructure.ByTransforming<Town>(x => new { Guild = x.Guild, ControlChannel = x.ControlChannel })
                 .Destructure.ByTransforming<Game>(x => new { TownKey = x.TownKey, Storytellers = x.Storytellers, VillagerCount = x.Villagers.Count })
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .WriteTo.File("logs/botc.log", rollingInterval:RollingInterval.Day)
-                .CreateLogger();
+                .WriteTo.File("logs/botc.log", rollingInterval: RollingInterval.Day);
 
             DotEnv.Load(@"..\..\..\..\.env");
 
+            string deployType = Environment.GetEnvironmentVariable("DEPLOY_TYPE") ?? "prod";
+            if(deployType.Equals("dev"))
+            {
+                logConfig = logConfig.WriteTo.Console();
+                logConfig = logConfig.MinimumLevel.Debug();
+            }
+            else
+            {
+                logConfig = logConfig.MinimumLevel.Warning();
+            }
+            Log.Logger = logConfig.CreateLogger();
+
+            var program = new Program();
+            await program.RunAsync();
+        }
+
+        private async Task RunAsync(CancellationToken ct)
+        {
             var sp = RegisterServices();
             sp = Database.ServiceFactory.RegisterServices(sp);
 
             DatabaseFactory dbp = new(sp);
             sp = dbp.Connect();
 
-            sp = Core.ServiceFactory.RegisterCoreServices(sp);
+            sp = Core.ServiceFactory.RegisterCoreServices(sp, ct);
             sp = Core.Lookup.LookupServiceFactory.RegisterLookupServices(sp);
 
             sp = DSharp.ServiceFactory.RegisterServices(sp);
+
             var dsharpRunner = new BotSystemRunner(sp, new DSharpSystem());
-            await dsharpRunner.RunAsync(CancellationToken.None);
+            await dsharpRunner.RunAsync();
         }
 
         public static IServiceProvider RegisterServices()
@@ -56,6 +72,31 @@ namespace Bot.Main
             sp.AddService<IEnvironment>(new ProgramEnvironment());
             sp.AddService<ITask>(new TaskStatic());
             return sp;
+        }
+
+        public async Task RunAsync()
+        {
+            using (var cts = new CancellationTokenSource())
+            {
+                await RunAsync(cts);
+            }
+        }
+
+        private async Task RunAsync(CancellationTokenSource cts)
+        {
+            ConsoleCancelEventHandler cancelCb = (s, e) => Console_CancelKeyPress(s, e, cts);
+            Console.CancelKeyPress += cancelCb;
+
+            await RunAsync(cts.Token);
+
+            Console.CancelKeyPress -= cancelCb;
+        }
+
+        private void Console_CancelKeyPress(object? _, ConsoleCancelEventArgs e, CancellationTokenSource cts)
+        {
+            e.Cancel = true;
+            if (!cts.IsCancellationRequested)
+                cts.Cancel();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -8,12 +9,22 @@ namespace Bot.Core
     public class TownCommandQueue : ITownCommandQueue
     {
         private readonly IBotSystem m_botSystem;
+        private readonly IShutdownPreventionService m_shutdownPreventionService;
 
         private readonly Dictionary<TownKey, Queue<QueueItem>> m_townToCommandQueue = new();
+
+        private readonly TaskCompletionSource m_readyToShutdown = new();
+        private bool m_shutdownRequested = false;
+
+        const string ShutdownRequestedMessage = "Bot on the Clocktower is restarting. Please wait a few moments, then try again.";
 
         public TownCommandQueue(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_botSystem);
+            serviceProvider.Inject(out m_shutdownPreventionService);
+
+            m_shutdownPreventionService.RegisterShutdownPreventer(m_readyToShutdown.Task);
+            m_shutdownPreventionService.ShutdownRequested += OnShutdownRequsted;
         }
 
         public async Task QueueCommandAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedCommandResult>> queuedTask)
@@ -21,8 +32,11 @@ namespace Bot.Core
             try
             {
                 await context.DeferInteractionResponse();
-                var webhook = m_botSystem.CreateWebhookBuilder().WithContent(initialMessage);
+                var webhook = m_botSystem.CreateWebhookBuilder().WithContent(m_shutdownRequested ? ShutdownRequestedMessage : initialMessage);
                 await context.EditResponseAsync(webhook);
+
+                if (m_shutdownRequested)
+                    return;
 
                 QueueItem newItem = new(context, queuedTask);
 
@@ -70,6 +84,18 @@ namespace Bot.Core
                 }
                 m_townToCommandQueue.Remove(townKey);
             }
+            if (m_shutdownRequested && !m_townToCommandQueue.Any())
+                m_readyToShutdown.TrySetResult();
+        }
+
+        private void OnShutdownRequsted(object? sender, EventArgs e)
+        {
+            m_shutdownRequested = true;
+
+            if (!m_townToCommandQueue.Any())
+                m_readyToShutdown.TrySetResult();
+
+            m_shutdownPreventionService.ShutdownRequested -= OnShutdownRequsted;
         }
 
         private class QueueItem
