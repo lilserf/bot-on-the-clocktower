@@ -8,7 +8,7 @@ namespace Bot.Core
 {
     public class BotMessaging : IBotMessaging
     {
-        private readonly ITownCommandQueue m_townCommandQueue;
+        private readonly ITownInteractionQueue m_townCommandQueue;
 
         public BotMessaging(IServiceProvider services)
         {
@@ -127,30 +127,30 @@ namespace Bot.Core
 
         public Task CommandEvilMessageAsync(IBotInteractionContext ctx, IMember demon, IReadOnlyCollection<IMember> minions, IMember? magician)
         {
-            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 string msg = (magician != null)
                     ? await SendMagicianMessage(demon, minions, magician)
                     : await SendEvilMessage(demon, minions);
-                return new QueuedCommandResult(msg);
+                return new QueuedInteractionResult(msg);
             });
         }
 
         public Task CommandLunaticMessageAsync(IBotInteractionContext ctx, IMember lunatic, IReadOnlyCollection<IMember> fakeMinions)
         {
-            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 string msg = await SendLunaticMessage(lunatic, fakeMinions);
-                return new QueuedCommandResult(msg);
+                return new QueuedInteractionResult(msg);
             });
         }
 
         public Task CommandLegionMessageAsync(IBotInteractionContext ctx, IReadOnlyCollection<IMember> legions)
         {
-            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 string msg = await SendLegionMessage(legions);
-                return new QueuedCommandResult(msg);
+                return new QueuedInteractionResult(msg);
             });
         }
     }

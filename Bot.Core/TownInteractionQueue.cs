@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public class TownCommandQueue : ITownCommandQueue
+    public class TownInteractionQueue : ITownInteractionQueue
     {
         private readonly IBotSystem m_botSystem;
         private readonly IShutdownPreventionService m_shutdownPreventionService;
@@ -18,7 +18,7 @@ namespace Bot.Core
 
         const string ShutdownRequestedMessage = "Bot on the Clocktower is restarting. Please wait a few moments, then try again.";
 
-        public TownCommandQueue(IServiceProvider serviceProvider)
+        public TownInteractionQueue(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_botSystem);
             serviceProvider.Inject(out m_shutdownPreventionService);
@@ -27,7 +27,7 @@ namespace Bot.Core
             m_shutdownPreventionService.ShutdownRequested += OnShutdownRequsted;
         }
 
-        public async Task QueueCommandAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedCommandResult>> queuedTask)
+        public async Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedInteractionResult>> queuedTask)
         {
             try
             {
@@ -101,8 +101,8 @@ namespace Bot.Core
         private class QueueItem
         {
             public IBotInteractionContext Context { get; }
-            public Func<Task<QueuedCommandResult>> CommandFunc { get; }
-            public QueueItem(IBotInteractionContext context, Func<Task<QueuedCommandResult>> commandFunc)
+            public Func<Task<QueuedInteractionResult>> CommandFunc { get; }
+            public QueueItem(IBotInteractionContext context, Func<Task<QueuedInteractionResult>> commandFunc)
             {
                 Context = context;
                 CommandFunc = commandFunc;

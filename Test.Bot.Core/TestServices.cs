@@ -47,7 +47,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(IVoteHandler), typeof(BotGameplay))]
         [InlineData(typeof(IBotGameplayInteractionHandler), typeof(BotGameplayInteractionHandler))]
         [InlineData(typeof(IBotMessaging), typeof(BotMessaging))]
-        [InlineData(typeof(ITownCommandQueue), typeof(TownCommandQueue))]		
+        [InlineData(typeof(ITownInteractionQueue), typeof(TownInteractionQueue))]		
         [InlineData(typeof(ITownCleanup), typeof(TownCleanup))]
         [InlineData(typeof(ITownResolver), typeof(TownResolver))]
         public void CreateBotServices_CreatesAllRequiredServices(Type serviceInterfaceType, Type serviceImplType)

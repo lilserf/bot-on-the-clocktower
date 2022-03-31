@@ -45,7 +45,7 @@ namespace Test.Bot.Core
         [Fact]
         public void TownCommandQueue_RegistersAsPreventer()
         {
-            var tcq = new TownCommandQueue(GetServiceProvider());
+            var tcq = new TownInteractionQueue(GetServiceProvider());
 
             m_mockShutdownPrevention.Verify(sp => sp.RegisterShutdownPreventer(It.IsAny<Task>()), Times.Once());
             Assert.Collection(m_registeredPreventerTasks,
@@ -55,7 +55,7 @@ namespace Test.Bot.Core
         [Fact]
         public void NothingQueued_LearnsOfShutdown_UnblocksShutdown()
         {
-            var tcq = new TownCommandQueue(GetServiceProvider());
+            var tcq = new TownInteractionQueue(GetServiceProvider());
 
             Assert.Collection(m_registeredPreventerTasks,
                 t => Assert.False(t.IsCompleted));
@@ -72,10 +72,10 @@ namespace Test.Bot.Core
             string initialMessage = "some initial message";
             string completionMessage = "completion message";
 
-            var tcs = new TaskCompletionSource<QueuedCommandResult>();
+            var tcs = new TaskCompletionSource<QueuedInteractionResult>();
 
-            var tcq = new TownCommandQueue(GetServiceProvider());
-            var t = tcq.QueueCommandAsync(initialMessage, m_mockInteractionContext.Object, () => tcs.Task);
+            var tcq = new TownInteractionQueue(GetServiceProvider());
+            var t = tcq.QueueInteractionAsync(initialMessage, m_mockInteractionContext.Object, () => tcs.Task);
 
             Assert.True(t.IsCompleted);
             m_mockInteractionContext.Verify(ic => ic.DeferInteractionResponse(), Times.Once);
@@ -88,7 +88,7 @@ namespace Test.Bot.Core
             Assert.Collection(m_registeredPreventerTasks,
                 t => Assert.False(t.IsCompleted));
 
-            tcs.SetResult(new QueuedCommandResult(completionMessage));
+            tcs.SetResult(new QueuedInteractionResult(completionMessage));
 
             m_mockWebhookBuilder.Verify(wb => wb.WithContent(It.Is<string>(s => s == completionMessage)), Times.Once);
             m_mockWebhookBuilder.Verify(wb => wb.WithContent(It.IsAny<string>()), Times.Exactly(2));
@@ -104,17 +104,17 @@ namespace Test.Bot.Core
             string initialMessage = "some initial message";
 
             int queueFuncCallCount = 0;
-            Task<QueuedCommandResult> queueFunc()
+            Task<QueuedInteractionResult> queueFunc()
             {
                 ++queueFuncCallCount;
                 throw new InvalidOperationException("Should not be calling the queue function when cancel is requested");
             }
 
-            var tcq = new TownCommandQueue(GetServiceProvider());
+            var tcq = new TownInteractionQueue(GetServiceProvider());
 
             m_mockShutdownPrevention.Raise(sp => sp.ShutdownRequested += null, EventArgs.Empty);
 
-            var t = tcq.QueueCommandAsync(initialMessage, m_mockInteractionContext.Object, queueFunc);
+            var t = tcq.QueueInteractionAsync(initialMessage, m_mockInteractionContext.Object, queueFunc);
 
             Assert.True(t.IsCompleted);
             m_mockInteractionContext.Verify(ic => ic.DeferInteractionResponse(), Times.Once);

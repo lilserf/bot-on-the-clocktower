@@ -19,7 +19,7 @@ namespace Bot.Core
 
         private readonly IBotSystem m_system;
         private readonly IComponentService m_componentService;
-        private readonly ITownCommandQueue m_townCommandQueue;
+        private readonly ITownInteractionQueue m_townCommandQueue;
 
         private readonly BotGameplay m_gameplay;
         private readonly BotVoteTimer m_voteTimer;
@@ -183,11 +183,11 @@ namespace Bot.Core
         #region Command handlers
         public Task CommandGameAsync(IBotInteractionContext context)
         {
-            return m_townCommandQueue.QueueCommandAsync("Starting game...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Starting game...", context, async () =>
             {
                 Serilog.Log.Information(CommandLogMsg, "game", context.Guild, context.Member);
                 (var message, bool success) = await PerformGameInternal(context.GetTownKey(), context.Member);
-                return new QueuedCommandResult(message, success, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu });
+                return new QueuedInteractionResult(message, success, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu });
             });
         }
 
@@ -196,11 +196,11 @@ namespace Bot.Core
 
         private Task QueueNightCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
-            return m_townCommandQueue.QueueCommandAsync("Sending players to nighttime...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Sending players to nighttime...", context, async () =>
             {
                 Serilog.Log.Information(ButtonLogMsg, "Night", context.Guild, context.Member);
                 var message = await PhaseNightInternal(context.GetTownKey(), context.Member);
-                return new QueuedCommandResult(message, includeComponents, new[] { m_dayButton, m_moreButton });
+                return new QueuedInteractionResult(message, includeComponents, new[] { m_dayButton, m_moreButton });
             });
         }
 
@@ -208,11 +208,11 @@ namespace Bot.Core
         public Task DayButtonPressed(IBotInteractionContext context) => QueueDayCommandAsync(context, true);
         private Task QueueDayCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
-            return m_townCommandQueue.QueueCommandAsync("Sending players to daytime...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Sending players to daytime...", context, async () =>
             {
                 Serilog.Log.Information(ButtonLogMsg, "Day", context.Guild, context.Member);
                 var message = await PhaseDayInternal(context.GetTownKey(), context.Member);
-                return new QueuedCommandResult(message, includeComponents, new[] { m_voteButton, m_endGameButton, m_moreButton }, new[] { m_voteTimerMenu });
+                return new QueuedInteractionResult(message, includeComponents, new[] { m_voteButton, m_endGameButton, m_moreButton }, new[] { m_voteTimerMenu });
             });
         }
 
@@ -220,21 +220,21 @@ namespace Bot.Core
         public Task VoteButtonPressed(IBotInteractionContext context) => QueueVoteCommandAsync(context, true);
         private Task QueueVoteCommandAsync(IBotInteractionContext context, bool includeComponents)
         {
-            return m_townCommandQueue.QueueCommandAsync("Calling players for a vote...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Calling players for a vote...", context, async () =>
             {
                 Serilog.Log.Information(ButtonLogMsg, "Vote", context.Guild, context.Member);
                 var message = await PhaseVoteInternal(context.GetTownKey(), context.Member);
-                return new QueuedCommandResult(message, includeComponents, new[] { m_nightButton, m_endGameButton, m_moreButton });
+                return new QueuedInteractionResult(message, includeComponents, new[] { m_nightButton, m_endGameButton, m_moreButton });
             });
         }
 
         public Task MoreButtonPressed(IBotInteractionContext context)
         {
-            return m_townCommandQueue.QueueCommandAsync("Expanding options...", context, () =>
+            return m_townCommandQueue.QueueInteractionAsync("Expanding options...", context, () =>
             {
                 Serilog.Log.Information(ButtonLogMsg, "More", context.Guild, context.Member);
                 var message = "Here are all the options again!";
-                return Task.FromResult(new QueuedCommandResult(message, true, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu  }));
+                return Task.FromResult(new QueuedInteractionResult(message, true, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu  }));
             });
         }
 
@@ -242,11 +242,11 @@ namespace Bot.Core
         public Task EndGameButtonPressed(IBotInteractionContext context) => QueueEndGameCommandAsync(context);
         private Task QueueEndGameCommandAsync(IBotInteractionContext context)
         {
-            return m_townCommandQueue.QueueCommandAsync("Ending the game...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Ending the game...", context, async () =>
             {
                 Serilog.Log.Information(ButtonLogMsg, "End Game", context.Guild, context.Member);
                 var message = await EndGameInternal(context.GetTownKey(), context.Member);
-                return new QueuedCommandResult(message);
+                return new QueuedInteractionResult(message);
             });
         }
 
@@ -254,31 +254,31 @@ namespace Bot.Core
         public Task VoteTimerMenuSelected(IBotInteractionContext context) => QueueVoteTimerCommandAsync(context, context.ComponentValues.First(), true);
         private Task QueueVoteTimerCommandAsync(IBotInteractionContext context, string timeString, bool includeComponents)
         {
-            return m_townCommandQueue.QueueCommandAsync("Setting a timer before a vote happens...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Setting a timer before a vote happens...", context, async () =>
             {
                 Serilog.Log.Information("[{button}] Menu selected on guild {@guild} by user {@user}: {value}", "Vote Timer", context.Guild, context.Member, timeString);
                 var message = await RunVoteTimerInternal(context.GetTownKey(), context.Member, timeString);
-                return new QueuedCommandResult(message, includeComponents, new[] { m_nightButton, m_moreButton }, new[] { m_voteTimerMenu });
+                return new QueuedInteractionResult(message, includeComponents, new[] { m_nightButton, m_moreButton }, new[] { m_voteTimerMenu });
             });
         }
 
         public Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
         {
-            return m_townCommandQueue.QueueCommandAsync("Settings storytellers...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Settings storytellers...", context, async () =>
             {
                 Serilog.Log.Information(CommandLogMsg + ": {users}", "storytellers", context.Guild, context.Member, users);
                 var message = await SetStorytellersInternal(context.GetTownKey(), context.Member, users);
-                return new QueuedCommandResult(message);
+                return new QueuedInteractionResult(message);
             });
         }
 
         public Task RunStopVoteTimerAsync(IBotInteractionContext context)
         {
-            return m_townCommandQueue.QueueCommandAsync("Stopping vote timer...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Stopping vote timer...", context, async () =>
             {
                 Serilog.Log.Information(CommandLogMsg, "stopVoteTimer", context.Guild, context.Member);
                 var message = await RunStopVoteTimerInternal(context.GetTownKey(), context.Member);
-                return new QueuedCommandResult(message);
+                return new QueuedInteractionResult(message);
             });
         }
         #endregion
