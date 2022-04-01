@@ -54,7 +54,7 @@ namespace Bot.Database
             await UpdateRecordInternal(doc);
         }
 
-        public async Task<IEnumerable<string>> GetScriptUrlsAsync(ulong guildId)
+        public async Task<IReadOnlyCollection<string>> GetScriptUrlsAsync(ulong guildId)
         {
             var doc = await GetRecordInternal(guildId);
             return doc.Urls;

@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using System;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Core.Lookup
@@ -23,9 +24,13 @@ namespace Bot.Core.Lookup
         public Task RemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl) => m_interactionQueue.QueueInteractionAsync($"Removing script at \"{scriptJsonUrl}\"...", ctx, () => PerformRemoveScriptAsync(ctx, scriptJsonUrl));
         public Task ListScriptsAsync(IBotInteractionContext ctx) => m_interactionQueue.QueueInteractionAsync($"Finding registered scripts...", ctx, () => PerformListScriptsAsync(ctx));
 
-        private Task<QueuedInteractionResult> PerformLookupAsync(IBotInteractionContext ctx, string lookupString)
+        private async Task<QueuedInteractionResult> PerformLookupAsync(IBotInteractionContext ctx, string lookupString)
         {
-            throw new NotImplementedException();
+            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, l =>
+            {
+                throw new NotImplementedException();
+            });
+            return new QueuedInteractionResult(result);
         }
 
         private async Task<QueuedInteractionResult> PerformAddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
@@ -48,9 +53,21 @@ namespace Bot.Core.Lookup
             return new QueuedInteractionResult(result);
         }
 
-        private Task<QueuedInteractionResult> PerformListScriptsAsync(object ctx)
+        private async Task<QueuedInteractionResult> PerformListScriptsAsync(IBotInteractionContext ctx)
         {
-            throw new NotImplementedException();
+            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
+            {
+                var scripts = await m_lookupDb.GetScriptUrlsAsync(ctx.Guild.Id);
+                if (scripts.Count == 0)
+                    return "No custom scripts have been added to this server.";
+
+                var sb = new StringBuilder();
+                sb.AppendLine("The following custom scripts were found for this server:");
+                foreach (var script in scripts)
+                    sb.AppendLine($"⦁ {script}");
+                return sb.ToString();
+            });
+            return new QueuedInteractionResult(result);
         }
     }
 }

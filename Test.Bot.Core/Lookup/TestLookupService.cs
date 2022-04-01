@@ -17,6 +17,7 @@ namespace Test.Bot.Core.Lookup
         private readonly Mock<IGuildInteractionQueue> m_mockGuildInteractionQueue = new(MockBehavior.Strict);
         private readonly Mock<IBotInteractionContext> m_mockInteractionContext = new(MockBehavior.Strict);
         private readonly Mock<IGuildInteractionErrorHandler> m_mockGuildErrorHandler = new(MockBehavior.Strict);
+        private readonly Mock<ICharacterLookup> m_mockCharacterLookup = new(MockBehavior.Strict);
         private readonly Mock<IGuild> m_mockInteractionGuild = new(MockBehavior.Strict);
         private readonly Mock<IMember> m_mockInteractionAuthor = new(MockBehavior.Strict);
         private readonly Mock<ILookupRoleDatabase> m_mockLookupDb = new(MockBehavior.Strict);
@@ -27,12 +28,16 @@ namespace Test.Bot.Core.Lookup
 
         private Action<string>? m_verifyQueueString = null;
         private Action<QueuedInteractionResult>? m_verifyInteractionResult = null;
+        private string? m_errorHandlerResult = null;
+
+        const string MockErrorReturnedFromErrorHandler = "an error happened! oh, no!";
 
         public TestLookupService()
         {
             RegisterMock(m_mockLookupDb);
             RegisterMock(m_mockGuildInteractionQueue);
             RegisterMock(m_mockGuildErrorHandler);
+            RegisterMock(m_mockCharacterLookup);
 
             m_mockLookupDb.Setup(ld => ld.AddScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             m_mockLookupDb.Setup(ld => ld.RemoveScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
@@ -45,7 +50,8 @@ namespace Test.Bot.Core.Lookup
                     var task = f(m_mockProcessLogger.Object);
                     task.Wait(10);
                     Assert.True(task.IsCompleted);
-                    return Task.FromResult(task.Result);
+                    m_errorHandlerResult = MockErrorReturnedFromErrorHandler;
+                    return Task.FromResult(m_errorHandlerResult);
                 });
 
             m_mockInteractionContext.SetupGet(ic => ic.Guild).Returns(m_mockInteractionGuild.Object);
@@ -62,6 +68,7 @@ namespace Test.Bot.Core.Lookup
                 });
         }
 
+        #region Queue tests
         [Fact]
         public void LookupRequested_QueuesRequest()
         {
@@ -134,6 +141,72 @@ namespace Test.Bot.Core.Lookup
                     Assert.Equal(ic, m_mockInteractionContext.Object);
                 });
         }
+        #endregion
+
+        #region Error handling tests
+        [Fact]
+        public void LookupRequested_PerformsErrorHandling()
+        {
+            var bls = SetupErrorHandlerWithDoNothingTask();
+            AssertCompletedTask(() => bls.LookupAsync(m_mockInteractionContext.Object, "lookup string"));
+
+            m_mockCharacterLookup.VerifyNoOtherCalls();
+            VerifyErrorHandledProperly();
+        }
+
+        [Fact]
+        public void AddRequested_PerformsErrorHandling()
+        {
+            var bls = SetupErrorHandlerWithDoNothingTask();
+            AssertCompletedTask(() => bls.AddScriptAsync(m_mockInteractionContext.Object, "add string"));
+
+            m_mockLookupDb.VerifyNoOtherCalls();
+            VerifyErrorHandledProperly();
+        }
+
+        [Fact]
+        public void RemoveRequested_PerformsErrorHandling()
+        {
+            var bls = SetupErrorHandlerWithDoNothingTask();
+            AssertCompletedTask(() => bls.RemoveScriptAsync(m_mockInteractionContext.Object, "remove string"));
+
+            m_mockLookupDb.VerifyNoOtherCalls();
+            VerifyErrorHandledProperly();
+        }
+
+        [Fact]
+        public void ListScripts_PerformsErrorHandling()
+        {
+            var bls = SetupErrorHandlerWithDoNothingTask();
+            AssertCompletedTask(() => bls.ListScriptsAsync(m_mockInteractionContext.Object));
+
+            m_mockLookupDb.VerifyNoOtherCalls();
+            VerifyErrorHandledProperly();
+        }
+
+        private IReturnsThrows<IGuildInteractionErrorHandler, Task<string>> SetupErrorHandler()
+        {
+            return m_mockGuildErrorHandler.Setup(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()))
+                .Callback<ulong, IMember, Func<IProcessLogger, Task<string>>>((gid, member, f) =>
+                {
+                    m_errorHandlerResult = MockErrorReturnedFromErrorHandler;
+                    Assert.Equal(m_mockGuildId, gid);
+                    Assert.Equal(m_mockInteractionAuthor.Object, member);
+                });
+        }
+
+        private BotLookupService SetupErrorHandlerWithDoNothingTask()
+        {
+            SetupErrorHandler().Returns(Task.FromResult(MockErrorReturnedFromErrorHandler));
+            return new BotLookupService(GetServiceProvider());
+        }
+
+        private void VerifyErrorHandledProperly()
+        {
+            m_mockGuildErrorHandler.Verify(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()), Times.Once);
+            Assert.Equal(MockErrorReturnedFromErrorHandler, m_errorHandlerResult);
+        }
+        #endregion
 
         [Fact]
         public void AddScriptRequested_AddsScriptToDbAndReturnsResults()
@@ -172,39 +245,37 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void Removeequested_PerformsErrorHandling()
+        public void NoScripts_ListScriptsRequested_ReturnsNoScripts()
         {
-            var bls = SetupErrorHandlerWithDoNothingTask();
-            AssertCompletedTask(() => bls.RemoveScriptAsync(m_mockInteractionContext.Object, "remove string"));
+            m_verifyInteractionResult = r =>
+            {
+                Assert.Contains("no custom scripts", r.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.False(r.IncludeComponents);
+            };
 
-            m_mockLookupDb.VerifyNoOtherCalls();
-            m_mockGuildErrorHandler.Verify(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()), Times.Once);
+            var bls = new BotLookupService(GetServiceProvider());
+            bls.ListScriptsAsync(m_mockInteractionContext.Object);
         }
 
         [Fact]
-        public void AddRequested_PerformsErrorHandling()
+        public void SomeScripts_ListScriptsRequested_ReturnsScripts()
         {
-            var bls = SetupErrorHandlerWithDoNothingTask();
-            AssertCompletedTask(() => bls.AddScriptAsync(m_mockInteractionContext.Object, "add string"));
+            string script1 = "script 1 url";
+            string script2 = "script 2 url";
+            m_mockDbScriptUrls.Add(script1);
+            m_mockDbScriptUrls.Add(script2);
 
-            m_mockLookupDb.VerifyNoOtherCalls();
-            m_mockGuildErrorHandler.Verify(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()), Times.Once);
-        }
+            m_verifyInteractionResult = r =>
+            {
+                Assert.Contains("custom scripts", r.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains("found", r.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains($"⦁ {script1}", r.Message);
+                Assert.Contains($"⦁ {script2}", r.Message);
+                Assert.False(r.IncludeComponents);
+            };
 
-        private IReturnsThrows<IGuildInteractionErrorHandler, Task<string>> SetupErrorHandler()
-        {
-            return m_mockGuildErrorHandler.Setup(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()))
-                .Callback<ulong, IMember, Func<IProcessLogger, Task<string>>>((gid, member, f) =>
-                {
-                    Assert.Equal(m_mockGuildId, gid);
-                    Assert.Equal(m_mockInteractionAuthor.Object, member);
-                });
-        }
-
-        private BotLookupService SetupErrorHandlerWithDoNothingTask()
-        {
-            SetupErrorHandler().Returns(Task.FromResult("did not run"));
-            return new BotLookupService(GetServiceProvider());
+            var bls = new BotLookupService(GetServiceProvider());
+            bls.ListScriptsAsync(m_mockInteractionContext.Object);
         }
     }
 }

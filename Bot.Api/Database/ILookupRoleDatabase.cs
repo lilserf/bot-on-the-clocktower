@@ -5,7 +5,7 @@ namespace Bot.Api.Database
 {
     public interface ILookupRoleDatabase
     {
-        Task<IEnumerable<string>> GetScriptUrlsAsync(ulong guildId);
+        Task<IReadOnlyCollection<string>> GetScriptUrlsAsync(ulong guildId);
 
         Task AddScriptUrlAsync(ulong guildId, string url);
 
