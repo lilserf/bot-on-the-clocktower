@@ -71,7 +71,7 @@ namespace Bot.Core
             if(towns.Count > 0)
             {
                 Serilog.Log.Information("AnnounceToTowns: {townCount} towns remain, scheduling callback...", towns.Count);
-                DateTime nextTime = m_dateTime.Now + TimeSpan.FromMinutes(1);
+                DateTime nextTime = m_dateTime.Now + TimeSpan.FromMinutes(MINUTES_PER_CALLBACK);
                 m_callbackScheduler.ScheduleCallback(towns, nextTime);
             }
             else
