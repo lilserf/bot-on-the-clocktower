@@ -32,9 +32,10 @@ namespace Bot.Core.Lookup
             return new QueuedInteractionResult($"Script \"{scriptJsonUrl}\" added to lookups for this server.");
         }
 
-        private Task<QueuedInteractionResult> PerformRemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
+        private async Task<QueuedInteractionResult> PerformRemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
         {
-            throw new NotImplementedException();
+            await m_lookupDb.RemoveScriptUrlAsync(ctx.Guild.Id, scriptJsonUrl);
+            return new QueuedInteractionResult($"Script \"{scriptJsonUrl}\" removed from lookups for this server.");
         }
 
         private Task<QueuedInteractionResult> PerformListScriptsAsync(object ctx)

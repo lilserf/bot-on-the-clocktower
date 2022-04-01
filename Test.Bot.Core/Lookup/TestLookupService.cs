@@ -119,5 +119,23 @@ namespace Test.Bot.Core.Lookup
 
             m_mockLookupDb.Verify(ld => ld.AddScriptUrlAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == scriptUrl)), Times.Once);
         }
+
+        [Fact]
+        public void RemoveScriptRequested_RemovesScriptFromDbAndReturnsResults()
+        {
+            string scriptUrl = "test script url";
+
+            m_verifyResult = r =>
+            {
+                Assert.Contains(scriptUrl, r.Message);
+                Assert.Contains("removed", r.Message);
+                Assert.False(r.IncludeComponents);
+            };
+
+            var bls = new BotLookupService(GetServiceProvider());
+            bls.RemoveScriptAsync(m_mockInteractionContext.Object, scriptUrl);
+
+            m_mockLookupDb.Verify(ld => ld.RemoveScriptUrlAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == scriptUrl)), Times.Once);
+        }
     }
 }
