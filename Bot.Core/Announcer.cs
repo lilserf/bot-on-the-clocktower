@@ -18,8 +18,8 @@ namespace Bot.Core
         IBotClient m_botClient;
         IDateTime m_dateTime;
 
-        const int NUM_TOWNS_PER_CALLBACK = 1;
-        const int MINUTES_PER_CALLBACK = 1;
+        const int NUM_TOWNS_PER_CALLBACK = 5;
+        const int MINUTES_PER_CALLBACK = 5;
 
         public Announcer(IServiceProvider sp)
         {
