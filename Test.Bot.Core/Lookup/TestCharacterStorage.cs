@@ -1,8 +1,7 @@
-﻿using System.Linq;
-using Bot.Api.Database;
-using Bot.Api.Lookup;
+﻿using Bot.Api.Database;
 using Bot.Core.Lookup;
 using Moq;
+using System.Linq;
 using Test.Bot.Base;
 using Xunit;
 

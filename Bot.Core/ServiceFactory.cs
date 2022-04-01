@@ -1,5 +1,4 @@
 ﻿using Bot.Api;
-using Bot.Api.Lookup;
 using Bot.Base;
 using Bot.Core.Callbacks;
 using System;

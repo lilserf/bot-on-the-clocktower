@@ -1,4 +1,4 @@
-﻿using Bot.Api.Lookup;
+﻿using Bot.Api;
 using Bot.Core.Lookup;
 using System;
 using Test.Bot.Base;
@@ -9,6 +9,7 @@ namespace Test.Bot.Core.Lookup
     public class TestLookupServices : TestBase
     {
         [Theory]
+        [InlineData(typeof(IBotLookupService), typeof(BotLookupService))]
         [InlineData(typeof(ICustomScriptParser), typeof(CustomScriptParser))]
         [InlineData(typeof(IStringDownloader), typeof(StringDownloader))]
         [InlineData(typeof(ICharacterStorage), typeof(CharacterStorage))]

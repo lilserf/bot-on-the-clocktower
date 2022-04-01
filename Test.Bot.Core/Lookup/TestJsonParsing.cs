@@ -1,5 +1,4 @@
-﻿using Bot.Api.Lookup;
-using Bot.Core.Lookup;
+﻿using Bot.Core.Lookup;
 using Newtonsoft.Json.Linq;
 using Test.Bot.Base;
 using Xunit;

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Bot.Api.Lookup
+namespace Bot.Core.Lookup
 {
     public class LookupCharacterResult
     {

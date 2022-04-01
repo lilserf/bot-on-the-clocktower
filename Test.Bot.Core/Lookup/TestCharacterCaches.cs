@@ -1,5 +1,4 @@
 ﻿using Bot.Api;
-using Bot.Api.Lookup;
 using Bot.Core.Lookup;
 using Moq;
 using System;

@@ -1,4 +1,4 @@
-namespace Bot.Api.Lookup
+namespace Bot.Core.Lookup
 {
     public class ScriptData
     {

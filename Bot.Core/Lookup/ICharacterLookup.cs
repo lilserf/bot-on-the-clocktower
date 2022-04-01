@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Bot.Api.Lookup
+namespace Bot.Core.Lookup
 {
     public interface ICharacterLookup
     {
