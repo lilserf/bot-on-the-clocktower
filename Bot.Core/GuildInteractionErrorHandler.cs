@@ -1,9 +1,7 @@
-﻿using Bot.Api;
-
-namespace Bot.Core
+﻿namespace Bot.Core
 {
-    public class GuildInteractionErrorHandler : BaseInteractionErrorHandler<TownKey>, IGuildInteractionErrorHandler
+    public class GuildInteractionErrorHandler : BaseInteractionErrorHandler<ulong>, IGuildInteractionErrorHandler
     {
-        protected override string GetFriendlyStringForKey(TownKey key) => InteractionWrapper.GetFriendlyStringForTownKey(key);
+        protected override string GetFriendlyStringForKey(ulong key) => $"Guild: `{key}`";
     }
 }
