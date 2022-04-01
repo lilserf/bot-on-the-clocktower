@@ -50,7 +50,7 @@ namespace Test.Bot.Core.Lookup
                     var task = f(m_mockProcessLogger.Object);
                     task.Wait(10);
                     Assert.True(task.IsCompleted);
-                    m_errorHandlerResult = MockErrorReturnedFromErrorHandler;
+                    m_errorHandlerResult = task.Result;
                     return Task.FromResult(m_errorHandlerResult);
                 });
 
