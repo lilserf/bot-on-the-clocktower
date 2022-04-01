@@ -28,6 +28,8 @@ namespace Test.Bot.Core
         }
 
         [Theory]
+        [InlineData(typeof(IGuildInteractionErrorHandler), typeof(GuildInteractionErrorHandler))]
+        [InlineData(typeof(ITownInteractionErrorHandler), typeof(TownInteractionErrorHandler))]
         [InlineData(typeof(ICallbackSchedulerFactory), typeof(CallbackSchedulerFactory))]
         [InlineData(typeof(IActiveGameService), typeof(ActiveGameService))]
         [InlineData(typeof(IComponentService), typeof(ComponentService))]

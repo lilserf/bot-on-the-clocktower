@@ -18,6 +18,8 @@ namespace Bot.Core
             var shutdown = new ShutdownService(applicationCancelToken);
             sp.AddService<IFinalShutdownService>(shutdown);
             sp.AddService<IShutdownPreventionService>(shutdown);
+            sp.AddService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+            sp.AddService<IGuildInteractionErrorHandler>(new GuildInteractionErrorHandler());
 
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
             sp.AddService<IActiveGameService>(new ActiveGameService());
