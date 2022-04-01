@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    public interface ITownInteractionQueue
+    public interface IGuildInteractionQueue
     {
         Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedInteractionResult>> queuedTask);
     }

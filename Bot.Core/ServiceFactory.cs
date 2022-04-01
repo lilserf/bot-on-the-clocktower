@@ -32,6 +32,7 @@ namespace Bot.Core
         public static IServiceProvider RegisterBotServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
+            sp.AddService<IGuildInteractionQueue>(new GuildInteractionQueue(sp));
             sp.AddService<ITownInteractionQueue>(new TownInteractionQueue(sp));
             sp.AddService<ITownCleanup>(new TownCleanup(sp));
             sp.AddService<ITownResolver>(new TownResolver(sp));

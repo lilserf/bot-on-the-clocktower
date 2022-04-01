@@ -111,4 +111,17 @@ namespace Bot.Core
             }
         }
     }
+
+    public class QueuedInteractionResult
+    {
+        public string Message { get; }
+        public bool IncludeComponents { get; }
+        public IBotComponent[][] ComponentSets { get; }
+        public QueuedInteractionResult(string message, bool includeComponents = false, params IBotComponent[][] componentSets)
+        {
+            Message = message;
+            IncludeComponents = includeComponents;
+            ComponentSets = componentSets;
+        }
+    }
 }
