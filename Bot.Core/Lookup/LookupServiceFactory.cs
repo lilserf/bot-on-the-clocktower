@@ -18,6 +18,7 @@ namespace Bot.Core.Lookup
             sp.AddService<IOfficialCharacterCache>(new OfficialCharacterCache(sp));
             sp.AddService<ICharacterStorage>(new CharacterStorage(sp));
             sp.AddService<ICharacterLookup>(new CharacterLookup(sp));
+            sp.AddService<ILookupMessageSender>(new LookupMessageSender(sp));
             sp.AddService<IBotLookupService>(new BotLookupService(sp));
 
             return sp;

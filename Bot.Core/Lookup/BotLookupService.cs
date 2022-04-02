@@ -1,6 +1,8 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,12 +13,16 @@ namespace Bot.Core.Lookup
         private readonly IGuildInteractionQueue m_interactionQueue;
         private readonly IGuildInteractionErrorHandler m_errorHandler;
         private readonly ILookupRoleDatabase m_lookupDb;
+        private readonly ICharacterLookup m_characterLookup;
+        private readonly ILookupMessageSender m_messageSender;
 
         public BotLookupService(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_interactionQueue);
             serviceProvider.Inject(out m_errorHandler);
             serviceProvider.Inject(out m_lookupDb);
+            serviceProvider.Inject(out m_characterLookup);
+            serviceProvider.Inject(out m_messageSender);
         }
 
         public Task LookupAsync(IBotInteractionContext ctx, string lookupString) => m_interactionQueue.QueueInteractionAsync($"Looking up \"{lookupString}\"...", ctx, () => PerformLookupAsync(ctx, lookupString));
@@ -26,11 +32,22 @@ namespace Bot.Core.Lookup
 
         private async Task<QueuedInteractionResult> PerformLookupAsync(IBotInteractionContext ctx, string lookupString)
         {
-            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, l =>
+            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
             {
-                return Task.FromResult($"Found no results for \"{lookupString}\"");
+                var lookupResult = await m_characterLookup.LookupCharacterAsync(ctx.Guild.Id, lookupString);
+
+                if (lookupResult.Items.Count == 0)
+                    return $"Found no results for \"{lookupString}\"";
+                else
+                    await SendLookupMessagesToChannel(ctx.Channel, lookupResult.Items);
+                return $"Found {lookupResult.Items.Count} results for \"{lookupString}\":";
             });
             return new QueuedInteractionResult(result);
+        }
+
+        private Task SendLookupMessagesToChannel(IChannel channel, IEnumerable<LookupCharacterItem> items)
+        {
+            return Task.WhenAll(items.Select(i => m_messageSender.SendLookupMessageAsync(channel, i)));
         }
 
         private async Task<QueuedInteractionResult> PerformAddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)

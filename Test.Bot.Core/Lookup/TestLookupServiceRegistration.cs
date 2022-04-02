@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Test.Bot.Core.Lookup
 {
-    public class TestLookupServices : TestBase
+    public class TestLookupServiceRegistration : TestBase
     {
         [Theory]
         [InlineData(typeof(IBotLookupService), typeof(BotLookupService))]
@@ -18,6 +18,7 @@ namespace Test.Bot.Core.Lookup
         [InlineData(typeof(ICustomScriptCache), typeof(CustomScriptCache))]
         [InlineData(typeof(IOfficialUrlProvider), typeof(OfficialUrlProvider))]
         [InlineData(typeof(IOfficialScriptParser), typeof(OfficialScriptParser))]
+        [InlineData(typeof(ILookupMessageSender), typeof(LookupMessageSender))]
         public void RegisterLookupServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = LookupServiceFactory.RegisterLookupServices(GetServiceProvider());

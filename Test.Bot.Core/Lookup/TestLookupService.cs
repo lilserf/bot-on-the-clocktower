@@ -21,8 +21,10 @@ namespace Test.Bot.Core.Lookup
         private readonly Mock<ICharacterLookup> m_mockCharacterLookup = new(MockBehavior.Strict);
         private readonly Mock<IGuild> m_mockInteractionGuild = new(MockBehavior.Strict);
         private readonly Mock<IMember> m_mockInteractionAuthor = new(MockBehavior.Strict);
+        private readonly Mock<IChannel> m_mockInteractionChannel = new(MockBehavior.Strict);
         private readonly Mock<ILookupRoleDatabase> m_mockLookupDb = new(MockBehavior.Strict);
         private readonly Mock<IProcessLogger> m_mockProcessLogger = new(MockBehavior.Strict);
+        private readonly Mock<ILookupMessageSender> m_mockLookupMessageSender = new(MockBehavior.Strict);
 
         private readonly List<string> m_mockDbScriptUrls = new();
         private ulong m_mockGuildId = 123ul;
@@ -43,6 +45,7 @@ namespace Test.Bot.Core.Lookup
             RegisterMock(m_mockGuildInteractionQueue);
             RegisterMock(m_mockGuildErrorHandler);
             RegisterMock(m_mockCharacterLookup);
+            RegisterMock(m_mockLookupMessageSender);
 
             m_mockLookupDb.Setup(ld => ld.AddScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             m_mockLookupDb.Setup(ld => ld.RemoveScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
@@ -62,6 +65,7 @@ namespace Test.Bot.Core.Lookup
 
             m_mockInteractionContext.SetupGet(ic => ic.Guild).Returns(m_mockInteractionGuild.Object);
             m_mockInteractionContext.SetupGet(ic => ic.Member).Returns(m_mockInteractionAuthor.Object);
+            m_mockInteractionContext.SetupGet(ic => ic.Channel).Returns(m_mockInteractionChannel.Object);
 
             SetupQueueInteraction()
                 .Returns<string, IBotInteractionContext, Func<Task<QueuedInteractionResult>>>((_, _, f) =>
@@ -317,6 +321,36 @@ namespace Test.Bot.Core.Lookup
 
             var bls = new BotLookupService(GetServiceProvider());
             bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
+        }
+
+        [Fact]
+        public void LookupMultipleCharacters_CallsMessageSender()
+        {
+            string lookupStr = "lookup str";
+
+            var testItem1 = new LookupCharacterItem(new CharacterData("char1", "abil1", CharacterTeam.Fabled, isOfficial: true), Enumerable.Empty<ScriptData>());
+            var testItem2 = new LookupCharacterItem(new CharacterData("char2", "abil2", CharacterTeam.Townsfolk, isOfficial: false), Enumerable.Empty<ScriptData>());
+            var expectedMessageCharacters = new[] { testItem1, testItem2 };
+
+            m_mockCharacterLookup.Setup(cl => cl.LookupCharacterAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == lookupStr))).ReturnsAsync(new LookupCharacterResult(expectedMessageCharacters));
+
+            List<LookupCharacterItem> actualMessageCharacters = new();
+            m_mockLookupMessageSender
+                .Setup(lms => lms.SendLookupMessageAsync(It.Is<IChannel>(c => c == m_mockInteractionChannel.Object), It.IsAny<LookupCharacterItem>()))
+                .Callback<IChannel, LookupCharacterItem>((_, i) => actualMessageCharacters.Add(i))
+                .Returns(Task.CompletedTask);
+
+            m_verifyInteractionResult = r =>
+            {
+                Assert.Contains("found", r.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains(expectedMessageCharacters.Length.ToString(), r.Message);
+                Assert.Contains(lookupStr, r.Message);
+            };
+
+            var bls = new BotLookupService(GetServiceProvider());
+            bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
+
+            Assert.Equal(expectedMessageCharacters, actualMessageCharacters);
         }
     }
 }
