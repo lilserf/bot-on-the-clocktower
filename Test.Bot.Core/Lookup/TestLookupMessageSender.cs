@@ -84,6 +84,73 @@ namespace Test.Bot.Core.Lookup
             VerifyNothingBadSent();
         }
 
+        [Fact]
+        public void PassedScripts_SendsScriptNames()
+        {
+            var script1 = new ScriptData("Script 1", isOfficial: false);
+            var script2 = new ScriptData("Script 2", isOfficial: false);
+
+            var ms = new LookupMessageSender(GetServiceProvider());
+            AssertCompletedTask(() => ms.SendLookupMessageAsync(m_mockChannel.Object, new LookupCharacterItem(CreateBasicCharacter(), new[] { script1, script2 })));
+
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains("Found in", System.StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains(script1.Name))), Times.Once);
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains(script2.Name))), Times.Once);
+        }
+
+        [Fact]
+        public void PassedOfficialScript_LinksToWiki()
+        {
+            var officialScript = new ScriptData("Trouble Brewing", isOfficial: true);
+
+            var ms = new LookupMessageSender(GetServiceProvider());
+            AssertCompletedTask(() => ms.SendLookupMessageAsync(m_mockChannel.Object, new LookupCharacterItem(CreateBasicCharacter(), new[] { officialScript })));
+
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains("Official", System.StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains(OfficialWikiHelper.WikiPrefixUrl + "Trouble_Brewing"))), Times.Once);
+            VerifyNothingBadSent();
+        }
+
+        [Fact]
+        public void PassedNoScript_NoFoundIn()
+        {
+            var ms = new LookupMessageSender(GetServiceProvider());
+            AssertCompletedTask(() => ms.SendLookupMessageAsync(m_mockChannel.Object, new LookupCharacterItem(CreateBasicCharacter(), Enumerable.Empty<ScriptData>())));
+
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains("Found in", System.StringComparison.InvariantCultureIgnoreCase))), Times.Never);
+            VerifyNothingBadSent();
+        }
+
+        [Fact]
+        public void ScriptAuthorsProvided_OutputsAuthor()
+        {
+            var script1 = new ScriptData("Script 1", isOfficial: true);
+            string author1 = "The Pandemonium Institute";
+            script1.Author = author1;
+
+            var script2 = new ScriptData("Script 2", isOfficial: false);
+            string author2 = "some person";
+            script2.Author = author2;            
+
+            var ms = new LookupMessageSender(GetServiceProvider());
+            AssertCompletedTask(() => ms.SendLookupMessageAsync(m_mockChannel.Object, new LookupCharacterItem(CreateBasicCharacter(), new[] { script1, script2 })));
+
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains($"by {script1.Author}", System.StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains($"by {script2.Author}", System.StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+        }
+
+        [Fact(Skip ="Waiting on embed branch")]
+        public void CustomScriptWithAlmanac_LinkToAlmanac()
+        {
+            // TODO: Should have 1 links - to the almanac as a whole
+        }        
+
+        [Fact(Skip ="Waiting on embed branch")]
+        public void CustomScriptWithBloodstarAlmanac_LinkToAlmanacAndCharacter()
+        {
+            // TODO: Should have 2 links - to the almanac as a whole, and another directly to the character in the almanac
+        }
+
         private void VerifyNothingBadSent()
         {
             m_mockChannel.Verify(c => c.SendMessageAsync(It.Is<string>(s => s.Contains("\r\n\r\n"))), Times.Never); // null check

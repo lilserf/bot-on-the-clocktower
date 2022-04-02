@@ -21,10 +21,24 @@ namespace Bot.Core.Lookup
             if (lookupItem.Character.IsOfficial)
                 sb.AppendLine($"(Official) Wiki: {OfficialWikiHelper.GetWikiUrl(lookupItem.Character.Name)}");
 
+            if (lookupItem.Scripts.Count > 0)
+            {
+                sb.AppendLine("Found in:");
+                foreach (var script in lookupItem.Scripts)
+                    AppendScriptInfo(sb, script);
+            }
+
             if (lookupItem.Character.FlavorText != null)
                 sb.AppendLine(lookupItem.Character.FlavorText);
 
             return channel.SendMessageAsync(sb.ToString());
+        }
+
+        private void AppendScriptInfo(StringBuilder sb, ScriptData script)
+        {
+            string authorSuffix = script.Author != null ? $" by {script.Author}" : "";
+            string officialSuffix = script.IsOfficial ? $" (Official) - {OfficialWikiHelper.GetWikiUrl(script.Name)}" : "";
+            sb.AppendLine($"⦁ {script.Name}{authorSuffix}{officialSuffix}");
         }
     }
 }

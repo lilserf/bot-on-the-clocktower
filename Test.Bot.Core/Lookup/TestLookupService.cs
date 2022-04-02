@@ -376,7 +376,7 @@ namespace Test.Bot.Core.Lookup
             var bls = new BotLookupService(GetServiceProvider());
             bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
 
-            m_mockProcessLogger.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains("permission", StringComparison.InvariantCultureIgnoreCase) && s.Contains(m_mockInteractionChannelName))), Times.Once);
+            m_mockProcessLogger.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains(m_mockInteractionChannelName))), Times.Once);
         }
     }
 }
