@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Api
@@ -16,8 +15,6 @@ namespace Bot.Api
 
 		public string Name { get; }
 
-		public Task SendMessageAsync(string msg);
-
-
+		public Task<IMessage> SendMessageAsync(string msg);
 	}
 }

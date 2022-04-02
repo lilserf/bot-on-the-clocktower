@@ -28,6 +28,7 @@ namespace Test.Bot.Core.Lookup
 
         private readonly List<string> m_mockDbScriptUrls = new();
         private ulong m_mockGuildId = 123ul;
+        private string m_mockInteractionChannelName = "channel name";
 
         private Action<string>? m_verifyQueueString = null;
 
@@ -51,6 +52,7 @@ namespace Test.Bot.Core.Lookup
             m_mockLookupDb.Setup(ld => ld.RemoveScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             m_mockLookupDb.Setup(ld => ld.GetScriptUrlsAsync(It.IsAny<ulong>())).ReturnsAsync(m_mockDbScriptUrls);
             m_mockCharacterLookup.Setup(cl => cl.LookupCharacterAsync(It.IsAny<ulong>(), It.IsAny<string>())).ReturnsAsync(new LookupCharacterResult(Enumerable.Empty<LookupCharacterItem>()));
+            m_mockProcessLogger.Setup(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
             m_mockInteractionGuild.SetupGet(g => g.Id).Returns(m_mockGuildId);
             SetupErrorHandler()
@@ -66,6 +68,8 @@ namespace Test.Bot.Core.Lookup
             m_mockInteractionContext.SetupGet(ic => ic.Guild).Returns(m_mockInteractionGuild.Object);
             m_mockInteractionContext.SetupGet(ic => ic.Member).Returns(m_mockInteractionAuthor.Object);
             m_mockInteractionContext.SetupGet(ic => ic.Channel).Returns(m_mockInteractionChannel.Object);
+
+            m_mockInteractionChannel.SetupGet(c => c.Name).Returns(m_mockInteractionChannelName);
 
             SetupQueueInteraction()
                 .Returns<string, IBotInteractionContext, Func<Task<QueuedInteractionResult>>>((_, _, f) =>
@@ -351,6 +355,28 @@ namespace Test.Bot.Core.Lookup
             bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
 
             Assert.Equal(expectedMessageCharacters, actualMessageCharacters);
+        }
+
+        [Fact]
+        public void SendMessage_ThrowsPermissionException_LoggerUpdated()
+        {
+            string lookupStr = "lookup str";
+            var thrownException = new UnauthorizedException();
+            var testItem1 = new LookupCharacterItem(new CharacterData("char1", "abil1", CharacterTeam.Fabled, isOfficial: true), Enumerable.Empty<ScriptData>());
+            var testItem2 = new LookupCharacterItem(new CharacterData("char2", "abil2", CharacterTeam.Townsfolk, isOfficial: false), Enumerable.Empty<ScriptData>());
+            m_mockCharacterLookup.Setup(cl => cl.LookupCharacterAsync(It.Is<ulong>(l => l == m_mockGuildId), It.IsAny<string>())).ReturnsAsync(new LookupCharacterResult(new[] { testItem1, testItem2 }));
+            m_mockLookupMessageSender.Setup(lms => lms.SendLookupMessageAsync(It.IsAny<IChannel>(), It.IsAny<LookupCharacterItem>())).Throws(thrownException);
+
+            m_verifyInteractionResult = r =>
+            {
+                Assert.Contains("unable", r.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains(lookupStr, r.Message);
+            };
+
+            var bls = new BotLookupService(GetServiceProvider());
+            bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
+
+            m_mockProcessLogger.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains("permission", StringComparison.InvariantCultureIgnoreCase) && s.Contains(m_mockInteractionChannelName))), Times.Once);
         }
     }
 }

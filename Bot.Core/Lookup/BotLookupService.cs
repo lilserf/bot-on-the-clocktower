@@ -39,15 +39,40 @@ namespace Bot.Core.Lookup
                 if (lookupResult.Items.Count == 0)
                     return $"Found no results for \"{lookupString}\"";
                 else
-                    await SendLookupMessagesToChannel(ctx.Channel, lookupResult.Items);
-                return $"Found {lookupResult.Items.Count} results for \"{lookupString}\":";
+                {
+                    var prefix = $"Found {lookupResult.Items.Count} result{(lookupResult.Items.Count > 1 ? "s" : "")} for \"{lookupString}\"";
+                    bool success = await TrySendLookupMessagesToChannel(l, ctx.Channel, lookupResult.Items);
+                    if (success)
+                        return $"{prefix}.";
+                    return $"{prefix}, but am unable to post about them!";
+                }
             });
             return new QueuedInteractionResult(result);
         }
 
-        private Task SendLookupMessagesToChannel(IChannel channel, IEnumerable<LookupCharacterItem> items)
+        private async Task<bool> TrySendLookupMessagesToChannel(IProcessLogger logger, IChannel channel, IEnumerable<LookupCharacterItem> items)
         {
-            return Task.WhenAll(items.Select(i => m_messageSender.SendLookupMessageAsync(channel, i)));
+            bool success = false;
+            try
+            {
+                await SendLookupMessagesToChannel(channel, items);
+                success = true;
+            }
+            catch (UnauthorizedException unauthorizedEx)
+            {
+                logger.LogException(unauthorizedEx, $"send messages to \"{channel.Name}\"");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return success;
+        }
+
+        private async Task SendLookupMessagesToChannel(IChannel channel, IEnumerable<LookupCharacterItem> items)
+        {
+            foreach (var i in items)
+                await m_messageSender.SendLookupMessageAsync(channel, i);
         }
 
         private async Task<QueuedInteractionResult> PerformAddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)

@@ -1,10 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Core.Lookup;
 using Moq;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -17,7 +14,7 @@ namespace Test.Bot.Core.Lookup
 
         public TestLookupMessageSender()
         {
-            m_mockChannel.Setup(c => c.SendMessageAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            m_mockChannel.Setup(c => c.SendMessageAsync(It.IsAny<string>())).Returns(Task.FromResult(new Mock<IMessage>().Object));
         }
 
         // NOTE: Expected this will change to an embed eventually

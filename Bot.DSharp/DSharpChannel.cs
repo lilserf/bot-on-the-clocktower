@@ -56,6 +56,10 @@ namespace Bot.DSharp
 			}
 		}
 
-		public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);
+		public async Task<IMessage> SendMessageAsync(string msg)
+		{
+			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(msg));
+			return new DSharpMessage(messageRet);
+		}
 	}
 }
