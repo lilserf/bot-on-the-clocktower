@@ -2,14 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 
 namespace Bot.Core.Lookup
 {
     public class OfficialScriptParser : IOfficialScriptParser
     {
-        public const string AlmanacPrefix = "https://wiki.bloodontheclocktower.com/";
-
         public GetOfficialCharactersResult ParseOfficialData(IEnumerable<string> scriptJsons, IEnumerable<string> characterJsons)
         {
             Dictionary<string, ScriptData> scriptIdToScriptMap = new();
@@ -76,7 +73,7 @@ namespace Bot.Core.Lookup
                 var roleArray = JsonParseUtil.GetObjectArrayProp(obj, "roles");
                 if (roleArray != null)
                     if (roleArray.Count <= 0)
-                        sd.AlmanacUrl = GetAlmanacUrl(name); // NOTE: Almanac only valid for official scripts with a roles list that is empty. Weird, but that's how it's set up
+                        sd.AlmanacUrl = OfficialWikiHelper.GetWikiUrl(name); // NOTE: Almanac only valid for official scripts with a roles list that is empty. Weird, but that's how it's set up
                     else
                         scriptCharactersMap[sd] = roleArray.Where(t => t != null && t.Type == JTokenType.String).Select(t => t.Value<string>()!).ToArray();
 
@@ -120,8 +117,6 @@ namespace Bot.Core.Lookup
                         cdws.Scripts.Add(script);
             }
         }
-
-        private static string GetAlmanacUrl(string scriptName) => $"{AlmanacPrefix}{HttpUtility.UrlEncode(string.Join('_', scriptName.Split(' ').Select(s => $"{char.ToUpper(s[0])}{s[1..]}")))}";
 
         private class CharacterDataWithScript
         {

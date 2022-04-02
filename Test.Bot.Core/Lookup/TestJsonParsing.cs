@@ -92,7 +92,7 @@ namespace Test.Bot.Core.Lookup
         private const string TbId = "tb";
         private const string TbName = "Trouble Brewing";
         private const string OfficialAuthor = "Trouble Brewing";
-        private const string TbAlmanac = OfficialScriptParser.AlmanacPrefix + "Trouble_Brewing";
+        private const string TbAlmanac = OfficialWikiHelper.WikiPrefixUrl + "Trouble_Brewing";
         private static readonly string TbJson = $"{{\"id\":\"{TbId}\",\"name\":\"{TbName}\",\"author\":\"{OfficialAuthor}\",\"roles\":[]}}";
 
         private const string PoisonerId = "poisoner";
