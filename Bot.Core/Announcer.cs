@@ -15,6 +15,7 @@ namespace Bot.Core
         IAnnouncementDatabase m_announcementDatabase;
         ITownDatabase m_townDatabase;
         ICallbackScheduler<Queue<TownKey>> m_callbackScheduler;
+        IBotSystem m_botSystem;
         IBotClient m_botClient;
         IDateTime m_dateTime;
 
@@ -26,6 +27,7 @@ namespace Bot.Core
             sp.Inject(out m_versionProvider);
             sp.Inject(out m_announcementDatabase);
             sp.Inject(out m_townDatabase);
+            sp.Inject(out m_botSystem);
             sp.Inject(out m_botClient);
             sp.Inject(out m_dateTime);
 
@@ -85,6 +87,30 @@ namespace Bot.Core
             var allTowns = new Queue<TownKey>(await m_townDatabase.GetAllTowns());
 
             await AnnounceToTowns(allTowns);            
+        }
+
+        public Task SetGuildAnnounce(ulong guildId, bool announce)
+        {
+            if (announce)
+            {
+                var latestVersion = m_versionProvider.Versions.Last();
+                return m_announcementDatabase.RecordGuildHasSeenVersion(guildId, latestVersion.Key, true);
+            }
+            else
+            {
+                return m_announcementDatabase.RecordGuildHasSeenVersion(guildId, IAnnouncementRecord.ImpossiblyLargeVersion, true);
+            }
+        }
+
+        public async Task CommandSetGuildAnnounce(IBotInteractionContext ctx, bool hear)
+        {
+            await ctx.DeferInteractionResponse();
+
+            await SetGuildAnnounce(ctx.Guild.Id, hear);
+
+            string onOff = hear ? "on" : "off";
+            var builder = m_botSystem.CreateWebhookBuilder().WithContent($"Turned announcements **{onOff}** for this server.");
+            await ctx.EditResponseAsync(builder);
         }
     }
 }

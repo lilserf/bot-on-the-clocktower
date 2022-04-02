@@ -63,6 +63,7 @@ namespace Bot.Database
                 await m_collection.ReplaceOneAsync(GetFilter(guildId), rec, options);
             }
         }
+
     }
 
     class MissingAnnouncementDatabaseException : Exception { }
