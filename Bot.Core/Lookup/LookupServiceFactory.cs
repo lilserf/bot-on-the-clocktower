@@ -6,7 +6,7 @@ namespace Bot.Core.Lookup
 {
     public static class LookupServiceFactory
     {
-        public static IServiceProvider RegisterLookupServices(IServiceProvider? parentServices)
+        public static IServiceProvider RegisterCoreLookupServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
 
@@ -19,6 +19,14 @@ namespace Bot.Core.Lookup
             sp.AddService<ICharacterStorage>(new CharacterStorage(sp));
             sp.AddService<ICharacterLookup>(new CharacterLookup(sp));
             sp.AddService<ILookupMessageSender>(new LookupMessageSender(sp));
+
+            return sp;
+        }
+
+        public static IServiceProvider RegisterBotLookupServices(IServiceProvider serviceProvider)
+        {
+            ServiceProvider sp = new(serviceProvider);
+
             sp.AddService<IBotLookupService>(new BotLookupService(sp));
 
             return sp;

@@ -9,7 +9,6 @@ namespace Test.Bot.Core.Lookup
     public class TestLookupServiceRegistration : TestBase
     {
         [Theory]
-        [InlineData(typeof(IBotLookupService), typeof(BotLookupService))]
         [InlineData(typeof(ICustomScriptParser), typeof(CustomScriptParser))]
         [InlineData(typeof(IStringDownloader), typeof(StringDownloader))]
         [InlineData(typeof(ICharacterStorage), typeof(CharacterStorage))]
@@ -19,9 +18,20 @@ namespace Test.Bot.Core.Lookup
         [InlineData(typeof(IOfficialUrlProvider), typeof(OfficialUrlProvider))]
         [InlineData(typeof(IOfficialScriptParser), typeof(OfficialScriptParser))]
         [InlineData(typeof(ILookupMessageSender), typeof(LookupMessageSender))]
-        public void RegisterLookupServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
+        public void RegisterLookupServices_CreatesAllRequiredCoreServices(Type serviceInterface, Type serviceImpl)
         {
-            var newSp = LookupServiceFactory.RegisterLookupServices(GetServiceProvider());
+            var newSp = LookupServiceFactory.RegisterCoreLookupServices(GetServiceProvider());
+            var service = newSp.GetService(serviceInterface);
+
+            Assert.NotNull(service);
+            Assert.IsType(serviceImpl, service);
+        }
+
+        [Theory]
+        [InlineData(typeof(IBotLookupService), typeof(BotLookupService))]
+        public void RegisterLookupServices_CreatesAllRequiredBotServices(Type serviceInterface, Type serviceImpl)
+        {
+            var newSp = LookupServiceFactory.RegisterBotLookupServices(GetServiceProvider());
             var service = newSp.GetService(serviceInterface);
 
             Assert.NotNull(service);
