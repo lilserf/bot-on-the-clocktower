@@ -28,7 +28,7 @@ namespace Bot.Core.Lookup
         {
             string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, l =>
             {
-                throw new NotImplementedException();
+                return Task.FromResult($"Found no results for \"{lookupString}\"");
             });
             return new QueuedInteractionResult(result);
         }
