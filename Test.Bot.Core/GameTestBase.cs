@@ -22,6 +22,8 @@ namespace Test.Bot.Core
         protected readonly Mock<ICallbackScheduler<TownKey>> TownKeyCallbackSchedulerMock = new(MockBehavior.Strict);
         protected readonly Mock<ICallbackSchedulerFactory> CallbackSchedulerFactoryMock = new(MockBehavior.Strict);
         protected Func<TownKey, Task>? TownKeyCallback;
+        
+        protected readonly Mock<ICallbackScheduler<Queue<TownKey>>> TownKeyQueueCallbackSchedulerMock = new(MockBehavior.Strict);
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
         protected readonly Mock<IShutdownPreventionService> ShutdownPreventionMock = new();
@@ -31,6 +33,7 @@ namespace Test.Bot.Core
         protected readonly Mock<ITownDatabase> TownLookupMock = new();
         protected readonly Mock<IDateTime> DateTimeMock = new();
         protected readonly Mock<IGameActivityDatabase> GameActivityDatabaseMock = new();
+        protected readonly Mock<IAnnouncementDatabase> AnnouncementDatabaseMock = new();
         protected readonly Mock<ITownCleanup> TownCleanupMock = new();
         protected readonly Mock<ITownResolver> TownResolverMock = new();
         protected readonly Mock<ITown> TownMock = new();
@@ -70,6 +73,9 @@ namespace Test.Bot.Core
                 .Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyCallbackSchedulerMock.Object)
                 .Callback<Func<TownKey, Task>, TimeSpan>((cb, _) => TownKeyCallback = cb);
 
+            CallbackSchedulerFactoryMock
+                .Setup(csf => csf.CreateScheduler(It.IsAny<Func<Queue<TownKey>, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyQueueCallbackSchedulerMock.Object);
+
             TownKeyCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
 
             Mock<IBotWebhookBuilder> builderMock = new();
@@ -86,6 +92,7 @@ namespace Test.Bot.Core
             RegisterMock(TownResolverMock);
             RegisterMock(DateTimeMock);
             RegisterMock(GameActivityDatabaseMock);
+            RegisterMock(AnnouncementDatabaseMock);
             RegisterMock(TownCleanupMock);
             RegisterMock(ActiveGameServiceMock);
             RegisterMock(ComponentServiceMock);
