@@ -3,6 +3,7 @@ using Bot.Api.Database;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Database
@@ -100,6 +101,12 @@ namespace Bot.Database
 			return await m_collection.Find(filter).ToListAsync();
 		}
 
-		public class MissingGuildInfoDatabaseException : Exception { }
+        public async Task<IEnumerable<TownKey>> GetAllTowns()
+        {
+			var documents = await m_collection.Find(_ => true).ToListAsync();
+			return documents.Select(x => new TownKey(x.GuildId, x.ControlChannelId));
+        }
+
+        public class MissingGuildInfoDatabaseException : Exception { }
 	}
 }

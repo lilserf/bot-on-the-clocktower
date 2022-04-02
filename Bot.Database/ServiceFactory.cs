@@ -13,6 +13,7 @@ namespace Bot.Database
             childSp.AddService<IGameActivityDatabaseFactory>(new GameActivityDatabaseFactory());
             childSp.AddService<IMongoClientFactory>(new MongoClientFactory());
             childSp.AddService<ILookupRoleDatabaseFactory>(new LookupRoleDatabaseFactory());
+            childSp.AddService<IAnnouncementDatabaseFactory>(new AnnouncementDatabaseFactory());
             return childSp;
         }
     }
