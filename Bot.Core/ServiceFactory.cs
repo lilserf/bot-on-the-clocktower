@@ -2,6 +2,7 @@
 using Bot.Base;
 using Bot.Core.Callbacks;
 using System;
+using System.Threading;
 
 namespace Bot.Core
 {
@@ -10,9 +11,14 @@ namespace Bot.Core
         /// <summary>
         /// These services are ones with few dependencies on anything
         /// </summary>
-        public static IServiceProvider RegisterCoreServices(IServiceProvider? parentServices)
+        public static IServiceProvider RegisterCoreServices(IServiceProvider? parentServices, CancellationToken applicationCancelToken)
         {
             ServiceProvider sp = new(parentServices);
+
+            var shutdown = new ShutdownService(applicationCancelToken);
+            sp.AddService<IFinalShutdownService>(shutdown);
+            sp.AddService<IShutdownPreventionService>(shutdown);
+
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());

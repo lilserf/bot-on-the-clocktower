@@ -3,6 +3,7 @@ using Bot.Core;
 using Bot.Core.Callbacks;
 using Moq;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -47,7 +48,7 @@ namespace Test.Bot.Core
         [Fact]
         public void CoreServices_RegistersCallbackSchedulerFactory()
         {
-            var sp = ServiceFactory.RegisterCoreServices(null);
+            var sp = ServiceFactory.RegisterCoreServices(null, CancellationToken.None);
             var csf = sp.GetService<ICallbackSchedulerFactory>();
 
             Assert.IsType<CallbackSchedulerFactory>(csf);

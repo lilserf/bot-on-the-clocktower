@@ -1,7 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Base;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Bot.Core
@@ -10,9 +9,12 @@ namespace Bot.Core
     {
         private readonly IServiceProvider m_serviceProvider;
         private readonly IBotClient m_client;
+        private readonly IFinalShutdownService m_finalShutdown;
 
         public BotSystemRunner(IServiceProvider parentServices, IBotSystem system)
         {
+            parentServices.Inject(out m_finalShutdown);
+
             m_client = system.CreateClient(parentServices);
 
             var systemServices = new ServiceProvider(parentServices);
@@ -22,15 +24,11 @@ namespace Bot.Core
             m_serviceProvider = ServiceFactory.RegisterBotServices(systemServices);
         }
 
-        public async Task RunAsync(CancellationToken cancelToken)
+        public async Task RunAsync()
         {
-            TaskCompletionSource tcs = new();
-
-            using (cancelToken.Register(tcs.SetCanceled))
-            {
-                await Task.WhenAny(tcs.Task, m_client.ConnectAsync(m_serviceProvider));
-                await Task.WhenAny(tcs.Task, Task.Delay(-1, CancellationToken.None)); // avoiding TaskCanceledException
-            }
+            await m_client.ConnectAsync(m_serviceProvider);
+            await m_finalShutdown.ReadyToShutdown;
+            await m_client.DisconnectAsync();
         }
     }
 }

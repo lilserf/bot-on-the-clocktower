@@ -6,6 +6,7 @@ namespace Bot.Api
     public interface IBotClient
     {
         Task ConnectAsync(IServiceProvider serviceProvider);
+        Task DisconnectAsync();
 
         Task<IGuild?> GetGuildAsync(ulong guildId);
 

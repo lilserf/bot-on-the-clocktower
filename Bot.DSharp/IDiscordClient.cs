@@ -19,6 +19,7 @@ namespace Bot.DSharp
 
         Task<IGuild?> GetGuildAsync(ulong id);
         Task ConnectAsync();
+        Task DisconnectAsync();
     }
 
     public class DiscordClientWrapper : DiscordWrapper<DiscordClient>, IDiscordClient
@@ -58,6 +59,7 @@ namespace Bot.DSharp
 
         public async Task<IGuild?> GetGuildAsync(ulong id) => new DSharpGuild(await Wrapped.GetGuildAsync(id));
         public Task ConnectAsync() => Wrapped.ConnectAsync();
+        public Task DisconnectAsync() => Wrapped.DisconnectAsync();
 
         private class AsyncEventWrapper<T> where T : DiscordEventArgs
         {

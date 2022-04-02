@@ -4,6 +4,7 @@ using Bot.Core;
 using Bot.Core.Callbacks;
 using Moq;
 using System;
+using System.Threading;
 using Test.Bot.Base;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Test.Bot.Core
         [Fact]
         public static void CreateCoreServices_ConstructsType()
         {
-            var sp = ServiceFactory.RegisterCoreServices(null);
+            var sp = ServiceFactory.RegisterCoreServices(null, CancellationToken.None);
             Assert.IsType<ServiceProvider>(sp);
         }
 
@@ -29,9 +30,11 @@ namespace Test.Bot.Core
         [InlineData(typeof(IActiveGameService), typeof(ActiveGameService))]
         [InlineData(typeof(IComponentService), typeof(ComponentService))]
         [InlineData(typeof(IShuffleService), typeof(ShuffleService))]
+        [InlineData(typeof(IFinalShutdownService), typeof(ShutdownService))]
+        [InlineData(typeof(IShutdownPreventionService), typeof(ShutdownService))]
         public void RegisterCoreServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
-            var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider());
+            var newSp = ServiceFactory.RegisterCoreServices(GetServiceProvider(), CancellationToken.None);
             var service = newSp.GetService(serviceInterface);
 
             Assert.NotNull(service);
@@ -49,6 +52,7 @@ namespace Test.Bot.Core
         {
             RegisterMock(new Mock<IBotSystem>());
             RegisterMock(new Mock<ICallbackSchedulerFactory>());
+            RegisterMock(new Mock<IShutdownPreventionService>());
             RegisterMock(new Mock<IComponentService>());
 
             var newSp = ServiceFactory.RegisterBotServices(GetServiceProvider());
