@@ -4,7 +4,7 @@ using DSharpPlus.Entities;
 
 namespace Bot.DSharp
 {
-    internal class DSharpEmbedBuilder : DiscordWrapper<DiscordEmbedBuilder>, IEmbedBuilder
+    public class DSharpEmbedBuilder : DiscordWrapper<DiscordEmbedBuilder>, IEmbedBuilder
     {
         public DSharpEmbedBuilder(DiscordEmbedBuilder wrapped)
             : base(wrapped)
