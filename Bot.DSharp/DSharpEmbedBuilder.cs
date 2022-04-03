@@ -19,7 +19,7 @@ namespace Bot.DSharp
 
         public IEmbed Build()
         {
-            throw new System.NotImplementedException();
+            return new DSharpEmbed(Wrapped.Build());
         }
 
         public IEmbedBuilder WithAuthor(string? name = null, string? url = null, string? iconUrl = null)

@@ -1,17 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Bot.Api
 {
-	public interface IInteractionResponseBuilder
+    public interface IInteractionResponseBuilder
 	{
 		IInteractionResponseBuilder WithTitle(string title);
 		IInteractionResponseBuilder WithCustomId(string customId);
 		IInteractionResponseBuilder WithContent(string content);
 
 		IInteractionResponseBuilder AddComponents(params IBotComponent[] components);
+		IInteractionResponseBuilder AddEmbeds(IEnumerable<IEmbed> embeds);
+	}
+
+	public static class IInteractionResponseBuilderExtensions
+    {
+		public static IInteractionResponseBuilder AddEmbed(IInteractionResponseBuilder @this, IEmbed embed)
+        {
+			return @this.AddEmbeds(new[] { embed });
+        }
 	}
 }
