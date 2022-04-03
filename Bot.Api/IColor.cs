@@ -1,5 +1,5 @@
 ﻿namespace Bot.Api
 {
-    public interface IEmbed
+    public interface IColor
     {}
 }

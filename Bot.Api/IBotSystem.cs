@@ -13,6 +13,8 @@ namespace Bot.Api
 
         IEmbedBuilder CreateEmbedBuilder();
 
+        IColorBuilder ColorBuilder { get; }
+
         enum ButtonType
 		{
             Primary = 1,

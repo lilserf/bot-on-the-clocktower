@@ -1,6 +1,6 @@
 ﻿namespace Bot.DSharp
 {
-    public class DiscordWrapper<T> where T : class
+    public class DiscordWrapper<T> where T : notnull
     {
         public T Wrapped { get; }
         public DiscordWrapper(T wrapped)
@@ -12,7 +12,7 @@
 		{
 			if (other is DiscordWrapper<T> obj)
 			{
-				return Wrapped.Equals(obj?.Wrapped);
+				return Wrapped.Equals(obj.Wrapped);
 			}
 			return false;
 		}
