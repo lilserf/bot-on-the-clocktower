@@ -43,6 +43,7 @@ namespace Bot.DSharp
             slash.RegisterCommands<DSharpGameSlashCommands>(devGuildId);
             slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
             slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
+            slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
             // During development, register no commands globally
             slash.RegisterCommands<EmptyCommands>();
 

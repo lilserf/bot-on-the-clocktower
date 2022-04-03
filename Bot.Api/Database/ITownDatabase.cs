@@ -12,6 +12,8 @@ namespace Bot.Api.Database
 
 		public Task<bool> AddTownAsync(ITown town, IMember author);
 		public Task<bool> UpdateTownAsync(ITown town);
+
+		public Task<IEnumerable<TownKey>> GetAllTowns();
 	}
 
 	public static class ITownLookupExtensions
