@@ -11,6 +11,10 @@ namespace Bot.Api
 
         IInteractionResponseBuilder CreateInteractionResponseBuilder();
 
+        IEmbedBuilder CreateEmbedBuilder();
+
+        IColorBuilder ColorBuilder { get; }
+
         enum ButtonType
 		{
             Primary = 1,

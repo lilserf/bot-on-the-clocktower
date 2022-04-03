@@ -7,14 +7,15 @@ namespace Test.Bot.Database
 {
     public class TestServices : TestBase
     {
-        [Fact]
-        public void RegisterServices_CreatesDiscordClientFactory()
+        [Theory]
+        [InlineData(typeof(IDiscordClientFactory), typeof(DiscordClientFactory))]
+        public void RegisterServices_CreatesAllRequiredServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = ServiceFactory.RegisterServices(GetServiceProvider());
-            var service = newSp.GetService<IDiscordClientFactory>();
+            var service = newSp.GetService(serviceInterface);
 
             Assert.NotNull(service);
-            Assert.IsType<DiscordClientFactory>(service);
+            Assert.IsType(serviceImpl, service);
         }
     }
 }

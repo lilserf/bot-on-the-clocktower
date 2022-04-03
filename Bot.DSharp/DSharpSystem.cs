@@ -48,5 +48,7 @@ namespace Bot.DSharp
             return new DSharpComponent(text1);
         }
 
+        public IEmbedBuilder CreateEmbedBuilder() => new DSharpEmbedBuilder(new DiscordEmbedBuilder());
+        public IColorBuilder ColorBuilder { get; } = new DSharpColorBuilder();
     }
 }
