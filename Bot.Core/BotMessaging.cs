@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Core.Interaction;
 using System;
 using System.Collections.Generic;
@@ -10,10 +11,14 @@ namespace Bot.Core
     public class BotMessaging : IBotMessaging
     {
         private readonly ITownInteractionQueue m_townCommandQueue;
+        private readonly ICommandMetricDatabase m_commandMetricsDatabase;
+        private readonly IDateTime m_dateTime;
 
         public BotMessaging(IServiceProvider services)
         {
             services.Inject(out m_townCommandQueue);
+            services.Inject(out m_commandMetricsDatabase);
+            services.Inject(out m_dateTime);
         }
 
         private const string DemonGreeting = "{0}: You are the **demon**. ";
@@ -130,6 +135,8 @@ namespace Bot.Core
         {
             return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
+                await m_commandMetricsDatabase.RecordCommand("evil", m_dateTime.Now);
+
                 string msg = (magician != null)
                     ? await SendMagicianMessage(demon, minions, magician)
                     : await SendEvilMessage(demon, minions);
@@ -141,6 +148,7 @@ namespace Bot.Core
         {
             return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
+                await m_commandMetricsDatabase.RecordCommand("lunatic", m_dateTime.Now);
                 string msg = await SendLunaticMessage(lunatic, fakeMinions);
                 return InteractionResult.FromMessage(msg);
             });
@@ -150,6 +158,7 @@ namespace Bot.Core
         {
             return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
+                await m_commandMetricsDatabase.RecordCommand("legion", m_dateTime.Now);
                 string msg = await SendLegionMessage(legions);
                 return InteractionResult.FromMessage(msg);
             });

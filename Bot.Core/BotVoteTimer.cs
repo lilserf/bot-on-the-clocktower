@@ -12,11 +12,15 @@ namespace Bot.Core
     public class BotVoteTimer : BotTownLookupHelper
     {
         private readonly VoteTimerController m_voteTimerController;
+        private readonly ICommandMetricDatabase m_commandMetricsDatabase;
+        private readonly IDateTime m_dateTime;
 
         public BotVoteTimer(IServiceProvider serviceProvider)
             : base(serviceProvider)
         {
             m_voteTimerController = new(serviceProvider);
+            serviceProvider.Inject(out m_commandMetricsDatabase);
+            serviceProvider.Inject(out m_dateTime);
         }
 
         public async Task<InteractionResult> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
@@ -44,11 +48,15 @@ namespace Bot.Core
             if (!string.IsNullOrWhiteSpace(ret))
                 return ret;
 
+            await m_commandMetricsDatabase.RecordCommand($"votetimer-{span.Value.ToString()}", m_dateTime.Now);
+
             return $"Vote timer started for {GetTimeString(span.Value, false)}!";
         }
 
         public async Task<InteractionResult> RunStopVoteTimerUnsafe(TownKey townKey, IProcessLogger processLoggger)
         {
+            await m_commandMetricsDatabase.RecordCommand("stopvotetimer", m_dateTime.Now);
+
             var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
             if (town == null)
                 return "Failed to run command";

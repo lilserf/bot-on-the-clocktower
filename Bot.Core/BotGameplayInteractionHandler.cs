@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Core.Interaction;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,9 @@ namespace Bot.Core
         private readonly IBotSystem m_system;
         private readonly IComponentService m_componentService;
         private readonly ITownInteractionQueue m_townCommandQueue;
+        private readonly IGameMetricDatabase m_gameMetricDatabase;
+        private readonly ICommandMetricDatabase m_commandMetricDatabase;
+        private readonly IDateTime m_dateTime;
 
         private readonly BotGameplay m_gameplay;
         private readonly BotVoteTimer m_voteTimer;
@@ -44,6 +48,9 @@ namespace Bot.Core
             serviceProvider.Inject(out m_system);
             serviceProvider.Inject(out m_componentService);
             serviceProvider.Inject(out m_townCommandQueue);
+            serviceProvider.Inject(out m_gameMetricDatabase);
+            serviceProvider.Inject(out m_commandMetricDatabase);
+            serviceProvider.Inject(out m_dateTime);
 
             m_nightButton = CreateButton(GameplayButton.Night, "Night", pressMethod: NightButtonPressed, emoji: "🌙");
             m_dayButton = CreateButton(GameplayButton.Day, "Day", pressMethod: DayButtonPressed, IBotSystem.ButtonType.Success, emoji: "☀️");
@@ -145,6 +152,8 @@ namespace Bot.Core
             bool success = true;
             var message = await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
+                await m_gameMetricDatabase.RecordGame(townKey, m_dateTime.Now);
+                await m_commandMetricDatabase.RecordCommand("game", m_dateTime.Now);
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 success = game != null;
                 return success ? "Welcome to Blood on the Clocktower!" : "Couldn't find an active game record for this town!";
