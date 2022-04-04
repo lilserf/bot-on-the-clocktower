@@ -4,6 +4,6 @@ namespace Bot.Core.Lookup
 {
     public interface IOfficialCharacterCache
     {
-        public Task<GetOfficialCharactersResult> GetOfficialCharactersAsync();
+        Task<GetOfficialCharactersResult> GetOfficialCharactersAsync();
     }
 }
