@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
 
-namespace Test.Bot.Core.Interactions
+namespace Test.Bot.Core.Interaction
 {
     public static class TestInteractionQueueHelper
     {

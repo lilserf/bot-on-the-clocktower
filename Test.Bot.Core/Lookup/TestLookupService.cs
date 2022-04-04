@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Test.Bot.Base;
-using Test.Bot.Core.Interactions;
+using Test.Bot.Core.Interaction;
 using Xunit;
 
 namespace Test.Bot.Core.Lookup
@@ -51,13 +51,13 @@ namespace Test.Bot.Core.Lookup
             m_mockInteractionChannel.SetupGet(c => c.Name).Returns(m_mockInteractionChannelName);
         }
 
-        #region Queue tests
+        #region Interaction testing
         [Fact]
-        public void LookupRequested_QueuesRequest()
+        public void LookupRequested_WrapsInteraction()
         {
             string lookupStr = "test lookup";
 
-            TestInteractionQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
+            TestInteractionWrapperHelper.TestGuildInteractionRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -71,11 +71,11 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void AddScriptRequested_QueuesRequest()
+        public void AddScriptRequested_WrapsInteraction()
         {
             string scriptUrl = "test script url";
 
-            TestInteractionQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
+            TestInteractionWrapperHelper.TestGuildInteractionRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -90,11 +90,11 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void RemoveScriptRequested_QueuesRequest()
+        public void RemoveScriptRequested_WrapsInteraction()
         {
             string scriptUrl = "test script url";
 
-            TestInteractionQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
+            TestInteractionWrapperHelper.TestGuildInteractionRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -109,9 +109,9 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void ListScriptsRequested_QueuesRequest()
+        public void ListScriptsRequested_WrapsInteraction()
         {
-            TestInteractionQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
+            TestInteractionWrapperHelper.TestGuildInteractionRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -125,112 +125,23 @@ namespace Test.Bot.Core.Lookup
         }
         #endregion
 
-        #region Error handling tests
-        [Fact]
-        public void LookupRequested_PerformsErrorHandling()
-        {
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
-                {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingRequested(queueSp,
-                        (sp) =>
-                        {
-                            var bls = new BotLookupService(sp);
-                            return bls.LookupAsync(m_mockInteractionContext.Object, "lookup string");
-                        },
-                        (gid, author) => VerifyErrorHandlerParams(gid, author));
-                    return Task.CompletedTask;
-                });
-
-            m_mockCharacterLookup.VerifyNoOtherCalls();
-        }
-
-        [Fact]
-        public void AddRequested_PerformsErrorHandling()
-        {
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
-                {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingRequested(queueSp,
-                        (sp) =>
-                        {
-                            var bls = new BotLookupService(sp);
-                            return bls.AddScriptAsync(m_mockInteractionContext.Object, "add string");
-                        },
-                        (gid, author) => VerifyErrorHandlerParams(gid, author));
-                    return Task.CompletedTask;
-                });
-
-            m_mockLookupDb.VerifyNoOtherCalls();
-        }
-
-        [Fact]
-        public void RemoveRequested_PerformsErrorHandling()
-        {
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
-                {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingRequested(queueSp,
-                        (sp) =>
-                        {
-                            var bls = new BotLookupService(sp);
-                            return bls.RemoveScriptAsync(m_mockInteractionContext.Object, "remove string");
-                        },
-                        (gid, author) => VerifyErrorHandlerParams(gid, author));
-                    return Task.CompletedTask;
-                });
-
-            m_mockLookupDb.VerifyNoOtherCalls();
-        }
-
-        [Fact]
-        public void ListScripts_PerformsErrorHandling()
-        {
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
-                {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingRequested(queueSp,
-                        (sp) =>
-                        {
-                            var bls = new BotLookupService(sp);
-                            return bls.ListScriptsAsync(m_mockInteractionContext.Object);
-                        },
-                        (gid, author) => VerifyErrorHandlerParams(gid, author));
-                    return Task.CompletedTask;
-                });
-
-            m_mockLookupDb.VerifyNoOtherCalls();
-        }
-
-        private void VerifyErrorHandlerParams(ulong guildId, IMember interactionAuthor)
-        {
-            Assert.Equal(m_mockGuildId, guildId);
-            Assert.Equal(m_mockInteractionAuthor.Object, interactionAuthor);
-        }
-        #endregion
-
         [Fact]
         public void AddScriptRequested_AddsScriptToDbAndReturnsResults()
         {
             string scriptUrl = "test script url";
 
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
                 {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingMethod(queueSp,
-                        (sp) =>
-                        {
-                            BotLookupService bls = new(sp);
-                            return bls.AddScriptAsync(m_mockInteractionContext.Object, scriptUrl);
-                        },
-                        (_, ir) =>
-                        {
-                            Assert.Contains(scriptUrl, ir.Message);
-                            Assert.Contains("added", ir.Message);
-                            Assert.False(ir.IncludeComponents);
-                            m_mockLookupDb.Verify(ld => ld.AddScriptUrlAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == scriptUrl)), Times.Once);
-                        });
-                    return Task.CompletedTask;
+                    BotLookupService bls = new(sp);
+                    return bls.AddScriptAsync(m_mockInteractionContext.Object, scriptUrl);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains(scriptUrl, ir.Message);
+                    Assert.Contains("added", ir.Message);
+                    Assert.False(ir.IncludeComponents);
+                    m_mockLookupDb.Verify(ld => ld.AddScriptUrlAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == scriptUrl)), Times.Once);
                 });
         }
 
@@ -239,44 +150,34 @@ namespace Test.Bot.Core.Lookup
         {
             string scriptUrl = "test script url";
 
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
                 {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingMethod(queueSp,
-                        (sp) =>
-                        {
-                            BotLookupService bls = new(sp);
-                            return bls.RemoveScriptAsync(m_mockInteractionContext.Object, scriptUrl);
-                        },
-                        (_, ir) =>
-                        {
-                            Assert.Contains(scriptUrl, ir.Message);
-                            Assert.Contains("removed", ir.Message);
-                            Assert.False(ir.IncludeComponents);
-                            m_mockLookupDb.Verify(ld => ld.RemoveScriptUrlAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == scriptUrl)), Times.Once);
-                        });
-                    return Task.CompletedTask;
+                    BotLookupService bls = new(sp);
+                    return bls.RemoveScriptAsync(m_mockInteractionContext.Object, scriptUrl);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains(scriptUrl, ir.Message);
+                    Assert.Contains("removed", ir.Message);
+                    Assert.False(ir.IncludeComponents);
+                    m_mockLookupDb.Verify(ld => ld.RemoveScriptUrlAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == scriptUrl)), Times.Once);
                 });
         }
 
         [Fact]
         public void NoScripts_ListScriptsRequested_ReturnsNoScripts()
         {
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
                 {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingMethod(queueSp,
-                        (sp) =>
-                        {
-                            BotLookupService bls = new(sp);
-                            return bls.ListScriptsAsync(m_mockInteractionContext.Object);
-                        },
-                        (_, ir) =>
-                        {
-                            Assert.Contains("no custom scripts", ir.Message, StringComparison.InvariantCultureIgnoreCase);
-                            Assert.False(ir.IncludeComponents);
-                        });
-                    return Task.CompletedTask;
+                    BotLookupService bls = new(sp);
+                    return bls.ListScriptsAsync(m_mockInteractionContext.Object);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains("no custom scripts", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.False(ir.IncludeComponents);
                 });
         }
 
@@ -288,24 +189,19 @@ namespace Test.Bot.Core.Lookup
             m_mockDbScriptUrls.Add(script1);
             m_mockDbScriptUrls.Add(script2);
 
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
                 {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingMethod(queueSp,
-                        (sp) =>
-                        {
-                            BotLookupService bls = new(sp);
-                            return bls.ListScriptsAsync(m_mockInteractionContext.Object);
-                        },
-                        (_, ir) =>
-                        {
-                            Assert.Contains("custom scripts", ir.Message, StringComparison.InvariantCultureIgnoreCase);
-                            Assert.Contains("found", ir.Message, StringComparison.InvariantCultureIgnoreCase);
-                            Assert.Contains($"⦁ {script1}", ir.Message);
-                            Assert.Contains($"⦁ {script2}", ir.Message);
-                            Assert.False(ir.IncludeComponents);
-                        });
-                    return Task.CompletedTask;
+                    BotLookupService bls = new(sp);
+                    return bls.ListScriptsAsync(m_mockInteractionContext.Object);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains("custom scripts", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains("found", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains($"⦁ {script1}", ir.Message);
+                    Assert.Contains($"⦁ {script2}", ir.Message);
+                    Assert.False(ir.IncludeComponents);
                 });
         }
 
@@ -314,23 +210,18 @@ namespace Test.Bot.Core.Lookup
         {
             string lookupStr = "lookup str";
 
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
                 {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingMethod(queueSp,
-                        (sp) =>
-                        {
-                            BotLookupService bls = new(sp);
-                            return bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
-                        },
-                        (_, ir) =>
-                        {
-                            Assert.Contains("no ", ir.Message, StringComparison.InvariantCultureIgnoreCase);
-                            Assert.Contains("found", ir.Message, StringComparison.InvariantCultureIgnoreCase);
-                            Assert.Contains(lookupStr, ir.Message);
-                            Assert.Empty(ir.Embeds);
-                        });
-                    return Task.CompletedTask;
+                    BotLookupService bls = new(sp);
+                    return bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains("no ", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains("found", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains(lookupStr, ir.Message);
+                    Assert.Empty(ir.Embeds);
                 });
         }
 
@@ -356,24 +247,19 @@ namespace Test.Bot.Core.Lookup
                 .Callback<LookupCharacterItem>(actualMessageCharacters.Add)
                 .Returns(expectedEmbedObjects[1]);
 
-            TestInteractionQueueHelper.TestGuildQueueMethod(GetServiceProvider(),
-                (queueSp) =>
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
                 {
-                    TestInteractionErrorHandlerHelper.TestGuildErrorHandlingMethod(queueSp,
-                        (sp) =>
-                        {
-                            BotLookupService bls = new(sp);
-                            return bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
-                        },
-                        (_, ir) =>
-                        {
-                            Assert.Contains("found", ir.Message, StringComparison.InvariantCultureIgnoreCase);
-                            Assert.Contains(expectedMessageCharacters.Length.ToString(), ir.Message);
-                            Assert.Contains(lookupStr, ir.Message);
-                            Assert.Equal(expectedEmbedObjects, ir.Embeds);
-                            Assert.Equal(expectedMessageCharacters, actualMessageCharacters);
-                        });
-                    return Task.CompletedTask;
+                    BotLookupService bls = new(sp);
+                    return bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains("found", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains(expectedMessageCharacters.Length.ToString(), ir.Message);
+                    Assert.Contains(lookupStr, ir.Message);
+                    Assert.Equal(expectedEmbedObjects, ir.Embeds);
+                    Assert.Equal(expectedMessageCharacters, actualMessageCharacters);
                 });
         }
     }

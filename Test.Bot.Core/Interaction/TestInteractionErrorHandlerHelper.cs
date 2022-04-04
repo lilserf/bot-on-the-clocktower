@@ -6,11 +6,11 @@ using System;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 
-namespace Test.Bot.Core.Interactions
+namespace Test.Bot.Core.Interaction
 {
     public static class TestInteractionErrorHandlerHelper
     {
-        private static readonly InteractionResult MockReturnedErrorResult = "an error happened! oh, no!";
+        public static readonly InteractionResult MockReturnedErrorResult = "an error happened! oh, no!";
 
         /// <summary>
         /// Test that a method is properly using the Guild Error Handler
@@ -34,7 +34,7 @@ namespace Test.Bot.Core.Interactions
             TestErrorHandlingRequested<TownKey, ITownInteractionErrorHandler>(serviceProvider, performTest, verifyParams);
         }
 
-        private static void TestErrorHandlingRequested<TKey, TErrorHandlerType>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<TKey, IMember>? verifyParams) where TKey : notnull where TErrorHandlerType : class, IInteractionErrorHandler<TKey>
+        public static void TestErrorHandlingRequested<TKey, TErrorHandlerType>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<TKey, IMember>? verifyParams) where TKey : notnull where TErrorHandlerType : class, IInteractionErrorHandler<TKey>
         {
             Mock<TErrorHandlerType> mockErrorHandler = new();
 
@@ -78,13 +78,15 @@ namespace Test.Bot.Core.Interactions
 
         public static void TestErrorHandlingMethod<TKey, TErrorHandlerType>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<Mock<IProcessLogger>, InteractionResult>? verifyResult) where TKey : notnull where TErrorHandlerType : class, IInteractionErrorHandler<TKey>
         {
-            Mock<IGuildInteractionErrorHandler> mockErrorHandler = new();
+            Mock<TErrorHandlerType> mockErrorHandler = new();
 
             ServiceProvider sp = new(serviceProvider);
             sp.AddService(mockErrorHandler.Object);
 
-            mockErrorHandler.Setup(eh => eh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<InteractionResult>>>()))
-                .Callback<ulong, IMember, Func<IProcessLogger, Task<InteractionResult>>>(
+            InteractionResult? innerFuncResult = null;
+
+            mockErrorHandler.Setup(eh => eh.TryProcessReportingErrorsAsync(It.IsAny<TKey>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<InteractionResult>>>()))
+                .Callback<TKey, IMember, Func<IProcessLogger, Task<InteractionResult>>>(
                     (k, m, f) =>
                     {
                         var mockPl = new Mock<IProcessLogger>(MockBehavior.Loose);
@@ -92,12 +94,14 @@ namespace Test.Bot.Core.Interactions
                         var result = TestTaskHelper.AssertCompletedTask(() => f(mockPl.Object));
 
                         verifyResult?.Invoke(mockPl, result);
+
+                        innerFuncResult = result;
                     })
-                .ReturnsAsync(MockReturnedErrorResult);
+                .ReturnsAsync(() => innerFuncResult ?? MockReturnedErrorResult);
 
             TestTaskHelper.AssertCompletedTask(() => performTest(sp));
 
-            mockErrorHandler.Verify(eh => eh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<InteractionResult>>>()), Times.Once);
+            mockErrorHandler.Verify(eh => eh.TryProcessReportingErrorsAsync(It.IsAny<TKey>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<InteractionResult>>>()), Times.Once);
         }
     }
 }
