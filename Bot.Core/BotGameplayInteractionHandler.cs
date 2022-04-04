@@ -22,6 +22,7 @@ namespace Bot.Core
         private readonly IBotSystem m_system;
         private readonly IComponentService m_componentService;
         private readonly ITownInteractionQueue m_townCommandQueue;
+        private readonly ITownInteractionErrorHandler m_townErrorHandler;
         private readonly IGameMetricDatabase m_gameMetricDatabase;
         private readonly ICommandMetricDatabase m_commandMetricDatabase;
         private readonly IDateTime m_dateTime;
@@ -48,6 +49,7 @@ namespace Bot.Core
             serviceProvider.Inject(out m_system);
             serviceProvider.Inject(out m_componentService);
             serviceProvider.Inject(out m_townCommandQueue);
+            serviceProvider.Inject(out m_townErrorHandler);
             serviceProvider.Inject(out m_gameMetricDatabase);
             serviceProvider.Inject(out m_commandMetricDatabase);
             serviceProvider.Inject(out m_dateTime);
@@ -107,7 +109,7 @@ namespace Bot.Core
         #region Callbacks from system with interaction context
         public async Task<InteractionResult> PhaseNightInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
@@ -121,7 +123,7 @@ namespace Bot.Core
 
         private async Task<InteractionResult> PhaseDayInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
@@ -135,7 +137,7 @@ namespace Bot.Core
 
         private async Task<InteractionResult> PhaseVoteInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
@@ -150,7 +152,7 @@ namespace Bot.Core
         private async Task<(InteractionResult, bool)> PerformGameInternal(TownKey townKey, IMember requester)
         {
             bool success = true;
-            var message = await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
+            var message = await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
                 await m_gameMetricDatabase.RecordGame(townKey, m_dateTime.Now);
                 await m_commandMetricDatabase.RecordCommand("game", m_dateTime.Now);
@@ -163,7 +165,7 @@ namespace Bot.Core
 
         private async Task<InteractionResult> EndGameInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 if (game == null)
@@ -176,17 +178,17 @@ namespace Bot.Core
 
         public async Task<InteractionResult> SetStorytellersInternal(TownKey townKey, IMember requester, IEnumerable<IMember> users)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, (processLog) => m_gameplay.SetStorytellersUnsafe(townKey, requester, users, processLog));
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, (processLog) => m_gameplay.SetStorytellersUnsafe(townKey, requester, users, processLog));
         }
 
         public async Task<InteractionResult> RunVoteTimerInternal(TownKey townKey, IMember requester, string timeString)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunVoteTimerUnsafe(townKey, timeString, processLoggger));
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunVoteTimerUnsafe(townKey, timeString, processLoggger));
         }
 
         public async Task<InteractionResult> RunStopVoteTimerInternal(TownKey townKey, IMember requester)
         {
-            return await InteractionWrapper.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunStopVoteTimerUnsafe(townKey, processLoggger));
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_voteTimer.RunStopVoteTimerUnsafe(townKey, processLoggger));
         }
         #endregion
 

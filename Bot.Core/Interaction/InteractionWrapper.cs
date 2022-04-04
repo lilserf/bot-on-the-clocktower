@@ -6,12 +6,6 @@ namespace Bot.Core.Interaction
 {
     public static class InteractionWrapper
     {
-        [Obsolete("Please use IGuildInteractionErrorHandler.TryProcessReportingErrorsAsync instead")]
-        public static Task<InteractionResult> TryProcessReportingErrorsAsync(TownKey townKey, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process)
-        {
-            return TryProcessReportingErrorsAsync(townKey, requester, process, GetFriendlyStringForTownKey);
-        }
-
         public static async Task<InteractionResult> TryProcessReportingErrorsAsync<TKey>(TKey key, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process, Func<TKey, string> getFriendlyStringForKey)
         {
             var logger = new ProcessLogger();
