@@ -15,12 +15,16 @@ namespace Bot.Core
         private readonly ITownDatabase m_townDb;
         private readonly IBotSystem m_botSystem;
         private readonly IComponentService m_componentService;
+        private readonly ICommandMetricDatabase m_commandMetricsDatabase;
+        private readonly IDateTime m_dateTime;
 
         public BotSetup(IServiceProvider sp)
         {
             sp.Inject(out m_townDb);
             sp.Inject(out m_botSystem);
             sp.Inject(out m_componentService);
+            sp.Inject(out m_commandMetricsDatabase);
+            sp.Inject(out m_dateTime);
         }
 
         public async Task CommandCreateTown(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight)
@@ -36,6 +40,8 @@ namespace Bot.Core
                 tdesc.NightCategoryName = string.Format(IBotSetup.DefaultNightCategoryFormat, townName);
 
             await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
+
+            await m_commandMetricsDatabase.RecordCommand("createtown", m_dateTime.Now);
 
             var builder = m_botSystem.CreateWebhookBuilder().WithContent($"Created new town **{townName}**!");
             await ctx.EditResponseAsync(builder);
@@ -65,6 +71,8 @@ namespace Bot.Core
         public async Task DestroyTown(ulong guildId, ulong channelId)
         {
             var townRec = await m_townDb.GetTownRecordAsync(guildId, channelId);
+
+            await m_commandMetricsDatabase.RecordCommand("destroytown", m_dateTime.Now);
 
             // TODO
         }

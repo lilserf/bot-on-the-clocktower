@@ -9,13 +9,13 @@ using MongoDB.Driver;
 
 namespace Bot.Database
 {
-    internal class MongoGameMetricDatabase : IGameMetricDatabase
+    internal class GameMetricDatabase : IGameMetricDatabase
     {
         public const string CollectionName = "GameMetrics";
 
         private readonly IMongoCollection<MongoGameMetricRecord> m_collection;
 
-        public MongoGameMetricDatabase(IMongoDatabase db)
+        public GameMetricDatabase(IMongoDatabase db)
         {
             m_collection = db.GetCollection<MongoGameMetricRecord>(CollectionName);
             if (m_collection == null) throw new MissingGameMetricDatabaseException();

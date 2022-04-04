@@ -103,14 +103,20 @@ namespace Test.Bot.Database
 			var mockGameActivityDb = new Mock<IGameActivityDatabase>(MockBehavior.Strict);
 			var mockLookupRoleDb = new Mock<ILookupRoleDatabase>(MockBehavior.Strict);
 			var mockAnnouncementDb = new Mock<IAnnouncementDatabase>(MockBehavior.Strict);
+			var mockGameMetricDb = new Mock<IGameMetricDatabase>(MockBehavior.Strict);
+			var mockCommandMetricDb = new Mock<ICommandMetricDatabase>(MockBehavior.Strict);
 			var mockLookupRoleDbFactory = RegisterMock(new Mock<ILookupRoleDatabaseFactory>(MockBehavior.Strict));
 			var mockTownLookupFactory = RegisterMock(new Mock<ITownDatabaseFactory>(MockBehavior.Strict));
 			var mockGameActivityDbFactory = RegisterMock(new Mock<IGameActivityDatabaseFactory>(MockBehavior.Strict));
 			var mockAnnouncementDbFactory = RegisterMock(new Mock<IAnnouncementDatabaseFactory>(MockBehavior.Strict));
+			var mockGameMetricDbFactory = RegisterMock(new Mock<IGameMetricDatabaseFactory>(MockBehavior.Strict));
+			var mockCommandMetricDbFactory = RegisterMock(new Mock<ICommandMetricDatabaseFactory>(MockBehavior.Strict));
 
 			mockGameActivityDbFactory.Setup(gadbf => gadbf.CreateGameActivityDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockGameActivityDb.Object);
 			mockLookupRoleDbFactory.Setup(lrdbf => lrdbf.CreateLookupRoleDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockLookupRoleDb.Object);
 			mockAnnouncementDbFactory.Setup(adbf => adbf.CreateAnnouncementDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockAnnouncementDb.Object);
+			mockGameMetricDbFactory.Setup(gmdbf => gmdbf.CreateGameMetricDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockGameMetricDb.Object);
+			mockCommandMetricDbFactory.Setup(gmdbf => gmdbf.CreateCommandMetricDatabase(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockCommandMetricDb.Object);
 
 			mockTownLookupFactory.Setup(tlf => tlf.CreateTownLookup(It.Is<IMongoDatabase>(md => md == mockDatabase.Object))).Returns(mockTownLookup.Object);
 			DatabaseFactory db = new(GetServiceProvider());

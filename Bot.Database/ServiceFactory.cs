@@ -15,6 +15,7 @@ namespace Bot.Database
             childSp.AddService<ILookupRoleDatabaseFactory>(new LookupRoleDatabaseFactory());
             childSp.AddService<IAnnouncementDatabaseFactory>(new AnnouncementDatabaseFactory());
             childSp.AddService<IGameMetricDatabaseFactory>(new GameMetricDatabaseFactory());
+            childSp.AddService<ICommandMetricDatabaseFactory>(new CommandMetricDatabaseFactory());
             return childSp;
         }
     }

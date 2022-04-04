@@ -12,7 +12,7 @@ namespace Bot.Database
     {
         public IGameMetricDatabase CreateGameMetricDatabase(IMongoDatabase db)
         {
-            return new MongoGameMetricDatabase(db);
+            return new GameMetricDatabase(db);
         }
     }
 }
