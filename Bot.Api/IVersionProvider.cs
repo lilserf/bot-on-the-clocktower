@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Api
 {
     public interface IVersionProvider
     {
-        public Dictionary<Version, IEmbed> Versions { get; }
+        Dictionary<Version, IEmbed> Versions { get; }
+        void InitializeVersions();
     }
 }
