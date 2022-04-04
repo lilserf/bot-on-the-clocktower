@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FuzzySharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,9 +26,12 @@ namespace Bot.Core.Lookup
 
         private IEnumerable<GetCharactersItem> FilterMatchingCharacterItems(IEnumerable<GetCharactersItem> characterItems, string charString)
         {
-            foreach (var item in characterItems)
-                if (0 == string.Compare(item.Character.Name, charString, StringComparison.InvariantCultureIgnoreCase))
-                    yield return item;
+            var allNames = characterItems.Select(ci => ci.Character.Name).Distinct().ToArray();
+            var matchedResult = Process.ExtractOne(charString, allNames, cutoff: 80);
+
+            if (matchedResult != null)
+                return characterItems.Where(ci => ci.Character.Name == matchedResult.Value);
+            return Enumerable.Empty<GetCharactersItem>();
         }
 
         private IReadOnlyCollection<GetCharactersItem> MergeCharacterItems(IEnumerable<GetCharactersItem> items)

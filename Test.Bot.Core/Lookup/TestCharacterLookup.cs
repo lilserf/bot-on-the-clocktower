@@ -163,6 +163,20 @@ namespace Test.Bot.Core.Lookup
                 });
         }
 
+        [Fact]
+        public void FuzzyNameProvided_ReturnsCorrectCharacter()
+        {
+            var lookup = new CharacterLookup(GetServiceProvider());
+
+            var result = AssertCompletedTask(() => lookup.LookupCharacterAsync(GuildId, "warshwomn"));
+
+            Assert.Collection(result.Items,
+                i =>
+                {
+                    AssertEquivalentRole(m_officialWasherWoman, i.Character);
+                });
+        }
+
         private static void AssertEquivalentRole(CharacterData a, CharacterData b)
         {
             Assert.Equal(a.Name, b.Name);
