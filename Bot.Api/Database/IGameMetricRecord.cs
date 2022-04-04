@@ -6,12 +6,16 @@ using System.Threading.Tasks;
 
 namespace Bot.Api.Database
 {
-    internal interface IGameMetricRecord
+    public interface IGameMetricRecord
     {
-        ulong TownHash { get; }
+        int TownHash { get; }
 
-        DateTime ActivityStart { get; }
-        DateTime ActivityEnd { get; }
+        DateTime FirstActivity { get; }
+        DateTime LastActivity { get; }
 
+        bool Complete { get; }
+        int Days { get; }
+        int Nights { get; }
+        int Votes { get; }
     }
 }
