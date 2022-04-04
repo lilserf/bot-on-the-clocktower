@@ -1,15 +1,12 @@
 ﻿using Bot.Api;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bot.Core
 {
     public class VersionProvider : IVersionProvider
     {
-        private Dictionary<Version, IEmbed> m_versions;
+        private Dictionary<Version, IEmbed> m_versions = new();
         public Dictionary<Version, IEmbed> Versions => m_versions;
 
         private IBotSystem m_botSystem;
@@ -19,8 +16,11 @@ namespace Bot.Core
         {
             sp.Inject(out m_botSystem);
             sp.Inject(out m_colorBuilder);
+        }
 
-            m_versions = new Dictionary<Version, IEmbed>();
+        public void InitializeVersions()
+        {
+            m_versions.Clear();
 
             // VERSION 3.0.0
             {
@@ -30,6 +30,5 @@ namespace Bot.Core
                 m_versions.Add(new Version(3, 0, 0), eb.Build());
             }
         }
-
     }
 }

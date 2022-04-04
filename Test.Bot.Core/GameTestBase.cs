@@ -65,6 +65,8 @@ namespace Test.Bot.Core
         protected readonly Mock<IProcessLogger> ProcessLoggerMock = new();
         protected readonly Mock<IComponentService> ComponentServiceMock = new();
         protected readonly Mock<IShuffleService> ShuffleServiceMock = new();
+        protected readonly Mock<IGameMetricDatabase> GameMetricDatabaseMock = new();
+        protected readonly Mock<ICommandMetricDatabase> CommandMetricDatabaseMock = new();
 
         public GameTestBase()
         {
@@ -97,6 +99,8 @@ namespace Test.Bot.Core
             RegisterMock(ActiveGameServiceMock);
             RegisterMock(ComponentServiceMock);
             RegisterMock(ShuffleServiceMock);
+            RegisterMock(GameMetricDatabaseMock);
+            RegisterMock(CommandMetricDatabaseMock);
 
             ShuffleServiceMock.Setup(ss => ss.Shuffle(It.IsAny<IEnumerable<Tuple<IChannel, IMember>>>()))
                 .Returns((IEnumerable<Tuple<IChannel, IMember>> input) => input.Reverse());

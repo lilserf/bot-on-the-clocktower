@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,9 @@ namespace Bot.Core
         private readonly IBotClient m_client;
         private readonly IShuffleService m_shuffle;
         private readonly ITownCleanup m_townCleanup;
+        private readonly IGameMetricDatabase m_gameMetricsDatabase;
+        private readonly ICommandMetricDatabase m_commandMetricsDatabase;
+        private readonly IDateTime m_dateTime;
 
 		public BotGameplay(IServiceProvider services)
             : base(services)
@@ -20,6 +24,9 @@ namespace Bot.Core
             services.Inject(out m_client);
             services.Inject(out m_shuffle);
             services.Inject(out m_townCleanup);
+            services.Inject(out m_gameMetricsDatabase);
+            services.Inject(out m_commandMetricsDatabase);
+            services.Inject(out m_dateTime);
 
             m_townCleanup.CleanupRequested += TownCleanup_CleanupRequested;
         }
@@ -269,6 +276,9 @@ namespace Bot.Core
                 //foreach (var (cottage, user) in villagerPairs)
                 //    await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
 
+                await m_gameMetricsDatabase.RecordNight(game.TownKey, m_dateTime.Now);
+                await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
+
                 return "Moved all players from Town Square to Cottages!";
             }
             else
@@ -294,6 +304,10 @@ namespace Bot.Core
             // Doesn't currently work :(
             //await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, town, processLog);
+
+            await m_gameMetricsDatabase.RecordDay(game.TownKey, m_dateTime.Now);
+            await m_commandMetricsDatabase.RecordCommand("day", m_dateTime.Now);
+
             return "Moved all players from Cottages back to Town Square!";
         }
 
@@ -304,6 +318,10 @@ namespace Bot.Core
                 return "Failed to find a valid town!";
 
             await MoveActivePlayersToTownSquare(game, town, processLog);
+
+            await m_gameMetricsDatabase.RecordVote(game.TownKey, m_dateTime.Now);
+            await m_commandMetricsDatabase.RecordCommand("vote", m_dateTime.Now);
+
             return "Moved all players to Town Square for voting!";
         }
 
@@ -339,6 +357,9 @@ namespace Bot.Core
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
                 return "Failed to find a valid town for this command!";
+
+            await m_gameMetricsDatabase.RecordEndGame(townKey, m_dateTime.Now);
+            await m_commandMetricsDatabase.RecordCommand("endgame", m_dateTime.Now);
 
             if (m_activeGameService.TryGetGame(townKey, out IGame? game))
             {
@@ -414,6 +435,8 @@ namespace Bot.Core
             }
             await GrantAndRevokeRoles(game, town, logger);
             await TagStorytellers(game, logger);
+
+            await m_commandMetricsDatabase.RecordCommand("setstorytellers", m_dateTime.Now);
 
             var verbage = foundUsers.Count > 1 ? "New Storytellers are" : "New Storyteller is";
             returnMsg += $"{verbage} {string.Join(", ", foundUsers.Select(x => MemberHelper.DisplayName(x)))}";

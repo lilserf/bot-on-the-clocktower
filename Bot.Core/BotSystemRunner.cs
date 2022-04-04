@@ -22,6 +22,7 @@ namespace Bot.Core
             systemServices.AddService(m_client);
 
             m_serviceProvider = ServiceFactory.RegisterBotServices(systemServices);
+            m_serviceProvider.GetService<IVersionProvider>().InitializeVersions();
         }
 
         public async Task RunAsync()
