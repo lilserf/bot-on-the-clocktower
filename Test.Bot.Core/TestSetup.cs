@@ -112,7 +112,8 @@ namespace Test.Bot.Core
             guild.SetupGet(x => x.ChannelCategories).Returns(new List<IChannelCategory>());
             guild.SetupGet(x => x.Channels).Returns(new List<IChannel>());
 
-            Mock<IRole> botRole = MakeRole("Bot on the Clocktower");
+            Mock<IRole> botRole = MakeRole("Bot on the Clocktower Test");
+            botRole.SetupGet(x => x.IsThisBot).Returns(true);
             guild.SetupGet(x => x.BotRole).Returns(botRole.Object);
 
             var roleList = new Dictionary<ulong, IRole> { { botRole.Object.Id, botRole.Object } };

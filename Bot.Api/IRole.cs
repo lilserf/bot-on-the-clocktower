@@ -6,5 +6,7 @@
 		public string Mention { get; }
 
 		public ulong Id { get; }
+
+		public bool IsThisBot { get; }
 	}
 }

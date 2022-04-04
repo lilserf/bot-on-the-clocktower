@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -93,7 +94,8 @@ namespace Bot.DSharp
             get
             {
                 // TODO: how do we get the bot user name instead of magic-stringing this
-                var role = Wrapped.Roles.Where(kvp => kvp.Value.IsManaged == true && kvp.Value.Name.Equals("Bot on the Clocktower")).Select(kvp => kvp.Value).FirstOrDefault();
+                var botName = Environment.GetEnvironmentVariable("BOT_NAME") ?? "Bot on the Clocktower";
+                var role = Wrapped.Roles.Where(kvp => kvp.Value.IsManaged == true && kvp.Value.Name.Equals(botName)).Select(kvp => kvp.Value).FirstOrDefault();
                 return role == null ? null : new DSharpRole(role);
             }
         }

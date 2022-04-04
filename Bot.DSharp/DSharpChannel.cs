@@ -61,5 +61,18 @@ namespace Bot.DSharp
 			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(msg));
 			return new DSharpMessage(messageRet);
 		}
+		
+		public async Task<IMessage> SendMessageAsync(string msg)
+		{
+			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(msg));
+			return new DSharpMessage(messageRet);
+		}
+
+		public async Task SendMessageAsync(IEmbed e)
+        {
+			if(e is not DSharpEmbed emb) throw new InvalidOperationException("Expected an embed that works with DSharp");            
+			var messageRet = await Wrapped.SendMessageAsync(emb.Wrapped);
+			return new DSharpMessage(messageRet);
+        }
 	}
 }
