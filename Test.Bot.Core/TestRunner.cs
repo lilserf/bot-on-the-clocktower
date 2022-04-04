@@ -23,6 +23,7 @@ namespace Test.Bot.Core
             RegisterMock(new Mock<IShutdownPreventionService>());
             RegisterMock(new Mock<ICallbackSchedulerFactory>());
             RegisterMock(new Mock<IComponentService>());
+            RegisterMock(new Mock<IColorBuilder>());
             RegisterMock(m_mockFinalShutdown);
 
             m_mockFinalShutdown.SetupGet(fs => fs.ReadyToShutdown).Returns(m_finalShutdownTcs.Task);
@@ -33,6 +34,7 @@ namespace Test.Bot.Core
             m_mockSystem.Setup(s => s.CreateClient(It.IsAny<IServiceProvider>())).Returns(m_mockClient.Object);
             m_mockSystem.Setup(s => s.CreateButton(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IBotSystem.ButtonType>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(new Mock<IBotComponent>().Object);
             m_mockSystem.Setup(s => s.CreateSelectMenu(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<IBotSystem.SelectMenuOption>>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<int>())).Returns(new Mock<IBotComponent>().Object);
+            m_mockSystem.Setup(s => s.CreateEmbedBuilder()).Returns(new Mock<IEmbedBuilder>().Object);
         }
 
         [Fact]
