@@ -9,17 +9,17 @@ using Xunit;
 
 namespace Test.Bot.Core.Interactions
 {
-    public static class TestQueueHelper
+    public static class TestInteractionQueueHelper
     {
         /// <summary>
         /// Test that a method is properly using the Guild Queue
         /// </summary>
         /// <param name="serviceProvider">Service Provider</param>
         /// <param name="performTest">Set up and perform the test. We expect it calls into the Guild Queue</param>
-        /// <param name="verifyQueueParams">Verification action to assert that params passed to the queue are correct</param>
-        public static void TestGuildQueueRequested(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyQueueParams = null)
+        /// <param name="verifyParams">Verification action to assert that params passed to the queue are correct</param>
+        public static void TestGuildQueueRequested(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyParams = null)
         {
-            TestQueueRequested<IGuildInteractionQueue>(serviceProvider, performTest, verifyQueueParams);
+            TestQueueRequested<IGuildInteractionQueue>(serviceProvider, performTest, verifyParams);
         }
 
         /// <summary>
@@ -27,13 +27,13 @@ namespace Test.Bot.Core.Interactions
         /// </summary>
         /// <param name="serviceProvider">Service Provider</param>
         /// <param name="performTest">Set up and perform the test. We expect it calls into the Town Queue</param>
-        /// <param name="verifyQueueParams">Verification action to assert that params passed to the queue are correct</param>
-        public static void TestTownQueueRequested(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyQueueParams = null)
+        /// <param name="verifyParams">Verification action to assert that params passed to the queue are correct</param>
+        public static void TestTownQueueRequested(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyParams = null)
         {
-            TestQueueRequested<ITownInteractionQueue>(serviceProvider, performTest, verifyQueueParams);
+            TestQueueRequested<ITownInteractionQueue>(serviceProvider, performTest, verifyParams);
         }
 
-        private static void TestQueueRequested<TQueue>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyQueueParams) where TQueue : class, IInteractionQueue
+        public static void TestQueueRequested<TQueue>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyParams) where TQueue : class, IInteractionQueue
         {
             Mock<TQueue> queueMock = new(MockBehavior.Strict);
 
@@ -43,7 +43,7 @@ namespace Test.Bot.Core.Interactions
             queueMock.Setup(iq => iq.QueueInteractionAsync(It.IsAny<string>(), It.IsAny<IBotInteractionContext>(), It.IsAny<Func<Task<InteractionResult>>>()))
                 .Callback<string, IBotInteractionContext, Func<Task<InteractionResult>>>((s, ic, f) =>
                 {
-                    verifyQueueParams?.Invoke(s, ic);
+                    verifyParams?.Invoke(s, ic);
                 })
                 .Returns(Task.CompletedTask);
 
@@ -58,9 +58,9 @@ namespace Test.Bot.Core.Interactions
         /// <param name="serviceProvider">Service Provider</param>
         /// <param name="performTest">Set up and perform the test</param>
         /// <param name="verifyResult">Verification action to assert that the result of the test is correct</param>
-        public static void TestGuildQueuedMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
+        public static void TestGuildQueueMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
         {
-            TestQueuedMethod<IGuildInteractionQueue>(serviceProvider, performTest, verifyResult);
+            TestQueueMethod<IGuildInteractionQueue>(serviceProvider, performTest, verifyResult);
         }
 
         /// <summary>
@@ -69,12 +69,12 @@ namespace Test.Bot.Core.Interactions
         /// <param name="serviceProvider">Service Provider</param>
         /// <param name="performTest">Set up and perform the test</param>
         /// <param name="verifyResult">Verification action to assert that the result of the test is correct</param>
-        public static void TestTowndQueuedMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
+        public static void TestTowndQueueMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
         {
-            TestQueuedMethod<IGuildInteractionQueue>(serviceProvider, performTest, verifyResult);
+            TestQueueMethod<IGuildInteractionQueue>(serviceProvider, performTest, verifyResult);
         }
 
-        private static void TestQueuedMethod<TQueue>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult) where TQueue : class, IInteractionQueue
+        public static void TestQueueMethod<TQueue>(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult) where TQueue : class, IInteractionQueue
         { 
             Mock<TQueue> queueMock = new(MockBehavior.Strict);
 
