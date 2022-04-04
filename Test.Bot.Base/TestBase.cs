@@ -32,19 +32,7 @@ namespace Test.Bot.Base
             return (Exception)(exceptionConstructor!.Invoke(Array.Empty<object?>()));
         }
 
-        protected static void AssertCompletedTask(Func<Task> runTask)
-        {
-            var t = runTask();
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-        }
-
-        protected static T AssertCompletedTask<T>(Func<Task<T>> runTask)
-        {
-            var t = runTask();
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-            return t.Result;
-        }
+        protected static void AssertCompletedTask(Func<Task> runTask) => TestTaskHelper.AssertCompletedTask(runTask);
+        protected static T AssertCompletedTask<T>(Func<Task<T>> runTask) => TestTaskHelper.AssertCompletedTask(runTask);
     }
 }
