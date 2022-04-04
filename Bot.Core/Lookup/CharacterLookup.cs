@@ -52,7 +52,7 @@ namespace Bot.Core.Lookup
 
                 if (!merged.TryGetValue(id, out var data))
                 {
-                    data = (new CharacterData(c.Name, c.Ability, c.Team, c.IsOfficial), new List<ScriptData>());
+                    data = (new CharacterData(c.Id, c.Name, c.Ability, c.Team, c.IsOfficial), new List<ScriptData>());
                     merged.Add(id, data);
                     order.Add(id);
                 }

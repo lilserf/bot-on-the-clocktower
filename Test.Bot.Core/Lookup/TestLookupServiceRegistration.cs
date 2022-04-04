@@ -17,7 +17,6 @@ namespace Test.Bot.Core.Lookup
         [InlineData(typeof(ICustomScriptCache), typeof(CustomScriptCache))]
         [InlineData(typeof(IOfficialUrlProvider), typeof(OfficialUrlProvider))]
         [InlineData(typeof(IOfficialScriptParser), typeof(OfficialScriptParser))]
-        [InlineData(typeof(ILookupMessageSender), typeof(LookupMessageSender))]
         public void RegisterLookupServices_CreatesAllRequiredCoreServices(Type serviceInterface, Type serviceImpl)
         {
             var newSp = LookupServiceFactory.RegisterCoreLookupServices(GetServiceProvider());
@@ -28,6 +27,7 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Theory]
+        [InlineData(typeof(ILookupEmbedBuilder), typeof(LookupEmbedBuilder))]
         [InlineData(typeof(IBotLookupService), typeof(BotLookupService))]
         public void RegisterLookupServices_CreatesAllRequiredBotServices(Type serviceInterface, Type serviceImpl)
         {

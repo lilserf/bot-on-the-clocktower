@@ -12,6 +12,7 @@
 
     public class CharacterData
     {
+        public string Id { get; }
         public string Name { get; }
         public string Ability { get; }
         public CharacterTeam Team { get; }
@@ -19,8 +20,9 @@
         public string? FlavorText { get; set; }
         public string? ImageUrl { get; set; }
 
-        public CharacterData(string name, string ability, CharacterTeam team, bool isOfficial)
+        public CharacterData(string id, string name, string ability, CharacterTeam team, bool isOfficial)
         {
+            Id = id;
             Name = name;
             Ability = ability;
             Team = team;

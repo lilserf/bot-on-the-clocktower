@@ -63,8 +63,8 @@ namespace Test.Bot.Core.Lookup
             string char1Ability = "char1 ability";
             string char2Ability = "char2 ability";
 
-            string char1Json = $"{{\"name\":\"{char1Name}\",\"ability\":\"{char1Ability}\",\"team\":\"townsfolk\"}}";
-            string char2Json = $"{{\"name\":\"{char2Name}\",\"ability\":\"{char2Ability}\",\"team\":\"townsfolk\"}}";
+            string char1Json = $"{{\"id\":\"someid1\",\"name\":\"{char1Name}\",\"ability\":\"{char1Ability}\",\"team\":\"townsfolk\"}}";
+            string char2Json = $"{{\"id\":\"someid2\",\"name\":\"{char2Name}\",\"ability\":\"{char2Ability}\",\"team\":\"townsfolk\"}}";
 
             var result = PerformCustomParse($"[{ValidMetaJson},{char1Json},{char2Json}]");
 
@@ -252,7 +252,7 @@ namespace Test.Bot.Core.Lookup
         [InlineData("fabled", CharacterTeam.Fabled)]
         public void CharParse_CharWithTeam_MatchesEnum(string teamStr, CharacterTeam expectedTeam)
         {
-            var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"{teamStr}\"}}";
+            var charJson = $"{{\"id\":\"someid\",\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"{teamStr}\"}}";
 
             var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: false);
 
@@ -263,7 +263,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void CharParse_InvalidTeam_NullChar()
         {
-            var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"invalidteam\"}}";
+            var charJson = $"{{\"id\":\"someid\",\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"invalidteam\"}}";
 
             var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: false);
 
@@ -312,7 +312,7 @@ namespace Test.Bot.Core.Lookup
         private static CharacterData ParseSimpleCharacter(bool isOfficial, string? addition=null)
         {
             var append = (addition != null) ? $",{addition}" : string.Empty;
-            var charJson = $"{{\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"townsfolk\"{append}}}";
+            var charJson = $"{{\"id\":\"someid\",\"name\":\"some name\",\"ability\":\"some ability\",\"team\":\"townsfolk\"{append}}}";
             var result = JsonParseUtil.ParseCharacterData(JObject.Parse(charJson), isOfficial: isOfficial);
             Assert.NotNull(result);
             return result!;

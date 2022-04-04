@@ -24,7 +24,7 @@ namespace Test.Bot.Core.Lookup
         private readonly Mock<IChannel> m_mockInteractionChannel = new(MockBehavior.Strict);
         private readonly Mock<ILookupRoleDatabase> m_mockLookupDb = new(MockBehavior.Strict);
         private readonly Mock<IProcessLogger> m_mockProcessLogger = new(MockBehavior.Strict);
-        private readonly Mock<ILookupMessageSender> m_mockLookupMessageSender = new(MockBehavior.Strict);
+        private readonly Mock<ILookupEmbedBuilder> m_mockLookupEmbedBuilder = new(MockBehavior.Strict);
 
         private readonly List<string> m_mockDbScriptUrls = new();
         private ulong m_mockGuildId = 123ul;
@@ -46,7 +46,7 @@ namespace Test.Bot.Core.Lookup
             RegisterMock(m_mockGuildInteractionQueue);
             RegisterMock(m_mockGuildErrorHandler);
             RegisterMock(m_mockCharacterLookup);
-            RegisterMock(m_mockLookupMessageSender);
+            RegisterMock(m_mockLookupEmbedBuilder);
 
             m_mockLookupDb.Setup(ld => ld.AddScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             m_mockLookupDb.Setup(ld => ld.RemoveScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
@@ -321,6 +321,7 @@ namespace Test.Bot.Core.Lookup
                 Assert.Contains("no ", r.Message, StringComparison.InvariantCultureIgnoreCase);
                 Assert.Contains("found", r.Message, StringComparison.InvariantCultureIgnoreCase);
                 Assert.Contains(lookupStr, r.Message);
+                Assert.Empty(r.Embeds);
             };
 
             var bls = new BotLookupService(GetServiceProvider());
@@ -328,55 +329,39 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void LookupMultipleCharacters_CallsMessageSender()
+        public void LookupMultipleCharacters_AddsEmbedsToResult()
         {
             string lookupStr = "lookup str";
 
-            var testItem1 = new LookupCharacterItem(new CharacterData("char1", "abil1", CharacterTeam.Fabled, isOfficial: true), Enumerable.Empty<ScriptData>());
-            var testItem2 = new LookupCharacterItem(new CharacterData("char2", "abil2", CharacterTeam.Townsfolk, isOfficial: false), Enumerable.Empty<ScriptData>());
+            var testItem1 = new LookupCharacterItem(new CharacterData("char1id", "char1", "abil1", CharacterTeam.Fabled, isOfficial: true), Enumerable.Empty<ScriptData>());
+            var testItem2 = new LookupCharacterItem(new CharacterData("char2id", "char2", "abil2", CharacterTeam.Townsfolk, isOfficial: false), Enumerable.Empty<ScriptData>());
             var expectedMessageCharacters = new[] { testItem1, testItem2 };
 
             m_mockCharacterLookup.Setup(cl => cl.LookupCharacterAsync(It.Is<ulong>(l => l == m_mockGuildId), It.Is<string>(s => s == lookupStr))).ReturnsAsync(new LookupCharacterResult(expectedMessageCharacters));
 
             List<LookupCharacterItem> actualMessageCharacters = new();
-            m_mockLookupMessageSender
-                .Setup(lms => lms.SendLookupMessageAsync(It.Is<IChannel>(c => c == m_mockInteractionChannel.Object), It.IsAny<LookupCharacterItem>()))
-                .Callback<IChannel, LookupCharacterItem>((_, i) => actualMessageCharacters.Add(i))
-                .Returns(Task.CompletedTask);
+            IEmbed[] expectedEmbedObjects = new[] { new Mock<IEmbed>(MockBehavior.Strict).Object, new Mock<IEmbed>(MockBehavior.Strict).Object };
+            m_mockLookupEmbedBuilder
+                .Setup(leb => leb.BuildLookupEmbed(It.Is<LookupCharacterItem>(lci => lci == testItem1)))
+                .Callback<LookupCharacterItem>(actualMessageCharacters.Add)
+                .Returns(expectedEmbedObjects[0]);
+            m_mockLookupEmbedBuilder
+                .Setup(leb => leb.BuildLookupEmbed(It.Is<LookupCharacterItem>(lci => lci == testItem2)))
+                .Callback<LookupCharacterItem>(actualMessageCharacters.Add)
+                .Returns(expectedEmbedObjects[1]);
 
             m_verifyInteractionResult = r =>
             {
                 Assert.Contains("found", r.Message, StringComparison.InvariantCultureIgnoreCase);
                 Assert.Contains(expectedMessageCharacters.Length.ToString(), r.Message);
                 Assert.Contains(lookupStr, r.Message);
+                Assert.Equal(expectedEmbedObjects, r.Embeds);
             };
 
             var bls = new BotLookupService(GetServiceProvider());
             bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
 
             Assert.Equal(expectedMessageCharacters, actualMessageCharacters);
-        }
-
-        [Fact]
-        public void SendMessage_ThrowsPermissionException_LoggerUpdated()
-        {
-            string lookupStr = "lookup str";
-            var thrownException = new UnauthorizedException();
-            var testItem1 = new LookupCharacterItem(new CharacterData("char1", "abil1", CharacterTeam.Fabled, isOfficial: true), Enumerable.Empty<ScriptData>());
-            var testItem2 = new LookupCharacterItem(new CharacterData("char2", "abil2", CharacterTeam.Townsfolk, isOfficial: false), Enumerable.Empty<ScriptData>());
-            m_mockCharacterLookup.Setup(cl => cl.LookupCharacterAsync(It.Is<ulong>(l => l == m_mockGuildId), It.IsAny<string>())).ReturnsAsync(new LookupCharacterResult(new[] { testItem1, testItem2 }));
-            m_mockLookupMessageSender.Setup(lms => lms.SendLookupMessageAsync(It.IsAny<IChannel>(), It.IsAny<LookupCharacterItem>())).Throws(thrownException);
-
-            m_verifyInteractionResult = r =>
-            {
-                Assert.Contains("unable", r.Message, StringComparison.InvariantCultureIgnoreCase);
-                Assert.Contains(lookupStr, r.Message);
-            };
-
-            var bls = new BotLookupService(GetServiceProvider());
-            bls.LookupAsync(m_mockInteractionContext.Object, lookupStr);
-
-            m_mockProcessLogger.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains(m_mockInteractionChannelName))), Times.Once);
         }
     }
 }

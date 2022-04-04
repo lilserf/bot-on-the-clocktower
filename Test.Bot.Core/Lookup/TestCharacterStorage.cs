@@ -28,7 +28,7 @@ namespace Test.Bot.Core.Lookup
         public void CharacterStorage_GetOfficalCharacters_ReturnsCharacterWithScript()
         {
             var expectedScript = new ScriptData("test script", isOfficial: true);
-            var expectedChar = new CharacterData("test char", "test ability", CharacterTeam.Minion, isOfficial: true);
+            var expectedChar = new CharacterData("testid", "test char", "test ability", CharacterTeam.Minion, isOfficial: true);
 
             m_mockOfficialCache.Setup(sc => sc.GetOfficialCharactersAsync()).ReturnsAsync(new GetOfficialCharactersResult(new[] { new GetOfficialCharactersItem(expectedChar, new[] { expectedScript }) }));
 
@@ -55,11 +55,11 @@ namespace Test.Bot.Core.Lookup
             m_mockLookupDb.Setup(ld => ld.GetScriptUrlsAsync(It.Is<ulong>(g => g == testGuildId))).ReturnsAsync(new string[] { testUrl1, testUrl2 });
 
             var expectedScript1 = new ScriptData("test script 1", isOfficial: false);
-            var expectedChar1 = new CharacterData("test char 1", "test ability 1", CharacterTeam.Townsfolk, isOfficial: false);
+            var expectedChar1 = new CharacterData("testid1", "test char 1", "test ability 1", CharacterTeam.Townsfolk, isOfficial: false);
 
             var expectedScript2 = new ScriptData("test script 1", isOfficial: false);
-            var expectedChar2 = new CharacterData("test char 2", "test ability 2", CharacterTeam.Demon, isOfficial: false);
-            var expectedChar3 = new CharacterData("test char 3", "test ability 3", CharacterTeam.Fabled, isOfficial: false);
+            var expectedChar2 = new CharacterData("testid2", "test char 2", "test ability 2", CharacterTeam.Demon, isOfficial: false);
+            var expectedChar3 = new CharacterData("testid3", "test char 3", "test ability 3", CharacterTeam.Fabled, isOfficial: false);
 
             m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.Is<string>(s => s == testUrl1))).ReturnsAsync(new GetCustomScriptResult(new[] { new ScriptWithCharacters( expectedScript1, new[] { expectedChar1 } ) }));
             m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.Is<string>(s => s == testUrl2))).ReturnsAsync(new GetCustomScriptResult(new[] { new ScriptWithCharacters( expectedScript2, new[] { expectedChar2, expectedChar3 } ) }));

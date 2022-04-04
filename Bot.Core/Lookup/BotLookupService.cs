@@ -1,7 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ namespace Bot.Core.Lookup
         private readonly IGuildInteractionErrorHandler m_errorHandler;
         private readonly ILookupRoleDatabase m_lookupDb;
         private readonly ICharacterLookup m_characterLookup;
-        private readonly ILookupMessageSender m_messageSender;
+        private readonly ILookupEmbedBuilder m_lookupEmbedBuilder;
 
         public BotLookupService(IServiceProvider serviceProvider)
         {
@@ -22,7 +21,7 @@ namespace Bot.Core.Lookup
             serviceProvider.Inject(out m_errorHandler);
             serviceProvider.Inject(out m_lookupDb);
             serviceProvider.Inject(out m_characterLookup);
-            serviceProvider.Inject(out m_messageSender);
+            serviceProvider.Inject(out m_lookupEmbedBuilder);
         }
 
         public Task LookupAsync(IBotInteractionContext ctx, string lookupString) => m_interactionQueue.QueueInteractionAsync($"Looking up \"{lookupString}\"...", ctx, () => PerformLookupAsync(ctx, lookupString));
@@ -40,39 +39,12 @@ namespace Bot.Core.Lookup
                     return $"Found no results for \"{lookupString}\"";
                 else
                 {
-                    var prefix = $"Found {lookupResult.Items.Count} result{(lookupResult.Items.Count > 1 ? "s" : "")} for \"{lookupString}\"";
-                    bool success = await TrySendLookupMessagesToChannel(l, ctx.Channel, lookupResult.Items);
-                    if (success)
-                        return $"{prefix}.";
-                    return $"{prefix}, but am unable to post about them!";
+                    string message = $"Found {lookupResult.Items.Count} result{(lookupResult.Items.Count > 1 ? "s" : "")} for \"{lookupString}\"";
+                    var embeds = lookupResult.Items.Select(m_lookupEmbedBuilder.BuildLookupEmbed).ToArray();
+                    return InteractionResult.FromMessageAndEmbeds(message, embeds);
                 }
             });
             return result;
-        }
-
-        private async Task<bool> TrySendLookupMessagesToChannel(IProcessLogger logger, IChannel channel, IEnumerable<LookupCharacterItem> items)
-        {
-            bool success = false;
-            try
-            {
-                await SendLookupMessagesToChannel(channel, items);
-                success = true;
-            }
-            catch (UnauthorizedException unauthorizedEx)
-            {
-                logger.LogException(unauthorizedEx, $"send messages to \"{channel.Name}\"");
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            return success;
-        }
-
-        private async Task SendLookupMessagesToChannel(IChannel channel, IEnumerable<LookupCharacterItem> items)
-        {
-            foreach (var i in items)
-                await m_messageSender.SendLookupMessageAsync(channel, i);
         }
 
         private async Task<InteractionResult> PerformAddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)

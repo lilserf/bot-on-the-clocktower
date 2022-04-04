@@ -28,18 +28,18 @@ namespace Test.Bot.Core.Lookup
 
         public TestCharacterLookup()
         {
-            m_officialWasherWoman = new("Washerwoman", "You start knowing that 1 or 2 players is a particular Townsfolk.", CharacterTeam.Townsfolk, isOfficial: true);
-            m_officialImp = new("Imp", "Each night*, choose a player: they die. If you kill yourself this way, a Minion becomes the Imp.", CharacterTeam.Demon, isOfficial: true);
+            m_officialWasherWoman = new("washerwoman", "Washerwoman", "You start knowing that 1 or 2 players is a particular Townsfolk.", CharacterTeam.Townsfolk, isOfficial: true);
+            m_officialImp = new("imp", "Imp", "Each night*, choose a player: they die. If you kill yourself this way, a Minion becomes the Imp.", CharacterTeam.Demon, isOfficial: true);
             m_officialImp.ImageUrl = "imp image url";
-            m_officialPoisoner = new("Poisoner", "Each night, choose a player: they are poisoned tonight and tomorrow day.", CharacterTeam.Minion, isOfficial: true);
+            m_officialPoisoner = new("poisoner", "Poisoner", "Each night, choose a player: they are poisoned tonight and tomorrow day.", CharacterTeam.Minion, isOfficial: true);
             m_troubleBrewing = new("Trouble Brewing", true);
 
-            m_officialCultLeader = new("Cult Leader", "Each night, you become the alignment of an alive neighbour. If all good players choose to join your cult, your team wins.", CharacterTeam.Townsfolk, isOfficial: true);
-            m_customCultLeader = new(m_officialCultLeader.Name, m_officialCultLeader.Ability, CharacterTeam.Outsider, isOfficial: false);
+            m_officialCultLeader = new("cultleader", "Cult Leader", "Each night, you become the alignment of an alive neighbour. If all good players choose to join your cult, your team wins.", CharacterTeam.Townsfolk, isOfficial: true);
+            m_customCultLeader = new("cultleadercustom", m_officialCultLeader.Name, m_officialCultLeader.Ability, CharacterTeam.Outsider, isOfficial: false);
 
-            m_customIcarus = new("Icarus", "Each day you may privately ask the storyteller a question. Either they answer truthfully or you become drunk for the rest of the game.", CharacterTeam.Townsfolk, isOfficial: false);
+            m_customIcarus = new("icarus", "Icarus", "Each day you may privately ask the storyteller a question. Either they answer truthfully or you become drunk for the rest of the game.", CharacterTeam.Townsfolk, isOfficial: false);
             m_customIcarus.FlavorText = "Let me warn you, Icarus, take the middle way, because the moisture will weigh down your wings, if you fly too low. But if you go too high, the sun will scorch them. Travel between the extremes and take the course I’ll show you!";
-            m_customImp = new(m_officialImp.Name, m_officialImp.Ability, m_officialImp.Team, isOfficial: false);
+            m_customImp = new("impcustom", m_officialImp.Name, m_officialImp.Ability, m_officialImp.Team, isOfficial: false);
             m_customImp.FlavorText = "We must keep our wits sharp and our sword sharper. Evil walks among us, and will stop at nothing to destroy us good, simple folk, bringing our fine town to ruin. Trust no-one. But, if you must trust someone, trust me.";
 
             m_customScript1 = new("Custom Script 1", false);

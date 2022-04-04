@@ -6,7 +6,7 @@
 
         IEmbedBuilder WithTitle(string title);
         IEmbedBuilder WithDescription(string description);
-        IEmbedBuilder WithImageUrl(string url);
+        IEmbedBuilder WithThumbnail(string url, int height = 0, int width = 0);
         IEmbedBuilder WithAuthor(string? name = null, string? url = null, string? iconUrl = null);
         IEmbedBuilder WithFooter(string? text = null, string? iconUrl = null);
         IEmbedBuilder WithColor(IColor color);
