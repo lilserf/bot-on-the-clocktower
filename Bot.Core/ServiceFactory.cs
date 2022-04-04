@@ -41,7 +41,7 @@ namespace Bot.Core
             sp.AddService<IBotGameplayInteractionHandler>(new BotGameplayInteractionHandler(sp, gameplay, voteTimer));
             sp.AddService<IBotMessaging>(new BotMessaging(sp));
             sp.AddService<IBotSetup>(new BotSetup(sp));
-            sp.AddService<IVersionProvider>(new VersionProvider());
+            sp.AddService<IVersionProvider>(new VersionProvider(sp));
             sp.AddService<IAnnouncer>(new Announcer(sp));
             return sp;
         }

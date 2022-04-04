@@ -8,6 +8,6 @@ namespace Bot.Api
 {
     public interface IVersionProvider
     {
-        public Dictionary<Version, string> Versions { get; }
+        public Dictionary<Version, IEmbed> Versions { get; }
     }
 }

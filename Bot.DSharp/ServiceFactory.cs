@@ -1,4 +1,5 @@
-﻿using Bot.Base;
+﻿using Bot.Api;
+using Bot.Base;
 using System;
 
 namespace Bot.DSharp
@@ -9,6 +10,7 @@ namespace Bot.DSharp
 		{
 			ServiceProvider sp = new(parentServices);
 			sp.AddService<IDiscordClientFactory>(new DiscordClientFactory());
+			sp.AddService<IColorBuilder>(new DSharpColorBuilder());
 			return sp;
 		}
 	}

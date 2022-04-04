@@ -17,7 +17,7 @@ namespace Bot.Api
 		public string Name { get; }
 
 		public Task SendMessageAsync(string msg);
-
+		public Task SendMessageAsync(IEmbed embed);
 
 	}
 }
