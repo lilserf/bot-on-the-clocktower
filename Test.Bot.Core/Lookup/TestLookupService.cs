@@ -80,6 +80,7 @@ namespace Test.Bot.Core.Lookup
                 (s, ic) =>
                 {
                     Assert.Contains(lookupStr, s);
+                    Assert.Equal(m_mockInteractionContext.Object, ic);
                 });
         }
 
@@ -98,6 +99,7 @@ namespace Test.Bot.Core.Lookup
                 {
                     Assert.Contains("adding", s, StringComparison.InvariantCultureIgnoreCase);
                     Assert.Contains(scriptUrl, s);
+                    Assert.Equal(m_mockInteractionContext.Object, ic);
                 });
         }
 
@@ -116,6 +118,7 @@ namespace Test.Bot.Core.Lookup
                 {
                     Assert.Contains("removing", s, StringComparison.InvariantCultureIgnoreCase);
                     Assert.Contains(scriptUrl, s);
+                    Assert.Equal(m_mockInteractionContext.Object, ic);
                 });
         }
 
@@ -131,6 +134,7 @@ namespace Test.Bot.Core.Lookup
                 (s, ic) =>
                 {
                     Assert.Contains("scripts", s, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Equal(m_mockInteractionContext.Object, ic);
                 });
         }
         #endregion
