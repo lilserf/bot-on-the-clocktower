@@ -6,6 +6,6 @@ namespace Bot.Core
 {
     public interface IGuildInteractionQueue
     {
-        Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedInteractionResult>> queuedTask);
+        Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<InteractionResult>> queuedTask);
     }
 }

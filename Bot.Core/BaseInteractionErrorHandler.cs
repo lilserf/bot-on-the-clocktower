@@ -6,7 +6,7 @@ namespace Bot.Core
 {
     public abstract class BaseInteractionErrorHandler<TKey> where TKey : notnull
     {
-        public Task<string> TryProcessReportingErrorsAsync(TKey key, IMember requester, Func<IProcessLogger, Task<string>> process)
+        public Task<InteractionResult> TryProcessReportingErrorsAsync(TKey key, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process)
         {
             return InteractionWrapper.TryProcessReportingErrorsAsync(key, requester, process, GetFriendlyStringForKey);
         }

@@ -30,6 +30,7 @@ namespace Test.Bot.Core
 
             m_mockBotSystem.Setup(c => c.CreateWebhookBuilder()).Returns(m_mockWebhookBuilder.Object);
             m_mockWebhookBuilder.Setup(wb => wb.WithContent(It.IsAny<string>())).Returns(m_mockWebhookBuilder.Object);
+            m_mockWebhookBuilder.Setup(wb => wb.AddEmbeds(It.IsAny<IEmbed[]>())).Returns(m_mockWebhookBuilder.Object);
 
             var mockGuild = new Mock<IGuild>(MockBehavior.Strict);
             var mockChannel = new Mock<IChannel>(MockBehavior.Strict);
@@ -72,7 +73,7 @@ namespace Test.Bot.Core
             string initialMessage = "some initial message";
             string completionMessage = "completion message";
 
-            var tcs = new TaskCompletionSource<QueuedInteractionResult>();
+            var tcs = new TaskCompletionSource<InteractionResult>();
 
             var tcq = new TownInteractionQueue(GetServiceProvider());
             var t = tcq.QueueInteractionAsync(initialMessage, m_mockInteractionContext.Object, () => tcs.Task);
@@ -88,7 +89,7 @@ namespace Test.Bot.Core
             Assert.Collection(m_registeredPreventerTasks,
                 t => Assert.False(t.IsCompleted));
 
-            tcs.SetResult(new QueuedInteractionResult(completionMessage));
+            tcs.SetResult(InteractionResult.FromMessage(completionMessage));
 
             m_mockWebhookBuilder.Verify(wb => wb.WithContent(It.Is<string>(s => s == completionMessage)), Times.Once);
             m_mockWebhookBuilder.Verify(wb => wb.WithContent(It.IsAny<string>()), Times.Exactly(2));
@@ -104,7 +105,7 @@ namespace Test.Bot.Core
             string initialMessage = "some initial message";
 
             int queueFuncCallCount = 0;
-            Task<QueuedInteractionResult> queueFunc()
+            Task<InteractionResult> queueFunc()
             {
                 ++queueFuncCallCount;
                 throw new InvalidOperationException("Should not be calling the queue function when cancel is requested");

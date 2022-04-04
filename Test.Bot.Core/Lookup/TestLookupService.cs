@@ -33,12 +33,12 @@ namespace Test.Bot.Core.Lookup
         private Action<string>? m_verifyQueueString = null;
 
         private bool m_expectedErrorHandlerCalled = false;
-        private string? m_errorHandlerResult = null;
+        private InteractionResult? m_errorHandlerResult = null;
 
-        private Action<QueuedInteractionResult>? m_verifyInteractionResult = null;
-        private QueuedInteractionResult? m_interactionResult = null;
+        private Action<InteractionResult>? m_verifyInteractionResult = null;
+        private InteractionResult? m_interactionResult = null;
 
-        const string MockErrorReturnedFromErrorHandler = "an error happened! oh, no!";
+        static readonly InteractionResult MockErrorReturnedFromErrorHandler = "an error happened! oh, no!";
 
         public TestLookupService()
         {
@@ -56,7 +56,7 @@ namespace Test.Bot.Core.Lookup
 
             m_mockInteractionGuild.SetupGet(g => g.Id).Returns(m_mockGuildId);
             SetupErrorHandler()
-                .Returns<ulong, IMember, Func<IProcessLogger, Task<string>>>((gid, member, f) =>
+                .Returns<ulong, IMember, Func<IProcessLogger, Task<InteractionResult>>>((gid, member, f) =>
                 {
                     var task = f(m_mockProcessLogger.Object);
                     task.Wait(10);
@@ -72,7 +72,7 @@ namespace Test.Bot.Core.Lookup
             m_mockInteractionChannel.SetupGet(c => c.Name).Returns(m_mockInteractionChannelName);
 
             SetupQueueInteraction()
-                .Returns<string, IBotInteractionContext, Func<Task<QueuedInteractionResult>>>((_, _, f) =>
+                .Returns<string, IBotInteractionContext, Func<Task<InteractionResult>>>((_, _, f) =>
                 {
                     var task = f();
                     task.Wait(10);
@@ -160,8 +160,8 @@ namespace Test.Bot.Core.Lookup
         private IReturnsThrows<IGuildInteractionQueue, Task> SetupQueueInteraction()
         {
             return m_mockGuildInteractionQueue
-                .Setup(giq => giq.QueueInteractionAsync(It.IsAny<string>(), It.IsAny<IBotInteractionContext>(), It.IsAny<Func<Task<QueuedInteractionResult>>>()))
-                .Callback<string, IBotInteractionContext, Func<Task<QueuedInteractionResult>>>((s, ic, f) =>
+                .Setup(giq => giq.QueueInteractionAsync(It.IsAny<string>(), It.IsAny<IBotInteractionContext>(), It.IsAny<Func<Task<InteractionResult>>>()))
+                .Callback<string, IBotInteractionContext, Func<Task<InteractionResult>>>((s, ic, f) =>
                 {
                     m_verifyQueueString?.Invoke(s);
                     Assert.Equal(ic, m_mockInteractionContext.Object);
@@ -225,14 +225,14 @@ namespace Test.Bot.Core.Lookup
 
             testAction();
 
-            m_mockGuildErrorHandler.Verify(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()), Times.Once);
+            m_mockGuildErrorHandler.Verify(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<InteractionResult>>>()), Times.Once);
             Assert.Equal(MockErrorReturnedFromErrorHandler, m_errorHandlerResult);
         }
 
-        private IReturnsThrows<IGuildInteractionErrorHandler, Task<string>> SetupErrorHandler()
+        private IReturnsThrows<IGuildInteractionErrorHandler, Task<InteractionResult>> SetupErrorHandler()
         {
-            return m_mockGuildErrorHandler.Setup(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<string>>>()))
-                .Callback<ulong, IMember, Func<IProcessLogger, Task<string>>>((gid, member, f) =>
+            return m_mockGuildErrorHandler.Setup(teh => teh.TryProcessReportingErrorsAsync(It.IsAny<ulong>(), It.IsAny<IMember>(), It.IsAny<Func<IProcessLogger, Task<InteractionResult>>>()))
+                .Callback<ulong, IMember, Func<IProcessLogger, Task<InteractionResult>>>((gid, member, f) =>
                 {
                     m_errorHandlerResult = MockErrorReturnedFromErrorHandler;
                     Assert.Equal(m_mockGuildId, gid);

@@ -132,7 +132,7 @@ namespace Bot.Core
                 string msg = (magician != null)
                     ? await SendMagicianMessage(demon, minions, magician)
                     : await SendEvilMessage(demon, minions);
-                return new QueuedInteractionResult(msg);
+                return InteractionResult.FromMessage(msg);
             });
         }
 
@@ -141,7 +141,7 @@ namespace Bot.Core
             return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 string msg = await SendLunaticMessage(lunatic, fakeMinions);
-                return new QueuedInteractionResult(msg);
+                return InteractionResult.FromMessage(msg);
             });
         }
 
@@ -150,7 +150,7 @@ namespace Bot.Core
             return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 string msg = await SendLegionMessage(legions);
-                return new QueuedInteractionResult(msg);
+                return InteractionResult.FromMessage(msg);
             });
         }
     }

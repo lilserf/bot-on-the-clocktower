@@ -7,30 +7,27 @@ namespace Bot.Core
     public static class InteractionWrapper
     {
         [Obsolete("Please use IGuildInteractionErrorHandler.TryProcessReportingErrorsAsync instead")]
-        public static Task<string> TryProcessReportingErrorsAsync(TownKey townKey, IMember requester, Func<IProcessLogger, Task<string>> process)
+        public static Task<InteractionResult> TryProcessReportingErrorsAsync(TownKey townKey, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process)
         {
             return TryProcessReportingErrorsAsync(townKey, requester, process, GetFriendlyStringForTownKey);
         }
 
-        public static async Task<string> TryProcessReportingErrorsAsync<TKey>(TKey key, IMember requester, Func<IProcessLogger, Task<string>> process, Func<TKey, string> getFriendlyStringForKey)
+        public static async Task<InteractionResult> TryProcessReportingErrorsAsync<TKey>(TKey key, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process, Func<TKey, string> getFriendlyStringForKey)
         {
             var logger = new ProcessLogger();
-            var msg = "An error occurred processing this command - please check your private messages for a detailed report.";
+            InteractionResult result = "An error occurred processing this command - please check your private messages for a detailed report.";
             try
             {
-                msg = await process(logger);
+                result = await process(logger);
             }
             catch (Exception e)
             {
                 await TrySendExceptionToAuthorAsync(key, requester, e, getFriendlyStringForKey);
             }
 
-            if(logger.HasMessages)
-			{
-                msg = string.Join("\n", logger.Messages) + "\n" + msg;
-			}
+            result.AddLogMessages(logger.Messages);
 
-            return msg;
+            return result;
         }
 
         public static string GetFriendlyStringForTownKey(TownKey townKey) => $"Guild: `{townKey.GuildId}`\nChannel: `{townKey.ControlChannelId}`";

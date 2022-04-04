@@ -6,6 +6,6 @@ namespace Bot.Core
 {
     public interface IGuildInteractionErrorHandler
     {
-        Task<string> TryProcessReportingErrorsAsync(ulong guildId, IMember requester, Func<IProcessLogger, Task<string>> process);
+        Task<InteractionResult> TryProcessReportingErrorsAsync(ulong guildId, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process);
     }
 }

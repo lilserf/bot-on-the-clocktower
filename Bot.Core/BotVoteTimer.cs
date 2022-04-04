@@ -18,7 +18,7 @@ namespace Bot.Core
             m_voteTimerController = new(serviceProvider);
         }
 
-        public async Task<string> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
+        public async Task<InteractionResult> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
             if (town == null)
@@ -46,7 +46,7 @@ namespace Bot.Core
             return $"Vote timer started for {GetTimeString(span.Value, false)}!";
         }
 
-        public async Task<string> RunStopVoteTimerUnsafe(TownKey townKey, IProcessLogger processLoggger)
+        public async Task<InteractionResult> RunStopVoteTimerUnsafe(TownKey townKey, IProcessLogger processLoggger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
             if (town == null)

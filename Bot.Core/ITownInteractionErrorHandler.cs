@@ -6,6 +6,6 @@ namespace Bot.Core
 {
     public interface ITownInteractionErrorHandler
     {
-        Task<string> TryProcessReportingErrorsAsync(TownKey townKey, IMember requester, Func<IProcessLogger, Task<string>> process);
+        Task<InteractionResult> TryProcessReportingErrorsAsync(TownKey townKey, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process);
     }
 }

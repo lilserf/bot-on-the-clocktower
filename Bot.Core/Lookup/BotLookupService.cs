@@ -30,9 +30,9 @@ namespace Bot.Core.Lookup
         public Task RemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl) => m_interactionQueue.QueueInteractionAsync($"Removing script at \"{scriptJsonUrl}\"...", ctx, () => PerformRemoveScriptAsync(ctx, scriptJsonUrl));
         public Task ListScriptsAsync(IBotInteractionContext ctx) => m_interactionQueue.QueueInteractionAsync($"Finding registered scripts...", ctx, () => PerformListScriptsAsync(ctx));
 
-        private async Task<QueuedInteractionResult> PerformLookupAsync(IBotInteractionContext ctx, string lookupString)
+        private async Task<InteractionResult> PerformLookupAsync(IBotInteractionContext ctx, string lookupString)
         {
-            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
+            var result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
             {
                 var lookupResult = await m_characterLookup.LookupCharacterAsync(ctx.Guild.Id, lookupString);
 
@@ -47,7 +47,7 @@ namespace Bot.Core.Lookup
                     return $"{prefix}, but am unable to post about them!";
                 }
             });
-            return new QueuedInteractionResult(result);
+            return result;
         }
 
         private async Task<bool> TrySendLookupMessagesToChannel(IProcessLogger logger, IChannel channel, IEnumerable<LookupCharacterItem> items)
@@ -75,29 +75,29 @@ namespace Bot.Core.Lookup
                 await m_messageSender.SendLookupMessageAsync(channel, i);
         }
 
-        private async Task<QueuedInteractionResult> PerformAddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
+        private async Task<InteractionResult> PerformAddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
         {
-            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
+            var result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
             {
                 await m_lookupDb.AddScriptUrlAsync(ctx.Guild.Id, scriptJsonUrl);
                 return $"Script \"{scriptJsonUrl}\" added to lookups for this server.";
             });
-            return new QueuedInteractionResult(result);
+            return result;
         }
 
-        private async Task<QueuedInteractionResult> PerformRemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
+        private async Task<InteractionResult> PerformRemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl)
         {
-            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
+            var result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
             {
                 await m_lookupDb.RemoveScriptUrlAsync(ctx.Guild.Id, scriptJsonUrl);
                 return $"Script \"{scriptJsonUrl}\" removed from lookups for this server.";
             });
-            return new QueuedInteractionResult(result);
+            return result;
         }
 
-        private async Task<QueuedInteractionResult> PerformListScriptsAsync(IBotInteractionContext ctx)
+        private async Task<InteractionResult> PerformListScriptsAsync(IBotInteractionContext ctx)
         {
-            string result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
+            var result = await m_errorHandler.TryProcessReportingErrorsAsync(ctx.Guild.Id, ctx.Member, async l =>
             {
                 var scripts = await m_lookupDb.GetScriptUrlsAsync(ctx.Guild.Id);
                 if (scripts.Count == 0)
@@ -109,7 +109,7 @@ namespace Bot.Core.Lookup
                     sb.AppendLine($"⦁ {script}");
                 return sb.ToString();
             });
-            return new QueuedInteractionResult(result);
+            return result;
         }
     }
 }

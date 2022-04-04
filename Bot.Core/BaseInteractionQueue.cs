@@ -27,7 +27,7 @@ namespace Bot.Core
             m_shutdownPreventionService.ShutdownRequested += OnShutdownRequsted;
         }
 
-        public async Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedInteractionResult>> queuedTask)
+        public async Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<InteractionResult>> queuedTask)
         {
             try
             {
@@ -75,7 +75,12 @@ namespace Bot.Core
                     {
                         var result = await item.CommandFunc();
 
-                        var webhook = m_botSystem.CreateWebhookBuilder().WithContent(result.Message);
+                        string messageWithLogs = result.LogMessages.Count > 0 ? $"{string.Join('\n', result.LogMessages)}\n{result.Message}" : result.Message;
+
+                        var webhook = m_botSystem.CreateWebhookBuilder()
+                            .WithContent(messageWithLogs)
+                            .AddEmbeds(result.Embeds);
+
                         if (result.IncludeComponents)
                             foreach (var components in result.ComponentSets)
                                 webhook.AddComponents(components);
@@ -103,25 +108,12 @@ namespace Bot.Core
         private class QueueItem
         {
             public IBotInteractionContext Context { get; }
-            public Func<Task<QueuedInteractionResult>> CommandFunc { get; }
-            public QueueItem(IBotInteractionContext context, Func<Task<QueuedInteractionResult>> commandFunc)
+            public Func<Task<InteractionResult>> CommandFunc { get; }
+            public QueueItem(IBotInteractionContext context, Func<Task<InteractionResult>> commandFunc)
             {
                 Context = context;
                 CommandFunc = commandFunc;
             }
-        }
-    }
-
-    public class QueuedInteractionResult
-    {
-        public string Message { get; }
-        public bool IncludeComponents { get; }
-        public IBotComponent[][] ComponentSets { get; }
-        public QueuedInteractionResult(string message, bool includeComponents = false, params IBotComponent[][] componentSets)
-        {
-            Message = message;
-            IncludeComponents = includeComponents;
-            ComponentSets = componentSets;
         }
     }
 }
