@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
+using Bot.Core.Interaction;
 using System;
 using System.Linq;
 using System.Text;

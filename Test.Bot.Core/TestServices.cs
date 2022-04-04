@@ -3,6 +3,7 @@ using Bot.Api.Database;
 using Bot.Base;
 using Bot.Core;
 using Bot.Core.Callbacks;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Threading;

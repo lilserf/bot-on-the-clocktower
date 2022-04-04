@@ -2,9 +2,9 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Bot.Core
+namespace Bot.Core.Interaction
 {
-    public interface ITownInteractionQueue
+    public interface IGuildInteractionQueue
     {
         Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<InteractionResult>> queuedTask);
     }

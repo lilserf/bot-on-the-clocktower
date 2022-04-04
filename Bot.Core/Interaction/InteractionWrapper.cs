@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Bot.Core
+namespace Bot.Core.Interaction
 {
     public static class InteractionWrapper
     {

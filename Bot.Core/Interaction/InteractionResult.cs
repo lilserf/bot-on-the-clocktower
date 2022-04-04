@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Bot.Api;
 
-namespace Bot.Core
+namespace Bot.Core.Interaction
 {
     public class InteractionResult
     {

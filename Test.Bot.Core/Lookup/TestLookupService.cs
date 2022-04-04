@@ -1,6 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
-using Bot.Core;
+using Bot.Core.Interaction;
 using Bot.Core.Lookup;
 using Moq;
 using Moq.Language.Flow;
@@ -30,7 +30,6 @@ namespace Test.Bot.Core.Lookup
         private ulong m_mockGuildId = 123ul;
         private string m_mockInteractionChannelName = "channel name";
 
-        private bool m_expectedErrorHandlerCalled = false;
         private InteractionResult? m_errorHandlerResult = null;
 
         static readonly InteractionResult MockErrorReturnedFromErrorHandler = "an error happened! oh, no!";
@@ -72,7 +71,7 @@ namespace Test.Bot.Core.Lookup
         {
             string lookupStr = "test lookup";
 
-            TestQueueHelper.TestQueueRequested(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -89,7 +88,7 @@ namespace Test.Bot.Core.Lookup
         {
             string scriptUrl = "test script url";
 
-            TestQueueHelper.TestQueueRequested(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -107,7 +106,7 @@ namespace Test.Bot.Core.Lookup
         {
             string scriptUrl = "test script url";
 
-            TestQueueHelper.TestQueueRequested(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -123,7 +122,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void ListScriptsRequested_QueuesRequest()
         {
-            TestQueueHelper.TestQueueRequested(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueueRequested(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -187,10 +186,9 @@ namespace Test.Bot.Core.Lookup
 
         private void PerformErrorHandlerTest(Func<IServiceProvider, Task> testFunc, Action verification)
         {
-            m_expectedErrorHandlerCalled = true;
             SetupErrorHandler().Returns(Task.FromResult(MockErrorReturnedFromErrorHandler));
 
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 testFunc,
                 (ir) =>
                 {
@@ -217,7 +215,7 @@ namespace Test.Bot.Core.Lookup
         {
             string scriptUrl = "test script url";
 
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -237,7 +235,7 @@ namespace Test.Bot.Core.Lookup
         {
             string scriptUrl = "test script url";
 
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -255,7 +253,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void NoScripts_ListScriptsRequested_ReturnsNoScripts()
         {
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -276,7 +274,7 @@ namespace Test.Bot.Core.Lookup
             m_mockDbScriptUrls.Add(script1);
             m_mockDbScriptUrls.Add(script2);
 
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -297,7 +295,7 @@ namespace Test.Bot.Core.Lookup
         {
             string lookupStr = "lookup str";
 
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);
@@ -334,7 +332,7 @@ namespace Test.Bot.Core.Lookup
                 .Callback<LookupCharacterItem>(actualMessageCharacters.Add)
                 .Returns(expectedEmbedObjects[1]);
 
-            TestQueueHelper.TestQueuedMethod(GetServiceProvider(),
+            TestQueueHelper.TestGuildQueuedMethod(GetServiceProvider(),
                 (sp) =>
                 {
                     BotLookupService bls = new(sp);

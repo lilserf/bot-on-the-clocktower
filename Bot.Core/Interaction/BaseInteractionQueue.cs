@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bot.Core
+namespace Bot.Core.Interaction
 {
     public abstract class BaseInteractionQueue<TKey> where TKey : notnull
     {

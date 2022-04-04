@@ -1,6 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Base;
-using Bot.Core;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ namespace Test.Bot.Core.Interactions
 {
     public static class TestQueueHelper
     {
-        public static void TestQueueRequested(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyQueueParams = null)
+        public static void TestGuildQueueRequested(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<string, IBotInteractionContext>? verifyQueueParams = null)
         {
             Mock<IGuildInteractionQueue> queueMock = new(MockBehavior.Strict);
 
@@ -30,7 +30,7 @@ namespace Test.Bot.Core.Interactions
             queueMock.Verify(iq => iq.QueueInteractionAsync(It.IsAny<string>(), It.IsAny<IBotInteractionContext>(), It.IsAny<Func<Task<InteractionResult>>>()), Times.Once);
         }
 
-        public static void TestQueuedMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
+        public static void TestGuildQueuedMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
         {
             Mock<IGuildInteractionQueue> queueMock = new(MockBehavior.Strict);
 

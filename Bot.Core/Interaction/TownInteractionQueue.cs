@@ -1,7 +1,7 @@
 ﻿using Bot.Api;
 using System;
 
-namespace Bot.Core
+namespace Bot.Core.Interaction
 {
     public class TownInteractionQueue : BaseInteractionQueue<TownKey>, ITownInteractionQueue
     {

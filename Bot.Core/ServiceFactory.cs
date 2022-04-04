@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Base;
 using Bot.Core.Callbacks;
+using Bot.Core.Interaction;
 using System;
 using System.Threading;
 

@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Core;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Collections.Generic;

@@ -1,4 +1,4 @@
-﻿namespace Bot.Core
+﻿namespace Bot.Core.Interaction
 {
     public class GuildInteractionErrorHandler : BaseInteractionErrorHandler<ulong>, IGuildInteractionErrorHandler
     {
