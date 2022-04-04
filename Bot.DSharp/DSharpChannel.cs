@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -55,12 +56,6 @@ namespace Bot.DSharp
 				await Wrapped.DeleteOverwriteAsync(role.Wrapped);
 			}
 		}
-
-		public async Task<IMessage> SendMessageAsync(string msg)
-		{
-			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(msg));
-			return new DSharpMessage(messageRet);
-		}
 		
 		public async Task<IMessage> SendMessageAsync(string msg)
 		{
@@ -68,7 +63,7 @@ namespace Bot.DSharp
 			return new DSharpMessage(messageRet);
 		}
 
-		public async Task SendMessageAsync(IEmbed e)
+		public async Task<IMessage> SendMessageAsync(IEmbed e)
         {
 			if(e is not DSharpEmbed emb) throw new InvalidOperationException("Expected an embed that works with DSharp");            
 			var messageRet = await Wrapped.SendMessageAsync(emb.Wrapped);
