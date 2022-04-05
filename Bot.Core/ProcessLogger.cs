@@ -46,7 +46,5 @@ namespace Bot.Core
 		}
 
         public IReadOnlyCollection<string> Messages => m_messages;
-
-        public bool HasMessages => m_messages.Count > 0;
 	}
 }

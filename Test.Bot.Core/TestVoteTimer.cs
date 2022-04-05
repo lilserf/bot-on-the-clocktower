@@ -141,11 +141,9 @@ namespace Test.Bot.Core
         private void RunVoteTimerVerifyCompleted(string timeString)
         {
             var vt = new BotVoteTimer(GetServiceProvider());
-
-            var t = vt.RunVoteTimerUnsafe(MockTownKey, timeString, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-            Assert.False(string.IsNullOrWhiteSpace(t.Result));
+            
+            var result = AssertCompletedTask(() => vt.RunVoteTimerUnsafe(MockTownKey, timeString, ProcessLoggerMock.Object));
+            Assert.False(string.IsNullOrWhiteSpace(result.Message));
         }
 
         private void AdvanceTime(TimeSpan span)

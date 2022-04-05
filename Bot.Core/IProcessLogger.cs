@@ -10,7 +10,5 @@ namespace Bot.Api
         public void LogMessage(string msg);
 
         public IReadOnlyCollection<string> Messages { get; }
-
-        public bool HasMessages { get; }
     }
 }

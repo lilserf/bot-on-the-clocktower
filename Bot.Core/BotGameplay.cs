@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
+using Bot.Core.Interaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -380,7 +381,7 @@ namespace Bot.Core
 
         }
 
-        public async Task<string> SetStorytellersUnsafe(TownKey townKey, IMember requester, IEnumerable<IMember> users, IProcessLogger logger)
+        public async Task<InteractionResult> SetStorytellersUnsafe(TownKey townKey, IMember requester, IEnumerable<IMember> users, IProcessLogger logger)
         {
             IGame? game = await CurrentGameAsync(townKey, requester, logger);
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);

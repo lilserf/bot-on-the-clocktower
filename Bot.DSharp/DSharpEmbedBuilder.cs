@@ -53,9 +53,9 @@ namespace Bot.DSharp
             return this;
         }
 
-        public IEmbedBuilder WithImageUrl(string url)
+        public IEmbedBuilder WithThumbnail(string url, int height=0, int width=0)
         {
-            var result = Wrapped.WithImageUrl(url);
+            var result = Wrapped.WithThumbnail(url, height, width);
             if (result != Wrapped) throw new ApplicationException("Expected chained return to be the wrapped object but it wasn't.");
             return this;
         }

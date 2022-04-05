@@ -2,6 +2,7 @@
 using Bot.Api.Database;
 using Bot.Core;
 using Bot.Core.Callbacks;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -253,7 +254,7 @@ namespace Test.Bot.Core
 
         protected BotGameplayInteractionHandler CreateGameplayInteractionHandler()
         {
-            RegisterService<ITownCommandQueue>(new TownCommandQueue(GetServiceProvider()));
+            RegisterService<ITownInteractionQueue>(new TownInteractionQueue(GetServiceProvider()));
             return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
         }
 

@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
+using Bot.Core.Interaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Bot.Core
 {
     public class BotMessaging : IBotMessaging
     {
-        private readonly ITownCommandQueue m_townCommandQueue;
+        private readonly ITownInteractionQueue m_townCommandQueue;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
 
@@ -132,34 +133,34 @@ namespace Bot.Core
 
         public Task CommandEvilMessageAsync(IBotInteractionContext ctx, IMember demon, IReadOnlyCollection<IMember> minions, IMember? magician)
         {
-            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 await m_commandMetricsDatabase.RecordCommand("evil", m_dateTime.Now);
 
                 string msg = (magician != null)
                     ? await SendMagicianMessage(demon, minions, magician)
                     : await SendEvilMessage(demon, minions);
-                return new QueuedCommandResult(msg);
+                return InteractionResult.FromMessage(msg);
             });
         }
 
         public Task CommandLunaticMessageAsync(IBotInteractionContext ctx, IMember lunatic, IReadOnlyCollection<IMember> fakeMinions)
         {
-            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 await m_commandMetricsDatabase.RecordCommand("lunatic", m_dateTime.Now);
                 string msg = await SendLunaticMessage(lunatic, fakeMinions);
-                return new QueuedCommandResult(msg);
+                return InteractionResult.FromMessage(msg);
             });
         }
 
         public Task CommandLegionMessageAsync(IBotInteractionContext ctx, IReadOnlyCollection<IMember> legions)
         {
-            return m_townCommandQueue.QueueCommandAsync("Informing...", ctx, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Informing...", ctx, async () =>
             {
                 await m_commandMetricsDatabase.RecordCommand("legion", m_dateTime.Now);
                 string msg = await SendLegionMessage(legions);
-                return new QueuedCommandResult(msg);
+                return InteractionResult.FromMessage(msg);
             });
         }
     }

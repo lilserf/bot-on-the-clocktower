@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -55,23 +56,25 @@ namespace Bot.DSharp
 				await Wrapped.DeleteOverwriteAsync(role.Wrapped);
 			}
 		}
+		
+		public async Task<IMessage> SendMessageAsync(string msg)
+		{
+			var messageRet = await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.SendMessageAsync(msg));
+			return new DSharpMessage(messageRet);
+		}
 
-		public async Task SendMessageAsync(string msg) => await Wrapped.SendMessageAsync(msg);
-
-		public async Task SendMessageAsync(IEmbed e)
+		public async Task<IMessage> SendMessageAsync(IEmbed e)
         {
-			if(e is DSharpEmbed emb)
-            {
-				await Wrapped.SendMessageAsync(emb.Wrapped);
-            }
+			if(e is not DSharpEmbed emb) throw new InvalidOperationException("Expected an embed that works with DSharp");            
+			var messageRet = await Wrapped.SendMessageAsync(emb.Wrapped);
+			return new DSharpMessage(messageRet);
         }
 
-        public async Task SendMessageAsync(IMessageBuilder b)
+        public async Task<IMessage> SendMessageAsync(IMessageBuilder b)
         {
-            if(b is DSharpMessageBuilder builder)
-            {
-				await Wrapped.SendMessageAsync(builder.Wrapped);
-            }
+			if(b is not DSharpMessageBuilder builder) throw new InvalidOperationException("Expected a MessageBuilder that works with DSharp");
+			var messageRet = await Wrapped.SendMessageAsync(builder.Wrapped);
+			return new DSharpMessage(messageRet);
         }
     }
 }

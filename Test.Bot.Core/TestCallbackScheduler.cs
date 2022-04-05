@@ -46,15 +46,6 @@ namespace Test.Bot.Core
         }
 
         [Fact]
-        public void CoreServices_RegistersCallbackSchedulerFactory()
-        {
-            var sp = ServiceFactory.RegisterCoreServices(null, CancellationToken.None);
-            var csf = sp.GetService<ICallbackSchedulerFactory>();
-
-            Assert.IsType<CallbackSchedulerFactory>(csf);
-        }
-
-        [Fact]
         public void SchedulerFactory_CallwithCallback_ProvidesCallbackScheduler()
         {
             Mock<Func<object, Task>> mockCb = new();
@@ -132,14 +123,14 @@ namespace Test.Bot.Core
 
             AdvanceTime(TimeSpan.FromSeconds(2));
             m_delayReset.Set();
-            await Task.Delay(2);
+            await Task.Delay(5);
             Assert.Equal(0, helper.CallbackCount);
 
             helper.ScheduleCallback(GetTimeAfter(TimeSpan.FromSeconds(10)));
 
             AdvanceTime(TimeSpan.FromSeconds(2));
             m_delayReset.Set();
-            await Task.Delay(2);
+            await Task.Delay(5);
             Assert.Equal(0, helper.CallbackCount);
 
             AdvanceTime(TimeSpan.FromSeconds(20));

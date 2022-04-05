@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Base;
+using Bot.Core.Lookup;
 using System;
 using System.Threading.Tasks;
 
@@ -22,7 +23,10 @@ namespace Bot.Core
             systemServices.AddService(m_client);
 
             m_serviceProvider = ServiceFactory.RegisterBotServices(systemServices);
+            m_serviceProvider = LookupServiceFactory.RegisterBotLookupServices(m_serviceProvider);
+
             m_serviceProvider.GetService<IVersionProvider>().InitializeVersions();
+
         }
 
         public async Task RunAsync()

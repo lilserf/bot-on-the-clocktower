@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Base;
 using Bot.Core.Callbacks;
+using Bot.Core.Interaction;
 using System;
 using System.Threading;
 
@@ -18,6 +19,8 @@ namespace Bot.Core
             var shutdown = new ShutdownService(applicationCancelToken);
             sp.AddService<IFinalShutdownService>(shutdown);
             sp.AddService<IShutdownPreventionService>(shutdown);
+            sp.AddService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+            sp.AddService<IGuildInteractionErrorHandler>(new GuildInteractionErrorHandler());
 
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
             sp.AddService<IActiveGameService>(new ActiveGameService());
@@ -32,7 +35,10 @@ namespace Bot.Core
         public static IServiceProvider RegisterBotServices(IServiceProvider? parentServices)
         {
             ServiceProvider sp = new(parentServices);
-            sp.AddService<ITownCommandQueue>(new TownCommandQueue(sp));
+            sp.AddService<IGuildInteractionQueue>(new GuildInteractionQueue(sp));
+            sp.AddService<ITownInteractionQueue>(new TownInteractionQueue(sp));
+            sp.AddService<IGuildInteractionWrapper>(new GuildInteractionWrapper(sp));
+            sp.AddService<ITownInteractionWrapper>(new TownInteractionWrapper(sp));
             sp.AddService<ITownCleanup>(new TownCleanup(sp));
             sp.AddService<ITownResolver>(new TownResolver(sp));
             var gameplay = new BotGameplay(sp);

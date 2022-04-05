@@ -41,10 +41,12 @@ namespace Bot.DSharp
             var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
 
             // During development, register our commands to the dev guild only
-            slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
-            slash.RegisterCommands<DSharpMessagingSlashCommands>(128585855097896963);
-            slash.RegisterCommands<DSharpMiscSlashCommands>(128585855097896963);
-            slash.RegisterCommands<DSharpSetupSlashCommands>(128585855097896963);
+            ulong devGuildId = 128585855097896963ul;
+            slash.RegisterCommands<DSharpGameSlashCommands>(devGuildId);
+            slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
+            slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
+            slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
+            slash.RegisterCommands<DSharpSetupSlashCommands>(devGuildId);
             // During development, register no commands globally
             slash.RegisterCommands<EmptyCommands>();
 

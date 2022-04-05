@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Core;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using Xunit;
@@ -8,6 +9,11 @@ namespace Test.Bot.Core
 {
     public class TestNightPhase : GameTestBase
     {
+        public TestNightPhase()
+        {
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+        }
+
         [Theory]
         [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]

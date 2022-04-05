@@ -1,7 +1,9 @@
 ﻿using Bot.Api;
+using Bot.Api.Database;
 using Bot.Base;
 using Bot.Core;
 using Bot.Core.Callbacks;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Threading;
@@ -13,9 +15,10 @@ namespace Test.Bot.Core
     public class TestServices : TestBase
     {
         [Fact]
-        public static void CreateCoreServices_ConstructsType()
+        public void CreateCoreServices_ConstructsType()
         {
-            var sp = ServiceFactory.RegisterCoreServices(null, CancellationToken.None);
+            RegisterMock(new Mock<ILookupRoleDatabase>());
+            var sp = ServiceFactory.RegisterCoreServices(GetServiceProvider(), CancellationToken.None);
             Assert.IsType<ServiceProvider>(sp);
         }
 
@@ -26,6 +29,8 @@ namespace Test.Bot.Core
         }
 
         [Theory]
+        [InlineData(typeof(IGuildInteractionErrorHandler), typeof(GuildInteractionErrorHandler))]
+        [InlineData(typeof(ITownInteractionErrorHandler), typeof(TownInteractionErrorHandler))]
         [InlineData(typeof(ICallbackSchedulerFactory), typeof(CallbackSchedulerFactory))]
         [InlineData(typeof(IActiveGameService), typeof(ActiveGameService))]
         [InlineData(typeof(IComponentService), typeof(ComponentService))]
@@ -45,7 +50,10 @@ namespace Test.Bot.Core
         [InlineData(typeof(IVoteHandler), typeof(BotGameplay))]
         [InlineData(typeof(IBotGameplayInteractionHandler), typeof(BotGameplayInteractionHandler))]
         [InlineData(typeof(IBotMessaging), typeof(BotMessaging))]
-        [InlineData(typeof(ITownCommandQueue), typeof(TownCommandQueue))]		
+        [InlineData(typeof(IGuildInteractionQueue), typeof(GuildInteractionQueue))]		
+        [InlineData(typeof(ITownInteractionQueue), typeof(TownInteractionQueue))]
+        [InlineData(typeof(IGuildInteractionWrapper), typeof(GuildInteractionWrapper))]
+        [InlineData(typeof(ITownInteractionWrapper), typeof(TownInteractionWrapper))]
         [InlineData(typeof(ITownCleanup), typeof(TownCleanup))]
         [InlineData(typeof(ITownResolver), typeof(TownResolver))]
         public void CreateBotServices_CreatesAllRequiredServices(Type serviceInterfaceType, Type serviceImplType)

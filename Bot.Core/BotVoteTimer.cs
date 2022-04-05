@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using Bot.Core.Callbacks;
+using Bot.Core.Interaction;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -22,7 +23,7 @@ namespace Bot.Core
             serviceProvider.Inject(out m_dateTime);
         }
 
-        public async Task<string> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
+        public async Task<InteractionResult> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
             if (town == null)
@@ -52,7 +53,7 @@ namespace Bot.Core
             return $"Vote timer started for {GetTimeString(span.Value, false)}!";
         }
 
-        public async Task<string> RunStopVoteTimerUnsafe(TownKey townKey, IProcessLogger processLoggger)
+        public async Task<InteractionResult> RunStopVoteTimerUnsafe(TownKey townKey, IProcessLogger processLoggger)
         {
             await m_commandMetricsDatabase.RecordCommand("stopvotetimer", m_dateTime.Now);
 

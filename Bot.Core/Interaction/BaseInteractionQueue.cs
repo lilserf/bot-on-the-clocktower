@@ -4,21 +4,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bot.Core
+namespace Bot.Core.Interaction
 {
-    public class TownCommandQueue : ITownCommandQueue
+    public abstract class BaseInteractionQueue<TKey> where TKey : notnull
     {
         private readonly IBotSystem m_botSystem;
         private readonly IShutdownPreventionService m_shutdownPreventionService;
 
-        private readonly Dictionary<TownKey, Queue<QueueItem>> m_townToCommandQueue = new();
+        private readonly Dictionary<TKey, Queue<QueueItem>> m_keyToCommandQueue = new();
 
         private readonly TaskCompletionSource m_readyToShutdown = new();
         private bool m_shutdownRequested = false;
 
         const string ShutdownRequestedMessage = "Bot on the Clocktower is restarting. Please wait a few moments, then try again.";
 
-        public TownCommandQueue(IServiceProvider serviceProvider)
+        public BaseInteractionQueue(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_botSystem);
             serviceProvider.Inject(out m_shutdownPreventionService);
@@ -27,7 +27,7 @@ namespace Bot.Core
             m_shutdownPreventionService.ShutdownRequested += OnShutdownRequsted;
         }
 
-        public async Task QueueCommandAsync(string initialMessage, IBotInteractionContext context, Func<Task<QueuedCommandResult>> queuedTask)
+        public async Task QueueInteractionAsync(string initialMessage, IBotInteractionContext context, Func<Task<InteractionResult>> queuedTask)
         {
             try
             {
@@ -40,31 +40,33 @@ namespace Bot.Core
 
                 QueueItem newItem = new(context, queuedTask);
 
-                var townKey = context.GetTownKey();
-                if (m_townToCommandQueue.TryGetValue(townKey, out var queue))
+                var key = KeyFromContext(context);
+                if (m_keyToCommandQueue.TryGetValue(key, out var queue))
                     queue.Enqueue(newItem); // If queue exists it should already be processing
                 else
                 {
                     queue = new();
-                    m_townToCommandQueue.Add(townKey, queue);
+                    m_keyToCommandQueue.Add(key, queue);
                     queue.Enqueue(newItem);
 
                     // Process the queue, but don't wait for it to complete
-                    ProcessQueue(townKey);
+                    ProcessQueue(key);
                 }
             }
             catch (Exception)
             { }
         }
 
-        private void ProcessQueue(TownKey townKey)
+        protected abstract TKey KeyFromContext(IBotInteractionContext context);
+
+        private void ProcessQueue(TKey key)
         {
-            ProcessQueueAsync(townKey).ConfigureAwait(continueOnCapturedContext: true);
+            ProcessQueueAsync(key).ConfigureAwait(continueOnCapturedContext: true);
         }
 
-        private async Task ProcessQueueAsync(TownKey townKey)
+        private async Task ProcessQueueAsync(TKey key)
         {
-            if (m_townToCommandQueue.TryGetValue(townKey, out var queue))
+            if (m_keyToCommandQueue.TryGetValue(key, out var queue))
             {
                 while (queue.Count > 0)
                 {
@@ -73,7 +75,12 @@ namespace Bot.Core
                     {
                         var result = await item.CommandFunc();
 
-                        var webhook = m_botSystem.CreateWebhookBuilder().WithContent(result.Message);
+                        string messageWithLogs = result.LogMessages.Count > 0 ? $"{string.Join('\n', result.LogMessages)}\n{result.Message}" : result.Message;
+
+                        var webhook = m_botSystem.CreateWebhookBuilder()
+                            .WithContent(messageWithLogs)
+                            .AddEmbeds(result.Embeds);
+
                         if (result.IncludeComponents)
                             foreach (var components in result.ComponentSets)
                                 webhook.AddComponents(components);
@@ -82,9 +89,9 @@ namespace Bot.Core
                     catch (Exception)
                     { }
                 }
-                m_townToCommandQueue.Remove(townKey);
+                m_keyToCommandQueue.Remove(key);
             }
-            if (m_shutdownRequested && !m_townToCommandQueue.Any())
+            if (m_shutdownRequested && !m_keyToCommandQueue.Any())
                 m_readyToShutdown.TrySetResult();
         }
 
@@ -92,7 +99,7 @@ namespace Bot.Core
         {
             m_shutdownRequested = true;
 
-            if (!m_townToCommandQueue.Any())
+            if (!m_keyToCommandQueue.Any())
                 m_readyToShutdown.TrySetResult();
 
             m_shutdownPreventionService.ShutdownRequested -= OnShutdownRequsted;
@@ -101,8 +108,8 @@ namespace Bot.Core
         private class QueueItem
         {
             public IBotInteractionContext Context { get; }
-            public Func<Task<QueuedCommandResult>> CommandFunc { get; }
-            public QueueItem(IBotInteractionContext context, Func<Task<QueuedCommandResult>> commandFunc)
+            public Func<Task<InteractionResult>> CommandFunc { get; }
+            public QueueItem(IBotInteractionContext context, Func<Task<InteractionResult>> commandFunc)
             {
                 Context = context;
                 CommandFunc = commandFunc;

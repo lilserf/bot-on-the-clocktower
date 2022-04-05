@@ -1,5 +1,6 @@
 ﻿using Moq;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Test.Bot.Base
@@ -30,5 +31,8 @@ namespace Test.Bot.Base
             Assert.NotNull(exceptionConstructor);
             return (Exception)(exceptionConstructor!.Invoke(Array.Empty<object?>()));
         }
+
+        protected static void AssertCompletedTask(Func<Task> runTask) => TestTaskHelper.AssertCompletedTask(runTask);
+        protected static T AssertCompletedTask<T>(Func<Task<T>> runTask) => TestTaskHelper.AssertCompletedTask(runTask);
     }
 }

@@ -1,12 +1,8 @@
-﻿using Bot.Api;
-using Bot.Api.Database;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Bot.Api.Database;
+using MongoDB.Driver;
 
 namespace Bot.Database
 {
@@ -43,14 +39,14 @@ namespace Bot.Database
 
             await m_collection.ReplaceOneAsync(filter, rec, options);
         }
-        public async Task AddScriptUrl(IGuild guild, string url)
+        public async Task AddScriptUrlAsync(ulong guildId, string url)
         {
-            var doc = await GetRecordInternal(guild.Id);
+            var doc = await GetRecordInternal(guildId);
 
             if(doc == null)
             {
                 doc = new MongoLookupRoleRecord();
-                doc.GuildId = guild.Id;
+                doc.GuildId = guildId;
                 doc.Urls = new List<string>();
             }
 
@@ -58,15 +54,15 @@ namespace Bot.Database
             await UpdateRecordInternal(doc);
         }
 
-        public async Task<IEnumerable<string>> GetScriptUrls(IGuild guild)
+        public async Task<IReadOnlyCollection<string>> GetScriptUrlsAsync(ulong guildId)
         {
-            var doc = await GetRecordInternal(guild.Id);
+            var doc = await GetRecordInternal(guildId);
             return doc.Urls;
         }
 
-        public async Task RemoveScriptUrl(IGuild guild, string url)
+        public async Task RemoveScriptUrlAsync(ulong guildId, string url)
         {
-            var doc = await GetRecordInternal(guild.Id);
+            var doc = await GetRecordInternal(guildId);
             doc.Urls.Remove(url);
             await UpdateRecordInternal(doc);
         }

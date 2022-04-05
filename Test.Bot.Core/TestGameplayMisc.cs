@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Core;
+using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Linq;
@@ -10,6 +11,11 @@ namespace Test.Bot.Core
 {
     public class TestGameplayMisc : GameTestBase
     {
+        public TestGameplayMisc()
+        {
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+        }
+
         [Fact]
         public void ConstructGame_NoExceptions()
         {
