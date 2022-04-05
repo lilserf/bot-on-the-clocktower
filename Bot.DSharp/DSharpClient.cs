@@ -42,6 +42,7 @@ namespace Bot.DSharp
             slash.RegisterCommands<DSharpGameSlashCommands>(128585855097896963);
             slash.RegisterCommands<DSharpMessagingSlashCommands>(128585855097896963);
             slash.RegisterCommands<DSharpMiscSlashCommands>(128585855097896963);
+            slash.RegisterCommands<DSharpSetupSlashCommands>(128585855097896963);
             // During development, register no commands globally
             slash.RegisterCommands<EmptyCommands>();
 
