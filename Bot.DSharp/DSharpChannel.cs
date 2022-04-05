@@ -70,12 +70,11 @@ namespace Bot.DSharp
 			return new DSharpMessage(messageRet);
         }
 
-        public async Task SendMessageAsync(IMessageBuilder b)
+        public async Task<IMessage> SendMessageAsync(IMessageBuilder b)
         {
-            if(b is DSharpMessageBuilder builder)
-            {
-				await Wrapped.SendMessageAsync(builder.Wrapped);
-            }
+			if(b is not DSharpMessageBuilder builder) throw new InvalidOperationException("Expected a MessageBuilder that works with DSharp");
+			var messageRet = await Wrapped.SendMessageAsync(builder.Wrapped);
+			return new DSharpMessage(messageRet);
         }
     }
 }
