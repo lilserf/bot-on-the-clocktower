@@ -17,14 +17,14 @@ namespace Bot.Core
 
         private readonly static List<LegacyCommandUpdate> s_commands = new()
         {
-            LegacyCommandUpdate.UnimplementedCommand("announce"),
-            LegacyCommandUpdate.UnimplementedCommand("noAnnounce"),
+            new("announce", "announce"),
+            new("noAnnounce", "announce"),
             LegacyCommandUpdate.UnimplementedCommand("townInfo"),
-            "addTown",
-            "removeTown",
+            LegacyCommandUpdate.UnimplementedCommand("addTown"),
+            LegacyCommandUpdate.UnimplementedCommand("removeTown"),
             LegacyCommandUpdate.UnimplementedCommand("setChatChannel"),
             "createTown",
-            "destroyTown",
+            LegacyCommandUpdate.UnimplementedCommand("destroyTown"),
             LegacyCommandUpdate.GameCommand("endGame"),
             new("setStorytellers", "storytellers"),
             "storytellers",
