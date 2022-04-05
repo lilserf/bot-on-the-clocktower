@@ -65,5 +65,13 @@ namespace Bot.DSharp
 				await Wrapped.SendMessageAsync(emb.Wrapped);
             }
         }
-	}
+
+        public async Task SendMessageAsync(IMessageBuilder b)
+        {
+            if(b is DSharpMessageBuilder builder)
+            {
+				await Wrapped.SendMessageAsync(builder.Wrapped);
+            }
+        }
+    }
 }

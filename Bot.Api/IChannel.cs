@@ -18,6 +18,7 @@ namespace Bot.Api
 
 		public Task SendMessageAsync(string msg);
 		public Task SendMessageAsync(IEmbed embed);
+		public Task SendMessageAsync(IMessageBuilder builder);
 
 	}
 }
