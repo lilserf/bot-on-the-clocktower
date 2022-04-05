@@ -13,6 +13,8 @@ namespace Bot.Api
 
         IEmbedBuilder CreateEmbedBuilder();
 
+        IMessageBuilder CreateMessageBuilder();
+
         IColorBuilder ColorBuilder { get; }
 
         enum ButtonType

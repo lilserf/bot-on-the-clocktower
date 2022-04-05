@@ -5,7 +5,7 @@ namespace Bot.Api
 {
     public interface IVersionProvider
     {
-        Dictionary<Version, IEmbed> Versions { get; }
+        Dictionary<Version, IMessageBuilder> Versions { get; }
         void InitializeVersions();
     }
 }

@@ -69,5 +69,13 @@ namespace Bot.DSharp
 			var messageRet = await Wrapped.SendMessageAsync(emb.Wrapped);
 			return new DSharpMessage(messageRet);
         }
-	}
+
+        public async Task SendMessageAsync(IMessageBuilder b)
+        {
+            if(b is DSharpMessageBuilder builder)
+            {
+				await Wrapped.SendMessageAsync(builder.Wrapped);
+            }
+        }
+    }
 }

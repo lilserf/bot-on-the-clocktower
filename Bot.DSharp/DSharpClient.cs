@@ -10,6 +10,7 @@ namespace Bot.DSharp
     public class DSharpClient : IBotClient
     {
         private readonly IComponentService m_componentService;
+        private readonly IOldCommandReminder m_oldCommandReminder;
 
         private readonly IDiscordClient m_discord;
 
@@ -18,6 +19,7 @@ namespace Bot.DSharp
         public DSharpClient(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_componentService);
+            serviceProvider.Inject(out m_oldCommandReminder);
 
             var environment = serviceProvider.GetService<IEnvironment>();
             var token = environment.GetEnvironmentVariable("DISCORD_TOKEN");
@@ -44,6 +46,7 @@ namespace Bot.DSharp
             slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
             slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
             slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
+            slash.RegisterCommands<DSharpSetupSlashCommands>(devGuildId);
             // During development, register no commands globally
             slash.RegisterCommands<EmptyCommands>();
 
@@ -56,12 +59,21 @@ namespace Bot.DSharp
                 return Task.CompletedTask;
             };
 
+            m_discord.MessageCreated += MessageCreated;
 			m_discord.ComponentInteractionCreated += ComponentInteractionCreated;
             m_discord.ModalSubmitted += ModalSubmitted;
 
             await m_discord.ConnectAsync();
 
             await readyTcs.Task;
+        }
+
+        private async Task MessageCreated(IDiscordClient sender, MessageCreateEventArgs e)
+        {
+            if (e.Author.IsBot == false)
+            {
+                await m_oldCommandReminder.UserMessageCreated(e.Message.Content, new DSharpChannel(e.Channel));
+            }
         }
 
         public Task DisconnectAsync() => m_discord.DisconnectAsync();

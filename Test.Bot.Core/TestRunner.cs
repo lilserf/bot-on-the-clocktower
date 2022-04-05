@@ -35,6 +35,7 @@ namespace Test.Bot.Core
             m_mockSystem.Setup(s => s.CreateButton(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IBotSystem.ButtonType>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(new Mock<IBotComponent>().Object);
             m_mockSystem.Setup(s => s.CreateSelectMenu(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<IBotSystem.SelectMenuOption>>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<int>())).Returns(new Mock<IBotComponent>().Object);
             m_mockSystem.Setup(s => s.CreateEmbedBuilder()).Returns(new Mock<IEmbedBuilder>().Object);
+            m_mockSystem.Setup(s => s.CreateMessageBuilder()).Returns(new Mock<IMessageBuilder>().Object);
         }
 
         [Fact]
