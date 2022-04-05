@@ -71,7 +71,7 @@ namespace Bot.Core
         private void Cleanup()
         {
             var now = m_dateTime.Now;
-            var filtered = m_lastReminder.Where(x => x.Value.AddHours(1) > now);
+            var filtered = m_lastReminder.Where(x => x.Value.AddHours(1) > now).ToList();
             m_lastReminder.Clear();
             foreach (var item in filtered)
                 m_lastReminder.Add(item.Key, item.Value);
