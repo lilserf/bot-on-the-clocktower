@@ -67,12 +67,13 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
-        private async Task OnMessageCreated(IDiscordClient sender, MessageCreateEventArgs e)
+        private Task OnMessageCreated(IDiscordClient _, MessageCreateEventArgs e)
         {
             if (e.Author.IsBot == false)
             {
                 MessageCreated?.Invoke(this, new MessageCreatedEventArgs(new DSharpChannel(e.Channel), e.Message.Content));
             }
+            return Task.CompletedTask;
         }
 
         public Task DisconnectAsync() => m_discord.DisconnectAsync();

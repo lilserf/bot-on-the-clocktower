@@ -96,10 +96,12 @@ namespace Bot.Core
                 if (s_commandMap.TryGetValue(keyword, out var update))
                 {
                     bool nag = true;
+                    var now = m_dateTime.Now;
+
                     if (m_lastReminder.ContainsKey(e.Channel.Id))
                     {
                         var lastReminder = m_lastReminder[e.Channel.Id];
-                        if (lastReminder.AddHours(1) > m_dateTime.Now)
+                        if (lastReminder.AddHours(1) > now)
                         {
                             nag = false;
                         }
@@ -107,7 +109,7 @@ namespace Bot.Core
 
                     if (nag)
                     {
-                        m_lastReminder[e.Channel.Id] = m_dateTime.Now;
+                        m_lastReminder[e.Channel.Id] = now;
 
                         var eb = m_botSystem.CreateEmbedBuilder();
                         eb.WithColor(m_botSystem.ColorBuilder.DarkRed);
@@ -125,7 +127,7 @@ namespace Bot.Core
             }
         }
 
-        private void SendMessageToChannel(IChannel channel, IEmbed embed)
+        private static void SendMessageToChannel(IChannel channel, IEmbed embed)
         {
             channel.SendMessageAsync(embed).ConfigureAwait(continueOnCapturedContext: true);
         }
