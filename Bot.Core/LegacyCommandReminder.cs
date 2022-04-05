@@ -2,12 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    internal class OldCommandReminder : IOldCommandReminder
+    public class LegacyCommandReminder : ILegacyCommandReminder
     {
         Dictionary<ulong, DateTime> m_lastReminder = new Dictionary<ulong, DateTime>();
 
@@ -52,7 +51,7 @@ namespace Bot.Core
 
         };
 
-        public OldCommandReminder(IServiceProvider sp)
+        public LegacyCommandReminder(IServiceProvider sp)
         {
             sp.Inject(out m_dateTime);
         }

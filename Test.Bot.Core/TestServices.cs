@@ -56,6 +56,7 @@ namespace Test.Bot.Core
         [InlineData(typeof(ITownInteractionWrapper), typeof(TownInteractionWrapper))]
         [InlineData(typeof(ITownCleanup), typeof(TownCleanup))]
         [InlineData(typeof(ITownResolver), typeof(TownResolver))]
+        [InlineData(typeof(ILegacyCommandReminder), typeof(LegacyCommandReminder))]
         public void CreateBotServices_CreatesAllRequiredServices(Type serviceInterfaceType, Type serviceImplType)
         {
             RegisterMock(new Mock<IBotSystem>());

@@ -10,7 +10,7 @@ namespace Bot.DSharp
     public class DSharpClient : IBotClient
     {
         private readonly IComponentService m_componentService;
-        private readonly IOldCommandReminder m_oldCommandReminder;
+        private readonly ILegacyCommandReminder m_legacyCommandReminder;
 
         private readonly IDiscordClient m_discord;
 
@@ -19,7 +19,7 @@ namespace Bot.DSharp
         public DSharpClient(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_componentService);
-            serviceProvider.Inject(out m_oldCommandReminder);
+            serviceProvider.Inject(out m_legacyCommandReminder);
 
             var environment = serviceProvider.GetService<IEnvironment>();
             var token = environment.GetEnvironmentVariable("DISCORD_TOKEN");
@@ -72,7 +72,7 @@ namespace Bot.DSharp
         {
             if (e.Author.IsBot == false)
             {
-                await m_oldCommandReminder.UserMessageCreated(e.Message.Content, new DSharpChannel(e.Channel));
+                await m_legacyCommandReminder.UserMessageCreated(e.Message.Content, new DSharpChannel(e.Channel));
             }
         }
 
