@@ -10,16 +10,15 @@ namespace Bot.DSharp
     public class DSharpClient : IBotClient
     {
         private readonly IComponentService m_componentService;
-        private readonly ILegacyCommandReminder m_legacyCommandReminder;
 
         private readonly IDiscordClient m_discord;
 
         public event EventHandler<EventArgs>? Connected;
+        public event EventHandler<MessageCreatedEventArgs>? MessageCreated;
 
         public DSharpClient(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_componentService);
-            serviceProvider.Inject(out m_legacyCommandReminder);
 
             var environment = serviceProvider.GetService<IEnvironment>();
             var token = environment.GetEnvironmentVariable("DISCORD_TOKEN");
@@ -59,7 +58,7 @@ namespace Bot.DSharp
                 return Task.CompletedTask;
             };
 
-            m_discord.MessageCreated += MessageCreated;
+            m_discord.MessageCreated += OnMessageCreated;
 			m_discord.ComponentInteractionCreated += ComponentInteractionCreated;
             m_discord.ModalSubmitted += ModalSubmitted;
 
@@ -68,11 +67,11 @@ namespace Bot.DSharp
             await readyTcs.Task;
         }
 
-        private async Task MessageCreated(IDiscordClient sender, MessageCreateEventArgs e)
+        private async Task OnMessageCreated(IDiscordClient sender, MessageCreateEventArgs e)
         {
             if (e.Author.IsBot == false)
             {
-                await m_legacyCommandReminder.UserMessageCreated(e.Message.Content, new DSharpChannel(e.Channel));
+                MessageCreated?.Invoke(this, new MessageCreatedEventArgs(new DSharpChannel(e.Channel), e.Message.Content));
             }
         }
 

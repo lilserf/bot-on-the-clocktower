@@ -2,85 +2,102 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Bot.Core
 {
     public class LegacyCommandReminder : ILegacyCommandReminder
     {
-        Dictionary<ulong, DateTime> m_lastReminder = new Dictionary<ulong, DateTime>();
+        private readonly IDateTime m_dateTime;
+        private readonly IBotSystem m_botSystem;
+        private readonly IBotClient m_botClient;
 
-        private IDateTime m_dateTime;
+        private readonly Dictionary<ulong, DateTime> m_lastReminder = new();
 
-        private static string s_prefix = "!";
+        private readonly static string s_prefix = "!";
 
-        private static List<string> s_commands = new List<string>()
+        private readonly static List<LegacyCommandUpdate> s_commands = new()
         {
-            "announce",
-            "noannounce",
-            "townInfo",
+            LegacyCommandUpdate.UnimplementedCommand("announce"),
+            LegacyCommandUpdate.UnimplementedCommand("noAnnounce"),
+            LegacyCommandUpdate.UnimplementedCommand("townInfo"),
             "addTown",
             "removeTown",
-            "setChatChannel",
+            LegacyCommandUpdate.UnimplementedCommand("setChatChannel"),
             "createTown",
             "destroyTown",
-            "endGame",
-            "setStorytellers",
+            LegacyCommandUpdate.GameCommand("endGame"),
+            new("setStorytellers", "storytellers"),
             "storytellers",
-            "sts",
-            "setsts",
-            "setst",
-            "currGame",
-            "curGame",
+            new("sts", "storytellers"),
+            new("setsts", "storytellers"),
+            new("setst", "storytellers"),
+            new("currGame", "game"),
+            new("curGame", "game"),
             "lunatic",
             "evil",
-            "night",
-            "day",
-            "vote",
-            "voteTimer",
-            "vt",
+            LegacyCommandUpdate.GameCommand("night"),
+            LegacyCommandUpdate.GameCommand("day"),
+            LegacyCommandUpdate.GameCommand("vote"),
+            LegacyCommandUpdate.GameCommand("voteTimer"),
+            LegacyCommandUpdate.GameCommand("vt", "voteTimer"),
             "stopVoteTimer",
-            "svt",
-            "character",
-            "role",
-            "char",
+            new("svt", "stopVoteTimer"),
+            new("character", "lookup"),
+            new("role", "lookup"),
+            new("char", "lookup"),
             "addScript",
             "removeScript",
-            "refreshScripts",
+            LegacyCommandUpdate.UnimplementedCommand("refreshScripts"),
             "listScripts",
-
         };
+
+        private readonly static Dictionary<string, LegacyCommandUpdate> s_commandMap = new();
+
+        static LegacyCommandReminder()
+        {
+            foreach(var command in s_commands)
+                s_commandMap.Add(command.LegacyCommandString.ToLowerInvariant(), command);
+        }
 
         public LegacyCommandReminder(IServiceProvider sp)
         {
             sp.Inject(out m_dateTime);
+            sp.Inject(out m_botSystem);
+            sp.Inject(out m_botClient);
+
+            m_botClient.MessageCreated += ClientMessageCreated;
         }
 
         private void Cleanup()
         {
             var filtered = m_lastReminder.Where(x => x.Value.AddHours(1) > m_dateTime.Now);
-            m_lastReminder = new(filtered);
+            m_lastReminder.Clear();
+            foreach (var item in filtered)
+                m_lastReminder.Add(item.Key, item.Value);
         }
 
-        private string GetMessage(string input)
+        private static string GetMessage(LegacyCommandUpdate update)
         {
-            // TODO: custom messages
-            return "Discord is moving to require Slash Commands instead of messages to control bots. Please try using the corresponding slash command instead, as these `!` commands will eventually stop working.";
+            if (!update.IsImplemented)
+                return $"Discord will eventually require using `/` commands (such as `/{update.ModernCommandString}`).\n\nUnfortunately, Bot on the Clocktower has not yet implemented an equivalent `/` command for `!{update.LegacyCommandString}`. Stay tuned!";
+
+            var gameSuffix = update.IsGameCommand ? "\n\nAlternatively, try out the new `/game` command for an updated experience!" : "";
+            return $"Please use `/{update.ModernCommandString}` instead of `!{update.LegacyCommandString}`.{gameSuffix}\n\nDiscord will eventually require using `/` instead, and `!` commands will stop working.";
         }
 
-        public async Task UserMessageCreated(string message, IChannel channel)
+        private void ClientMessageCreated(object? sender, MessageCreatedEventArgs e)
         {
-            var first = message.Split(" ").FirstOrDefault() ?? "";
+            var first = e.Message.Split(" ").FirstOrDefault() ?? "";
 
             if (first.StartsWith(s_prefix))
             {
-                string keyword = first.Substring(s_prefix.Length);
-                if (s_commands.Contains(keyword))
+                string keyword = first.Substring(s_prefix.Length).ToLowerInvariant();
+                if (s_commandMap.TryGetValue(keyword, out var update))
                 {
                     bool nag = true;
-                    if (m_lastReminder.ContainsKey(channel.Id))
+                    if (m_lastReminder.ContainsKey(e.Channel.Id))
                     {
-                        var lastReminder = m_lastReminder[channel.Id];
+                        var lastReminder = m_lastReminder[e.Channel.Id];
                         if (lastReminder.AddHours(1) > m_dateTime.Now)
                         {
                             nag = false;
@@ -89,11 +106,59 @@ namespace Bot.Core
 
                     if (nag)
                     {
-                        m_lastReminder[channel.Id] = m_dateTime.Now;
-                        await channel.SendMessageAsync(GetMessage(keyword));
+                        m_lastReminder[e.Channel.Id] = m_dateTime.Now;
+
+                        var eb = m_botSystem.CreateEmbedBuilder();
+                        eb.WithColor(m_botSystem.ColorBuilder.DarkRed);
+                        eb.WithTitle("Warning!");
+                        eb.WithDescription(GetMessage(update));
+                        try
+                        {
+                            SendMessageToChannel(e.Channel, eb.Build());
+                        }
+                        catch (Exception)
+                        { }
                     }
                     Cleanup();
                 }
+            }
+        }
+
+        private void SendMessageToChannel(IChannel channel, IEmbed embed)
+        {
+            channel.SendMessageAsync(embed).ConfigureAwait(continueOnCapturedContext: true);
+        }
+
+        private class LegacyCommandUpdate
+        {
+            public string LegacyCommandString { get; }
+            public string ModernCommandString { get; }
+            public bool IsGameCommand { get; private set; } = false;
+            public bool IsImplemented { get; private set; } = true;
+
+            public LegacyCommandUpdate(string legacyCommandString, string? modernCommandString=null)
+            {
+                LegacyCommandString = legacyCommandString;
+                ModernCommandString = modernCommandString ?? legacyCommandString;
+            }
+
+            public static implicit operator LegacyCommandUpdate(string legacyCommandString) => new(legacyCommandString);
+
+            public static LegacyCommandUpdate GameCommand(string legacyCommandString, string? modernCommandString = null)
+            {
+                var ret = new LegacyCommandUpdate(legacyCommandString, modernCommandString);
+                ret.IsGameCommand = true;
+                return ret;
+            }
+
+            // Can't figure out a good way to do a warning if a method is called other than Obsolete
+            // https://stackoverflow.com/questions/154109/custom-compiler-warnings
+            [Obsolete("Anything calling this needs attention before release.")]
+            public static LegacyCommandUpdate UnimplementedCommand(string legacyCommandString)
+            {
+                var ret = new LegacyCommandUpdate(legacyCommandString);
+                ret.IsImplemented = false;
+                return ret;
             }
         }
     }
