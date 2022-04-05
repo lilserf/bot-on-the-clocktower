@@ -23,6 +23,7 @@ namespace Bot.Core
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
+            sp.AddService<IOldCommandReminder>(new OldCommandReminder(sp));
             return sp;
         }
 

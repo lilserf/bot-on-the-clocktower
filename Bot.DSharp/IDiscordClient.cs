@@ -16,6 +16,7 @@ namespace Bot.DSharp
         event AsyncEventHandler<IDiscordClient, ReadyEventArgs> Ready;
         event AsyncEventHandler<IDiscordClient, ComponentInteractionCreateEventArgs> ComponentInteractionCreated;
         event AsyncEventHandler<IDiscordClient, ModalSubmitEventArgs> ModalSubmitted;
+        event AsyncEventHandler<IDiscordClient, MessageCreateEventArgs> MessageCreated;
 
         Task<IGuild?> GetGuildAsync(ulong id);
         Task ConnectAsync();
@@ -27,6 +28,7 @@ namespace Bot.DSharp
         private readonly AsyncEventWrapper<ReadyEventArgs> mReadyWrapper;
         private readonly AsyncEventWrapper<ComponentInteractionCreateEventArgs> mComponentInteractionCreatedWrapper;
         private readonly AsyncEventWrapper<ModalSubmitEventArgs> mModalSubmitWrapper;
+        private readonly AsyncEventWrapper<MessageCreateEventArgs> mMessageCreateWrapper;
 
         public DiscordClientWrapper(DiscordClient wrapped)
             : base(wrapped)
@@ -34,6 +36,7 @@ namespace Bot.DSharp
             mReadyWrapper = new AsyncEventWrapper<ReadyEventArgs>(this, f => Wrapped.Ready += f, f => Wrapped.Ready -= f);
             mComponentInteractionCreatedWrapper = new AsyncEventWrapper<ComponentInteractionCreateEventArgs>(this, f => Wrapped.ComponentInteractionCreated += f, f => Wrapped.ComponentInteractionCreated -= f);
             mModalSubmitWrapper = new AsyncEventWrapper<ModalSubmitEventArgs>(this, f => Wrapped.ModalSubmitted += f, f => Wrapped.ModalSubmitted -= f);
+            mMessageCreateWrapper = new AsyncEventWrapper<MessageCreateEventArgs>(this, f => Wrapped.MessageCreated += f, f => Wrapped.MessageCreated -= f);
         }
 
 
@@ -53,6 +56,12 @@ namespace Bot.DSharp
         {
             add { mModalSubmitWrapper.Event += value; }
             remove {  mModalSubmitWrapper.Event -= value;}
+        }
+
+        public event AsyncEventHandler<IDiscordClient, MessageCreateEventArgs> MessageCreated
+        {
+            add { mMessageCreateWrapper.Event += value; }
+            remove { mMessageCreateWrapper.Event -= value; }
         }
 
         public SlashCommandsExtension UseSlashCommands(SlashCommandsConfiguration config) => Wrapped.UseSlashCommands(config);
