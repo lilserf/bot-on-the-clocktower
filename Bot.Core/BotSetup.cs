@@ -274,12 +274,15 @@ namespace Bot.Core
                 throw new CreateTownException($"Could not find bot role!");
             var everyoneRole = guild.EveryoneRole;
 
+            // Make sure things aren't null
+            townDesc.FallbackToDefaults();
+
             // First create the roles for this town
-            newTown.StorytellerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName!, Color.Magenta);
+            newTown.StorytellerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName, Color.Magenta);
             if (newTown.StorytellerRole == null)
                 throw new CreateTownException($"Could not find or create Storyteller role '{townDesc.StorytellerRoleName}'");
 
-            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName!, Color.DarkMagenta);
+            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName, Color.DarkMagenta);
             if (newTown.VillagerRole == null)
                 throw new CreateTownException($"Could not find or create Villager role '{townDesc.VillagerRoleName}'");
 
