@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Bot.Api
 {
@@ -8,6 +9,10 @@ namespace Bot.Api
 
 		public IReadOnlyCollection<IChannel> Channels { get; }
 
+
 		public string Name { get; }
+		public IChannel? GetChannelByName(string name);
+		public Task DeleteAsync(string? reason = null);
+
 	}
 }

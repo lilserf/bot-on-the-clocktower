@@ -78,11 +78,31 @@ namespace Bot.DSharp
             return null;
         }
 
+        public IChannel? GetChannelByName(string name)
+        {
+            var chanKvp = Wrapped.Channels.FirstOrDefault(x => x.Value.Name.Equals(name));
+            if(chanKvp.Key != 0 && IsStandardChannel(chanKvp.Value))
+            {
+                return new DSharpChannel(chanKvp.Value);
+            }
+            return null;
+        }
+
         public IChannelCategory? GetChannelCategory(ulong id)
         {
             var channel = Wrapped.GetChannel(id);
             if (channel != null && IsChannelCategory(channel))
                 return new DSharpChannelCategory(channel);
+            return null;
+        }
+
+        public IChannelCategory? GetCategoryByName(string name)
+        {
+            var chanKvp = Wrapped.Channels.FirstOrDefault(x => x.Value.Name.Equals(name));
+            if (chanKvp.Key != 0 && IsChannelCategory(chanKvp.Value))
+            {
+                return new DSharpChannelCategory(chanKvp.Value);
+            }
             return null;
         }
 
@@ -111,6 +131,16 @@ namespace Bot.DSharp
         private static bool IsChannelCategory(DiscordChannel channel)
         {
             return channel.Type == DSharpPlus.ChannelType.Category;
+        }
+
+        public IRole? GetRoleByName(string name)
+        {
+            var role = Roles.FirstOrDefault(x => x.Value.Name == name);
+            if (role.Key != 0)
+            {
+                return role.Value;
+            }
+            return null;
         }
     }
 }

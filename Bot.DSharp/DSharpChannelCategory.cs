@@ -35,7 +35,22 @@ namespace Bot.DSharp
 			}
 		}
 
-		public async Task RemoveOverwriteAsync(IMember m)
+        public async Task DeleteAsync(string? reason = null)
+        {
+			await Wrapped.DeleteAsync(reason);
+        }
+
+        public IChannel? GetChannelByName(string name)
+        {
+            var chan = Channels.FirstOrDefault(x => x.Name == name);
+			if(chan != null)
+            {
+				return chan;
+            }
+			return null;
+        }
+
+        public async Task RemoveOverwriteAsync(IMember m)
 		{
 			if (m is DSharpMember member)
 			{

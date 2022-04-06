@@ -31,5 +31,12 @@ namespace Bot.DSharp
         {
             await BotSetup!.TownInfoAsync(new DSharpInteractionContext(ctx));
         }
+
+        [SlashCommand("destroyTown", "Destroy any channels and roles created by /createtown for the town with the given name")]
+        public async Task DestroyTownCommand(InteractionContext ctx,
+            [Option("townName", "Town Name")] string townName)
+        {
+            await BotSetup!.DestroyTownAsync(new DSharpInteractionContext(ctx), townName);
+        }
     }
 }
