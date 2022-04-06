@@ -8,6 +8,9 @@ namespace Bot.Api
 	{
 		ulong Id { get; }
 
+		string Name { get; }
+
+		IRole? GetRoleByName(string name);
 		IReadOnlyDictionary<ulong, IRole> Roles { get; }
 		IRole? BotRole { get; }
 		IRole EveryoneRole { get; }
@@ -21,8 +24,9 @@ namespace Bot.Api
 		Task<IRole?> CreateRoleAsync(string name, Color color);
 
         IChannel? GetChannel(ulong id);
-
+		IChannel? GetChannelByName(string name);
 		IChannelCategory? GetChannelCategory(ulong id);
+		IChannelCategory? GetCategoryByName(string name);
 
 		IReadOnlyCollection<IChannel> Channels { get; }
 		IReadOnlyCollection<IChannelCategory> ChannelCategories { get; }

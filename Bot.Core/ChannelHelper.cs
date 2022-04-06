@@ -34,7 +34,7 @@ namespace Bot.Core
             return chan;
         }
 
-        static string MakeTextChannelName(string inName)
+        public static string MakeTextChannelName(string inName)
         {
             return inName.ToLower().Replace(' ', '-');
         }

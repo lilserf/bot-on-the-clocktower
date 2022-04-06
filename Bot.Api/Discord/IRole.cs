@@ -1,4 +1,6 @@
-﻿namespace Bot.Api
+﻿using System.Threading.Tasks;
+
+namespace Bot.Api
 {
     public interface IRole
 	{
@@ -8,5 +10,7 @@
 		public ulong Id { get; }
 
 		public bool IsThisBot { get; }
+
+		public Task DeleteAsync();
 	}
 }

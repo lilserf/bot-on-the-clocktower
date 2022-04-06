@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using DSharpPlus.Entities;
 using System;
+using System.Threading.Tasks;
 
 namespace Bot.DSharp
 {
@@ -21,5 +22,10 @@ namespace Bot.DSharp
         public DSharpRole(DiscordRole wrapped)
 			: base(wrapped)
 		{}
-	}
+
+        public Task DeleteAsync()
+        {
+            return Wrapped.DeleteAsync();
+        }
+    }
 }

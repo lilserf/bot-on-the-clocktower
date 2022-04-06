@@ -21,6 +21,7 @@ namespace Bot.DSharp
 		public int Position => Wrapped.Position;
 
 		public bool IsVoice => Wrapped.Type == DSharpPlus.ChannelType.Voice;
+		public bool IsText => Wrapped.Type == DSharpPlus.ChannelType.Text;
 
 		public string Name => Wrapped.Name;
 
@@ -40,8 +41,12 @@ namespace Bot.DSharp
 			}
 		}
 
+        public async Task DeleteAsync(string? reason = null)
+        {
+			await Wrapped.DeleteAsync(reason);
+        }
 
-		public async Task RemoveOverwriteAsync(IMember m)
+        public async Task RemoveOverwriteAsync(IMember m)
         {
 			if (m is DSharpMember member)
             {
