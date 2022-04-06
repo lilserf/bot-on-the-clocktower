@@ -1,5 +1,6 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
+using Bot.Core.Interaction;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -13,24 +14,68 @@ namespace Bot.Core
         public IEnumerable<string> DefaultExtraDayChannels => new[] { "Dark Alley", "Library", "Graveyard", "Pie Shop" };
 
         private readonly ITownDatabase m_townDb;
+        private readonly ITownResolver m_townResolver;
         private readonly IBotSystem m_botSystem;
         private readonly IComponentService m_componentService;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
+        private readonly IGuildInteractionWrapper m_interactionWrapper;
 
         public BotSetup(IServiceProvider sp)
         {
             sp.Inject(out m_townDb);
+            sp.Inject(out m_townResolver);
             sp.Inject(out m_botSystem);
             sp.Inject(out m_componentService);
             sp.Inject(out m_commandMetricsDatabase);
             sp.Inject(out m_dateTime);
+            sp.Inject(out m_interactionWrapper);
         }
 
-        public async Task CommandCreateTown(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight)
-        {
-            await ctx.DeferInteractionResponse();
+        public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => m_interactionWrapper.WrapInteractionAsync($"Creating town...", ctx, l => PerformCreateTown(l, ctx, townName, guildPlayerRole, guildStRole, useNight));
+        public Task TownInfoAsync(IBotInteractionContext ctx) => m_interactionWrapper.WrapInteractionAsync($"Looking up town...", ctx, l => PerformTownInfo(l, ctx));
 
+        private async Task<InteractionResult> PerformTownInfo(IProcessLogger _, IBotInteractionContext ctx)
+        {
+            var townRecord = await m_townDb.GetTownRecordAsync(ctx.Guild.Id, ctx.Channel.Id);
+
+            if (townRecord != null)
+            {
+                var town = await m_townResolver.ResolveTownAsync(townRecord);
+
+                if (town != null)
+                {
+                    //embed = discord.Embed(title = f'{guild.name} // {townInfo.dayCategory.name}', description = f'Created {townInfo.timestamp} by {townInfo.authorName}', color = 0xcc0000)
+                    //embed.add_field(name = "Control Channel", value = townInfo.controlChannel.name, inline = False)
+                    //embed.add_field(name = "Town Square", value = townInfo.townSquare.name, inline = False)
+                    //embed.add_field(name = "Chat Channel", value = townInfo.chatChannel and townInfo.chatChannel.name or "<None>", inline = False)
+                    //embed.add_field(name = "Day Category", value = townInfo.dayCategory.name, inline = False)
+                    //embed.add_field(name = "Night Category", value = townInfo.nightCategory and townInfo.nightCategory.name or "<None>", inline = False)
+                    //embed.add_field(name = "Storyteller Role", value = townInfo.storyTellerRole.name, inline = False)
+                    //embed.add_field(name = "Villager Role", value = townInfo.villagerRole.name, inline = False)
+
+                    var u = "Unknown";
+
+                    var embed = m_botSystem.CreateEmbedBuilder();
+                    embed.WithTitle($"{town.Guild?.Name ?? u} // {town.DayCategory?.Name ?? u}")
+                        .WithDescription($"Created {townRecord.Timestamp} by {townRecord.AuthorName}");
+                    embed.AddField("Control Channel", town.ControlChannel?.Name ?? u);
+                    embed.AddField("Town Square", town.TownSquare?.Name ?? u);
+                    if(town.ChatChannel != null) embed.AddField("Chat Channel", town.ChatChannel.Name);
+                    embed.AddField("Day Category", town.DayCategory?.Name ?? u);
+                    if (town.NightCategory != null) embed.AddField("Night Category", town.NightCategory.Name);
+                    embed.AddField("Storyteller Role", town.StorytellerRole?.Name ?? u);
+                    embed.AddField("Villager Role", town.VillagerRole?.Name ?? u);
+
+                    return InteractionResult.FromMessageAndEmbeds("Town found!", embed.Build());
+                }
+            }
+
+            return InteractionResult.FromMessage("Couldn't find an active town for this server & channel!");
+        }
+
+        private async Task<InteractionResult> PerformCreateTown(IProcessLogger _, IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight)
+        {
             TownDescription tdesc = new TownDescription();
             tdesc.Guild = ctx.Guild;
             tdesc.Author = ctx.Member;
@@ -43,8 +88,7 @@ namespace Bot.Core
 
             await m_commandMetricsDatabase.RecordCommand("createtown", m_dateTime.Now);
 
-            var builder = m_botSystem.CreateWebhookBuilder().WithContent($"Created new town **{townName}**!");
-            await ctx.EditResponseAsync(builder);
+            return InteractionResult.FromMessage($"Created new town **{townName}**!");
         }
 
         public Task AddTown(ITown town, IMember author)

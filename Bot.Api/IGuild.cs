@@ -8,6 +8,7 @@ namespace Bot.Api
 	{
 		ulong Id { get; }
 
+		string Name { get; }
 		IReadOnlyDictionary<ulong, IRole> Roles { get; }
 		IRole? BotRole { get; }
 		IRole EveryoneRole { get; }

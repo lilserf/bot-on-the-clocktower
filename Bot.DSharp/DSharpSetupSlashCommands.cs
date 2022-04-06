@@ -23,7 +23,13 @@ namespace Bot.DSharp
             var wrappedPlayerRole = playerRole == null ? null : new DSharpRole(playerRole);
             var wrappedStRole = stRole == null ? null : new DSharpRole(stRole);
 
-            await BotSetup!.CommandCreateTown(new DSharpInteractionContext(ctx), townName, wrappedPlayerRole, wrappedStRole, useNight);
+            await BotSetup!.CreateTownAsync(new DSharpInteractionContext(ctx), townName, wrappedPlayerRole, wrappedStRole, useNight);
+        }
+
+        [SlashCommand("townInfo", "Get info about any town registered for this server & channel")]
+        public async Task TownInfoCommand(InteractionContext ctx)
+        {
+            await BotSetup!.TownInfoAsync(new DSharpInteractionContext(ctx));
         }
     }
 }

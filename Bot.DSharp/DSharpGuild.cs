@@ -11,6 +11,7 @@ namespace Bot.DSharp
     public class DSharpGuild : DiscordWrapper<DiscordGuild>, IGuild
 	{
 		public ulong Id => Wrapped.Id;
+        public string Name => Wrapped.Name;
 
 		public IReadOnlyDictionary<ulong, IRole> Roles => m_roles;
 
