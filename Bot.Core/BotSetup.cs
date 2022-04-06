@@ -42,18 +42,6 @@ namespace Bot.Core
             m_interactionWrapper.WrapInteractionAsync($"Destroying channels and roles for town {townName}...", ctx,
                 l => PerformDestroyTown(l, ctx, townName));
         
-        private async Task<bool> TryDestroyChannel(IGuild g, string name)
-        {
-            var chan = g.GetChannelByName(name);
-            if(chan != null)
-            {
-                await chan.DeleteAsync();
-                return true;
-            }
-
-            return false;
-        }
-
         private async Task<InteractionResult> PerformDestroyTown(IProcessLogger _, IBotInteractionContext ctx, string townName)
         {
             var guild = ctx.Guild;
