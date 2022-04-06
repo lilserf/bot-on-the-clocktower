@@ -23,5 +23,6 @@ namespace Bot.Api
 
         public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? playerRole, IRole? stRole, bool useNight);
         public Task TownInfoAsync(IBotInteractionContext ctx);
+        public Task DestroyTownAsync(IBotInteractionContext ctx, string townName);
     }
 }

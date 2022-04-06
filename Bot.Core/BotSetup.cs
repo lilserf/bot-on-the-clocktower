@@ -16,6 +16,7 @@ namespace Bot.Core
         private readonly ITownDatabase m_townDb;
         private readonly ITownResolver m_townResolver;
         private readonly IBotSystem m_botSystem;
+        private readonly IBotClient m_botClient;
         private readonly IComponentService m_componentService;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
@@ -26,15 +27,29 @@ namespace Bot.Core
             sp.Inject(out m_townDb);
             sp.Inject(out m_townResolver);
             sp.Inject(out m_botSystem);
+            sp.Inject(out m_botClient);
             sp.Inject(out m_componentService);
             sp.Inject(out m_commandMetricsDatabase);
             sp.Inject(out m_dateTime);
             sp.Inject(out m_interactionWrapper);
         }
 
-        public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => m_interactionWrapper.WrapInteractionAsync($"Creating town...", ctx, l => PerformCreateTown(l, ctx, townName, guildPlayerRole, guildStRole, useNight));
-        public Task TownInfoAsync(IBotInteractionContext ctx) => m_interactionWrapper.WrapInteractionAsync($"Looking up town...", ctx, l => PerformTownInfo(l, ctx));
-
+        public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => 
+            m_interactionWrapper.WrapInteractionAsync($"Creating town...", ctx, 
+                l => PerformCreateTown(l, ctx, townName, guildPlayerRole, guildStRole, useNight));
+        public Task TownInfoAsync(IBotInteractionContext ctx) => 
+            m_interactionWrapper.WrapInteractionAsync($"Looking up town...", ctx, 
+                l => PerformTownInfo(l, ctx));
+        public Task DestroyTownAsync(IBotInteractionContext ctx, string townName) =>
+            m_interactionWrapper.WrapInteractionAsync($"Destroying channels and roles for town ${townName}...", ctx,
+                l => PerformDestroyTown(l, ctx, townName));
+        
+        private async Task<InteractionResult> PerformDestroyTown(IProcessLogger _, IBotInteractionContext ctx, string townName)
+        {
+            var guild = ctx.Guild;
+            return InteractionResult.FromMessage("Done");
+        }
+        
         private async Task<InteractionResult> PerformTownInfo(IProcessLogger _, IBotInteractionContext ctx)
         {
             var townRecord = await m_townDb.GetTownRecordAsync(ctx.Guild.Id, ctx.Channel.Id);
@@ -45,15 +60,6 @@ namespace Bot.Core
 
                 if (town != null)
                 {
-                    //embed = discord.Embed(title = f'{guild.name} // {townInfo.dayCategory.name}', description = f'Created {townInfo.timestamp} by {townInfo.authorName}', color = 0xcc0000)
-                    //embed.add_field(name = "Control Channel", value = townInfo.controlChannel.name, inline = False)
-                    //embed.add_field(name = "Town Square", value = townInfo.townSquare.name, inline = False)
-                    //embed.add_field(name = "Chat Channel", value = townInfo.chatChannel and townInfo.chatChannel.name or "<None>", inline = False)
-                    //embed.add_field(name = "Day Category", value = townInfo.dayCategory.name, inline = False)
-                    //embed.add_field(name = "Night Category", value = townInfo.nightCategory and townInfo.nightCategory.name or "<None>", inline = False)
-                    //embed.add_field(name = "Storyteller Role", value = townInfo.storyTellerRole.name, inline = False)
-                    //embed.add_field(name = "Villager Role", value = townInfo.villagerRole.name, inline = False)
-
                     var u = "Unknown";
 
                     var embed = m_botSystem.CreateEmbedBuilder();
@@ -217,6 +223,8 @@ namespace Bot.Core
 
             await AddTown(newTown, author);
         }
+
+
     }
 
     public class CreateTownException : Exception
