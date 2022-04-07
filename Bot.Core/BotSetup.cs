@@ -33,15 +33,69 @@ namespace Bot.Core
         }
 
         public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => 
-            m_interactionWrapper.WrapInteractionAsync($"Creating town...", ctx, 
+            m_interactionWrapper.WrapInteractionAsync($"Creating town **{townName}**...", ctx, 
                 l => PerformCreateTown(l, ctx, townName, guildPlayerRole, guildStRole, useNight));
         public Task TownInfoAsync(IBotInteractionContext ctx) => 
             m_interactionWrapper.WrapInteractionAsync($"Looking up town...", ctx, 
                 l => PerformTownInfo(l, ctx));
         public Task DestroyTownAsync(IBotInteractionContext ctx, string townName) =>
-            m_interactionWrapper.WrapInteractionAsync($"Destroying channels and roles for town {townName}...", ctx,
+            m_interactionWrapper.WrapInteractionAsync($"Destroying channels and roles for town **{townName}**...", ctx,
                 l => PerformDestroyTown(l, ctx, townName));
-        
+
+        public Task RemoveTownAsync(IBotInteractionContext ctx, string? townName)
+        {
+            string msg = $"Removing town {townName}...";
+            if (townName == null)
+                msg = $"Removing town...";
+
+            return m_interactionWrapper.WrapInteractionAsync(msg, ctx,
+                l => PerformRemoveTown(l, ctx, townName));
+        }
+
+        private Task<bool> RemoveTown(ITownRecord townRec)
+        {
+            return m_townDb.DeleteTownAsync(townRec);
+        }
+
+        private async Task<InteractionResult> PerformRemoveTown(IProcessLogger _, IBotInteractionContext ctx, string? townName)
+        {
+            bool townNameMode = (townName != null);
+            var guild = ctx.Guild;
+            bool success = false;
+            ITownRecord? townRec = null;
+            if (townName == null)
+            {
+                townRec = await m_townDb.GetTownRecordAsync(guild.Id, ctx.Channel.Id);
+            }
+            else
+            {
+                townRec = await m_townDb.GetTownRecordByNameAsync(guild.Id, townName);
+            }
+
+            if (townRec != null)
+            {
+                townName = townRec.DayCategory;
+                success = await RemoveTown(townRec);
+            }
+
+            if (success)
+            {
+                var embed = m_botSystem.CreateEmbedBuilder();
+                embed.WithTitle($"{guild.Name} // {townName}");
+                embed.WithDescription($"This town is no longer registered.");
+                embed.WithColor(m_botSystem.ColorBuilder.DarkRed);
+
+                return InteractionResult.FromMessageAndEmbeds("", embed.Build());
+            }
+            else
+            {
+                string msg = "Couldn't find a town controlled by this channel to remove!";
+                if (townNameMode)
+                    msg = $"Couldn't find a town named **{townName}** on this server to remove!";
+                return InteractionResult.FromMessage(msg);
+            }
+        }
+
         private async Task<InteractionResult> PerformDestroyTown(IProcessLogger _, IBotInteractionContext ctx, string townName)
         {
             var guild = ctx.Guild;
@@ -135,6 +189,10 @@ namespace Bot.Core
                     success = false;
                 }
             }
+            else
+            {
+                return InteractionResult.FromMessage($"Couldn't find a town named **{townName}** on this server!");
+            }
 
             // Don't try to remove roles if we had an issue with something else - we might need them to see channels that didn't delete!
             if(success)
@@ -185,8 +243,13 @@ namespace Bot.Core
 
             if(success)
             {
-                // TODO
-                // Remove from town DB
+                var townRec = await m_townDb.GetTownRecordByNameAsync(guild.Id, townName);
+                if (townRec != null)
+                {
+                    bool removeSuccess = await RemoveTown(townRec);
+                    if (removeSuccess)
+                        message += $"\n\nTown **{townName}** is no longer registered.";
+                }
             }
 
             return InteractionResult.FromMessage(message);

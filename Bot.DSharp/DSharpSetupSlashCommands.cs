@@ -38,5 +38,12 @@ namespace Bot.DSharp
         {
             await BotSetup!.DestroyTownAsync(new DSharpInteractionContext(ctx), townName);
         }
+
+        [SlashCommand("removeTown", "Unregister a town on this server without deleting any channels or roles")]
+        public async Task RemoveTownCommand(InteractionContext ctx,
+            [Option("townName", "Town Name - if left blank, will delete the town associated with the channel issuing the command.")] string? townName = null)
+        {
+            await BotSetup!.RemoveTownAsync(new DSharpInteractionContext(ctx), townName);
+        }
     }
 }

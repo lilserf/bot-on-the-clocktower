@@ -107,6 +107,22 @@ namespace Bot.Database
 			return documents.Select(x => new TownKey(x.GuildId, x.ControlChannelId));
         }
 
+        public async Task<bool> DeleteTownAsync(ITownRecord townRec)
+        {
+			var filter = GetTownMatchFilter(townRec.GuildId, townRec.ControlChannelId);
+			var result = await m_collection.DeleteManyAsync(filter);
+			return (result.DeletedCount > 0 ? true : false);
+        }
+
+        public async Task<ITownRecord?> GetTownRecordByNameAsync(ulong guildId, string townName)
+        {
+			// Build a filter for the specific document we want
+			var builder = Builders<MongoTownRecord>.Filter;
+			var filter = builder.Eq(x => x.GuildId, guildId) & builder.Eq(x => x.DayCategory, townName);
+
+			return await m_collection.Find(filter).FirstOrDefaultAsync();
+		}
+
         public class MissingGuildInfoDatabaseException : Exception { }
 	}
 }
