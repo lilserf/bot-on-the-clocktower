@@ -11,6 +11,7 @@ namespace Bot.Core
         private readonly IServiceProvider m_serviceProvider;
         private readonly IBotClient m_client;
         private readonly IFinalShutdownService m_finalShutdown;
+        private readonly GhostTownCleanup m_ghostTownCleanup;
 
         public BotSystemRunner(IServiceProvider parentServices, IBotSystem system)
         {
@@ -27,6 +28,7 @@ namespace Bot.Core
 
             m_serviceProvider.GetService<IVersionProvider>().InitializeVersions();
 
+            m_ghostTownCleanup = new GhostTownCleanup(m_serviceProvider);
         }
 
         public async Task RunAsync()
