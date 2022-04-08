@@ -34,7 +34,7 @@ jobs:
           dotnet-version: '5.0.x'
           
       - name: Publish
-        run: dotnet publish -c release -f net5.0 -o published
+        run: dotnet publish Bot.Main/Bot.Main.csproj -c release -f net5.0 -o published
       
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
