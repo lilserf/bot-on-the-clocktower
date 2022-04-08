@@ -26,6 +26,7 @@ namespace Bot.Core
             sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
+
             return sp;
         }
 
@@ -39,6 +40,7 @@ namespace Bot.Core
             sp.AddService<ITownInteractionQueue>(new TownInteractionQueue(sp));
             sp.AddService<IGuildInteractionWrapper>(new GuildInteractionWrapper(sp));
             sp.AddService<ITownInteractionWrapper>(new TownInteractionWrapper(sp));
+            sp.AddService<IStartupTownTasks>(new StartupTownTasks(sp));
             sp.AddService<ITownCleanup>(new TownCleanup(sp));
             sp.AddService<ITownResolver>(new TownResolver(sp));
             var gameplay = new BotGameplay(sp);

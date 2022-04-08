@@ -19,10 +19,10 @@ namespace Bot.Core
         IVersionProvider m_versionProvider;
         IAnnouncementDatabase m_announcementDatabase;
         ITownDatabase m_townDatabase;
-        ICallbackScheduler<Queue<TownKey>> m_callbackScheduler;
         IBotSystem m_botSystem;
         IBotClient m_botClient;
         IDateTime m_dateTime;
+        IStartupTownTasks m_startupTownTasks;
 
         const int NUM_TOWNS_PER_CALLBACK = 5;
         const int MINUTES_PER_CALLBACK = 5;
@@ -34,74 +34,42 @@ namespace Bot.Core
             sp.Inject(out m_townDatabase);
             sp.Inject(out m_botSystem);
             sp.Inject(out m_botClient);
-            sp.Inject(out m_dateTime);            
+            sp.Inject(out m_dateTime);     
+            sp.Inject(out m_startupTownTasks);
 
-            var callbackFactory = sp.GetService<ICallbackSchedulerFactory>();
-            m_callbackScheduler = callbackFactory.CreateScheduler<Queue<TownKey>>(AnnounceToTowns, TimeSpan.FromMinutes(1));
-
-            m_botClient.Connected += OnClientConnected;
+            m_startupTownTasks.AddStartupTask(AnnounceToTown);
         }
 
-        private async void OnClientConnected(object? sender, EventArgs e)
-        {
-            await AnnounceLatestVersion();
-        }
-
-        private async Task AnnounceToTowns(Queue<TownKey> towns)
+        private async Task AnnounceToTown(TownKey townKey)
         {
             bool restricted = bool.Parse(Environment.GetEnvironmentVariable("RESTRICT_ANNOUNCE") ?? "false");
 
-            Serilog.Log.Information("AnnounceToTowns: {townCount} towns remain...", towns.Count());
-            int numSent = 0;
-            while(numSent < NUM_TOWNS_PER_CALLBACK && towns.Count > 0)
+            // If we're restricted, skip all guilds not in the allowList
+            if (restricted && !s_guildAllowList.Contains(townKey.GuildId))
+                return;
+
+            Serilog.Log.Information("AnnounceToTown: Checking town {townKey}", townKey);
+
+            var guild = await m_botClient.GetGuildAsync(townKey.GuildId);
+            if (guild == null) 
+                return;
+
+            var chan = guild.GetChannel(townKey.ControlChannelId);
+            if (chan == null) 
+                return;
+
+            foreach (var versionObj in m_versionProvider.Versions)
             {
-                var townKey = towns.Dequeue();
-
-                // If we're restricted, skip all guilds not in the allowList
-                if (restricted && !s_guildAllowList.Contains(townKey.GuildId))
-                    continue;
-
-                Serilog.Log.Information("AnnounceToTowns: Checking town {townKey}", townKey);
-
-                var guild = await m_botClient.GetGuildAsync(townKey.GuildId);
-                if (guild == null) 
-                    continue;
-
-                var chan = guild.GetChannel(townKey.ControlChannelId);
-                if (chan == null) 
-                    continue;
-
-                foreach (var versionObj in m_versionProvider.Versions)
+                Serilog.Log.Information("AnnounceToTowns: Checking version {versionObj}", versionObj);
+                if (!await m_announcementDatabase.HasSeenVersion(townKey.GuildId, versionObj.Key))
                 {
-                    Serilog.Log.Information("AnnounceToTowns: Checking version {versionObj}", versionObj);
-                    if (!await m_announcementDatabase.HasSeenVersion(townKey.GuildId, versionObj.Key))
-                    {
-                        await m_announcementDatabase.RecordGuildHasSeenVersion(townKey.GuildId, versionObj.Key);
+                    await m_announcementDatabase.RecordGuildHasSeenVersion(townKey.GuildId, versionObj.Key);
 
-                        numSent++;
-                        await chan.SendMessageAsync(versionObj.Value);
-                    }
+                    await chan.SendMessageAsync(versionObj.Value);
                 }
             }
-
-            if(towns.Count > 0)
-            {
-                Serilog.Log.Information("AnnounceToTowns: {townCount} towns remain, scheduling callback...", towns.Count);
-                DateTime nextTime = m_dateTime.Now + TimeSpan.FromMinutes(MINUTES_PER_CALLBACK);
-                m_callbackScheduler.ScheduleCallback(towns, nextTime);
-            }
-            else
-            {
-                Serilog.Log.Information("AnnounceToTowns: Announcements complete!");
-            }
         }
 
-        public async Task AnnounceLatestVersion()
-        {
-            var allTowns = new Queue<TownKey>(await m_townDatabase.GetAllTowns());
-
-            await AnnounceToTowns(allTowns);            
-        }
 
         public Task SetGuildAnnounce(ulong guildId, bool announce)
         {
