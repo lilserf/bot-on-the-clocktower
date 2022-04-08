@@ -6,9 +6,9 @@ name: Deploy
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ feature/csharp-port ]
+    branches: [ feature/csharp_port ]
   pull_request:
-    branches: [ feature/csharp-port ]
+    branches: [ feature/csharp_port ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -28,6 +28,14 @@ jobs:
           ref: feature/csharp_port
           submodules: 'recursive'
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '5.0.x'
+          
+      - name: Build
+        run: dotnet build -c release
+      
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -38,16 +46,16 @@ jobs:
         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts       
         
       - name: Deploy with rsync
-        run: rsync -avz . ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/usr/botc/
+        run: rsync -avz ./bin/release/net5.0/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/usr/botc_bin/
         
-      - name: Run the 'new deploy' script on the server
-        uses: fifsky/ssh-action@master
-        with:
-          command: |
-            cd /usr/botc
-            nohup ./new-deploy.sh
-          host: ${{ secrets.SSH_HOST }}
-          user: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          args: -tt
+      #- name: Run the 'new deploy' script on the server
+      #  uses: fifsky/ssh-action@master
+      #  with:
+      #    command: |
+      #      cd /usr/botc
+      #      nohup ./new-deploy.sh
+      #    host: ${{ secrets.SSH_HOST }}
+      #    user: ${{ secrets.SSH_USER }}
+      #    key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #    args: -tt
 
