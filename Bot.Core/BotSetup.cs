@@ -32,6 +32,8 @@ namespace Bot.Core
             sp.Inject(out m_interactionWrapper);
         }
 
+        public Task AddTownAsync(IBotInteractionContext ctx, string townName) => throw new NotImplementedException();
+
         public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => 
             m_interactionWrapper.WrapInteractionAsync($"Creating town **{townName}**...", ctx, 
                 l => PerformCreateTown(l, ctx, townName, guildPlayerRole, guildStRole, useNight));
@@ -409,7 +411,6 @@ namespace Bot.Core
 
             await AddTown(newTown, author);
         }
-
 
     }
 
