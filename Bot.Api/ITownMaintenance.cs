@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-    public interface IStartupTownTasks
+    public interface ITownMaintenance
     {
-        void AddStartupTask(Func<TownKey, Task> startupTask);
+        void AddMaintenanceTask(Func<TownKey, Task> startupTask);
 
-        Task Startup();
+        Task RunMaintenance();
     }
 }

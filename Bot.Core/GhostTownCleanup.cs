@@ -10,7 +10,7 @@ namespace Bot.Core
 {
     internal class GhostTownCleanup
     {
-        IStartupTownTasks m_startupTownTasks;
+        ITownMaintenance m_startupTownTasks;
         IBotClient m_botClient;
         ITownDatabase m_townDatabase;
         IGameMetricDatabase m_gameMetricDatabase;
@@ -24,7 +24,7 @@ namespace Bot.Core
             sp.Inject(out m_gameMetricDatabase);
             sp.Inject(out m_dateTime);
 
-            m_startupTownTasks.AddStartupTask(CleanupGhostTown);
+            m_startupTownTasks.AddMaintenanceTask(CleanupGhostTown);
         }
 
         private async Task CleanupGhostTown(TownKey townKey)

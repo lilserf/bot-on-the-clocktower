@@ -22,7 +22,7 @@ namespace Bot.Core
         IBotSystem m_botSystem;
         IBotClient m_botClient;
         IDateTime m_dateTime;
-        IStartupTownTasks m_startupTownTasks;
+        ITownMaintenance m_startupTownTasks;
 
         const int NUM_TOWNS_PER_CALLBACK = 5;
         const int MINUTES_PER_CALLBACK = 5;
@@ -37,7 +37,7 @@ namespace Bot.Core
             sp.Inject(out m_dateTime);     
             sp.Inject(out m_startupTownTasks);
 
-            m_startupTownTasks.AddStartupTask(AnnounceToTown);
+            m_startupTownTasks.AddMaintenanceTask(AnnounceToTown);
         }
 
         private async Task AnnounceToTown(TownKey townKey)
