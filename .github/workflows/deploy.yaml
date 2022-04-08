@@ -4,10 +4,8 @@ name: Deploy
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
+  # Triggers the workflow on push events to csharp_port
   push:
-    branches: [ feature/csharp_port ]
-  pull_request:
     branches: [ feature/csharp_port ]
 
   # Allows you to run this workflow manually from the Actions tab
