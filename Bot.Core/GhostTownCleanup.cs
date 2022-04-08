@@ -13,12 +13,16 @@ namespace Bot.Core
         IStartupTownTasks m_startupTownTasks;
         IBotClient m_botClient;
         ITownDatabase m_townDatabase;
+        IGameMetricDatabase m_gameMetricDatabase;
+        IDateTime m_dateTime;
 
         public GhostTownCleanup(IServiceProvider sp)
         {
             sp.Inject(out m_startupTownTasks);
             sp.Inject(out m_botClient);
             sp.Inject(out m_townDatabase);
+            sp.Inject(out m_gameMetricDatabase);
+            sp.Inject(out m_dateTime);
 
             m_startupTownTasks.AddStartupTask(CleanupGhostTown);
         }
@@ -26,6 +30,12 @@ namespace Bot.Core
         private async Task CleanupGhostTown(TownKey townKey)
         {
             Serilog.Log.Information("GhostTownCleanup: Checking town {townKey}", townKey);
+
+            // If there was activity in the last 30 days, skip this town
+            var mostRecent = await m_gameMetricDatabase.GetMostRecentGame(townKey);
+            if (mostRecent != null && mostRecent.Value.AddDays(30) > m_dateTime.Now)
+                return;
+            
             IGuild? guild = await m_botClient.GetGuildAsync(townKey.GuildId);
             IChannel? controlChan = null;
 

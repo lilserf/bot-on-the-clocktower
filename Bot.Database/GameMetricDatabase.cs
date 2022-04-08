@@ -117,6 +117,20 @@ namespace Bot.Database
             await m_collection.ReplaceOneAsync(filter, record, new ReplaceOptions() { IsUpsert = true });
         }
 
+        public async Task<DateTime?> GetMostRecentGame(TownKey townKey)
+        {
+            var filterBuilder = Builders<MongoGameMetricRecord>.Filter;
+
+            var filter = filterBuilder.Eq(x => x.TownHash, TownHash(townKey));
+
+            var sortBuilder = Builders<MongoGameMetricRecord>.Sort;
+
+            var sort = sortBuilder.Descending(x => x.FirstActivity);
+
+            var mostRecent = await m_collection.Find(filter).Sort(sort).FirstOrDefaultAsync();
+
+            return mostRecent?.FirstActivity ?? null;
+        }
     }
 
     class MissingGameMetricDatabaseException : Exception { }

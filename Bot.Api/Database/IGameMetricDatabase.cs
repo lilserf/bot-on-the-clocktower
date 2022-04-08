@@ -17,5 +17,7 @@ namespace Bot.Api.Database
         public Task RecordVote(TownKey townKey, DateTime timestamp);
 
         public Task RecordEndGame(TownKey townKey, DateTime timestamp);
+
+        public Task<DateTime?> GetMostRecentGame(TownKey townKey);
     }
 }
