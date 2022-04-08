@@ -46,7 +46,7 @@ jobs:
         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts       
         
       - name: Deploy with rsync
-        run: rsync -avz ./bin/release/net5.0/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/usr/botc_bin/
+        run: rsync -avz bin/release/net5.0/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/usr/botc_bin/
         
       #- name: Run the 'new deploy' script on the server
       #  uses: fifsky/ssh-action@master
