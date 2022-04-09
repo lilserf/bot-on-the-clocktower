@@ -34,5 +34,11 @@ namespace Bot.DSharp
         {
             return BotLookup!.ListScriptsAsync(new DSharpInteractionContext(ctx));
         }
+
+        [SlashCommand("refreshScripts", "Refresh scripts registered for this server")]
+        public Task LookupCommand(InteractionContext ctx)
+        {
+            return BotLookup!.RefreshScriptsAsync(new DSharpInteractionContext(ctx));
+        }
     }
 }

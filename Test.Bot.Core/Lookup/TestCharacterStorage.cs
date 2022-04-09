@@ -20,7 +20,9 @@ namespace Test.Bot.Core.Lookup
             RegisterMock(m_mockLookupDb);
 
             m_mockOfficialCache.Setup(oc => oc.GetOfficialCharactersAsync()).ReturnsAsync(new GetOfficialCharactersResult(Enumerable.Empty<GetOfficialCharactersItem>()));
+            m_mockOfficialCache.Setup(oc => oc.InvalidateCache());
             m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.IsAny<string>())).ReturnsAsync(new GetCustomScriptResult(Enumerable.Empty<ScriptWithCharacters>()));
+            m_mockCustomCache.Setup(cc => cc.InvalidateCache(It.IsAny<string>()));
             m_mockLookupDb.Setup(ld => ld.GetScriptUrlsAsync(It.IsAny<ulong>())).ReturnsAsync(new string[] { });
         }
 
@@ -61,8 +63,8 @@ namespace Test.Bot.Core.Lookup
             var expectedChar2 = new CharacterData("testid2", "test char 2", "test ability 2", CharacterTeam.Demon, isOfficial: false);
             var expectedChar3 = new CharacterData("testid3", "test char 3", "test ability 3", CharacterTeam.Fabled, isOfficial: false);
 
-            m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.Is<string>(s => s == testUrl1))).ReturnsAsync(new GetCustomScriptResult(new[] { new ScriptWithCharacters( expectedScript1, new[] { expectedChar1 } ) }));
-            m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.Is<string>(s => s == testUrl2))).ReturnsAsync(new GetCustomScriptResult(new[] { new ScriptWithCharacters( expectedScript2, new[] { expectedChar2, expectedChar3 } ) }));
+            m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.Is<string>(s => s == testUrl1))).ReturnsAsync(new GetCustomScriptResult(new[] { new ScriptWithCharacters(expectedScript1, new[] { expectedChar1 }) }));
+            m_mockCustomCache.Setup(cc => cc.GetCustomScriptAsync(It.Is<string>(s => s == testUrl2))).ReturnsAsync(new GetCustomScriptResult(new[] { new ScriptWithCharacters(expectedScript2, new[] { expectedChar2, expectedChar3 }) }));
 
             var cs = new CharacterStorage(GetServiceProvider());
 
@@ -88,6 +90,28 @@ namespace Test.Bot.Core.Lookup
                         s => Assert.Equal(expectedScript2, s));
                 }
             );
+        }
+
+        [Fact]
+        public void CharacterStorage_RefreshScripts_InvalidatesExpectedScripts()
+        {
+            ulong testGuildId = 123ul;
+            string testUrl1 = "test url 1";
+            string testUrl2 = "test url 2";
+
+            m_mockLookupDb.Setup(ld => ld.GetScriptUrlsAsync(It.Is<ulong>(g => g == testGuildId))).ReturnsAsync(new string[] { testUrl1, testUrl2 });
+
+            var cs = new CharacterStorage(GetServiceProvider());
+            m_mockOfficialCache.Verify(oc => oc.InvalidateCache(), Times.Never);
+            m_mockCustomCache.Verify(cc => cc.InvalidateCache(It.IsAny<string>()), Times.Never);
+
+            AssertCompletedTask(() => cs.RefreshCharactersAsync(testGuildId));
+
+            m_mockOfficialCache.Verify(oc => oc.InvalidateCache(), Times.Once);
+            m_mockOfficialCache.VerifyNoOtherCalls();
+            m_mockCustomCache.Verify(cc => cc.InvalidateCache(It.Is<string>(s => s == testUrl1)), Times.Once);
+            m_mockCustomCache.Verify(cc => cc.InvalidateCache(It.Is<string>(s => s == testUrl2)), Times.Once);
+            m_mockCustomCache.VerifyNoOtherCalls();
         }
     }
 }

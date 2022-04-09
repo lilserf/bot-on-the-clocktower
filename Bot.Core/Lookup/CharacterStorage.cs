@@ -39,5 +39,14 @@ namespace Bot.Core.Lookup
 
             return new GetCharactersResult(items);
         }
+
+        public async Task RefreshCharactersAsync(ulong guildId)
+        {
+            var guildCustomScriptUrls = await m_lookupDb.GetScriptUrlsAsync(guildId);
+
+            m_officialCache.InvalidateCache();
+            foreach (var url in guildCustomScriptUrls)
+                m_customCache.InvalidateCache(url);
+        }
     }
 }

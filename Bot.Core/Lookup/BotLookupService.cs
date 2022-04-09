@@ -27,6 +27,7 @@ namespace Bot.Core.Lookup
         public Task AddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl) => m_interactionWrapper.WrapInteractionAsync($"Adding script at \"{scriptJsonUrl}\"...", ctx, l => PerformAddScriptAsync(l, ctx, scriptJsonUrl));
         public Task RemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl) => m_interactionWrapper.WrapInteractionAsync($"Removing script at \"{scriptJsonUrl}\"...", ctx, l => PerformRemoveScriptAsync(l, ctx, scriptJsonUrl));
         public Task ListScriptsAsync(IBotInteractionContext ctx) => m_interactionWrapper.WrapInteractionAsync($"Finding registered scripts...", ctx, l => PerformListScriptsAsync(l, ctx));
+        public Task RefreshScriptsAsync(IBotInteractionContext ctx) => m_interactionWrapper.WrapInteractionAsync($"Refreshing scripts...", ctx, l => PerformRefreshScriptsAsync(l, ctx));
 
         private async Task<InteractionResult> PerformLookupAsync(IProcessLogger _, IBotInteractionContext ctx, string lookupString)
         {
@@ -65,6 +66,12 @@ namespace Bot.Core.Lookup
             foreach (var script in scripts)
                 sb.AppendLine($"⦁ {script}");
             return sb.ToString();
+        }
+
+        private async Task<InteractionResult> PerformRefreshScriptsAsync(IProcessLogger _, IBotInteractionContext ctx)
+        {
+            await m_characterLookup.RefreshCharactersAsync(ctx.Guild.Id);
+            return "Scripts have been refreshed.";
         }
     }
 }

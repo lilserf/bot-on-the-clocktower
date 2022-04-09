@@ -24,6 +24,8 @@ namespace Bot.Core.Lookup
             return new LookupCharacterResult(mergedCharacters.Select(c => new LookupCharacterItem(c.Character, c.Scripts)));
         }
 
+        public Task RefreshCharactersAsync(ulong guildId) => m_storage.RefreshCharactersAsync(guildId);
+        
         private IEnumerable<GetCharactersItem> FilterMatchingCharacterItems(IEnumerable<GetCharactersItem> characterItems, string charString)
         {
             var allNames = characterItems.Select(ci => ci.Character.Name).Distinct().ToArray();

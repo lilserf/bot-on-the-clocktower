@@ -37,5 +37,10 @@ namespace Bot.Core.Lookup
             m_urlToScriptAndTime[url] = (script, now);
             return script;
         }
+
+        public void InvalidateCache(string url)
+        {
+            m_urlToScriptAndTime.Remove(url);
+        }
     }
 }

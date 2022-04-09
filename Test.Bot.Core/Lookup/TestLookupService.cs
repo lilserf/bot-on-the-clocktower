@@ -40,6 +40,7 @@ namespace Test.Bot.Core.Lookup
             m_mockLookupDb.Setup(ld => ld.RemoveScriptUrlAsync(It.IsAny<ulong>(), It.IsAny<string>())).Returns(Task.CompletedTask);
             m_mockLookupDb.Setup(ld => ld.GetScriptUrlsAsync(It.IsAny<ulong>())).ReturnsAsync(m_mockDbScriptUrls);
             m_mockCharacterLookup.Setup(cl => cl.LookupCharacterAsync(It.IsAny<ulong>(), It.IsAny<string>())).ReturnsAsync(new LookupCharacterResult(Enumerable.Empty<LookupCharacterItem>()));
+            m_mockCharacterLookup.Setup(cl => cl.RefreshCharactersAsync(It.IsAny<ulong>())).Returns(Task.CompletedTask);
             m_mockProcessLogger.Setup(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
             m_mockInteractionGuild.SetupGet(g => g.Id).Returns(m_mockGuildId);
@@ -120,6 +121,22 @@ namespace Test.Bot.Core.Lookup
                 (s, ic) =>
                 {
                     Assert.Contains("scripts", s, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Equal(m_mockInteractionContext.Object, ic);
+                });
+        }
+
+        [Fact]
+        public void RefreshScriptsRequested_WrapsInteraction()
+        {
+            TestInteractionWrapperHelper.TestGuildInteractionRequested(GetServiceProvider(),
+                (sp) =>
+                {
+                    BotLookupService bls = new(sp);
+                    return bls.RefreshScriptsAsync(m_mockInteractionContext.Object);
+                },
+                (s, ic) =>
+                {
+                    Assert.Contains("refreshing", s, StringComparison.InvariantCultureIgnoreCase);
                     Assert.Equal(m_mockInteractionContext.Object, ic);
                 });
         }
@@ -260,6 +277,23 @@ namespace Test.Bot.Core.Lookup
                     Assert.Contains(lookupStr, ir.Message);
                     Assert.Equal(expectedEmbedObjects, ir.Embeds);
                     Assert.Equal(expectedMessageCharacters, actualMessageCharacters);
+                });
+        }
+
+        [Fact]
+        public void LookupRefreshScripts_CallsIntoLookup()
+        {
+            TestInteractionWrapperHelper.TestGuildInteractionMethod(GetServiceProvider(),
+                (sp) =>
+                {
+                    BotLookupService bls = new(sp);
+                    return bls.RefreshScriptsAsync(m_mockInteractionContext.Object);
+                },
+                (_, ir) =>
+                {
+                    Assert.Contains("scripts", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains("refreshed", ir.Message, StringComparison.InvariantCultureIgnoreCase);
+                    m_mockCharacterLookup.Verify(cl => cl.RefreshCharactersAsync(It.Is<ulong>(ul => ul == m_mockGuildId)), Times.Once);
                 });
         }
     }
