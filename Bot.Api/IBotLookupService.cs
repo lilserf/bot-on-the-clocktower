@@ -8,5 +8,6 @@ namespace Bot.Api
         Task AddScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl);
         Task RemoveScriptAsync(IBotInteractionContext ctx, string scriptJsonUrl);
         Task ListScriptsAsync(IBotInteractionContext ctx);
+        Task RefreshScriptsAsync(IBotInteractionContext ctx);
     }
 }

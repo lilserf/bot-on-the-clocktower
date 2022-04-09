@@ -177,6 +177,17 @@ namespace Test.Bot.Core.Lookup
                 });
         }
 
+        [Fact]
+        public void RefreshScriptsCalled_CallsStorageRefresh()
+        {
+            var lookup = new CharacterLookup(GetServiceProvider());
+
+            AssertCompletedTask(() => lookup.RefreshCharactersAsync(GuildId));
+
+            m_mockCharacterStorage.Verify(cs => cs.RefreshCharactersAsync(It.Is<ulong>(ul => ul == GuildId)), Times.Once);
+            m_mockCharacterStorage.VerifyNoOtherCalls();
+        }
+
         private static void AssertEquivalentRole(CharacterData a, CharacterData b)
         {
             Assert.Equal(a.Name, b.Name);
