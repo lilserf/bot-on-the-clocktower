@@ -47,7 +47,7 @@ namespace Bot.Core
             new("char", "lookup"),
             "addScript",
             "removeScript",
-            LegacyCommandUpdate.UnimplementedCommand("refreshScripts"),
+            "refreshScripts",
             "listScripts",
         };
 
