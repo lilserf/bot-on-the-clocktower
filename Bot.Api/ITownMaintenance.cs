@@ -9,7 +9,5 @@ namespace Bot.Api
     public interface ITownMaintenance
     {
         void AddMaintenanceTask(Func<TownKey, Task> startupTask);
-
-        Task RunMaintenanceAsync();
     }
 }

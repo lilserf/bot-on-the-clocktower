@@ -13,8 +13,10 @@ namespace Bot.Core
     {
         const int NUM_TOWNS_PER_CALLBACK = 5;
         const int MINUTES_PER_CALLBACK = 5;
+        const int DAYS_BETWEEN_MAINTENANCE = 14;
 
         private readonly ICallbackScheduler<Queue<TownKey>> m_callbackScheduler;
+        private readonly ICallbackScheduler<bool> m_longWaitScheduler;
         private readonly ITownDatabase m_townDatabase;
         private readonly IBotClient m_botClient;
         private readonly IDateTime m_dateTime;
@@ -44,13 +46,19 @@ namespace Bot.Core
             m_shutdownPrevention.RegisterShutdownPreventer(m_shutdownTcs.Task);
 
             var callbackFactory = sp.GetService<ICallbackSchedulerFactory>();
+            // Scheduler for when we're running the queue - every few minutes, process some more towns
             m_callbackScheduler = callbackFactory.CreateScheduler<Queue<TownKey>>(ProcessQueue, TimeSpan.FromMinutes(1));
+            // Scheduler for when we're waiting between maintenance periods - only needs to check every day or so
+            m_longWaitScheduler = callbackFactory.CreateScheduler<bool>(RunMaintenanceAsync, TimeSpan.FromDays(1));
 
             m_botClient.Connected += async (o, args) => await RunMaintenanceAsync();
         }
 
         private async Task ProcessQueue(Queue<TownKey> towns)
         {
+            if (m_queueProcessing)
+                return;
+
             m_queueProcessing = true;
             Serilog.Log.Information("TownMaintenance: {townCount} towns remain...", towns.Count());
 
@@ -83,7 +91,11 @@ namespace Bot.Core
             }
             else
             {
-                Serilog.Log.Information("TownMaintenance: maintenance complete!");
+                DateTime nextTime = m_dateTime.Now + TimeSpan.FromDays(DAYS_BETWEEN_MAINTENANCE);
+                Serilog.Log.Information("TownMaintenance: maintenance complete! Next maintenance will be {time}", nextTime);
+                m_longWaitScheduler.ScheduleCallback(false, nextTime);
+
+
             }
 
             if(m_shutdownRequested)
@@ -96,7 +108,7 @@ namespace Bot.Core
             m_startupTasks.Add(startupTask);
         }
 
-        public async Task RunMaintenanceAsync()
+        private async Task RunMaintenanceAsync(bool initial=true)
         {
             var allTowns = new Queue<TownKey>(await m_townDatabase.GetAllTowns());
 
