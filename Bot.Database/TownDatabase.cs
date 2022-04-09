@@ -107,9 +107,9 @@ namespace Bot.Database
 			return documents.Select(x => new TownKey(x.GuildId, x.ControlChannelId));
         }
 
-        public async Task<bool> DeleteTownAsync(ITownRecord townRec)
+        public async Task<bool> DeleteTownAsync(TownKey townKey)
         {
-			var filter = GetTownMatchFilter(townRec.GuildId, townRec.ControlChannelId);
+			var filter = GetTownMatchFilter(townKey.GuildId, townKey.ControlChannelId);
 			var result = await m_collection.DeleteManyAsync(filter);
 			return (result.DeletedCount > 0 ? true : false);
         }

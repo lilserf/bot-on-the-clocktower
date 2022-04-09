@@ -25,6 +25,7 @@ namespace Test.Bot.Core
         protected Func<TownKey, Task>? TownKeyCallback;
         
         protected readonly Mock<ICallbackScheduler<Queue<TownKey>>> TownKeyQueueCallbackSchedulerMock = new(MockBehavior.Strict);
+        protected readonly Mock<ICallbackScheduler<bool>> BoolCallbackSchedulerMock = new(MockBehavior.Strict);
 
         protected readonly Mock<IBotSystem> BotSystemMock = new();
         protected readonly Mock<IShutdownPreventionService> ShutdownPreventionMock = new();
@@ -78,6 +79,9 @@ namespace Test.Bot.Core
 
             CallbackSchedulerFactoryMock
                 .Setup(csf => csf.CreateScheduler(It.IsAny<Func<Queue<TownKey>, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyQueueCallbackSchedulerMock.Object);
+
+            CallbackSchedulerFactoryMock
+                .Setup(csf => csf.CreateScheduler(It.IsAny<Func<bool, Task>>(), It.IsAny<TimeSpan>())).Returns(BoolCallbackSchedulerMock.Object);
 
             TownKeyCallbackSchedulerMock.Setup(cs => cs.ScheduleCallback(It.IsAny<TownKey>(), It.IsAny<DateTime>()));
 
