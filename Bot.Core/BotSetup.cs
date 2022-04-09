@@ -32,7 +32,10 @@ namespace Bot.Core
             sp.Inject(out m_interactionWrapper);
         }
 
-        public Task AddTownAsync(IBotInteractionContext ctx, string townName) => throw new NotImplementedException();
+        public Task AddTownAsync(IBotInteractionContext ctx, string townName) =>
+            m_interactionWrapper.WrapInteractionAsync($"Adding town **townName**...", ctx,
+                l => PerformAddTown(l, ctx, townName));
+
 
         public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => 
             m_interactionWrapper.WrapInteractionAsync($"Creating town **{townName}**...", ctx, 
@@ -53,6 +56,12 @@ namespace Bot.Core
             return m_interactionWrapper.WrapInteractionAsync(msg, ctx,
                 l => PerformRemoveTown(l, ctx, townName));
         }
+
+        private Task<InteractionResult> PerformAddTown(IProcessLogger l, IBotInteractionContext ctx, string townName)
+        {
+            throw new NotImplementedException();
+        }
+
 
         private Task<bool> RemoveTown(ITownRecord townRec)
         {
