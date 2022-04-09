@@ -23,6 +23,7 @@ namespace Bot.Core
         IBotClient m_botClient;
         IDateTime m_dateTime;
         ITownMaintenance m_townMaintenance;
+        IEnvironment m_environment;
 
         public Announcer(IServiceProvider sp)
         {
@@ -33,13 +34,14 @@ namespace Bot.Core
             sp.Inject(out m_botClient);
             sp.Inject(out m_dateTime);     
             sp.Inject(out m_townMaintenance);
+            sp.Inject(out m_environment);
 
             m_townMaintenance.AddMaintenanceTask(AnnounceToTown);
         }
 
         private async Task AnnounceToTown(TownKey townKey)
         {
-            if(!bool.TryParse(Environment.GetEnvironmentVariable("RESTRICT_ANNOUNCE"), out bool restricted))
+            if(!bool.TryParse(m_environment.GetEnvironmentVariable("RESTRICT_ANNOUNCE"), out bool restricted))
             {
                 restricted = false;
             }
@@ -63,9 +65,8 @@ namespace Bot.Core
                 Serilog.Log.Information("AnnounceToTowns: Checking version {versionObj}", versionObj);
                 if (!await m_announcementDatabase.HasSeenVersion(townKey.GuildId, versionObj.Key))
                 {
-                    await m_announcementDatabase.RecordGuildHasSeenVersion(townKey.GuildId, versionObj.Key);
-
                     await chan.SendMessageAsync(versionObj.Value);
+                    await m_announcementDatabase.RecordGuildHasSeenVersion(townKey.GuildId, versionObj.Key);
                 }
             }
         }
