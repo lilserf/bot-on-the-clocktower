@@ -10,11 +10,11 @@ namespace Bot.Core
 {
     internal class GhostTownCleanup : IGhostTownCleanup
     {
-        ITownMaintenance m_startupTownTasks;
-        IBotClient m_botClient;
-        ITownDatabase m_townDatabase;
-        IGameMetricDatabase m_gameMetricDatabase;
-        IDateTime m_dateTime;
+        private readonly ITownMaintenance m_startupTownTasks;
+        private readonly IBotClient m_botClient;
+        private readonly ITownDatabase m_townDatabase;
+        private readonly IGameMetricDatabase m_gameMetricDatabase;
+        private readonly IDateTime m_dateTime;
 
         public GhostTownCleanup(IServiceProvider sp)
         {
