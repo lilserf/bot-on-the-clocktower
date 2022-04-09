@@ -6,7 +6,8 @@ namespace Bot.Core.Lookup
 {
     public interface ICharacterStorage
     {
-        public Task<GetCharactersResult> GetCharactersAsync(ulong guildId);
+        Task<GetCharactersResult> GetCharactersAsync(ulong guildId);
+        Task RefreshCharactersAsync(ulong guildId);
     }
 
     public class GetCharactersResult
