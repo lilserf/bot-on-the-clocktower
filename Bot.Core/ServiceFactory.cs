@@ -52,6 +52,7 @@ namespace Bot.Core
             sp.AddService<IVersionProvider>(new VersionProvider(sp));
             sp.AddService<IAnnouncer>(new Announcer(sp));
             sp.AddService<ILegacyCommandReminder>(new LegacyCommandReminder(sp));
+            sp.AddService<IGhostTownCleanup>(new GhostTownCleanup(sp));
             return sp;
         }
     }

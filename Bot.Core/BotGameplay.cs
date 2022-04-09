@@ -277,7 +277,7 @@ namespace Bot.Core
                 //foreach (var (cottage, user) in villagerPairs)
                 //    await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
 
-                await m_gameMetricsDatabase.RecordNight(game.TownKey, m_dateTime.Now);
+                await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
 
                 return "Moved all players from Town Square to Cottages!";
@@ -306,7 +306,7 @@ namespace Bot.Core
             //await ClearCottagePermissions(game, processLog);
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
-            await m_gameMetricsDatabase.RecordDay(game.TownKey, m_dateTime.Now);
+            await m_gameMetricsDatabase.RecordDayAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("day", m_dateTime.Now);
 
             return "Moved all players from Cottages back to Town Square!";
@@ -320,7 +320,7 @@ namespace Bot.Core
 
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
-            await m_gameMetricsDatabase.RecordVote(game.TownKey, m_dateTime.Now);
+            await m_gameMetricsDatabase.RecordVoteAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("vote", m_dateTime.Now);
 
             return "Moved all players to Town Square for voting!";
@@ -359,7 +359,7 @@ namespace Bot.Core
             if (town == null)
                 return "Failed to find a valid town for this command!";
 
-            await m_gameMetricsDatabase.RecordEndGame(townKey, m_dateTime.Now);
+            await m_gameMetricsDatabase.RecordEndGameAsync(townKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("endgame", m_dateTime.Now);
 
             if (m_activeGameService.TryGetGame(townKey, out IGame? game))

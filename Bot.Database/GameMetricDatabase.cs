@@ -61,7 +61,7 @@ namespace Bot.Database
             };
         }
 
-        public async Task RecordGame(TownKey townKey, DateTime timestamp)
+        public async Task RecordGameAsync(TownKey townKey, DateTime timestamp)
         {
             var existing = await GetExisting(townKey);
             if(existing != null)
@@ -81,7 +81,7 @@ namespace Bot.Database
             await m_collection.InsertOneAsync(newRec);
         }
 
-        public async Task RecordDay(TownKey townKey, DateTime timestamp)
+        public async Task RecordDayAsync(TownKey townKey, DateTime timestamp)
         {
             var record = await GetExistingOrNew(townKey, timestamp);
             record.Days++;
@@ -90,7 +90,7 @@ namespace Bot.Database
             await m_collection.ReplaceOneAsync(filter, record, new ReplaceOptions() { IsUpsert = true });
         }
 
-        public async Task RecordNight(TownKey townKey, DateTime timestamp)
+        public async Task RecordNightAsync(TownKey townKey, DateTime timestamp)
         {
             var record = await GetExistingOrNew(townKey, timestamp);
             record.Nights++;
@@ -99,7 +99,7 @@ namespace Bot.Database
             await m_collection.ReplaceOneAsync(filter, record, new ReplaceOptions() { IsUpsert = true });
         }
 
-        public async Task RecordVote(TownKey townKey, DateTime timestamp)
+        public async Task RecordVoteAsync(TownKey townKey, DateTime timestamp)
         {
             var record = await GetExistingOrNew(townKey, timestamp);
             record.Votes++;
@@ -108,7 +108,7 @@ namespace Bot.Database
             await m_collection.ReplaceOneAsync(filter, record, new ReplaceOptions() { IsUpsert = true });
         }
 
-        public async Task RecordEndGame(TownKey townKey, DateTime timestamp)
+        public async Task RecordEndGameAsync(TownKey townKey, DateTime timestamp)
         {
             var record = await GetExistingOrNew(townKey, timestamp);
             record.Complete = true;
@@ -117,18 +117,15 @@ namespace Bot.Database
             await m_collection.ReplaceOneAsync(filter, record, new ReplaceOptions() { IsUpsert = true });
         }
 
-        public async Task<DateTime?> GetMostRecentGame(TownKey townKey)
+        public async Task<DateTime?> GetMostRecentGameAsync(TownKey townKey)
         {
             var filterBuilder = Builders<MongoGameMetricRecord>.Filter;
-
             var filter = filterBuilder.Eq(x => x.TownHash, TownHash(townKey));
 
             var sortBuilder = Builders<MongoGameMetricRecord>.Sort;
-
             var sort = sortBuilder.Descending(x => x.FirstActivity);
 
             var mostRecent = await m_collection.Find(filter).Sort(sort).FirstOrDefaultAsync();
-
             return mostRecent?.FirstActivity ?? null;
         }
     }

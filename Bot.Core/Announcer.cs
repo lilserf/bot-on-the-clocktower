@@ -22,10 +22,7 @@ namespace Bot.Core
         IBotSystem m_botSystem;
         IBotClient m_botClient;
         IDateTime m_dateTime;
-        ITownMaintenance m_startupTownTasks;
-
-        const int NUM_TOWNS_PER_CALLBACK = 5;
-        const int MINUTES_PER_CALLBACK = 5;
+        ITownMaintenance m_townMaintenance;
 
         public Announcer(IServiceProvider sp)
         {
@@ -35,14 +32,17 @@ namespace Bot.Core
             sp.Inject(out m_botSystem);
             sp.Inject(out m_botClient);
             sp.Inject(out m_dateTime);     
-            sp.Inject(out m_startupTownTasks);
+            sp.Inject(out m_townMaintenance);
 
-            m_startupTownTasks.AddMaintenanceTask(AnnounceToTown);
+            m_townMaintenance.AddMaintenanceTask(AnnounceToTown);
         }
 
         private async Task AnnounceToTown(TownKey townKey)
         {
-            bool restricted = bool.Parse(Environment.GetEnvironmentVariable("RESTRICT_ANNOUNCE") ?? "false");
+            if(!bool.TryParse(Environment.GetEnvironmentVariable("RESTRICT_ANNOUNCE"), out bool restricted))
+            {
+                restricted = false;
+            }
 
             // If we're restricted, skip all guilds not in the allowList
             if (restricted && !s_guildAllowList.Contains(townKey.GuildId))

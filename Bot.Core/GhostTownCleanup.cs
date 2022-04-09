@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Core
 {
-    internal class GhostTownCleanup
+    internal class GhostTownCleanup : IGhostTownCleanup
     {
         ITownMaintenance m_startupTownTasks;
         IBotClient m_botClient;
@@ -32,7 +32,7 @@ namespace Bot.Core
             Serilog.Log.Information("GhostTownCleanup: Checking town {townKey}", townKey);
 
             // If there was activity in the last 30 days, skip this town
-            var mostRecent = await m_gameMetricDatabase.GetMostRecentGame(townKey);
+            var mostRecent = await m_gameMetricDatabase.GetMostRecentGameAsync(townKey);
             if (mostRecent != null && mostRecent.Value.AddDays(30) > m_dateTime.Now)
                 return;
             

@@ -56,7 +56,7 @@ namespace Bot.Core
 
         private Task<bool> RemoveTown(ITownRecord townRec)
         {
-            return m_townDb.DeleteTownAsync(new TownKey(townRec.GuildId, townRec.ControlChannelId));
+            return m_townDb.DeleteTownAsync(TownKey.FromTownRecord(townRec));
         }
 
         private async Task<InteractionResult> PerformRemoveTown(IProcessLogger _, IBotInteractionContext ctx, string? townName)

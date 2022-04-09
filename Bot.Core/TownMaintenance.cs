@@ -46,7 +46,7 @@ namespace Bot.Core
             var callbackFactory = sp.GetService<ICallbackSchedulerFactory>();
             m_callbackScheduler = callbackFactory.CreateScheduler<Queue<TownKey>>(ProcessQueue, TimeSpan.FromMinutes(1));
 
-            m_botClient.Connected += async (o, args) => await RunMaintenance();
+            m_botClient.Connected += async (o, args) => await RunMaintenanceAsync();
         }
 
         private async Task ProcessQueue(Queue<TownKey> towns)
@@ -63,27 +63,31 @@ namespace Bot.Core
 
                 foreach (var task in m_startupTasks)
                 {
-                    await task(townKey);
+                    try
+                    {
+                        await task(townKey);
+                    }
+                    catch (Exception)
+                    {
+                        // todo: something?
+                    }
                 }
                 numSent++;
             }
 
-            if (towns.Count > 0)
+            if (towns.Count > 0 && !m_shutdownRequested)
             {
-                if (m_shutdownRequested)
-                    m_shutdownTcs.TrySetResult();
-                else
-                {
-                    Serilog.Log.Information("TownMaintenance: {townCount} towns remain, scheduling callback...", towns.Count);
-                    DateTime nextTime = m_dateTime.Now + TimeSpan.FromMinutes(MINUTES_PER_CALLBACK);
-                    m_callbackScheduler.ScheduleCallback(towns, nextTime);
-                }
+                Serilog.Log.Information("TownMaintenance: {townCount} towns remain, scheduling callback...", towns.Count);
+                DateTime nextTime = m_dateTime.Now + TimeSpan.FromMinutes(MINUTES_PER_CALLBACK);
+                m_callbackScheduler.ScheduleCallback(towns, nextTime);
             }
             else
             {
                 Serilog.Log.Information("TownMaintenance: maintenance complete!");
             }
 
+            if(m_shutdownRequested)
+                m_shutdownTcs.TrySetResult();
             m_queueProcessing = false;
         }
 
@@ -92,7 +96,7 @@ namespace Bot.Core
             m_startupTasks.Add(startupTask);
         }
 
-        public async Task RunMaintenance()
+        public async Task RunMaintenanceAsync()
         {
             var allTowns = new Queue<TownKey>(await m_townDatabase.GetAllTowns());
 

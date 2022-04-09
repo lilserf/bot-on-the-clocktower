@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Api
 {
-    public interface ITownMaintenance
+    public interface IGhostTownCleanup
     {
-        void AddMaintenanceTask(Func<TownKey, Task> startupTask);
-
-        Task RunMaintenanceAsync();
     }
 }
