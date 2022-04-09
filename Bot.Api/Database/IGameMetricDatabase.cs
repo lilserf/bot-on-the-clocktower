@@ -8,14 +8,16 @@ namespace Bot.Api.Database
 {
     public interface IGameMetricDatabase
     {
-        public Task RecordGame(TownKey townKey, DateTime timestamp);
+        public Task RecordGameAsync(TownKey townKey, DateTime timestamp);
 
-        public Task RecordNight(TownKey townKey, DateTime timestamp);
+        public Task RecordNightAsync(TownKey townKey, DateTime timestamp);
 
-        public Task RecordDay(TownKey townKey, DateTime timestamp);
+        public Task RecordDayAsync(TownKey townKey, DateTime timestamp);
 
-        public Task RecordVote(TownKey townKey, DateTime timestamp);
+        public Task RecordVoteAsync(TownKey townKey, DateTime timestamp);
 
-        public Task RecordEndGame(TownKey townKey, DateTime timestamp);
+        public Task RecordEndGameAsync(TownKey townKey, DateTime timestamp);
+
+        public Task<DateTime?> GetMostRecentGameAsync(TownKey townKey);
     }
 }

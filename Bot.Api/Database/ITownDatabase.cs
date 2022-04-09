@@ -14,7 +14,7 @@ namespace Bot.Api.Database
 
 		public Task<bool> AddTownAsync(ITown town, IMember author);
 		public Task<bool> UpdateTownAsync(ITown town);
-		public Task<bool> DeleteTownAsync(ITownRecord townRec);
+		public Task<bool> DeleteTownAsync(TownKey townKey);
 
 		public Task<IEnumerable<TownKey>> GetAllTowns();
 	}

@@ -26,7 +26,6 @@ namespace Bot.Core
             m_serviceProvider = LookupServiceFactory.RegisterBotLookupServices(m_serviceProvider);
 
             m_serviceProvider.GetService<IVersionProvider>().InitializeVersions();
-
         }
 
         public async Task RunAsync()

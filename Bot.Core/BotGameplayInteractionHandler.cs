@@ -154,7 +154,7 @@ namespace Bot.Core
             bool success = true;
             var message = await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
             {
-                await m_gameMetricDatabase.RecordGame(townKey, m_dateTime.Now);
+                await m_gameMetricDatabase.RecordGameAsync(townKey, m_dateTime.Now);
                 await m_commandMetricDatabase.RecordCommand("game", m_dateTime.Now);
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 success = game != null;
