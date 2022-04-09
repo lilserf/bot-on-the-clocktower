@@ -267,6 +267,29 @@ namespace Test.Bot.Core.Lookup
             Assert.Equal(expectedResult2, result2);
         }
 
+        [Fact]
+        public void OfficialCache_CallTwiceWithInvalidate_FetchesTwice()
+        {
+            var expectedResult1 = new GetOfficialCharactersResult(Enumerable.Empty<GetOfficialCharactersItem>());
+            var expectedResult2 = new GetOfficialCharactersResult(Enumerable.Empty<GetOfficialCharactersItem>());
+            m_mockOfficialParser.SetupSequence(cp => cp.ParseOfficialData(It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>()))
+                .Returns(expectedResult1)
+                .Returns(expectedResult2);
+
+            m_mockOfficialUrlProvider.SetupGet(oup => oup.ScriptUrls).Returns(new[] { "script" });
+            m_mockOfficialUrlProvider.SetupGet(oup => oup.CharacterUrls).Returns(new[] { "char" });
+
+            var oc = new OfficialCharacterCache(GetServiceProvider());
+            var result1 = AssertCompletedTask(() => oc.GetOfficialCharactersAsync());
+            oc.Invalidate();
+            var result2 = AssertCompletedTask(() => oc.GetOfficialCharactersAsync());
+
+            m_mockOfficialParser.Verify(op => op.ParseOfficialData(It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>()), Times.Exactly(2));
+            m_mockDownloader.Verify(d => d.DownloadStringAsync(It.IsAny<string>()), Times.Exactly(4));
+            Assert.Equal(expectedResult1, result1);
+            Assert.Equal(expectedResult2, result2);
+        }
+
         private GetCustomScriptResult PerformCustomGet()
         {
             var csc = new CustomScriptCache(GetServiceProvider());

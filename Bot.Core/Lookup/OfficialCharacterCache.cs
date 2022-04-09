@@ -44,5 +44,10 @@ namespace Bot.Core.Lookup
             m_lastResultTime = now;
             return m_lastResult;
         }
+
+        public void Invalidate()
+        {
+            m_lastResult = null;
+        }
     }
 }
