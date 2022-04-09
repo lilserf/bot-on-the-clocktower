@@ -45,7 +45,7 @@ namespace Bot.Core.Lookup
             return m_lastResult;
         }
 
-        public void Invalidate()
+        public void InvalidateCache()
         {
             m_lastResult = null;
         }

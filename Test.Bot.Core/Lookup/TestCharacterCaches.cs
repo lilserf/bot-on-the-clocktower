@@ -281,13 +281,41 @@ namespace Test.Bot.Core.Lookup
 
             var oc = new OfficialCharacterCache(GetServiceProvider());
             var result1 = AssertCompletedTask(() => oc.GetOfficialCharactersAsync());
-            oc.Invalidate();
+            oc.InvalidateCache();
             var result2 = AssertCompletedTask(() => oc.GetOfficialCharactersAsync());
 
             m_mockOfficialParser.Verify(op => op.ParseOfficialData(It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>()), Times.Exactly(2));
             m_mockDownloader.Verify(d => d.DownloadStringAsync(It.IsAny<string>()), Times.Exactly(4));
             Assert.Equal(expectedResult1, result1);
             Assert.Equal(expectedResult2, result2);
+        }
+
+        [Fact]
+        public void CustomCache_MultipleUrlsOneInvalided_RefetchesInvalidated()
+        {
+            string url1 = "some url 1";
+            string url2 = "some url 2";
+            string json = "this is some json";
+            GetCustomScriptResult expectedResult = new(Enumerable.Empty<ScriptWithCharacters>());
+            SetupDownload(url1, json);
+            SetupDownload(url2, json);
+            SetupCustomParser(json, expectedResult);
+
+            var csc = new CustomScriptCache(GetServiceProvider());
+            var firstResult = AssertCompletedTask(() => csc.GetCustomScriptAsync(url1));
+            var secondResult = AssertCompletedTask(() => csc.GetCustomScriptAsync(url2));
+
+            csc.InvalidateCache(url1);
+
+            var thirdResult = AssertCompletedTask(() => csc.GetCustomScriptAsync(url1));
+            var fourthResult = AssertCompletedTask(() => csc.GetCustomScriptAsync(url2));
+
+            Assert.Equal(expectedResult, firstResult);
+            Assert.Equal(expectedResult, secondResult);
+            Assert.Equal(expectedResult, thirdResult);
+            Assert.Equal(expectedResult, fourthResult);
+            m_mockDownloader.Verify(d => d.DownloadStringAsync(It.Is<string>(s => s == url1)), Times.Exactly(2));
+            m_mockDownloader.Verify(d => d.DownloadStringAsync(It.Is<string>(s => s == url2)), Times.Once);
         }
 
         private GetCustomScriptResult PerformCustomGet()
