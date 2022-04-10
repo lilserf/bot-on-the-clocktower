@@ -52,40 +52,46 @@ namespace Bot.DSharp
             [Option("chatChannel", "Chat channel (optional, must be text)")] DiscordChannel? chatChannel = null
             )
         {
+            // Need to do error handling here at the argument level before we try to create wrappers for stuff that's
+            // totally the wrong type
             List<string> errors = new();
 
             if (controlChannel.Type != DSharpPlus.ChannelType.Text)
             {
-                errors.Add($"Control channel `{controlChannel.Name}` is not a text channel!");
+                errors.Add($"- Control channel `{controlChannel.Name}` is not a text channel!");
             }
             if (dayCategory.Type != DSharpPlus.ChannelType.Category)
             {
-                errors.Add($"Day category `{dayCategory.Name}` is not a category!");
+                errors.Add($"- Day category `{dayCategory.Name}` is not a category!");
             }
             if (townSquare.Type != DSharpPlus.ChannelType.Voice)
             {
-                errors.Add($"Town Square channel `{townSquare.Name}` is not a voice channel!");
+                errors.Add($"- Town Square channel `{townSquare.Name}` is not a voice channel!");
             }
-            if (!dayCategory.Children.Contains(controlChannel))
+            if (dayCategory.Type == DSharpPlus.ChannelType.Category && !dayCategory.Children.Contains(controlChannel))
             {
-                errors.Add($"Control channel `{controlChannel.Name}` is not in the {dayCategory.Name} category!");
+                errors.Add($"- Control channel `{controlChannel.Name}` is not in the **{dayCategory.Name}** category!");
             }
-            if (!dayCategory.Children.Contains(townSquare))
+            if (dayCategory.Type == DSharpPlus.ChannelType.Category && !dayCategory.Children.Contains(townSquare))
             {
-                errors.Add($"Town Square channel `{townSquare.Name}` is not in the {dayCategory.Name} category!");
+                errors.Add($"- Town Square channel `{townSquare.Name}` is not in the **{dayCategory.Name}** category!");
             }
             if(nightCategory != null && nightCategory.Type != DSharpPlus.ChannelType.Category)
             {
-                errors.Add($"Night category `{nightCategory.Name}` is not a category!");
+                errors.Add($"- Night category `{nightCategory.Name}` is not a category!");
             }
-            if(chatChannel != null && !dayCategory.Children.Contains(chatChannel))
+            if(chatChannel != null && chatChannel.Type != DSharpPlus.ChannelType.Text)
             {
-                errors.Add($"Chat channel `{chatChannel.Name}` is not in the {dayCategory.Name} category!");
+                errors.Add($"- Chat channel `{chatChannel.Name}` is not a text channel!");
+            }
+            if(chatChannel != null && dayCategory.Type == DSharpPlus.ChannelType.Category && !dayCategory.Children.Contains(chatChannel))
+            {
+                errors.Add($"- Chat channel `{chatChannel.Name}` is not in the **{dayCategory.Name}** category!");
             }
 
             if(errors.Count > 0)
             {
-                string msg = "Sorry, I found errors:\n" + string.Join("\n", errors);
+                string msg = "Couldn't add a town due to the following errors:\n" + string.Join("\n", errors);
                 await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent(msg));
                 return;
             }
