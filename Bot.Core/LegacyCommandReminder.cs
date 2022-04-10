@@ -20,7 +20,7 @@ namespace Bot.Core
             new("announce", "announce"),
             new("noAnnounce", "announce"),
             "townInfo",
-            LegacyCommandUpdate.UnimplementedCommand("addTown"),
+            "addTown",
             "removeTown",
             LegacyCommandUpdate.UnimplementedCommand("setChatChannel"),
             "createTown",

@@ -16,7 +16,7 @@ namespace Bot.DSharp
         public async Task AnnounceCommand(InteractionContext ctx, 
             [Option("hearAnnouncements", "If true, this server will hear new version announcements")] bool hear)
         {
-            await Announcer?.CommandSetGuildAnnounce(new DSharpInteractionContext(ctx), hear);
+            await Announcer!.CommandSetGuildAnnounce(new DSharpInteractionContext(ctx), hear);
         }
     }
 }

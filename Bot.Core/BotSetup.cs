@@ -32,12 +32,23 @@ namespace Bot.Core
             sp.Inject(out m_interactionWrapper);
         }
 
-        public Task AddTownAsync(IBotInteractionContext ctx, string townName) =>
+        public Task AddTownAsync(IBotInteractionContext ctx, 
+            IChannel controlChan, 
+            IChannel townSquare, 
+            IChannelCategory dayCat,
+            IChannelCategory? nightCat,
+            IRole? stRole,
+            IRole? villagerRole,
+            IChannel? chatChan) =>
             m_interactionWrapper.WrapInteractionAsync($"Adding town **townName**...", ctx,
-                l => PerformAddTown(l, ctx, townName));
+                l => PerformAddTown(l, ctx, controlChan, townSquare, dayCat, nightCat, stRole, villagerRole, chatChan));
 
 
-        public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight) => 
+        public Task CreateTownAsync(IBotInteractionContext ctx, 
+            string townName, 
+            IRole? guildPlayerRole, 
+            IRole? guildStRole, 
+            bool useNight) => 
             m_interactionWrapper.WrapInteractionAsync($"Creating town **{townName}**...", ctx, 
                 l => PerformCreateTown(l, ctx, townName, guildPlayerRole, guildStRole, useNight));
         public Task TownInfoAsync(IBotInteractionContext ctx) => 
@@ -47,19 +58,42 @@ namespace Bot.Core
             m_interactionWrapper.WrapInteractionAsync($"Destroying channels and roles for town **{townName}**...", ctx,
                 l => PerformDestroyTown(l, ctx, townName));
 
-        public Task RemoveTownAsync(IBotInteractionContext ctx, string? townName)
+        public Task RemoveTownAsync(IBotInteractionContext ctx, IChannelCategory? dayCat)
         {
-            string msg = $"Removing town {townName}...";
-            if (townName == null)
-                msg = $"Removing town...";
+            string msg = $"Removing town...";
+            if(dayCat != null)
+                msg = $"Removing town {dayCat.Name}...";
 
             return m_interactionWrapper.WrapInteractionAsync(msg, ctx,
-                l => PerformRemoveTown(l, ctx, townName));
+                l => PerformRemoveTown(l, ctx, dayCat));
         }
 
-        private Task<InteractionResult> PerformAddTown(IProcessLogger l, IBotInteractionContext ctx, string townName)
+        private async Task<InteractionResult> PerformAddTown(IProcessLogger l, IBotInteractionContext ctx, 
+            IChannel controlChan,
+            IChannel townSquare,
+            IChannelCategory dayCat,
+            IChannelCategory? nightCat,
+            IRole? stRole,
+            IRole? villagerRole,
+            IChannel? chatChan)
         {
-            throw new NotImplementedException();
+
+            Town newTown = new Town()
+            {
+                Guild = ctx.Guild,
+                ControlChannel = controlChan,
+                TownSquare = townSquare,
+                DayCategory = dayCat,
+                NightCategory = nightCat,
+                StorytellerRole = stRole,
+                VillagerRole = villagerRole,
+                ChatChannel = chatChan
+            };
+
+            await AddTown(newTown, ctx.Member);
+
+            var embed = EmbedFromTown(newTown, m_dateTime.Now, ctx.Member.DisplayName);
+            return InteractionResult.FromMessageAndEmbeds($"Town **{dayCat.Name}** added!", embed);
         }
 
 
@@ -68,24 +102,26 @@ namespace Bot.Core
             return m_townDb.DeleteTownAsync(TownKey.FromTownRecord(townRec));
         }
 
-        private async Task<InteractionResult> PerformRemoveTown(IProcessLogger _, IBotInteractionContext ctx, string? townName)
+        private async Task<InteractionResult> PerformRemoveTown(IProcessLogger _, IBotInteractionContext ctx, IChannelCategory? dayCat)
         {
-            bool townNameMode = (townName != null);
+            bool categoryMode = (dayCat != null);
+            string townName = "unknown";
             var guild = ctx.Guild;
             bool success = false;
             ITownRecord? townRec = null;
-            if (townName == null)
+            if (dayCat == null)
             {
                 townRec = await m_townDb.GetTownRecordAsync(guild.Id, ctx.Channel.Id);
             }
             else
             {
-                townRec = await m_townDb.GetTownRecordByNameAsync(guild.Id, townName);
+                townRec = await m_townDb.GetTownRecordByNameAsync(guild.Id, dayCat.Name);
             }
 
             if (townRec != null)
             {
-                townName = townRec.DayCategory;
+                if(townRec.DayCategory != null)
+                    townName = townRec.DayCategory;
                 success = await RemoveTown(townRec);
             }
 
@@ -101,7 +137,7 @@ namespace Bot.Core
             else
             {
                 string msg = "Couldn't find a town controlled by this channel to remove!";
-                if (townNameMode)
+                if (categoryMode)
                     msg = $"Couldn't find a town named **{townName}** on this server to remove!";
                 return InteractionResult.FromMessage(msg);
             }
@@ -266,6 +302,24 @@ namespace Bot.Core
             return InteractionResult.FromMessage(message);
         }
         
+        private IEmbed EmbedFromTown(ITown town, DateTime timestamp, string authorName)
+        {
+            var u = "Unknown";
+
+            var embed = m_botSystem.CreateEmbedBuilder();
+            embed.WithTitle($"{town.Guild?.Name ?? u} // {town.DayCategory?.Name ?? u}")
+                .WithDescription($"Created {timestamp} by {authorName}")
+                .WithColor(m_botSystem.ColorBuilder.DarkRed);
+            embed.AddField("Control Channel", town.ControlChannel?.Name ?? u);
+            embed.AddField("Town Square", town.TownSquare?.Name ?? u);
+            if (town.ChatChannel != null) embed.AddField("Chat Channel", town.ChatChannel.Name);
+            embed.AddField("Day Category", town.DayCategory?.Name ?? u);
+            if (town.NightCategory != null) embed.AddField("Night Category", town.NightCategory.Name);
+            embed.AddField("Storyteller Role", town.StorytellerRole?.Name ?? u);
+            embed.AddField("Villager Role", town.VillagerRole?.Name ?? u);
+            return embed.Build();
+        }
+
         private async Task<InteractionResult> PerformTownInfo(IProcessLogger _, IBotInteractionContext ctx)
         {
             var townRecord = await m_townDb.GetTownRecordAsync(ctx.Guild.Id, ctx.Channel.Id);
@@ -276,20 +330,9 @@ namespace Bot.Core
 
                 if (town != null)
                 {
-                    var u = "Unknown";
+                    var embed = EmbedFromTown(town, townRecord.Timestamp, townRecord.AuthorName);
 
-                    var embed = m_botSystem.CreateEmbedBuilder();
-                    embed.WithTitle($"{town.Guild?.Name ?? u} // {town.DayCategory?.Name ?? u}")
-                        .WithDescription($"Created {townRecord.Timestamp} by {townRecord.AuthorName}");
-                    embed.AddField("Control Channel", town.ControlChannel?.Name ?? u);
-                    embed.AddField("Town Square", town.TownSquare?.Name ?? u);
-                    if(town.ChatChannel != null) embed.AddField("Chat Channel", town.ChatChannel.Name);
-                    embed.AddField("Day Category", town.DayCategory?.Name ?? u);
-                    if (town.NightCategory != null) embed.AddField("Night Category", town.NightCategory.Name);
-                    embed.AddField("Storyteller Role", town.StorytellerRole?.Name ?? u);
-                    embed.AddField("Villager Role", town.VillagerRole?.Name ?? u);
-
-                    return InteractionResult.FromMessageAndEmbeds("Town found!", embed.Build());
+                    return InteractionResult.FromMessageAndEmbeds("Town found!", embed);
                 }
             }
 
