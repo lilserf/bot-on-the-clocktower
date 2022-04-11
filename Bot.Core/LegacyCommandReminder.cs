@@ -22,7 +22,7 @@ namespace Bot.Core
             "townInfo",
             "addTown",
             "removeTown",
-            LegacyCommandUpdate.UnimplementedCommand("setChatChannel"),
+            new("setChatChannel", "modifyTown"),
             "createTown",
             "destroyTown",
             new("setStorytellers", "storytellers"),

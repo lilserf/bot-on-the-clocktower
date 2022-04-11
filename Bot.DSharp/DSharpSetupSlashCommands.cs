@@ -39,8 +39,35 @@ namespace Bot.DSharp
             await BotSetup!.DestroyTownAsync(new DSharpInteractionContext(ctx), townName);
         }
 
+        [SlashCommand("modifyTown", "Modify one of the optional details of a town")]
+        public async Task ModifyTownCommand(InteractionContext ctx,
+            [Option("chatChannel", "Set the (text) chat channel for this town")] DiscordChannel? chatChannel = null,
+            [Option("nightCategory", "Set the Night category for this town")] DiscordChannel? nightCat = null,
+            [Option("storytellerRole", "Set the storyteller role for this town")] DiscordRole? stRole = null,
+            [Option("villagerRole", "Set the villager role for this town")] DiscordRole? villagerRole = null)
+        {
+            // Need to do error handling here at the argument level before we try to create wrappers for stuff that's
+            // totally the wrong type
+            List<string> errors = new();
 
-        //   Usage: {COMMAND_PREFIX}addTown <control channel> <town square channel> <day category> <night category> <storyteller role> <villager role> [chat channel]\n\nAlternate usage: {COMMAND_PREFIX}addTown control=<control channel> townSquare=<town square channel> dayCategory=<day category> [nightCategory=<night category>] stRole=<storyteller role> villagerRole=<villager role> [chatChannel=<chat channel>]')
+            if(chatChannel != null && chatChannel.Type != DSharpPlus.ChannelType.Text)
+            {
+                errors.Add($"- Chat channel `{chatChannel.Name}` is not a text channel!");
+            }
+            if(nightCat != null && nightCat.Type != DSharpPlus.ChannelType.Category)
+            {
+                errors.Add($"- Night category `{nightCat.Name}` is not a category!");
+            }
+
+            var chatChanWrapped = chatChannel == null ? null : new DSharpChannel(chatChannel);
+            var nightCatWrapped = nightCat == null ? null : new DSharpChannelCategory(nightCat);
+            var stRoleWrapped = stRole == null ? null : new DSharpRole(stRole);
+            var villagerRoleWrapped = villagerRole == null ? null : new DSharpRole(villagerRole);
+
+            await BotSetup!.ModifyTownAsync(new DSharpInteractionContext(ctx), chatChanWrapped, nightCatWrapped, stRoleWrapped, villagerRoleWrapped);
+        }
+
+
         [SlashCommand("addTown", "Add a new town composed of existing channel and roles on this server")]
         public async Task AddTownCommand(InteractionContext ctx,
             [Option("controlChannel", "Control channel (must be text)")] DiscordChannel controlChannel,

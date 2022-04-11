@@ -30,6 +30,12 @@ namespace Bot.Api
             IRole? villagerRole,
             IChannel? chatChan);
 
+        public Task ModifyTownAsync(IBotInteractionContext ctx,
+            IChannel? chatChannel,
+            IChannelCategory? nightCat,
+            IRole? stRole,
+            IRole? villagerRole);
+
         public Task CreateTownAsync(IBotInteractionContext ctx, 
             string townName, 
             IRole? playerRole, 
