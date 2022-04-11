@@ -30,7 +30,7 @@ namespace Bot.Core
                 return "Failed to run command";
 
             if (town.ChatChannel == null)
-                return LogAndReturnEmptyString(processLoggger, "No chat channel found for this town. Please set the chat channel via the `/setChatChannel` command.");
+                return LogAndReturnEmptyString(processLoggger, "No chat channel found for this town. Please set the chat channel via the `/modifyTown` command.");
 
             if (town.VillagerRole == null)
                 return LogAndReturnEmptyString(processLoggger, "No villager role found for this town. Please set up the town properly via the `/addTown` command.");

@@ -69,7 +69,7 @@ namespace Test.Bot.Core
 
             RunVoteTimerVerifyCompleted();
 
-            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("/setChatChannel", StringComparison.InvariantCultureIgnoreCase) && s.Contains("no chat channel found", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            ProcessLoggerMock.Verify(pl => pl.LogMessage(It.Is<string>(s => s.Contains("/modifyTown", StringComparison.InvariantCultureIgnoreCase) && s.Contains("no chat channel found", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
         [Fact]
