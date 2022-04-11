@@ -21,10 +21,30 @@ namespace Bot.Api
 
         public Task CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole, IRole? guildPlayerRole);
 
-        public Task AddTownAsync(IBotInteractionContext ctx, string townName);
-        public Task CreateTownAsync(IBotInteractionContext ctx, string townName, IRole? playerRole, IRole? stRole, bool useNight);
+        public Task AddTownAsync(IBotInteractionContext ctx, 
+            IChannel controlChan, 
+            IChannel townSquare, 
+            IChannelCategory dayCategory,
+            IChannelCategory? nightCategory,
+            IRole? stRole,
+            IRole? villagerRole,
+            IChannel? chatChan);
+
+        public Task ModifyTownAsync(IBotInteractionContext ctx,
+            IChannel? chatChannel,
+            IChannelCategory? nightCat,
+            IRole? stRole,
+            IRole? villagerRole);
+
+        public Task CreateTownAsync(IBotInteractionContext ctx, 
+            string townName, 
+            IRole? playerRole, 
+            IRole? stRole, 
+            bool useNight);
         public Task TownInfoAsync(IBotInteractionContext ctx);
-        public Task DestroyTownAsync(IBotInteractionContext ctx, string townName);
-        public Task RemoveTownAsync(IBotInteractionContext ctx, string? townName=null);
+        public Task DestroyTownAsync(IBotInteractionContext ctx, 
+            string townName);
+        public Task RemoveTownAsync(IBotInteractionContext ctx, 
+            IChannelCategory? dayCat);
     }
 }
