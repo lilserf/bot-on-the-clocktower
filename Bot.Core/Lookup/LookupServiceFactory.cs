@@ -11,7 +11,7 @@ namespace Bot.Core.Lookup
             ServiceProvider sp = new(parentServices);
 
             sp.AddService<IOfficialUrlProvider>(new OfficialUrlProvider());
-            sp.AddService<IOfficialScriptParser>(new OfficialScriptParser());
+            sp.AddService<IOfficialScriptParser>(new OfficialScriptParser(sp));
             sp.AddService<ICustomScriptParser>(new CustomScriptParser());
             sp.AddService<IStringDownloader>(new StringDownloader());
             sp.AddService<ICustomScriptCache>(new CustomScriptCache(sp));
