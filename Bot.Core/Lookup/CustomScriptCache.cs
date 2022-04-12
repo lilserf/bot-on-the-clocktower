@@ -1,6 +1,6 @@
 ﻿using Bot.Api;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 namespace Bot.Core.Lookup
@@ -12,7 +12,7 @@ namespace Bot.Core.Lookup
         private readonly IStringDownloader m_stringDownloader;
         private readonly ICustomScriptParser m_scriptParser;
 
-        private readonly Dictionary<string, (GetCustomScriptResult, DateTime)> m_urlToScriptAndTime = new();
+        private readonly ConcurrentDictionary<string, (GetCustomScriptResult, DateTime)> m_urlToScriptAndTime = new();
 
         public CustomScriptCache(IServiceProvider serviceProvider)
         {
@@ -34,13 +34,14 @@ namespace Bot.Core.Lookup
                  return GetCustomScriptResult.EmptyResult;
 
             var script = m_scriptParser.ParseScript(json);
-            m_urlToScriptAndTime[url] = (script, now);
+            if (m_urlToScriptAndTime.TryRemove(url, out _))
+                m_urlToScriptAndTime.TryAdd(url, (script, now));
             return script;
         }
 
         public void InvalidateCache(string url)
         {
-            m_urlToScriptAndTime.Remove(url);
+            m_urlToScriptAndTime.TryRemove(url, out _);
         }
     }
 }
