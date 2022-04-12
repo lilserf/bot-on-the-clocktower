@@ -56,6 +56,8 @@ namespace Test.Bot.Core
             chan.SetupGet(x => x.Id).Returns((ulong)name.GetHashCode());
             chan.Setup(x => x.AddOverwriteAsync(It.IsAny<IMember>(), It.IsAny<IBaseChannel.Permissions>(), It.IsAny<IBaseChannel.Permissions>())).Returns(Task.CompletedTask);
             chan.Setup(x => x.AddOverwriteAsync(It.IsAny<IRole>(), It.IsAny<IBaseChannel.Permissions>(), It.IsAny<IBaseChannel.Permissions>())).Returns(Task.CompletedTask);
+            chan.Setup(x => x.RemoveOverwriteAsync(It.IsAny<IMember>())).Returns(Task.CompletedTask);
+            chan.Setup(x => x.RemoveOverwriteAsync(It.IsAny<IRole>())).Returns(Task.CompletedTask);
             return chan;
         }
 
