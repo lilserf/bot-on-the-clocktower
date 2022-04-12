@@ -443,7 +443,7 @@ namespace Bot.Core
             if (newTown.ControlChannel == null)
                 throw new CreateTownException($"Could not find or create control channel '{townDesc.ControlChannelName}'");
             await newTown.ControlChannel.AddOverwriteAsync(botRole, Permissions.AccessChannels);
-            await newTown.ControlChannel.AddOverwriteAsync(newTown.VillagerRole, allow: Permissions.None, deny: Permissions.AccessChannels);
+            await newTown.ControlChannel.RemoveOverwriteAsync(newTown.VillagerRole);
 
             if (guildStRole != null)
             {
