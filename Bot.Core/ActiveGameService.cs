@@ -1,33 +1,23 @@
 ﻿using Bot.Api;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Bot.Core
 {
     public class ActiveGameService : IActiveGameService
     {
-        private readonly Dictionary<TownKey, IGame> m_games = new();
+        private readonly ConcurrentDictionary<TownKey, IGame> m_games = new();
 
         public bool RegisterGame(ITown town, IGame game)
         {
             var key = TownKey.FromTown(town);
-            if (!m_games.ContainsKey(key))
-            {
-                m_games.Add(key, game);
-                return true;
-            }
-            return false;
+            return m_games.TryAdd(key, game);
         }
 
         public bool EndGame(ITown town)
         {
             var key = TownKey.FromTown(town);
-            if(m_games.ContainsKey(key))
-            {
-                m_games.Remove(key);
-                return true;
-            }
-            return false;
+            return m_games.TryRemove(key, out _);
         }
 
         public bool TryGetGame(TownKey townKey, [MaybeNullWhen(false)] out IGame game)
