@@ -56,8 +56,7 @@ namespace Bot.Core.Lookup
 
         private void AppendScriptInfo(StringBuilder sb, CharacterData character, ScriptData script)
         {
-            string? wikiLink = script.IsOfficial ? OfficialWikiHelper.GetWikiUrl(script.Name) : script.AlmanacUrl;
-            string nameWithLink = wikiLink != null ? $"[{script.Name}]({wikiLink})" : script.Name;
+            string nameWithLink = script.AlmanacUrl != null ? $"[{script.Name}]({script.AlmanacUrl})" : script.Name;
             string authorSuffix = script.Author != null ? $" by {script.Author}" : "";
             string wikiSuffix = script.IsOfficial && character.IsOfficial ? $" - [{character.Name}]({OfficialWikiHelper.GetWikiUrl(character.Name)})" : GetCustomWikiSuffixForAlmanac(character, script);
             sb.AppendLine($"{nameWithLink}{authorSuffix}{wikiSuffix}");
