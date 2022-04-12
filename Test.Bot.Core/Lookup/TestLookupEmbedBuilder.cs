@@ -87,17 +87,20 @@ namespace Test.Bot.Core.Lookup
         }
 
         [Fact]
-        public void PassedOfficialScript_LinksToWiki()
+        public void PassedOfficialScript_UsesAlmanacLink()
         {
             var officialScript = new ScriptData("Trouble Brewing", isOfficial: true);
+            officialScript.AlmanacUrl = "almanac_url";
 
             var leb = new LookupEmbedBuilder(GetServiceProvider());
-            var embed = leb.BuildLookupEmbed(new LookupCharacterItem(CreateBasicCharacter(), new[] { officialScript }));
+            var embed = leb.BuildLookupEmbed(new LookupCharacterItem(CreateBasicCharacter(isOfficial:true), new[] { officialScript }));
 
             Assert.Equal(m_mockEmbed.Object, embed);
+
+            m_mockEmbedBuilder.Verify(eb => eb.WithDescription(It.Is<string>(s => s.Contains(" (Official)"))), Times.Once);
             m_mockEmbedBuilder.Verify(eb => eb.AddField(
                 It.Is<string>(s => s.Contains("Found In", StringComparison.InvariantCultureIgnoreCase)),
-                It.Is<string>(s => s.Contains($"[{officialScript.Name}]({OfficialWikiHelper.WikiPrefixUrl + "Trouble_Brewing"}) (Official)")),
+                It.Is<string>(s => s.Contains($"[{officialScript.Name}]({officialScript.AlmanacUrl})")),
                 It.Is<bool>(b => b == false)), Times.Once);
         }
 
@@ -132,6 +135,6 @@ namespace Test.Bot.Core.Lookup
                 It.Is<bool>(b => b == false)), Times.Once);
         }
 
-        private static CharacterData CreateBasicCharacter() => new("charid", "charname", "charAbility", CharacterTeam.Townsfolk, isOfficial: false);
+        private static CharacterData CreateBasicCharacter(bool isOfficial=false) => new("charid", "charname", "charAbility", CharacterTeam.Townsfolk, isOfficial: isOfficial);
     }
 }
