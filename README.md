@@ -244,6 +244,9 @@ Looks up a character by name. Official characters provided by https://clocktower
 
 If custom characters are desired, see the `/addScript` command.
 
+![image](https://user-images.githubusercontent.com/151635/162877468-b1e1b511-adba-43cf-9c42-cf59751d023d.png)
+
+
 ### `/addscript <script json url>`
 
 Informs the bot about a custom script using its json, collecting any custom characters in it.
@@ -254,6 +257,8 @@ Some extra features are available if they are provided your script json.
 * If the character json has a `flavor` property, this will be included.
 
 These features are all supported by script publishing from https://www.bloodstar.xyz/
+
+![image](https://user-images.githubusercontent.com/151635/162878228-cdee7bd6-4e35-4973-b1a7-be0944225fdb.png)
 
 ### `/removescript <script json url>`
 
