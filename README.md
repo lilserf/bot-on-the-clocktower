@@ -258,7 +258,7 @@ Some extra features are available if they are provided your script json.
 
 These features are all supported by script publishing from https://www.bloodstar.xyz/
 
-![image](https://user-images.githubusercontent.com/151635/162878228-cdee7bd6-4e35-4973-b1a7-be0944225fdb.png)
+![image](https://user-images.githubusercontent.com/151635/163033622-351ca62c-24da-40f7-8952-c18c86907bec.png)
 
 ### `/removescript <script json url>`
 
