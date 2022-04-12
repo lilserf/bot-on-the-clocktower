@@ -39,16 +39,17 @@ namespace Test.Bot.Core.Lookup
         public void CustomScript_JustMeta_ReturnsValidScriptNoCharacters()
         {
             string scriptName = "script name";
-            string almanacUrl = "almanac url";
+            string providedAlmanacUrl = "almanac url";
+            string expectedAlmanacUrl = "almanac%20url";
             string author = "author name";
 
-            var result = PerformCustomParse($"[{{\"id\":\"_meta\",\"name\":\"{scriptName}\",\"almanac\":\"{almanacUrl}\",\"author\":\"{author}\"}}]");
+            var result = PerformCustomParse($"[{{\"id\":\"_meta\",\"name\":\"{scriptName}\",\"almanac\":\"{providedAlmanacUrl}\",\"author\":\"{author}\"}}]");
 
             Assert.Collection(result.ScriptsWithCharacters,
                 swc =>
                 {
                     Assert.Equal(scriptName, swc.Script.Name);
-                    Assert.Equal(almanacUrl, swc.Script.AlmanacUrl);
+                    Assert.Equal(expectedAlmanacUrl, swc.Script.AlmanacUrl);
                     Assert.Equal(author, swc.Script.Author);
                     Assert.False(swc.Script.IsOfficial);
                     Assert.Empty(swc.Characters);

@@ -53,7 +53,10 @@ namespace Bot.Core.Lookup
                 return null;
 
             ScriptData sd = new(name, isOfficial: false);
-            sd.AlmanacUrl = JsonParseUtil.GetObjectStringProp(obj, "almanac");
+
+            var almanacUrl = JsonParseUtil.GetObjectStringProp(obj, "almanac");
+            if (almanacUrl != null)
+                sd.AlmanacUrl = Uri.EscapeUriString(almanacUrl);
             sd.Author = JsonParseUtil.GetObjectStringProp(obj, "author");
             return sd;
         }
