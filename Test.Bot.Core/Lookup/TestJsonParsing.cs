@@ -304,9 +304,18 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void CharParse_ImageProvided_IsSet()
         {
-            var imageUrl = "some image url";
+            var imageUrl = "some_image_url";
             var result = ParseSimpleCharacter(isOfficial: false, $"\"image\":\"{imageUrl}\"");
             Assert.Equal(imageUrl, result.ImageUrl);
+        }
+
+        [Fact]
+        public void CharParse_UrlWithSpaces_EncodesProperly()
+        {
+            var providedImageUrl = "some image url";
+            var expectedImageUrl = "some%20image%20url";
+            var result = ParseSimpleCharacter(isOfficial: false, $"\"image\":\"{providedImageUrl}\"");
+            Assert.Equal(expectedImageUrl, result.ImageUrl);
         }
 
         private static CharacterData ParseSimpleCharacter(bool isOfficial, string? addition=null)

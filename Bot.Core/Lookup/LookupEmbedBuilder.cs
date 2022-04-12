@@ -46,8 +46,6 @@ namespace Bot.Core.Lookup
             if (lookupItem.Character.ImageUrl != null)
                 eb.WithThumbnail(lookupItem.Character.ImageUrl);
 
-            
-
             if (lookupItem.Character.FlavorText != null)
                 eb.WithFooter(lookupItem.Character.FlavorText);
 
