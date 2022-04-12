@@ -18,9 +18,11 @@ namespace Bot.Core.Lookup
         {
             string name = lookupItem.Character.Name;
 
+            string officialSuffix = lookupItem.Character.IsOfficial ? $" (Official)" : "";
+
             var eb = m_botSystem.CreateEmbedBuilder()
                 .WithTitle(name)
-                .WithDescription(Enum.GetName(lookupItem.Character.Team)!)
+                .WithDescription($"{Enum.GetName(lookupItem.Character.Team)!}{officialSuffix}")
                 .WithColor(CharacterColorHelper.GetColorForTeam(m_botSystem.ColorBuilder, lookupItem.Character.Team))
                 .AddField("Ability", lookupItem.Character.Ability);
 
@@ -46,8 +48,6 @@ namespace Bot.Core.Lookup
             if (lookupItem.Character.ImageUrl != null)
                 eb.WithThumbnail(lookupItem.Character.ImageUrl);
 
-            
-
             if (lookupItem.Character.FlavorText != null)
                 eb.WithFooter(lookupItem.Character.FlavorText);
 
@@ -56,12 +56,10 @@ namespace Bot.Core.Lookup
 
         private void AppendScriptInfo(StringBuilder sb, CharacterData character, ScriptData script)
         {
-            string? wikiLink = script.IsOfficial ? OfficialWikiHelper.GetWikiUrl(script.Name) : script.AlmanacUrl;
-            string nameWithLink = wikiLink != null ? $"[{script.Name}]({wikiLink})" : script.Name;
-            string officialSuffix = script.IsOfficial ? $" (Official)" : "";
+            string nameWithLink = script.AlmanacUrl != null ? $"[{script.Name}]({script.AlmanacUrl})" : script.Name;
             string authorSuffix = script.Author != null ? $" by {script.Author}" : "";
             string wikiSuffix = script.IsOfficial && character.IsOfficial ? $" - [{character.Name}]({OfficialWikiHelper.GetWikiUrl(character.Name)})" : GetCustomWikiSuffixForAlmanac(character, script);
-            sb.AppendLine($"{nameWithLink}{authorSuffix}{officialSuffix}{wikiSuffix}");
+            sb.AppendLine($"{nameWithLink}{authorSuffix}{wikiSuffix}");
         }
 
         private string GetCustomWikiSuffixForAlmanac(CharacterData character, ScriptData script)

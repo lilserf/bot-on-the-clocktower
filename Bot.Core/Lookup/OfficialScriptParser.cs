@@ -7,6 +7,12 @@ namespace Bot.Core.Lookup
 {
     public class OfficialScriptParser : IOfficialScriptParser
     {
+        private readonly IOfficialUrlProvider m_urlProvider;
+        public OfficialScriptParser(IServiceProvider serviceProvider)
+        {
+            serviceProvider.Inject(out m_urlProvider);
+        }
+
         public GetOfficialCharactersResult ParseOfficialData(IEnumerable<string> scriptJsons, IEnumerable<string> characterJsons)
         {
             Dictionary<string, ScriptData> scriptIdToScriptMap = new();
@@ -36,7 +42,7 @@ namespace Bot.Core.Lookup
             return new GetOfficialCharactersResult(retItems);
         }
 
-        private void ParseScripts(string scriptsJson, ICollection<ScriptData> scripts, Dictionary<string, ScriptData> scriptIdToScriptMap, Dictionary<ScriptData, IReadOnlyCollection<string>> scriptCharactersMap)
+        private static void ParseScripts(string scriptsJson, ICollection<ScriptData> scripts, Dictionary<string, ScriptData> scriptIdToScriptMap, Dictionary<ScriptData, IReadOnlyCollection<string>> scriptCharactersMap)
         {
             JArray? arr;
             try
@@ -104,6 +110,9 @@ namespace Bot.Core.Lookup
                 if (cd == null)
                     continue;
 
+                if (cd.ImageUrl == null)
+                    cd.ImageUrl = GetCharacterImageUrl(cd.Id);
+
                 var cdws = new CharacterDataWithScript(cd);
                 charList.Add(cdws);
 
@@ -117,6 +126,8 @@ namespace Bot.Core.Lookup
                         cdws.Scripts.Add(script);
             }
         }
+
+        private string? GetCharacterImageUrl(string charId) => $"{m_urlProvider.RawSourceRoot}assets/icons/{charId}.png";
 
         private class CharacterDataWithScript
         {

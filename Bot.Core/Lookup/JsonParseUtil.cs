@@ -44,7 +44,9 @@ namespace Bot.Core.Lookup
             CharacterData cd = new(id, name, ability, team, isOfficial: isOfficial);
 
             cd.FlavorText = GetObjectStringProp(obj, "flavor");
-            cd.ImageUrl = GetObjectStringProp(obj, "image");
+            var imageUrlStr = GetObjectStringProp(obj, "image");
+            if (imageUrlStr != null)
+                cd.ImageUrl = Uri.EscapeUriString(imageUrlStr);
 
             return cd;
         }

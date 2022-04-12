@@ -1,4 +1,5 @@
 ﻿using Bot.Core.Lookup;
+using Moq;
 using Newtonsoft.Json.Linq;
 using Test.Bot.Base;
 using Xunit;
@@ -8,6 +9,15 @@ namespace Test.Bot.Core.Lookup
     public class TestJsonParsing : TestBase
     {
         private const string ValidMetaJson = "{\"id\":\"_meta\",\"name\":\"script name\"}";
+
+        private readonly Mock<IOfficialUrlProvider> m_mockUrlProvider = new();
+
+        public TestJsonParsing()
+        {
+            RegisterMock(m_mockUrlProvider);
+
+            m_mockUrlProvider.SetupGet(up => up.RawSourceRoot).Returns("https://raw.path/to/source/");
+        }
 
         [Fact]
         public void CustomScript_NoMeta_ReturnsNoResults()
@@ -116,7 +126,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void OfficialParse_JustCharacters_ReturnsCharacters()
         {
-            var op = new OfficialScriptParser();
+            var op = new OfficialScriptParser(GetServiceProvider());
             var result = op.ParseOfficialData(new string[] { }, new[] { $"[{PoisonerJson}]", $"[{SavantJson}]" });
 
             Assert.Collection(result.Items,
@@ -141,7 +151,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void OfficialParse_CharacterInScript_ReturnsCharacterInScript()
         {
-            var op = new OfficialScriptParser();
+            var op = new OfficialScriptParser(GetServiceProvider());
             var result = op.ParseOfficialData(new[] { $"[{TbJson}]" }, new[] { $"[{PoisonerJson}]" });
 
             Assert.Collection(result.Items,
@@ -162,7 +172,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void OfficialParse_InvalidScriptJson_Continues()
         {
-            var op = new OfficialScriptParser();
+            var op = new OfficialScriptParser(GetServiceProvider());
             var result = op.ParseOfficialData(new[] { $"[\"this is invalid data\"]" }, new[] { $"[{PoisonerJson}]" });
 
             Assert.Collection(result.Items,
@@ -175,7 +185,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void OfficialParse_InvalidCharacterJson_Continues()
         {
-            var op = new OfficialScriptParser();
+            var op = new OfficialScriptParser(GetServiceProvider());
             var result = op.ParseOfficialData(new string[] {}, new[] { $"[\"invalid role json\",{PoisonerJson},\"another invalid role json\"]" });
 
             Assert.Collection(result.Items,
@@ -188,7 +198,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void OfficialParse_TeensyvilleScript_FindsCharacter()
         {
-            var op = new OfficialScriptParser();
+            var op = new OfficialScriptParser(GetServiceProvider());
             var result = op.ParseOfficialData(new[] { $"[{LufJson}]" }, new[] { $"[{SavantJson}]" });
 
             Assert.Collection(result.Items,
@@ -213,7 +223,7 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void OfficialParse_UnofficialScript_MarkedUnofficial()
         {
-            var op = new OfficialScriptParser();
+            var op = new OfficialScriptParser(GetServiceProvider());
             var result = op.ParseOfficialData(new[] { $"[{UnofficialJson}]" }, new[] { $"[{SavantJson}]" });
 
             Assert.Collection(result.Items,
@@ -304,9 +314,18 @@ namespace Test.Bot.Core.Lookup
         [Fact]
         public void CharParse_ImageProvided_IsSet()
         {
-            var imageUrl = "some image url";
+            var imageUrl = "some_image_url";
             var result = ParseSimpleCharacter(isOfficial: false, $"\"image\":\"{imageUrl}\"");
             Assert.Equal(imageUrl, result.ImageUrl);
+        }
+
+        [Fact]
+        public void CharParse_UrlWithSpaces_EncodesProperly()
+        {
+            var providedImageUrl = "some image url";
+            var expectedImageUrl = "some%20image%20url";
+            var result = ParseSimpleCharacter(isOfficial: false, $"\"image\":\"{providedImageUrl}\"");
+            Assert.Equal(expectedImageUrl, result.ImageUrl);
         }
 
         private static CharacterData ParseSimpleCharacter(bool isOfficial, string? addition=null)
