@@ -26,10 +26,6 @@ First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/auth
 
 For more information on the permissions it requests, see [Permission Details](#permission-details).
 
-### Roles
-
-< Insert Role Image here >
-
 It is recommended (but optional) that your server has the following roles:
 * A role for server members who like to be Storytellers. Example role name: **BotC Storyteller**
 * A role for server members who play the game. Example role name: **BotC Player**
@@ -37,17 +33,15 @@ It is recommended (but optional) that your server has the following roles:
 
 You should grant this role to appropriate server members, as the bot will not grant these roles for you.
 
-
-
 #### A note on Server Administrators
 
 Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators or Owners can always see all channels and cannot have their nicknames changes. For these reasons, if a server Administrator/Owner wants to play too, it is recommended that they create a separate non-Admininstrator/Owner Discord account for playing with the bot.
 
-### Quick Setup: `/createtown`
+### Quick Setup: `!createTown`
 
-To quickly set up your town, simply send a command to the bot with the name of your town and - optionally - the server-wide roles mentioned above.
+To quickly set up your town, simply send a command to the bot with the name of your town and - optionally - the roles mentioned above.
 
-> `/createtown townname:"Ravenswood Bluff" storytellerrole:@BotC Storyteller playerrole:@BotC Player usenight:True`
+> `!createTown "Ravenswood Bluff" "BotC Storyteller" "BotC Player"`
 
 This will create all the categories, channels, and roles needed by Ravenswood Bluff.
 
@@ -57,7 +51,7 @@ The bot supports more than 1 town per Discord server. With 2 differently-named t
 
 #### Explanation of the Setup
 
-For more information on precisely what this setup does (what categories, roles, and permissions are created), see the `/addTown` command reference, below.
+For more information on precisely what this setup does (what categories, roles, and permissions are created), see the `!addTown` command reference, below.
 
 ---
 
@@ -65,11 +59,7 @@ For more information on precisely what this setup does (what categories, roles, 
 
 All players can gather in the Town Square channel while the Storyteller sets up the game on http://clocktower.online (or whatever mechanism your group uses).
 
-When it's time for Night 1 to begin, the Storyteller should use the `/game` command to start a new game.
-
-
-
-uses `!night` to send all players to their individual Cottages. Each player has permissions only for the Cottage they're placed in, so they can't see each other at all, but the Storyteller can see all the Cottages.
+When it's time for Night 1 to begin, the Storyteller uses `!night` to send all players to their individual Cottages. Each player has permissions only for the Cottage they're placed in, so they can't see each other at all, but the Storyteller can see all the Cottages.
 
 Optionally, to distribute the Minion and Demon info (but not the Demon bluffs), the Storyteller can use the `!evil` command (see this and `!lunatic` below) to quickly send messages to all the Evil players informing them of their teammates.
 
