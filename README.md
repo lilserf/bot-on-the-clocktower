@@ -244,7 +244,7 @@ Looks up a character by name. Official characters provided by https://clocktower
 
 If custom characters are desired, see the `/addScript` command.
 
-![image](https://user-images.githubusercontent.com/151635/162877468-b1e1b511-adba-43cf-9c42-cf59751d023d.png)
+![image](https://user-images.githubusercontent.com/151635/162993413-2dce6201-01cb-41b7-93ee-b1bc5422b419.png)
 
 
 ### `/addscript <script json url>`
