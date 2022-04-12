@@ -26,15 +26,19 @@ namespace Bot.Core.Lookup
         {
             var now = DateTime.Now;
 
-            if (m_urlToScriptAndTime.TryGetValue(url, out var scriptAndTime) && scriptAndTime.Item2 > now - TimeSpan.FromDays(1))
-                return scriptAndTime.Item1;
+            bool existsInDict = false;
+            if (m_urlToScriptAndTime.TryGetValue(url, out var scriptAndTime))
+                if (scriptAndTime.Item2 > now - TimeSpan.FromDays(1))
+                    return scriptAndTime.Item1;
+                else
+                    existsInDict = true;
 
             string? json = (await m_stringDownloader.DownloadStringAsync(url)).Data;
             if (json == null)
                  return GetCustomScriptResult.EmptyResult;
 
             var script = m_scriptParser.ParseScript(json);
-            if (m_urlToScriptAndTime.TryRemove(url, out _))
+            if (!existsInDict || m_urlToScriptAndTime.TryRemove(url, out _))
                 m_urlToScriptAndTime.TryAdd(url, (script, now));
             return script;
         }
