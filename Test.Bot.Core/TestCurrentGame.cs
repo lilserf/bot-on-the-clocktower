@@ -250,11 +250,11 @@ namespace Test.Bot.Core
 
 
         [Theory]
-        [InlineData(typeof(UnauthorizedException))]
         [InlineData(typeof(NotFoundException))]
         [InlineData(typeof(ServerErrorException))]
         public void CurrentGame_StorytellerTag_Exceptions(Type exceptionType)
         {
+            // We no longer test for this to throw an UnauthorizedException because that path catches and continues
             InteractionAuthorMock.Setup(m => m.SetDisplayName(It.IsAny<string>())).ThrowsAsync(CreateException(exceptionType));
 
             RunCurrentGameAssertComplete();
