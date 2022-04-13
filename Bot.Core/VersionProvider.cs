@@ -32,12 +32,24 @@ Major things to be aware of are called out below.";
 
                 {
                     IEmbedBuilder eb = m_botSystem.CreateEmbedBuilder();
+                    eb.WithColor(m_colorBuilder.Red);
+                    string message =
+                        @"You should re-invite this bot to your server to ensure all permissions are set correctly.
+You can do this by going to Bot on the Clocktower's profile and choosing **Add to Server**.";
+                    eb.AddField("Alert!", message);
+                    msg.AddEmbed(eb.Build());
+                }
+
+                {
+                    IEmbedBuilder eb = m_botSystem.CreateEmbedBuilder();
                     eb.WithColor(m_colorBuilder.Blue);
+                    eb.WithImageUrl("https://user-images.githubusercontent.com/151635/162874601-a94936c7-de43-4c0b-ad08-6089f67f6dc3.png");
                     string message =
                         @"This bot now has slash command equivalents for all the old !commands.
 These are extremely powerful, with nifty autocompletion, documentation, and interactive buttons.
 **TIP**: Try the `/game` command for a super-easy game management flow!";
                     eb.AddField("Slash Commands", message);
+                    
                     msg.AddEmbed(eb.Build());
                 }
                 {

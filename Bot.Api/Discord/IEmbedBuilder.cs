@@ -10,6 +10,8 @@
         IEmbedBuilder WithAuthor(string? name = null, string? url = null, string? iconUrl = null);
         IEmbedBuilder WithFooter(string? text = null, string? iconUrl = null);
         IEmbedBuilder WithColor(IColor color);
+        IEmbedBuilder WithImageUrl(string url);
         IEmbedBuilder AddField(string name, string value, bool inline = false);
+
     }
 }
