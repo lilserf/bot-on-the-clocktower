@@ -86,6 +86,11 @@ namespace Bot.Core
                 await member.SetDisplayName(StorytellerTag + member.DisplayName);
                 return true;
             }
+            catch(UnauthorizedException ex)
+            {
+                await member.SendMessageAsync("Bot on the Clocktower couldn't change your diplay name to show you're a Storyteller - you may be the admin of this server, or otherwise above the Bot in the Roles list.");
+                return true;
+            }
             catch(Exception ex)
             {
                 Serilog.Log.Error(ex, "AddStorytellerTag failed while changing display name of {@member}", member);

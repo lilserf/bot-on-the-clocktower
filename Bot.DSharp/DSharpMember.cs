@@ -53,7 +53,7 @@ namespace Bot.DSharp
 
 		public async Task SetDisplayName(string newName)
         {
-			await Wrapped.ModifyAsync(x => x.Nickname = newName);
+			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.ModifyAsync(x => x.Nickname = newName));
         }
 
         public override string ToString()

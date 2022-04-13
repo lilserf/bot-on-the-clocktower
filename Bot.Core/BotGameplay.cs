@@ -274,8 +274,8 @@ namespace Bot.Core
 
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
                 // This currently throws UnauthorizedException :/
-                //foreach (var (cottage, user) in villagerPairs)
-                //    await MemberHelper.AddPermissionsAsync(user, cottage, processLog);
+                foreach (var (cottage, user) in villagerPairs)
+                    await cottage.AddOverwriteAsync(user, IBaseChannel.Permissions.AccessChannels);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
@@ -303,7 +303,16 @@ namespace Bot.Core
             if (town == null)
                 return "Failed to find a valid town!";
             // Doesn't currently work :(
-            //await ClearCottagePermissions(game, processLog);
+            if (town.NightCategory != null)
+            {
+                foreach (var cottage in town.NightCategory.Channels)
+                {
+                    foreach (var user in cottage.Users)
+                    {
+                        await cottage.RemoveOverwriteAsync(user);
+                    }
+                }
+            }
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
             await m_gameMetricsDatabase.RecordDayAsync(game.TownKey, m_dateTime.Now);

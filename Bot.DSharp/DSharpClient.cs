@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.DSharp
@@ -40,12 +41,16 @@ namespace Bot.DSharp
             var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
 
             // During development, register our commands to the dev guild only
-            ulong devGuildId = 128585855097896963ul;
-            slash.RegisterCommands<DSharpGameSlashCommands>(devGuildId);
-            slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
-            slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
-            slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
-            slash.RegisterCommands<DSharpSetupSlashCommands>(devGuildId);
+            List<ulong> devGuildIds = new() { 128585855097896963ul, 215551375608643586ul };
+
+            foreach (ulong devGuildId in devGuildIds)
+            { 
+                slash.RegisterCommands<DSharpGameSlashCommands>(devGuildId);
+                slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
+                slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
+                slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
+                slash.RegisterCommands<DSharpSetupSlashCommands>(devGuildId);
+            }
             // During development, register no commands globally
             slash.RegisterCommands<EmptyCommands>();
 
