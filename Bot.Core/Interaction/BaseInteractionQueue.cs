@@ -53,11 +53,14 @@ namespace Bot.Core.Interaction
                     ProcessQueue(key);
                 }
             }
-            catch (Exception)
-            { }
+            catch (Exception e)
+            {
+                await ExceptionReportingHelper.TrySendExceptionToMemberAsync($"Queue Request [{GetFriendlyStringForKey(KeyFromContext(context))}]", context.Member, e);
+            }
         }
 
         protected abstract TKey KeyFromContext(IBotInteractionContext context);
+        protected abstract string GetFriendlyStringForKey(TKey key);
 
         private void ProcessQueue(TKey key)
         {
@@ -86,8 +89,10 @@ namespace Bot.Core.Interaction
                                 webhook.AddComponents(components);
                         await item.Context.EditResponseAsync(webhook);
                     }
-                    catch (Exception)
-                    { }
+                    catch (Exception e)
+                    {
+                        await ExceptionReportingHelper.TrySendExceptionToMemberAsync($"Queue Process [{GetFriendlyStringForKey(KeyFromContext(item.Context))}]", item.Context.Member, e);
+                    }
                 }
                 m_keyToCommandQueue.Remove(key);
             }

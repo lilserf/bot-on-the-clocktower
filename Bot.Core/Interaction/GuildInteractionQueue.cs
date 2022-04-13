@@ -10,5 +10,6 @@ namespace Bot.Core.Interaction
         {}
 
         protected override ulong KeyFromContext(IBotInteractionContext context) => context.Guild.Id;
+        protected override string GetFriendlyStringForKey(ulong key) => $"Guild: `{key}`";
     }
 }

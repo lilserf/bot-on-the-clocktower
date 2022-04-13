@@ -10,5 +10,6 @@ namespace Bot.Core.Interaction
         {}
 
         protected override TownKey KeyFromContext(IBotInteractionContext context) => context.GetTownKey();
+        protected override string GetFriendlyStringForKey(TownKey townKey) => $"Guild: `{townKey.GuildId}`\nChannel: `{townKey.ControlChannelId}`";
     }
 }

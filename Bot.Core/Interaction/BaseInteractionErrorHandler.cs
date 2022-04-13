@@ -28,7 +28,7 @@ namespace Bot.Core.Interaction
 
         private static Task TrySendExceptionToAuthorAsync(TKey key, IMember requester, Exception e, Func<TKey, string> getFriendlyStringForKey)
         {
-            return ExceptionReportingHelper.TrySendExceptionToMemberAsync(getFriendlyStringForKey(key), requester, e);
+            return ExceptionReportingHelper.TrySendExceptionToMemberAsync($"Interaction error [{getFriendlyStringForKey(key)}]", requester, e);
         }
     }
 }
