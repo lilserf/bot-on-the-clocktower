@@ -49,7 +49,7 @@ namespace Test.Bot.Core.Interaction
         }
 
         [Fact]
-        public async Task QueueRequest_ExceptionThrownDuringProcess_NotifiesAuthor()
+        public void QueueRequest_ExceptionThrownDuringProcess_NotifiesAuthor()
         {
             string errorMessage = "threw an error!";
             m_mockContext.SetupSequence(c => c.EditResponseAsync(It.IsAny<IBotWebhookBuilder>()))

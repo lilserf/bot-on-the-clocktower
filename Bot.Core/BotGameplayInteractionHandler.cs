@@ -90,22 +90,6 @@ namespace Bot.Core
             return button;
         }
 
-        // Helper for editing the original interaction with a summarizing message when finished
-        // TODO: move within IBotInteractionContext
-        protected async Task EditOriginalMessage(IBotInteractionContext context, string s)
-        {
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(s))
-                {
-                    var webhook = m_system.CreateWebhookBuilder().WithContent(s);
-                    await context.EditResponseAsync(webhook);
-                }
-            }
-            catch (Exception)
-            { }
-        }
-
         #region Callbacks from system with interaction context
         public async Task<InteractionResult> PhaseNightInternal(TownKey townKey, IMember requester)
         {
