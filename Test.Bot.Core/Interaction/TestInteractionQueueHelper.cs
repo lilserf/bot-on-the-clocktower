@@ -69,7 +69,7 @@ namespace Test.Bot.Core.Interaction
         /// <param name="serviceProvider">Service Provider</param>
         /// <param name="performTest">Set up and perform the test</param>
         /// <param name="verifyResult">Verification action to assert that the result of the test is correct</param>
-        public static void TestTowndQueueMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
+        public static void TestTownQueueMethod(IServiceProvider serviceProvider, Func<IServiceProvider, Task> performTest, Action<InteractionResult>? verifyResult = null)
         {
             TestQueueMethod<IGuildInteractionQueue>(serviceProvider, performTest, verifyResult);
         }

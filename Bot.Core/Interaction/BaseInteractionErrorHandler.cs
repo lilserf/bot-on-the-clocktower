@@ -26,14 +26,9 @@ namespace Bot.Core.Interaction
             return result;
         }
 
-        private static async Task TrySendExceptionToAuthorAsync(TKey key, IMember requester, Exception e, Func<TKey, string> getFriendlyStringForKey)
+        private static Task TrySendExceptionToAuthorAsync(TKey key, IMember requester, Exception e, Func<TKey, string> getFriendlyStringForKey)
         {
-            try
-            {
-                await requester.SendMessageAsync($"Bot on the Clocktower encountered an error.\n\nPlease consider reporting the error at <https://github.com/lilserf/bot-on-the-clocktower/issues> and including all the information below:\n\n{getFriendlyStringForKey(key)}\nException: `{e.GetType().Name}`\nMessage:   `{e.Message}`\nStack trace:\n```{e.StackTrace}```");
-            }
-            catch (Exception)
-            { }
+            return ExceptionReportingHelper.TrySendExceptionToMemberAsync($"Interaction error [{getFriendlyStringForKey(key)}]", requester, e);
         }
     }
 }
