@@ -44,9 +44,6 @@ namespace Bot.Main
             }
             Log.Logger = logConfig.CreateLogger();
 
-            // Temporarily enable Serilog self-logging
-            Serilog.Debugging.SelfLog.Enable(Console.Error);
-
             var program = new Program();
             await program.RunAsync();
         }
