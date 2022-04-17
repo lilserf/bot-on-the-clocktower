@@ -22,15 +22,13 @@ namespace Bot.Api
             IChannel townSquare, 
             IChannelCategory dayCategory,
             IChannelCategory? nightCategory,
-            IRole? stRole,
-            IRole? villagerRole,
+            IRole stRole,
+            IRole villagerRole,
             IChannel? chatChan);
 
         public Task ModifyTownAsync(IBotInteractionContext ctx,
             IChannel? chatChannel,
-            IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole);
+            IChannelCategory? nightCat);
 
         public Task CreateTownAsync(IBotInteractionContext ctx, 
             string townName, 
