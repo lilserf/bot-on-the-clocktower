@@ -73,9 +73,9 @@ namespace Bot.DSharp
             [Option("controlChannel", "Control channel (must be text)")] DiscordChannel controlChannel,
             [Option("townSquare", "Town Square channel (must be voice)")] DiscordChannel townSquare,
             [Option("dayCategory", "Day Category (must contain control and town square channels)")] DiscordChannel dayCategory,
+            [Option("storytellerRole", "Role to grant storytellers in this town during an active game")] DiscordRole stRole,
+            [Option("villagerRole", "Role to grant villagers in this town during an active game")] DiscordRole villagerRole,
             [Option("nightCategory", "Night Category (optional)")] DiscordChannel? nightCategory = null,
-            [Option("storytellerRole", "Storyteller role (optional)")] DiscordRole? stRole = null,
-            [Option("villagerRole", "Villager role (optional)")] DiscordRole? villagerRole = null,
             [Option("chatChannel", "Chat channel (optional, must be text)")] DiscordChannel? chatChannel = null
             )
         {
@@ -128,8 +128,8 @@ namespace Bot.DSharp
             var dayCat = new DSharpChannelCategory(dayCategory);
 
             var nightCat = nightCategory == null ? null : new DSharpChannelCategory(nightCategory);
-            var stRoleWrapped = stRole == null ? null : new DSharpRole(stRole);
-            var villagerRoleWrapped = villagerRole == null ? null : new DSharpRole(villagerRole);
+            var stRoleWrapped = new DSharpRole(stRole);
+            var villagerRoleWrapped = new DSharpRole(villagerRole);
             var chatChan = chatChannel == null ? null : new DSharpChannel(chatChannel);
 
             await BotSetup!.AddTownAsync(new DSharpInteractionContext(ctx), controlChan, townChan, dayCat, nightCat, stRoleWrapped, villagerRoleWrapped, chatChan);

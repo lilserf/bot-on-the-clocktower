@@ -37,8 +37,8 @@ namespace Bot.Core
             IChannel townSquare, 
             IChannelCategory dayCat,
             IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole,
+            IRole stRole,
+            IRole villagerRole,
             IChannel? chatChan) =>
             m_interactionWrapper.WrapInteractionAsync($"Adding town **townName**...", ctx,
                 l => PerformAddTown(l, ctx, controlChan, townSquare, dayCat, nightCat, stRole, villagerRole, chatChan));
@@ -113,8 +113,8 @@ namespace Bot.Core
             IChannel townSquare,
             IChannelCategory dayCat,
             IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole,
+            IRole stRole,
+            IRole villagerRole,
             IChannel? chatChan)
         {
 
