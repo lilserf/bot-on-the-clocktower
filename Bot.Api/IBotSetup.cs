@@ -17,10 +17,6 @@ namespace Bot.Api
 
         public IEnumerable<string> DefaultExtraDayChannels { get; }
 
-        public Task AddTown(ITown town, IMember author);
-
-        public Task CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole, IRole? guildPlayerRole);
-
         public Task AddTownAsync(IBotInteractionContext ctx, 
             IChannel controlChan, 
             IChannel townSquare, 

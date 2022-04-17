@@ -384,11 +384,13 @@ namespace Bot.Core
             TownDescription tdesc = new TownDescription();
             tdesc.PopulateFromTownName(townName, ctx.Guild, ctx.Member, useNight);
 
-            await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
+            var newTown = await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
 
             await m_commandMetricsDatabase.RecordCommand("createtown", m_dateTime.Now);
 
-            return InteractionResult.FromMessage($"Created new town **{townName}**!");
+            var embed = EmbedFromTown(newTown, m_dateTime.Now, ctx.Member.DisplayName ?? "unknown");
+
+            return InteractionResult.FromMessageAndEmbeds($"Created new town **{townName}**!", embed);
         }
 
         public Task AddTown(ITown town, IMember author)
@@ -406,7 +408,7 @@ namespace Bot.Core
             // TODO
         }
 
-        public async Task CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole = null, IRole? guildPlayerRole = null)
+        public async Task<Town> CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole = null, IRole? guildPlayerRole = null)
         {
             IGuild guild = townDesc.Guild;
 
@@ -502,6 +504,8 @@ namespace Bot.Core
             }
 
             await AddTown(newTown, author);
+
+            return newTown;
         }
 
     }
