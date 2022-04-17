@@ -45,11 +45,9 @@ namespace Bot.Core
 
         public Task ModifyTownAsync(IBotInteractionContext ctx,
             IChannel? chatChannel,
-            IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole) =>
+            IChannelCategory? nightCat) =>
             m_interactionWrapper.WrapInteractionAsync($"Modifying town...", ctx,
-                l => PerformModifyTown(l, ctx, chatChannel, nightCat, stRole, villagerRole));
+                l => PerformModifyTown(l, ctx, chatChannel, nightCat));
 
         public Task CreateTownAsync(IBotInteractionContext ctx, 
             string townName, 
@@ -77,9 +75,7 @@ namespace Bot.Core
 
         private async Task<InteractionResult> PerformModifyTown(IProcessLogger l, IBotInteractionContext ctx,
             IChannel? chatChannel,
-            IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole)
+            IChannelCategory? nightCat)
         {
             var townRecord = await m_townDb.GetTownRecordAsync(ctx.Guild.Id, ctx.Channel.Id);
 
@@ -93,10 +89,6 @@ namespace Bot.Core
                         town.ChatChannel = chatChannel;
                     if (nightCat != null)
                         town.NightCategory = nightCat;
-                    if (stRole != null)
-                        town.StorytellerRole = stRole;
-                    if(villagerRole != null)
-                        town.VillagerRole = villagerRole;
 
                     await m_townDb.UpdateTownAsync(town);
 

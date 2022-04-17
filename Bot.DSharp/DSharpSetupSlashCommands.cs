@@ -42,9 +42,7 @@ namespace Bot.DSharp
         [SlashCommand("modifyTown", "Modify one of the optional details of a town")]
         public async Task ModifyTownCommand(InteractionContext ctx,
             [Option("chatChannel", "Set the (text) chat channel for this town")] DiscordChannel? chatChannel = null,
-            [Option("nightCategory", "Set the Night category for this town")] DiscordChannel? nightCat = null,
-            [Option("storytellerRole", "Set the storyteller role for this town")] DiscordRole? stRole = null,
-            [Option("villagerRole", "Set the villager role for this town")] DiscordRole? villagerRole = null)
+            [Option("nightCategory", "Set the Night category for this town")] DiscordChannel? nightCat = null)
         {
             // Need to do error handling here at the argument level before we try to create wrappers for stuff that's
             // totally the wrong type
@@ -61,10 +59,8 @@ namespace Bot.DSharp
 
             var chatChanWrapped = chatChannel == null ? null : new DSharpChannel(chatChannel);
             var nightCatWrapped = nightCat == null ? null : new DSharpChannelCategory(nightCat);
-            var stRoleWrapped = stRole == null ? null : new DSharpRole(stRole);
-            var villagerRoleWrapped = villagerRole == null ? null : new DSharpRole(villagerRole);
 
-            await BotSetup!.ModifyTownAsync(new DSharpInteractionContext(ctx), chatChanWrapped, nightCatWrapped, stRoleWrapped, villagerRoleWrapped);
+            await BotSetup!.ModifyTownAsync(new DSharpInteractionContext(ctx), chatChanWrapped, nightCatWrapped);
         }
 
 
