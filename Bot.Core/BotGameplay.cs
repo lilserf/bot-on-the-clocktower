@@ -273,7 +273,6 @@ namespace Bot.Core
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
 
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
-                // This currently throws UnauthorizedException :/
                 foreach (var (cottage, user) in villagerPairs)
                     await cottage.AddOverwriteAsync(user, IBaseChannel.Permissions.AccessChannels);
 
