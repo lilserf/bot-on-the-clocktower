@@ -161,13 +161,7 @@ namespace Bot.Core
                     foundUsers.AddRange(c.Users.ToList());
                 }
 
-                if (town.NightCategory != null)
-                {
-                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
-                    {
-                        foundUsers.AddRange(c.Users.ToList());
-                    }
-                }
+                foundUsers.AddRange(GetMembersInNightCategory(town));
 
                 // Sanity check for bots
                 foundUsers = foundUsers.Where(u => !u.IsBot).ToList();
@@ -245,6 +239,14 @@ namespace Bot.Core
             return game;
         }
 
+        private static IEnumerable<IMember> GetMembersInNightCategory(ITown town)
+        {
+            if (town.NightCategory != null)
+                foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
+                    foreach (var u in c.Users)
+                        yield return u;
+        }
+
         public async Task<string> PhaseNightUnsafe(IGame game, IProcessLogger processLog)
 		{
             var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
@@ -269,8 +271,7 @@ namespace Bot.Core
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
 
                 // Now move STs
-                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
-                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+                await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
                 foreach (var (cottage, user) in villagerPairs)
@@ -279,11 +280,27 @@ namespace Bot.Core
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
 
-                return "Moved all players from Town Square to Cottages!";
+                return $"Moved all players from {town.TownSquare?.Name ?? "Town Square"} to nighttime!";
             }
             else
             {
                 return "No Night Category for this town!";
+            }
+        }
+
+        private static async Task MoveStorytellersToCottages(IProcessLogger processLog, ITown town, IEnumerable<Tuple<IChannel, IMember>> sts)
+        {
+            HashSet<IMember>? nightCatMembers = null;
+            foreach (var (c, st) in sts)
+            {
+                if (nightCatMembers == null)
+                    nightCatMembers = GetMembersInNightCategory(town).ToHashSet();
+
+                if (nightCatMembers.Contains(st))
+                    continue;
+
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+                nightCatMembers = null; // We just waited for a move, so the members list may have changed and need refreshing
             }
         }
 

@@ -105,13 +105,25 @@ namespace Test.Bot.Core
             gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object });
 
             BotGameplay g = new(GetServiceProvider());
-            var t = g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);            
-            Assert.True(t.IsCompleted);
+            AssertCompletedTask(() => g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object));
 
             InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
             st2.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
             Villager1Mock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage2Mock.Object)), Times.Once);
+        }
+
+        [Fact]
+        public void StorytellersAlreadyInNightCategory_DoesNotMove()
+        {
+            TownSquareMock.SetupGet(t => t.Users).Returns(Array.Empty<IMember>());
+            Cottage2Mock.SetupGet(x => x.Users).Returns(new [] {InteractionAuthorMock.Object });
+
+            var gameMock = CreateGameMock();
+
+            BotGameplay g = new(GetServiceProvider());
+            AssertCompletedTask(() => g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object));
+
+            InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Never);
         }
     }
 }
