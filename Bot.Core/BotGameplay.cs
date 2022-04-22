@@ -271,8 +271,7 @@ namespace Bot.Core
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
 
                 // Now move STs
-                foreach (var (c, st) in m_shuffle.Shuffle(stPairs))
-                    await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+                await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
                 foreach (var (cottage, user) in villagerPairs)
@@ -286,6 +285,22 @@ namespace Bot.Core
             else
             {
                 return "No Night Category for this town!";
+            }
+        }
+
+        private static async Task MoveStorytellersToCottages(IProcessLogger processLog, ITown town, IEnumerable<Tuple<IChannel, IMember>> sts)
+        {
+            HashSet<IMember>? nightCatMembers = null;
+            foreach (var (c, st) in sts)
+            {
+                if (nightCatMembers == null)
+                    nightCatMembers = GetMembersInNightCategory(town).ToHashSet();
+
+                if (nightCatMembers.Contains(st))
+                    continue;
+
+                await MemberHelper.MoveToChannelLoggingErrorsAsync(st, c, processLog);
+                nightCatMembers = null; // We just waited for a move, so the members list may have changed and need refreshing
             }
         }
 
