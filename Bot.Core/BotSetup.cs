@@ -37,19 +37,17 @@ namespace Bot.Core
             IChannel townSquare, 
             IChannelCategory dayCat,
             IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole,
+            IRole stRole,
+            IRole villagerRole,
             IChannel? chatChan) =>
             m_interactionWrapper.WrapInteractionAsync($"Adding town **townName**...", ctx,
                 l => PerformAddTown(l, ctx, controlChan, townSquare, dayCat, nightCat, stRole, villagerRole, chatChan));
 
         public Task ModifyTownAsync(IBotInteractionContext ctx,
             IChannel? chatChannel,
-            IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole) =>
+            IChannelCategory? nightCat) =>
             m_interactionWrapper.WrapInteractionAsync($"Modifying town...", ctx,
-                l => PerformModifyTown(l, ctx, chatChannel, nightCat, stRole, villagerRole));
+                l => PerformModifyTown(l, ctx, chatChannel, nightCat));
 
         public Task CreateTownAsync(IBotInteractionContext ctx, 
             string townName, 
@@ -77,9 +75,7 @@ namespace Bot.Core
 
         private async Task<InteractionResult> PerformModifyTown(IProcessLogger l, IBotInteractionContext ctx,
             IChannel? chatChannel,
-            IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole)
+            IChannelCategory? nightCat)
         {
             var townRecord = await m_townDb.GetTownRecordAsync(ctx.Guild.Id, ctx.Channel.Id);
 
@@ -93,10 +89,6 @@ namespace Bot.Core
                         town.ChatChannel = chatChannel;
                     if (nightCat != null)
                         town.NightCategory = nightCat;
-                    if (stRole != null)
-                        town.StorytellerRole = stRole;
-                    if(villagerRole != null)
-                        town.VillagerRole = villagerRole;
 
                     await m_townDb.UpdateTownAsync(town);
 
@@ -113,8 +105,8 @@ namespace Bot.Core
             IChannel townSquare,
             IChannelCategory dayCat,
             IChannelCategory? nightCat,
-            IRole? stRole,
-            IRole? villagerRole,
+            IRole stRole,
+            IRole villagerRole,
             IChannel? chatChan)
         {
 
@@ -384,11 +376,13 @@ namespace Bot.Core
             TownDescription tdesc = new TownDescription();
             tdesc.PopulateFromTownName(townName, ctx.Guild, ctx.Member, useNight);
 
-            await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
+            var newTown = await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
 
             await m_commandMetricsDatabase.RecordCommand("createtown", m_dateTime.Now);
 
-            return InteractionResult.FromMessage($"Created new town **{townName}**!");
+            var embed = EmbedFromTown(newTown, m_dateTime.Now, ctx.Member.DisplayName ?? "unknown");
+
+            return InteractionResult.FromMessageAndEmbeds($"Created new town **{townName}**!", embed);
         }
 
         public Task AddTown(ITown town, IMember author)
@@ -406,7 +400,7 @@ namespace Bot.Core
             // TODO
         }
 
-        public async Task CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole = null, IRole? guildPlayerRole = null)
+        public async Task<Town> CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole = null, IRole? guildPlayerRole = null)
         {
             IGuild guild = townDesc.Guild;
 
@@ -502,6 +496,8 @@ namespace Bot.Core
             }
 
             await AddTown(newTown, author);
+
+            return newTown;
         }
 
     }

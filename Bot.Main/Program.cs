@@ -40,7 +40,7 @@ namespace Bot.Main
             }
             else
             {
-                logConfig = logConfig.MinimumLevel.Warning();
+                logConfig = logConfig.MinimumLevel.Information();
             }
             Log.Logger = logConfig.CreateLogger();
 

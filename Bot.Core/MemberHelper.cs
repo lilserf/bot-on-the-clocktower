@@ -86,9 +86,9 @@ namespace Bot.Core
                 await member.SetDisplayName(StorytellerTag + member.DisplayName);
                 return true;
             }
-            catch(UnauthorizedException ex)
+            catch(UnauthorizedException)
             {
-                await member.SendMessageAsync("Bot on the Clocktower couldn't change your diplay name to show you're a Storyteller - you may be the admin of this server, or otherwise above the Bot in the Roles list.");
+                // Don't spam the server owner, just let this succeed without adding the (ST) tag
                 return true;
             }
             catch(Exception ex)
