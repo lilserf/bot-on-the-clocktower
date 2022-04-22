@@ -280,7 +280,7 @@ namespace Bot.Core
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
 
-                return "Moved all players from Town Square to Cottages!";
+                return $"Moved all players from {town.TownSquare?.Name ?? "Town Square"} to nighttime!";
             }
             else
             {
