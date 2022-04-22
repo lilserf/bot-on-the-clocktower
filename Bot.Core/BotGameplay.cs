@@ -161,13 +161,7 @@ namespace Bot.Core
                     foundUsers.AddRange(c.Users.ToList());
                 }
 
-                if (town.NightCategory != null)
-                {
-                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
-                    {
-                        foundUsers.AddRange(c.Users.ToList());
-                    }
-                }
+                foundUsers.AddRange(GetMembersInNightCategory(town));
 
                 // Sanity check for bots
                 foundUsers = foundUsers.Where(u => !u.IsBot).ToList();
@@ -243,6 +237,14 @@ namespace Bot.Core
             await activityRecordTask;
 
             return game;
+        }
+
+        private static IEnumerable<IMember> GetMembersInNightCategory(ITown town)
+        {
+            if (town.NightCategory != null)
+                foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
+                    foreach (var u in c.Users)
+                        yield return u;
         }
 
         public async Task<string> PhaseNightUnsafe(IGame game, IProcessLogger processLog)
