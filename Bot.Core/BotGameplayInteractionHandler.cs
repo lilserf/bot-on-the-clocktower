@@ -99,7 +99,7 @@ namespace Bot.Core
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
-                    return "Couldn't find an active game record for this town!";
+                    return BotGameplay.NoGameInProgressMessage;
                 }
                 return await m_gameplay.PhaseNightUnsafe(game, processLog);
             });
@@ -113,7 +113,7 @@ namespace Bot.Core
                 if (game == null)
                 {
                     // TODO: more error reporting here? Could make use of use processLog!
-                    return "Couldn't find an active game record for this town!";
+                    return BotGameplay.NoGameInProgressMessage;
                 }
                 return await m_gameplay.PhaseDayUnsafe(game, processLog);
             });
@@ -127,7 +127,7 @@ namespace Bot.Core
                 if (game == null)
                 {
                     // TODO: more error reporting here?
-                    return "Couldn't find an active game record for this town!";
+                    return BotGameplay.NoGameInProgressMessage;
                 }
                 return await m_gameplay.PhaseVoteUnsafe(game, processLog);
             });
@@ -142,7 +142,7 @@ namespace Bot.Core
                 await m_commandMetricDatabase.RecordCommand("game", m_dateTime.Now);
                 var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
                 success = game != null;
-                return success ? "Welcome to Blood on the Clocktower!" : "Couldn't find an active game record for this town!";
+                return success ? "Welcome to Blood on the Clocktower!" : BotGameplay.NoGameInProgressMessage;
             });
             return (message, success);
         }

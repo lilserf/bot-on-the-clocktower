@@ -18,7 +18,9 @@ namespace Bot.Core
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
 
-		public BotGameplay(IServiceProvider services)
+        public const string NoGameInProgressMessage = "Could not start a game. This might mean there was a permission issue, or it could mean nobody is currently in the Town channels. Are you ready to play?";
+
+        public BotGameplay(IServiceProvider services)
             : base(services)
 		{
             services.Inject(out m_activeGameService);
@@ -414,7 +416,7 @@ namespace Bot.Core
             if (game == null)
             {
                 // TODO: more error reporting here?
-                return "Couldn't find an active game record for this town!";
+                return NoGameInProgressMessage;
             }
             if (town == null)
             {
