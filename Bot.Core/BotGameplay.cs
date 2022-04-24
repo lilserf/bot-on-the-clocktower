@@ -122,7 +122,7 @@ namespace Bot.Core
             foreach (var u in game.Villagers)
             {
                 if (storytellerRole != null && u.Roles.Contains(storytellerRole))
-                    await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
+                await MemberHelper.RevokeRoleLoggingErrorsAsync(u, storytellerRole, logger);
                 if (villagerRole != null && !u.Roles.Contains(villagerRole))
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
             }
@@ -142,45 +142,7 @@ namespace Bot.Core
             {
                 Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
 
-                //Resolve a change in Storytellers
-                if (!game.Storytellers.Contains(requester))
-                {
-                    foreach (var user in game.Storytellers.ToList())
-                    {
-                        game.AddVillager(user);
-                        game.RemoveStoryteller(user);
-                    }
-                    game.RemoveVillager(requester);
-                    game.AddStoryteller(requester);
-                }
-
-                await TagStorytellers(game, logger);
-
-                var foundUsers = new List<IMember>();
-
-                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
-                {
-                    foundUsers.AddRange(c.Users.ToList());
-                }
-
-                foundUsers.AddRange(GetMembersInNightCategory(town));
-
-                // Sanity check for bots
-                foundUsers = foundUsers.Where(u => !u.IsBot).ToList();
-
-                var newPlayers = foundUsers.Except(game.AllPlayers);
-                var oldPlayers = game.AllPlayers.Except(foundUsers);
-
-                foreach (var p in newPlayers)
-                {
-                    game.AddVillager(p);
-                }
-                foreach (var p in oldPlayers)
-                {
-                    game.RemoveVillager(p);
-                }
-
-                await GrantAndRevokeRoles(game, town, logger);
+                game = await ResolveGameDiffs(game, town, requester, logger);
             }
             else
             {
@@ -188,55 +150,59 @@ namespace Bot.Core
                 game = new Game(townKey);
                 Serilog.Log.Debug("CurrentGameAsync created new game {@game} from town {@town}", game, town);
 
-                // Assume the author of the command is the Storyteller
-                var storyteller = requester;
-                game.AddStoryteller(storyteller);
-                Serilog.Log.Debug("CurrentGameAsync: Storyteller is {@storyteller}", storyteller);
-
-                var allUsers = new List<IMember>();
-
-                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
-                {
-                    allUsers.AddRange(c.Users);
-                }
-
-                if (town.NightCategory != null)
-                {
-                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
-                    {
-                        allUsers.AddRange(c.Users);
-                    }
-                }
-
-                // Sanity check for bots
-                allUsers = allUsers.Where(u => !u.IsBot).ToList();
-
-                bool storytellerInChannels = allUsers.Remove(storyteller);
-
-                // Make everyone else a villager
-                foreach (var v in allUsers)
-                {
-                    game.AddVillager(v);
-                    Serilog.Log.Debug("CurrentGameAsync: Added villager {@villager}", v);
-                }
-
-                // Check that the storyteller is actually in one of the channels
-                if (!storytellerInChannels)
-                    return null;
-                // Check that the players of the game are actually in channels?
-                foreach (var user in game.Villagers)
-                {
-                    if (!allUsers.Contains(user))
-                        return null;
-                }
-
-                await GrantAndRevokeRoles(game, town, logger);
-                await TagStorytellers(game, logger);
-
+                game = await ResolveGameDiffs(game, town, requester, logger);
+  
                 m_activeGameService.RegisterGame(town, game);
             }
 
             await activityRecordTask;
+
+            return game;
+        }
+
+        private async Task<IGame> ResolveGameDiffs(IGame game, ITown town, IMember commandAuthor, IProcessLogger logger)
+        {
+            //Resolve a change in Storytellers
+            if (!game.Storytellers.Contains(commandAuthor))
+            {
+                foreach (var user in game.Storytellers.ToList())
+                {
+                    game.AddVillager(user);
+                    game.RemoveStoryteller(user);
+                }
+                game.RemoveVillager(commandAuthor);
+                game.AddStoryteller(commandAuthor);
+            }
+
+            await TagStorytellers(game, logger);
+
+            var foundUsers = new List<IMember>();
+
+            foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
+            {
+                foundUsers.AddRange(c.Users.ToList());
+            }
+
+            foundUsers.AddRange(GetMembersInNightCategory(town));
+
+            bool storytellerInChannels = foundUsers.Remove(commandAuthor);
+
+            // Sanity check for bots
+            foundUsers = foundUsers.Where(u => !u.IsBot).ToList();
+
+            var newPlayers = foundUsers.Except(game.AllPlayers);
+            var oldPlayers = game.AllPlayers.Except(foundUsers);
+
+            foreach (var p in newPlayers)
+            {
+                game.AddVillager(p);
+            }
+            foreach (var p in oldPlayers)
+            {
+                game.RemoveVillager(p);
+            }
+
+            await GrantAndRevokeRoles(game, town, logger);
 
             return game;
         }
