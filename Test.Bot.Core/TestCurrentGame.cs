@@ -264,24 +264,21 @@ namespace Test.Bot.Core
         [Fact]
         public void CurrentGame_StorytellerSwitch()
         {
-            var gameMock = MockGameInProgress();
+            MockGameInProgress();
 
             // Make Villager1 send the message, not IAuthor
-            RunCurrentGameAssertComplete(Villager1Mock.Object);
+            var game = RunCurrentGameAssertComplete(Villager1Mock.Object);
 
-            // Should have removed IAuthor as the ST and added Villager1, and vice versa for the Villager list
-            gameMock.Verify(m => m.RemoveStoryteller(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
-            gameMock.Verify(m => m.AddStoryteller(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
-            gameMock.Verify(m => m.AddVillager(It.Is<IMember>(o => o == InteractionAuthorMock.Object)), Times.Once);
-            gameMock.Verify(m => m.RemoveVillager(It.Is<IMember>(o => o == Villager1Mock.Object)), Times.Once);
+            Assert.NotNull(game);
+            Assert.Contains(Villager1Mock.Object, game!.Storytellers);
+            Assert.DoesNotContain(InteractionAuthorMock.Object, game!.Storytellers);
+            Assert.Contains(InteractionAuthorMock.Object, game!.Villagers);
+            Assert.DoesNotContain(Villager1Mock.Object, game!.Villagers);
         }
 
         [Fact]
         public void CurrentGame_NewPeople()
         {
-            var ags = new ActiveGameService();
-            RegisterService<IActiveGameService>(ags);
-
             TownSquareMock.SetupGet(c => c.Users).Returns(new[] { InteractionAuthorMock.Object, Villager1Mock.Object, Villager2Mock.Object });
             RunCurrentGameAssertComplete();
 

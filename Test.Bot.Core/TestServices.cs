@@ -32,7 +32,6 @@ namespace Test.Bot.Core
         [InlineData(typeof(IGuildInteractionErrorHandler), typeof(GuildInteractionErrorHandler))]
         [InlineData(typeof(ITownInteractionErrorHandler), typeof(TownInteractionErrorHandler))]
         [InlineData(typeof(ICallbackSchedulerFactory), typeof(CallbackSchedulerFactory))]
-        [InlineData(typeof(IActiveGameService), typeof(ActiveGameService))]
         [InlineData(typeof(IComponentService), typeof(ComponentService))]
         [InlineData(typeof(IShuffleService), typeof(ShuffleService))]
         [InlineData(typeof(IFinalShutdownService), typeof(ShutdownService))]

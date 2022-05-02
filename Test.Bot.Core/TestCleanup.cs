@@ -56,9 +56,6 @@ namespace Test.Bot.Core
 
             TownCleanupMock.Raise(tc => tc.CleanupRequested += null, new TownCleanupRequestedArgs(MockTownKey));
 
-            if(gameInProgress)
-                ActiveGameServiceMock.Verify(x => x.EndGame(It.Is<ITown>(t => t == TownMock.Object)), Times.Once);
-
             Villager1Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
             Villager2Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
             Villager3Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);

@@ -104,20 +104,10 @@ namespace Test.Bot.Core
             Assert.True(t.IsCompleted);
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void GameEnd_RolesAndTagsRemoved(bool gameInProgress)
+        [Fact]
+        public void GameEnd_RolesAndTagsRemoved()
         {
-            if (gameInProgress)
-            {
-                MockGameInProgress();
-            }
-            else
-            {
-                // Even if no game is supposedly in progress, let's give the storyteller the (ST) tag
-                InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
-            }
+            MockGameInProgress();
 
             var gs = CreateGameplayInteractionHandler();
             var t = gs.CommandEndGameAsync(InteractionContextMock.Object);
@@ -128,14 +118,12 @@ namespace Test.Bot.Core
             InteractionAuthorMock.Verify(m => m.SetDisplayName(StorytellerDisplayName), Times.Once);
             Villager1Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
             Villager2Mock.Verify(m => m.RevokeRoleAsync(VillagerRoleMock.Object), Times.Once);
-            if(gameInProgress)
-                ActiveGameServiceMock.Verify(m => m.EndGame(TownMock.Object), Times.Once);
         }
 
         [Fact]
         public void Gameplay_SetStorytellers_OneExisting()
         {
-            var gameMock = MockGameInProgress();
+            MockGameInProgress();
 
             var sts = new[] { InteractionAuthorMock.Object, Villager1Mock.Object };
 
@@ -144,16 +132,17 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
-            gameMock.Verify(g => g.RemoveStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
-            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
-            gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
+            // Verify the original storyteller wasn't revoked OR added again unnecessarily
+            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Never);
+            InteractionAuthorMock.Verify(m => m.RevokeRoleAsync(StorytellerRoleMock.Object), Times.Never);
+            // Verify the new storyteller had the role granted 
+            Villager1Mock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Once);
         }
 
         [Fact]
         public void Gameplay_SetStorytellers_NoneExisting()
         {
-            var gameMock = MockGameInProgress();
+            MockGameInProgress();
 
             var sts = new[] { Villager1Mock.Object, Villager2Mock.Object };
 
@@ -162,12 +151,12 @@ namespace Test.Bot.Core
             t.Wait(50);
             Assert.True(t.IsCompleted);
 
-            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Never);
-            gameMock.Verify(g => g.RemoveStoryteller(It.Is<IMember>(m => m == InteractionAuthorMock.Object)), Times.Once);
-            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
-            gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager1Mock.Object)), Times.Once);
-            gameMock.Verify(g => g.AddStoryteller(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
-            gameMock.Verify(g => g.RemoveVillager(It.Is<IMember>(m => m == Villager2Mock.Object)), Times.Once);
+            // Verify the original storyteller had the role revoked
+            InteractionAuthorMock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Never);
+            InteractionAuthorMock.Verify(m => m.RevokeRoleAsync(StorytellerRoleMock.Object), Times.Once);
+            // Verify the new storytellers had the role granted
+            Villager1Mock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Once);
+            Villager2Mock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Once);
         }
     }
 }

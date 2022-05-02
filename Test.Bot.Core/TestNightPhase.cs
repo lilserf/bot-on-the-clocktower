@@ -100,12 +100,20 @@ namespace Test.Bot.Core
 
             TownSquareMock.SetupGet(t => t.Users).Returns(new[] { InteractionAuthorMock.Object, st2.Object, Villager1Mock.Object });
 
-            var gameMock = CreateGameMock();
-            gameMock.SetupGet(g => g.Storytellers).Returns(new[] { InteractionAuthorMock.Object, st2.Object });
-            gameMock.SetupGet(g => g.Villagers).Returns(new[] { Villager1Mock.Object });
+            MockGameInProgress();
+            // Add a second storyteller
+            UserShouldHaveRole(st2, StorytellerRoleMock.Object);
 
             BotGameplay g = new(GetServiceProvider());
-            AssertCompletedTask(() => g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object));
+            
+            // Get the Game
+            var gameTask = g.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, new ProcessLogger());
+            gameTask.Wait(50);
+            Assert.True(gameTask.IsCompleted);
+            var game = gameTask.Result;
+            Assert.NotNull(game);
+
+            AssertCompletedTask(() => g.PhaseNightUnsafe(game!, ProcessLoggerMock.Object));
 
             InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
             st2.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Once);
@@ -118,10 +126,18 @@ namespace Test.Bot.Core
             TownSquareMock.SetupGet(t => t.Users).Returns(Array.Empty<IMember>());
             Cottage2Mock.SetupGet(x => x.Users).Returns(new [] {InteractionAuthorMock.Object });
 
-            var gameMock = CreateGameMock();
+            MockGameInProgress();
 
             BotGameplay g = new(GetServiceProvider());
-            AssertCompletedTask(() => g.PhaseNightUnsafe(gameMock.Object, ProcessLoggerMock.Object));
+
+            // Get the Game
+            var gameTask = g.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, new ProcessLogger());
+            gameTask.Wait(50);
+            Assert.True(gameTask.IsCompleted);
+            var game = gameTask.Result;
+            Assert.NotNull(game);
+
+            AssertCompletedTask(() => g.PhaseNightUnsafe(game!, ProcessLoggerMock.Object));
 
             InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Never);
         }
