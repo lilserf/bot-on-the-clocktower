@@ -16,7 +16,7 @@ namespace Bot.Core
         {
             ServiceProvider sp = new(parentServices);
 
-            var shutdown = new ShutdownService(applicationCancelToken);
+            var shutdown = new ShutdownService(sp, applicationCancelToken);
             sp.AddService<IFinalShutdownService>(shutdown);
             sp.AddService<IShutdownPreventionService>(shutdown);
             sp.AddService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());

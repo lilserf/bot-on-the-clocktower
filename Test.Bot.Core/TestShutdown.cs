@@ -129,6 +129,7 @@ namespace Test.Bot.Core
         [Fact]
         public void ShutdownServiceNoPreventers_Cancelled_ReadyToShutdown()
         {
+            RegisterMock(new Mock<IDateTime>());
             using var cts = new CancellationTokenSource();
 
             int shutdownRequestCount = 0;
@@ -138,7 +139,7 @@ namespace Test.Bot.Core
             }
 
 
-            var ss = new ShutdownService(cts.Token);
+            var ss = new ShutdownService(GetServiceProvider(), cts.Token);
             ss.ShutdownRequested += ShutdownRequestedFunc;
 
             Assert.Equal(0, shutdownRequestCount);
@@ -153,6 +154,7 @@ namespace Test.Bot.Core
         [Fact]
         public async Task ShutdownServiceWithPreventers_Cancelled_WaitsForPreventers()
         {
+            RegisterMock(new Mock<IDateTime>());
             using var cts = new CancellationTokenSource();
 
             var tcs = new TaskCompletionSource();
@@ -163,7 +165,7 @@ namespace Test.Bot.Core
                 ++shutdownRequestCount;
             }
 
-            var ss = new ShutdownService(cts.Token);
+            var ss = new ShutdownService(GetServiceProvider(), cts.Token);
             ss.ShutdownRequested += ShutdownRequestedFunc;
             ss.RegisterShutdownPreventer(tcs.Task);
 
