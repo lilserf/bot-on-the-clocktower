@@ -48,7 +48,7 @@ namespace Bot.Core
             if (!string.IsNullOrWhiteSpace(ret))
                 return ret;
 
-            await m_commandMetricsDatabase.RecordCommand($"votetimer-{span.Value.ToString()}", m_dateTime.Now);
+            await m_commandMetricsDatabase.RecordCommand($"votetimer-{span.Value}", m_dateTime.Now);
 
             return $"Vote timer started for {GetTimeString(span.Value, false)}!";
         }

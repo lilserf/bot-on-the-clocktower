@@ -111,7 +111,7 @@ namespace Bot.Database
         {
 			var filter = GetTownMatchFilter(townKey.GuildId, townKey.ControlChannelId);
 			var result = await m_collection.DeleteManyAsync(filter);
-			return (result.DeletedCount > 0 ? true : false);
+			return (result.DeletedCount > 0);
         }
 
         public async Task<ITownRecord?> GetTownRecordByNameAsync(ulong guildId, string townName)

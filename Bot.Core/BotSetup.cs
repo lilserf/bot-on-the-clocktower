@@ -16,7 +16,6 @@ namespace Bot.Core
         private readonly ITownDatabase m_townDb;
         private readonly ITownResolver m_townResolver;
         private readonly IBotSystem m_botSystem;
-        private readonly IComponentService m_componentService;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
         private readonly IGuildInteractionWrapper m_interactionWrapper;
@@ -26,7 +25,6 @@ namespace Bot.Core
             sp.Inject(out m_townDb);
             sp.Inject(out m_townResolver);
             sp.Inject(out m_botSystem);
-            sp.Inject(out m_componentService);
             sp.Inject(out m_commandMetricsDatabase);
             sp.Inject(out m_dateTime);
             sp.Inject(out m_interactionWrapper);
@@ -73,7 +71,7 @@ namespace Bot.Core
                 l => PerformRemoveTown(l, ctx, dayCat));
         }
 
-        private async Task<InteractionResult> PerformModifyTown(IProcessLogger l, IBotInteractionContext ctx,
+        private async Task<InteractionResult> PerformModifyTown(IProcessLogger _, IBotInteractionContext ctx,
             IChannel? chatChannel,
             IChannelCategory? nightCat)
         {
@@ -100,7 +98,7 @@ namespace Bot.Core
             return InteractionResult.FromMessage("Couldn't find a valid town to modify associated with this channel. Are you in the control channel for the town to modify?");
         }
 
-            private async Task<InteractionResult> PerformAddTown(IProcessLogger l, IBotInteractionContext ctx, 
+            private async Task<InteractionResult> PerformAddTown(IProcessLogger _, IBotInteractionContext ctx, 
             IChannel controlChan,
             IChannel townSquare,
             IChannelCategory dayCat,
@@ -110,7 +108,7 @@ namespace Bot.Core
             IChannel? chatChan)
         {
 
-            Town newTown = new Town()
+            Town newTown = new()
             {
                 Guild = ctx.Guild,
                 ControlChannel = controlChan,
@@ -140,15 +138,9 @@ namespace Bot.Core
             string townName = "unknown";
             var guild = ctx.Guild;
             bool success = false;
-            ITownRecord? townRec = null;
-            if (dayCat == null)
-            {
-                townRec = await m_townDb.GetTownRecordAsync(guild.Id, ctx.Channel.Id);
-            }
-            else
-            {
-                townRec = await m_townDb.GetTownRecordByNameAsync(guild.Id, dayCat.Name);
-            }
+            ITownRecord? townRec = dayCat == null ? 
+                await m_townDb.GetTownRecordAsync(guild.Id, ctx.Channel.Id) :
+                await m_townDb.GetTownRecordByNameAsync(guild.Id, dayCat.Name);
 
             if (townRec != null)
             {
@@ -373,7 +365,7 @@ namespace Bot.Core
 
         private async Task<InteractionResult> PerformCreateTown(IProcessLogger _, IBotInteractionContext ctx, string townName, IRole? guildPlayerRole, IRole? guildStRole, bool useNight)
         {
-            TownDescription tdesc = new TownDescription();
+            TownDescription tdesc = new();
             tdesc.PopulateFromTownName(townName, ctx.Guild, ctx.Member, useNight);
 
             var newTown = await CreateTown(tdesc, ctx.Member, guildStRole, guildPlayerRole);
@@ -390,21 +382,11 @@ namespace Bot.Core
             return m_townDb.AddTownAsync(town, author);
         }
 
-
-        public async Task DestroyTown(ulong guildId, ulong channelId)
-        {
-            var townRec = await m_townDb.GetTownRecordAsync(guildId, channelId);
-
-            await m_commandMetricsDatabase.RecordCommand("destroytown", m_dateTime.Now);
-
-            // TODO
-        }
-
         public async Task<Town> CreateTown(TownDescription townDesc, IMember author, IRole? guildStRole = null, IRole? guildPlayerRole = null)
         {
             IGuild guild = townDesc.Guild;
 
-            Town newTown = new Town();
+            Town newTown = new();
             newTown.Guild = guild;
 
             // Get bot role

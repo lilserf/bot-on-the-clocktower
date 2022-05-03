@@ -192,7 +192,7 @@ namespace Bot.Core
             
             // If the author isn't in one of the channels
             // or nobody else is around, we can't play a game
-            if (!commandAuthorInChannels && allUsers.Count() == 0)
+            if (!commandAuthorInChannels && allUsers.Count == 0)
                 return null;
 
             // Last, populate the Villagers by putting all non-Storytellers as Villagers
