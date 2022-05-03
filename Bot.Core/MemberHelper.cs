@@ -60,7 +60,7 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "GrantRole failed while revoking {@user} role {@role}", member, role);
+                Serilog.Log.Error(ex, "RevokeRole failed while revoking {@user} role {@role}", member, role);
                 if (!IsHandledException(ex))
                     throw;
 
@@ -78,6 +78,8 @@ namespace Bot.Core
         }
         public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
         {
+            Serilog.Log.Information("AddStorytellerTag for member {@member}", member);
+
             if (member.DisplayName.StartsWith(StorytellerTag))
                 return true;
 
@@ -104,7 +106,8 @@ namespace Bot.Core
 
         public static async Task<bool> RemoveStorytellerTag(IMember member, IProcessLogger logger)
         {
-            if(!member.DisplayName.StartsWith(StorytellerTag))
+            Serilog.Log.Information("RemoveStorytellerTag for member {@member}", member);
+            if (!member.DisplayName.StartsWith(StorytellerTag))
                 return true;
 
             try

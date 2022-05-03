@@ -23,7 +23,6 @@ namespace Bot.Core
             sp.AddService<IGuildInteractionErrorHandler>(new GuildInteractionErrorHandler());
 
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
-            sp.AddService<IActiveGameService>(new ActiveGameService());
             sp.AddService<IComponentService>(new ComponentService());
             sp.AddService<IShuffleService>(new ShuffleService());
 

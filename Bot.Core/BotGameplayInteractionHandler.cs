@@ -269,7 +269,7 @@ namespace Bot.Core
 
         public Task CommandSetStorytellersAsync(IBotInteractionContext context, IEnumerable<IMember> users)
         {
-            return m_townCommandQueue.QueueInteractionAsync("Settings storytellers...", context, async () =>
+            return m_townCommandQueue.QueueInteractionAsync("Setting storytellers...", context, async () =>
             {
                 Serilog.Log.Information(CommandLogMsg + ": {users}", "storytellers", context.Guild, context.Member, users);
                 return await SetStorytellersInternal(context.GetTownKey(), context.Member, users);

@@ -53,6 +53,7 @@ namespace Bot.DSharp
 
 		public async Task SetDisplayName(string newName)
         {
+			Serilog.Log.Information("Setting {@member} display name to {newName}", this, newName);
 			await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.ModifyAsync(x => x.Nickname = newName));
         }
 

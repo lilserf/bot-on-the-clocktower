@@ -63,7 +63,6 @@ namespace Test.Bot.Core
         protected readonly Mock<IMember> Villager3Mock = new();
 
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
-        protected readonly Mock<IActiveGameService> ActiveGameServiceMock = new();
         protected readonly Mock<IProcessLogger> ProcessLoggerMock = new();
         protected readonly Mock<IComponentService> ComponentServiceMock = new();
         protected readonly Mock<IShuffleService> ShuffleServiceMock = new();
@@ -101,7 +100,6 @@ namespace Test.Bot.Core
             RegisterMock(GameActivityDatabaseMock);
             RegisterMock(AnnouncementDatabaseMock);
             RegisterMock(TownCleanupMock);
-            RegisterMock(ActiveGameServiceMock);
             RegisterMock(ComponentServiceMock);
             RegisterMock(ShuffleServiceMock);
             RegisterMock(GameMetricDatabaseMock);
@@ -120,10 +118,6 @@ namespace Test.Bot.Core
             TownResolverMock.Setup(c => c.ResolveTownAsync(It.Is<ITownRecord>(tr => tr == TownRecordMock.Object))).ReturnsAsync(TownMock.Object);
 
             ClientMock.Setup(c => c.GetGuildAsync(It.Is<ulong>(x => x == MockGuildId))).ReturnsAsync(GuildMock.Object);
-
-            // By default, the ActiveGameService won't find a game for this context
-            IGame? defaultGame = null;
-            ActiveGameServiceMock.Setup(a => a.TryGetGame(It.IsAny<TownKey>(), out defaultGame)).Returns(false);
 
             ProcessLoggerMock.Setup(c => c.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
 
@@ -213,41 +207,21 @@ namespace Test.Bot.Core
             member.SetupGet(x => x.Roles).Returns(Array.Empty<IRole>());
         }
 
-        protected Mock<IGame> MockGameInProgress()
+        protected static void UserShouldHaveRole(Mock<IMember> member, IRole role)
         {
-            var gameMock = CreateGameMock();
-
-            var gameObject = gameMock.Object;
-            ActiveGameServiceMock.Setup(ags => ags.TryGetGame(It.IsAny<TownKey>(), out gameObject)).Returns(true);
-
-            return gameMock;
+            member.SetupGet(x => x.Roles).Returns(new [] { role });
         }
 
-        protected Mock<IGame> CreateGameMock()
+        protected void MockGameInProgress()
         {
-            Mock<IGame> gameMock = new();
-            gameMock.SetupGet(g => g.TownKey).Returns(MockTownKey);
-
-            // Actually back the Game mock with lists for storytellers and villagers :/
-            var storytellers = new List<IMember>(new[] { InteractionAuthorMock.Object });
-            var villagers = new List<IMember>(new[] { Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
-            gameMock.SetupGet(g => g.AllPlayers).Returns(() => storytellers.Concat(villagers).ToList());
-            gameMock.SetupGet(g => g.Storytellers).Returns(() => storytellers);
-            gameMock.SetupGet(g => g.Villagers).Returns(() => villagers);
-            gameMock.Setup(g => g.AddStoryteller(It.IsAny<IMember>())).Callback<IMember>((m) => storytellers.Add(m));
-            gameMock.Setup(g => g.RemoveStoryteller(It.IsAny<IMember>())).Callback<IMember>((m) => storytellers.Remove(m));
-            gameMock.Setup(g => g.AddVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Add(m));
-            gameMock.Setup(g => g.RemoveVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Remove(m));
-
+            // Tag storyteller
             InteractionAuthorMock.SetupGet(m => m.DisplayName).Returns(MemberHelper.StorytellerTag + StorytellerDisplayName);
-            InteractionAuthorMock.SetupGet(m => m.Roles).Returns(new[] { StorytellerRoleMock.Object });
-            Villager1Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
-            Villager2Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
-            Villager3Mock.SetupGet(m => m.Roles).Returns(new[] { VillagerRoleMock.Object });
-
-            return gameMock;
+            // Roles for players and storytellers
+            UserShouldHaveRole(InteractionAuthorMock, StorytellerRoleMock.Object);
+            UserShouldHaveRole(Villager1Mock, VillagerRoleMock.Object);
+            UserShouldHaveRole(Villager2Mock, VillagerRoleMock.Object);
+            UserShouldHaveRole(Villager3Mock, VillagerRoleMock.Object);
         }
-
 
         // Common assumptions we want to make for most of our Interactions
         protected void VerifyContext()
@@ -262,7 +236,7 @@ namespace Test.Bot.Core
             return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
         }
 
-        protected void RunCurrentGameAssertComplete(IMember? requester = null)
+        protected IGame? RunCurrentGameAssertComplete(IMember? requester = null)
         {
             requester ??= InteractionAuthorMock.Object;
 
@@ -270,6 +244,7 @@ namespace Test.Bot.Core
             var t = gs.CurrentGameAsync(MockTownKey, requester, ProcessLoggerMock.Object);
             t.Wait(50);
             Assert.True(t.IsCompleted);
+            return t.Result;
         }
     }
 }

@@ -10,7 +10,6 @@ namespace Bot.Core
 {
     public class BotGameplay : BotTownLookupHelper, IVoteHandler
     {
-        private readonly IActiveGameService m_activeGameService;
         private readonly IBotClient m_client;
         private readonly IShuffleService m_shuffle;
         private readonly ITownCleanup m_townCleanup;
@@ -23,7 +22,6 @@ namespace Bot.Core
         public BotGameplay(IServiceProvider services)
             : base(services)
 		{
-            services.Inject(out m_activeGameService);
             services.Inject(out m_client);
             services.Inject(out m_shuffle);
             services.Inject(out m_townCleanup);
@@ -137,106 +135,78 @@ namespace Bot.Core
             if (!CheckIsTownViable(town, logger))
                 return null;
             
-            Task activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
-            if (m_activeGameService.TryGetGame(townKey, out IGame? game))
+            var activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
+            var gameTask = CreateGameFromDiscordState(townKey, requester, logger);
+
+            await Task.WhenAll(gameTask, activityRecordTask);
+            return gameTask.Result;
+        }
+
+        // Create a new IGame with state matching what's going on in Discord
+        public async Task<IGame?> CreateGameFromDiscordState(TownKey townKey, IMember? commandAuthor, IProcessLogger logger)
+        {
+            var town = await GetValidTownOrLogErrorAsync(townKey, logger);
+            if (town == null)
+                return null;
+
+            // Find all participants in the game
+            var allUsers = new List<IMember>();
+
+            foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
             {
-                Serilog.Log.Debug("CurrentGameAsync found viable game in progress: {@game}", game);
-
-                //Resolve a change in Storytellers
-                if (!game.Storytellers.Contains(requester))
-                {
-                    foreach (var user in game.Storytellers.ToList())
-                    {
-                        game.AddVillager(user);
-                        game.RemoveStoryteller(user);
-                    }
-                    game.RemoveVillager(requester);
-                    game.AddStoryteller(requester);
-                }
-
-                await TagStorytellers(game, logger);
-
-                var foundUsers = new List<IMember>();
-
-                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
-                {
-                    foundUsers.AddRange(c.Users.ToList());
-                }
-
-                foundUsers.AddRange(GetMembersInNightCategory(town));
-
-                // Sanity check for bots
-                foundUsers = foundUsers.Where(u => !u.IsBot).ToList();
-
-                var newPlayers = foundUsers.Except(game.AllPlayers);
-                var oldPlayers = game.AllPlayers.Except(foundUsers);
-
-                foreach (var p in newPlayers)
-                {
-                    game.AddVillager(p);
-                }
-                foreach (var p in oldPlayers)
-                {
-                    game.RemoveVillager(p);
-                }
-
-                await GrantAndRevokeRoles(game, town, logger);
-            }
-            else
-            {
-                // No record, so create one
-                game = new Game(townKey);
-                Serilog.Log.Debug("CurrentGameAsync created new game {@game} from town {@town}", game, town);
-
-                // Assume the author of the command is the Storyteller
-                var storyteller = requester;
-                game.AddStoryteller(storyteller);
-                Serilog.Log.Debug("CurrentGameAsync: Storyteller is {@storyteller}", storyteller);
-
-                var allUsers = new List<IMember>();
-
-                foreach (var c in town.DayCategory!.Channels.Where(c => c.IsVoice))
-                {
-                    allUsers.AddRange(c.Users);
-                }
-
-                if (town.NightCategory != null)
-                {
-                    foreach (var c in town.NightCategory.Channels.Where(c => c.IsVoice))
-                    {
-                        allUsers.AddRange(c.Users);
-                    }
-                }
-
-                // Sanity check for bots
-                allUsers = allUsers.Where(u => !u.IsBot).ToList();
-
-                bool storytellerInChannels = allUsers.Remove(storyteller);
-
-                // Make everyone else a villager
-                foreach (var v in allUsers)
-                {
-                    game.AddVillager(v);
-                    Serilog.Log.Debug("CurrentGameAsync: Added villager {@villager}", v);
-                }
-
-                // Check that the storyteller is actually in one of the channels
-                if (!storytellerInChannels)
-                    return null;
-                // Check that the players of the game are actually in channels?
-                foreach (var user in game.Villagers)
-                {
-                    if (!allUsers.Contains(user))
-                        return null;
-                }
-
-                await GrantAndRevokeRoles(game, town, logger);
-                await TagStorytellers(game, logger);
-
-                m_activeGameService.RegisterGame(town, game);
+                allUsers.AddRange(c.Users.ToList());
             }
 
-            await activityRecordTask;
+            allUsers.AddRange(GetMembersInNightCategory(town));
+            // Sanity check for bots
+            allUsers = allUsers.Where(u => !u.IsBot).ToList();
+
+            HashSet<IMember> storytellers = new();
+            HashSet<IMember> villagers = new();
+            // Now find everybody who currently has the storyteller role
+            foreach (var user in allUsers)
+            {
+                if(user.Roles.Contains(town.StorytellerRole))
+                    storytellers.Add(user);
+            }
+
+            if (commandAuthor != null)
+            {
+                // Next, resolve whether this command produces a change in Storytellers
+                if (!storytellers.Contains(commandAuthor))
+                {
+                    foreach (var user in storytellers)
+                    {
+                        villagers.Add(user);
+                        storytellers.Remove(user);
+                    }
+                    villagers.Remove(commandAuthor);
+                    storytellers.Add(commandAuthor);
+                }
+            }
+
+            bool commandAuthorInChannels = true;
+            
+            if(commandAuthor != null)
+                commandAuthorInChannels = allUsers.Remove(commandAuthor);
+            
+            // If the author isn't in one of the channels
+            // or nobody else is around, we can't play a game
+            if (!commandAuthorInChannels && allUsers.Count() == 0)
+                return null;
+
+            // Last, populate the Villagers by putting all non-Storytellers as Villagers
+            foreach (var p in allUsers)
+            {
+                if(!storytellers.Contains(p))
+                    villagers.Add(p);
+            }
+
+            IGame? game = new Game(townKey, storytellers, villagers);
+            // Finally grant the proper roles where needed
+            await GrantAndRevokeRoles(game, town, logger);
+            // And tag the new storytellers where needed
+            await TagStorytellers(game, logger);
 
             return game;
         }
@@ -353,12 +323,14 @@ namespace Bot.Core
             return "Moved all players to Town Square for voting!";
         }
 
-        public async Task PerformVoteAsync(TownKey townRecord)
+        public async Task PerformVoteAsync(TownKey townKey)
         {
-            if (m_activeGameService.TryGetGame(townRecord, out IGame? game))
+            var logger = new ProcessLogger();
+
+            var game = await CreateGameFromDiscordState(townKey, null, logger);
+            
+            if (game != null)
             {
-                var logger = new ProcessLogger();
-             
                 try
                 {
                     await PhaseVoteUnsafe(game, logger);
@@ -389,10 +361,10 @@ namespace Bot.Core
             await m_gameMetricsDatabase.RecordEndGameAsync(townKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("endgame", m_dateTime.Now);
 
-            if (m_activeGameService.TryGetGame(townKey, out IGame? game))
-            {
-                m_activeGameService.EndGame(town);
+            var game = await CreateGameFromDiscordState(townKey, null, logger);
 
+            if (game != null)
+            {
                 foreach (var user in game.AllPlayers)
                     await EndGameForUser(user, town, logger);
                 return "Thank you for playing Blood on the Clocktower!";

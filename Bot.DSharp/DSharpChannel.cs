@@ -29,7 +29,12 @@ namespace Bot.DSharp
         {
 			if (m is DSharpMember member)
 			{
-				await Wrapped.AddOverwriteAsync(member.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny);
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(member.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny));
+				}
+				catch (Bot.Api.UnauthorizedException)
+				{ }
 			}
         }
 
@@ -37,7 +42,13 @@ namespace Bot.DSharp
 		{
 			if (r is DSharpRole role)
 			{
-				await Wrapped.AddOverwriteAsync(role.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny);
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(role.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny));
+				}
+				catch (Bot.Api.UnauthorizedException)
+				{ }
+
 			}
 		}
 
@@ -50,15 +61,27 @@ namespace Bot.DSharp
         {
 			if (m is DSharpMember member)
             {
-				await Wrapped.DeleteOverwriteAsync(member.Wrapped);
-            }
-        }
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.DeleteOverwriteAsync(member.Wrapped));
+				}
+				catch (Bot.Api.UnauthorizedException)
+				{ }
+
+			}
+		}
 
 		public async Task RemoveOverwriteAsync(IRole m)
 		{
 			if (m is DSharpRole role)
 			{
-				await Wrapped.DeleteOverwriteAsync(role.Wrapped);
+				try
+				{
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.DeleteOverwriteAsync(role.Wrapped));
+				}
+				catch (Bot.Api.UnauthorizedException)
+				{ }
+
 			}
 		}
 		
