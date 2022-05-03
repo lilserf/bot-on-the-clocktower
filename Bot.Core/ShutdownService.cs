@@ -8,7 +8,7 @@ namespace Bot.Core
 {
     public class ShutdownService : IFinalShutdownService, IShutdownPreventionService
     {
-        private readonly IDateTime DateTime;
+        private readonly IDateTime m_dateTime;
 
         private readonly List<Task> m_shutdownPreventers = new();
         private readonly TaskCompletionSource m_readyToShutdownTcs = new();
@@ -17,7 +17,7 @@ namespace Bot.Core
 
         public ShutdownService(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
-            serviceProvider.Inject(out DateTime);
+            serviceProvider.Inject(out m_dateTime);
             cancellationToken.Register(CancelRequested);
         }
 
@@ -34,7 +34,7 @@ namespace Bot.Core
         {
             if (!m_shutdownRequested)
             {
-                var beginTime = DateTime.Now;
+                var beginTime = m_dateTime.Now;
                 Serilog.Log.Debug($"Shutdown requested at {beginTime}");
 
                 m_shutdownRequested = true;
@@ -53,7 +53,7 @@ namespace Bot.Core
 
         private void SetReadyToShutdown(DateTime beginTime)
         {
-            var now = DateTime.Now;
+            var now = m_dateTime.Now;
             if (m_readyToShutdownTcs.TrySetResult())
                 Serilog.Log.Information($"Shutdown requested at {beginTime} actions completed after {now - beginTime}");
         }
