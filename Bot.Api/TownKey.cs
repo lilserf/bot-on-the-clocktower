@@ -13,7 +13,6 @@ namespace Bot.Api
             ControlChannelId = channelId;
         }
 
-        public static TownKey FromTown(ITown town) => FromTownRecord(town.TownRecord);
         public static TownKey FromTownRecord(ITownRecord townRecord) => new(townRecord.GuildId, townRecord.ControlChannelId);
 
         public bool Equals(TownKey other)

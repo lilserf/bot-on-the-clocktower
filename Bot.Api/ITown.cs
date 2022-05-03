@@ -4,7 +4,7 @@ namespace Bot.Api
 {
 	public interface ITown
 	{
-		public ITownRecord TownRecord { get;}
+		public ITownRecord? TownRecord { get;}
 		public IGuild? Guild { get; }
 		public IChannel? ControlChannel { get; }
 		public IChannel? TownSquare { get; }

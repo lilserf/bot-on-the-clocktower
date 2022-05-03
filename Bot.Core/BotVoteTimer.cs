@@ -26,7 +26,7 @@ namespace Bot.Core
         public async Task<InteractionResult> RunVoteTimerUnsafe(TownKey townKey, string timeString, IProcessLogger processLoggger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
-            if (town == null)
+            if (town == null || town.TownRecord == null)
                 return "Failed to run command";
 
             if (town.ChatChannel == null)
@@ -43,7 +43,7 @@ namespace Bot.Core
             if (span.Value.TotalSeconds < 10 || span.Value.TotalMinutes > 20)
                 return LogAndReturnEmptyString(processLoggger, $"Please choose a time between 10 seconds and 20 minutes. You requested: {GetTimeString(span.Value, false)}");
 
-            var ret = await m_voteTimerController.AddTownAsync(TownKey.FromTown(town), span.Value);
+            var ret = await m_voteTimerController.AddTownAsync(TownKey.FromTownRecord(town.TownRecord), span.Value);
 
             if (!string.IsNullOrWhiteSpace(ret))
                 return ret;
@@ -58,10 +58,10 @@ namespace Bot.Core
             await m_commandMetricsDatabase.RecordCommand("stopvotetimer", m_dateTime.Now);
 
             var town = await GetValidTownOrLogErrorAsync(townKey, processLoggger);
-            if (town == null)
+            if (town == null || town.TownRecord == null)
                 return "Failed to run command";
 
-            return await m_voteTimerController.RemoveTownAsync(TownKey.FromTown(town));
+            return await m_voteTimerController.RemoveTownAsync(TownKey.FromTownRecord(town.TownRecord));
         }
 
         private static string LogAndReturnEmptyString(IProcessLogger processLoggger, string logString)

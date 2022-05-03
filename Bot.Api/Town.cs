@@ -4,7 +4,7 @@ namespace Bot.Api
 {
     public class Town : ITown
 	{
-		public ITownRecord TownRecord { get; }
+		public ITownRecord? TownRecord { get; }
 		public IGuild? Guild { get; set; }
 		public IChannel? ControlChannel { get; set; }
 		public IChannel? TownSquare { get; set; }
@@ -19,10 +19,8 @@ namespace Bot.Api
 			TownRecord = townRecord;
         }
 
-		public Town()
-        {
-
-        }
+        public Town()
+        {}
 
         public override string ToString()
         {
