@@ -9,17 +9,19 @@ namespace Bot.Core
 		public TownKey TownKey { get; }
 		public IReadOnlyCollection<IMember> Storytellers => m_storytellers;
 
-		private readonly List<IMember> m_storytellers = new();
+		private readonly HashSet<IMember> m_storytellers = new();
 
 		public IReadOnlyCollection<IMember> Villagers => m_villagers;
 
-		private readonly List<IMember> m_villagers = new();
+		private readonly HashSet<IMember> m_villagers = new();
 
 		public IReadOnlyCollection<IMember> AllPlayers => Storytellers.Concat(Villagers).ToList();
 
-		public Game(TownKey townKey)
+		public Game(TownKey townKey, IEnumerable<IMember> storytellers, IEnumerable<IMember> villagers)
 		{
 			TownKey = townKey;
+			m_storytellers = new(storytellers);
+			m_villagers = new(villagers);
 		}
 
 		public void AddVillager(IMember villager) => m_villagers.Add(villager);

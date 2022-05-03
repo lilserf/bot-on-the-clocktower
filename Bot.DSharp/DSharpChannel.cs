@@ -31,9 +31,9 @@ namespace Bot.DSharp
 			{
 				try
 				{
-					await Wrapped.AddOverwriteAsync(member.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny);
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(member.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny));
 				}
-				catch (DSharpPlus.Exceptions.UnauthorizedException)
+				catch (Bot.Api.UnauthorizedException)
 				{ }
 			}
         }
@@ -44,9 +44,9 @@ namespace Bot.DSharp
 			{
 				try
 				{
-					await Wrapped.AddOverwriteAsync(role.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny);
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(role.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny));
 				}
-				catch (DSharpPlus.Exceptions.UnauthorizedException)
+				catch (Bot.Api.UnauthorizedException)
 				{ }
 
 			}
@@ -63,9 +63,9 @@ namespace Bot.DSharp
             {
 				try
 				{
-					await Wrapped.DeleteOverwriteAsync(member.Wrapped);
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.DeleteOverwriteAsync(member.Wrapped));
 				}
-				catch (DSharpPlus.Exceptions.UnauthorizedException)
+				catch (Bot.Api.UnauthorizedException)
 				{ }
 
 			}
@@ -77,9 +77,9 @@ namespace Bot.DSharp
 			{
 				try
 				{
-					await Wrapped.DeleteOverwriteAsync(role.Wrapped);
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.DeleteOverwriteAsync(role.Wrapped));
 				}
-				catch (DSharpPlus.Exceptions.UnauthorizedException)
+				catch (Bot.Api.UnauthorizedException)
 				{ }
 
 			}

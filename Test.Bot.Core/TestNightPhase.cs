@@ -105,12 +105,9 @@ namespace Test.Bot.Core
             UserShouldHaveRole(st2, StorytellerRoleMock.Object);
 
             BotGameplay g = new(GetServiceProvider());
-            
+
             // Get the Game
-            var gameTask = g.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, new ProcessLogger());
-            gameTask.Wait(50);
-            Assert.True(gameTask.IsCompleted);
-            var game = gameTask.Result;
+            var game = AssertCompletedTask(() => g.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object));
             Assert.NotNull(game);
 
             AssertCompletedTask(() => g.PhaseNightUnsafe(game!, ProcessLoggerMock.Object));
@@ -131,10 +128,7 @@ namespace Test.Bot.Core
             BotGameplay g = new(GetServiceProvider());
 
             // Get the Game
-            var gameTask = g.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, new ProcessLogger());
-            gameTask.Wait(50);
-            Assert.True(gameTask.IsCompleted);
-            var game = gameTask.Result;
+            var game = AssertCompletedTask(() => g.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object));
             Assert.NotNull(game);
 
             AssertCompletedTask(() => g.PhaseNightUnsafe(game!, ProcessLoggerMock.Object));

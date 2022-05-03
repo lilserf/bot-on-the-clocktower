@@ -223,27 +223,6 @@ namespace Test.Bot.Core
             UserShouldHaveRole(Villager3Mock, VillagerRoleMock.Object);
         }
 
-        //protected Mock<IGame> CreateGameMock()
-        //{
-        //    Mock<IGame> gameMock = new();
-        //    gameMock.SetupGet(g => g.TownKey).Returns(MockTownKey);
-
-        //    // Actually back the Game mock with lists for storytellers and villagers :/
-        //    var storytellers = new List<IMember>(new[] { InteractionAuthorMock.Object });
-        //    var villagers = new List<IMember>(new[] { Villager1Mock.Object, Villager2Mock.Object, Villager3Mock.Object });
-        //    gameMock.SetupGet(g => g.AllPlayers).Returns(() => storytellers.Concat(villagers).ToList());
-        //    gameMock.SetupGet(g => g.Storytellers).Returns(() => storytellers);
-        //    gameMock.SetupGet(g => g.Villagers).Returns(() => villagers);
-        //    gameMock.Setup(g => g.AddStoryteller(It.IsAny<IMember>())).Callback<IMember>((m) => storytellers.Add(m));
-        //    gameMock.Setup(g => g.RemoveStoryteller(It.IsAny<IMember>())).Callback<IMember>((m) => storytellers.Remove(m));
-        //    gameMock.Setup(g => g.AddVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Add(m));
-        //    gameMock.Setup(g => g.RemoveVillager(It.IsAny<IMember>())).Callback<IMember>((m) => villagers.Remove(m));
-
-
-        //    return gameMock;
-        //}
-
-
         // Common assumptions we want to make for most of our Interactions
         protected void VerifyContext()
         {

@@ -135,21 +135,19 @@ namespace Bot.Core
             if (!CheckIsTownViable(town, logger))
                 return null;
             
-            Task activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
-            IGame? game = await CreateGameFromDiscordState(townKey, requester, logger);
+            var activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
+            var gameTask = CreateGameFromDiscordState(townKey, requester, logger);
 
-            await activityRecordTask;
-            return game;
+            await Task.WhenAll(gameTask, activityRecordTask);
+            return gameTask.Result;
         }
 
         // Create a new IGame with state matching what's going on in Discord
         public async Task<IGame?> CreateGameFromDiscordState(TownKey townKey, IMember? commandAuthor, IProcessLogger logger)
         {
-            IGame? game = new Game(townKey);
-
-            var town = await GetValidTownOrLogErrorAsync(game.TownKey, logger);
+            var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
-                return game;
+                return null;
 
             // Find all participants in the game
             var allUsers = new List<IMember>();
@@ -163,25 +161,27 @@ namespace Bot.Core
             // Sanity check for bots
             allUsers = allUsers.Where(u => !u.IsBot).ToList();
 
+            HashSet<IMember> storytellers = new();
+            HashSet<IMember> villagers = new();
             // Now find everybody who currently has the storyteller role
             foreach (var user in allUsers)
             {
                 if(user.Roles.Contains(town.StorytellerRole))
-                    game.AddStoryteller(user);
+                    storytellers.Add(user);
             }
 
             if (commandAuthor != null)
             {
                 // Next, resolve whether this command produces a change in Storytellers
-                if (!game.Storytellers.Contains(commandAuthor))
+                if (!storytellers.Contains(commandAuthor))
                 {
-                    foreach (var user in game.Storytellers.ToList())
+                    foreach (var user in storytellers)
                     {
-                        game.AddVillager(user);
-                        game.RemoveStoryteller(user);
+                        villagers.Add(user);
+                        storytellers.Remove(user);
                     }
-                    game.RemoveVillager(commandAuthor);
-                    game.AddStoryteller(commandAuthor);
+                    villagers.Remove(commandAuthor);
+                    storytellers.Add(commandAuthor);
                 }
             }
 
@@ -198,10 +198,11 @@ namespace Bot.Core
             // Last, populate the Villagers by putting all non-Storytellers as Villagers
             foreach (var p in allUsers)
             {
-                if(!game.Storytellers.Contains(p))
-                    game.AddVillager(p);
+                if(!storytellers.Contains(p))
+                    villagers.Add(p);
             }
 
+            IGame? game = new Game(townKey, storytellers, villagers);
             // Finally grant the proper roles where needed
             await GrantAndRevokeRoles(game, town, logger);
             // And tag the new storytellers where needed
