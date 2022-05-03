@@ -8,14 +8,16 @@ namespace Bot.Core
 {
     public class ShutdownService : IFinalShutdownService, IShutdownPreventionService
     {
-        private readonly List<Task> m_shutdownPreventers = new();
+        private readonly IDateTime DateTime;
 
+        private readonly List<Task> m_shutdownPreventers = new();
         private readonly TaskCompletionSource m_readyToShutdownTcs = new();
 
         private bool m_shutdownRequested = false;
 
-        public ShutdownService(CancellationToken cancellationToken)
+        public ShutdownService(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
+            serviceProvider.Inject(out DateTime);
             cancellationToken.Register(CancelRequested);
         }
 
@@ -32,19 +34,28 @@ namespace Bot.Core
         {
             if (!m_shutdownRequested)
             {
-                Serilog.Log.Debug("A shutdown has been requested.");
+                var beginTime = DateTime.Now;
+                Serilog.Log.Debug($"A shutdown has been requested at {beginTime}");
+
                 m_shutdownRequested = true;
                 ShutdownRequested?.Invoke(this, EventArgs.Empty);
 
                 if (m_shutdownPreventers.Count > 0)
                     Task.WhenAll(m_shutdownPreventers).ContinueWith(_ =>
                     {
-                        m_readyToShutdownTcs.TrySetResult();
+                        SetReadyToShutdown(beginTime);
                         return Task.CompletedTask;
                     });
                 else
-                    m_readyToShutdownTcs.TrySetResult();
+                    SetReadyToShutdown(beginTime);
             }
+        }
+
+        private void SetReadyToShutdown(DateTime beginTime)
+        {
+            var now = DateTime.Now;
+            if (m_readyToShutdownTcs.TrySetResult())
+                Serilog.Log.Debug($"Shutdown actions complete. Elapsed time: {now - beginTime}");
         }
     }
 }
