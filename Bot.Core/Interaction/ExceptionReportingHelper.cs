@@ -21,7 +21,7 @@ namespace Bot.Core.Interaction
                 // Not a whole lot we can do about this. Maybe log it?
             }
 
-            string GetRangeOrFull(string str, int max)
+            static string GetRangeOrFull(string str, int max)
             {
                 return max < str.Length ? str[..max] : str;
             }
