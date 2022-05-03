@@ -35,7 +35,7 @@ namespace Bot.Core
             if (!m_shutdownRequested)
             {
                 var beginTime = DateTime.Now;
-                Serilog.Log.Debug($"A shutdown has been requested at {beginTime}");
+                Serilog.Log.Debug($"Shutdown requested at {beginTime}");
 
                 m_shutdownRequested = true;
                 ShutdownRequested?.Invoke(this, EventArgs.Empty);
@@ -55,7 +55,7 @@ namespace Bot.Core
         {
             var now = DateTime.Now;
             if (m_readyToShutdownTcs.TrySetResult())
-                Serilog.Log.Debug($"Shutdown actions complete. Elapsed time: {now - beginTime}");
+                Serilog.Log.Information($"Shutdown requested at {beginTime} actions completed after {now - beginTime}");
         }
     }
 }
