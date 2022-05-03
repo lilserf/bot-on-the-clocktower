@@ -9,11 +9,11 @@ namespace Bot.Core
 		public TownKey TownKey { get; }
 		public IReadOnlyCollection<IMember> Storytellers => m_storytellers;
 
-		private readonly HashSet<IMember> m_storytellers = new();
+		private readonly HashSet<IMember> m_storytellers;
 
 		public IReadOnlyCollection<IMember> Villagers => m_villagers;
 
-		private readonly HashSet<IMember> m_villagers = new();
+		private readonly HashSet<IMember> m_villagers;
 
 		public IReadOnlyCollection<IMember> AllPlayers => Storytellers.Concat(Villagers).ToList();
 
