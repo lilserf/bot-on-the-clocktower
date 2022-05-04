@@ -58,12 +58,12 @@ namespace Bot.DSharp
                 typeof(DSharpSetupSlashCommands),
             };
 
+            List<ulong> devGuildIds = new() { 128585855097896963ul, 215551375608643586ul };
             if (m_deployType == "dev")
             {
                 // The "dev" deploy should only be used by us doing development locally and using the 
                 // DEV bot token - so the DEV bot will remain registered only to our servers, with no global
                 // commands.
-                List<ulong> devGuildIds = new() { 128585855097896963ul, 215551375608643586ul };
 
                 foreach (ulong devGuildId in devGuildIds)
                 {
@@ -74,6 +74,11 @@ namespace Bot.DSharp
             }
             else if (m_deployType == "prod")
             {
+                // Unregister any guild-specific commands for the prod bot
+                foreach(ulong devGuildId in devGuildIds)
+                {
+                    slash.RegisterCommands<EmptyCommands>(devGuildId);
+                }
                 // The "prod" deploy should only be used by the real server using the real bot token,
                 // so it will now be registered globally
                 RegisterCommands(slash, commandTypes);
