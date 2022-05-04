@@ -44,9 +44,12 @@ namespace Bot.Main
             }
             Log.Logger = logConfig.CreateLogger();
 
+            Log.Information("Bot started");
+
             var program = new Program();
             await program.RunAsync();
 
+            Log.Information("Bot stopped");
             Log.CloseAndFlush();
         }
 
