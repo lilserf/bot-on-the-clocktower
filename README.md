@@ -6,7 +6,7 @@ This bot handles setting up all the channels, roles, and permissions you need to
 
 # Invite the Bot
 
-First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=bot) **\<\<**
+First, you need to **\>\>** [invite the bot](https://discord.com/api/oauth2/authorize?client_id=795055055509651456&permissions=419441680&scope=applications.commands%20bot) **\<\<**
 
 For more information on the permissions it requests, see [Permission Details](#permission-details).
 
