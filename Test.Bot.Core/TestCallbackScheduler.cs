@@ -322,7 +322,7 @@ namespace Test.Bot.Core
 
             public async Task WaitCallbackAsync()
             {
-                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromMilliseconds(50));
+                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromMilliseconds(200));
                 Assert.True(success);
             }
 
@@ -360,7 +360,7 @@ namespace Test.Bot.Core
 
             public async Task WaitCallbackAsync()
             {
-                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromMilliseconds(50));
+                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromMilliseconds(200));
                 Assert.True(success);
             }
 
