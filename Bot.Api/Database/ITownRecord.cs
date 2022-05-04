@@ -12,7 +12,7 @@ namespace Bot.Api.Database
 		public string? NightCategory { get; }
 		public ulong NightCategoryId { get; }
 		public string? ChatChannel { get; }
-		public ulong ChatChannelId { get; }
+		public ulong? ChatChannelId { get; }
 		public string? TownSquare { get; }
 		public ulong TownSquareId { get; }
 		public string? StorytellerRole { get; }

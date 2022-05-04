@@ -26,7 +26,7 @@ namespace Bot.Core
                 var dayCategoryResult = GetChannelCategory(guild, rec.DayCategoryId, rec.DayCategory);
                 var nightCategoryResult = GetChannelCategory(guild, rec.NightCategoryId, rec.NightCategory);
                 var controlChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ControlChannelId, rec.ControlChannel, false);
-                var chatChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ChatChannelId, rec.ChatChannel, false);
+                var chatChannelResult = GetChannel(guild, dayCategoryResult.Channel, rec.ChatChannelId.HasValue ? rec.ChatChannelId.Value : 0, rec.ChatChannel, false);
                 var townSquareResult = GetChannel(guild, dayCategoryResult.Channel, rec.TownSquareId, rec.TownSquare, true);
                 var storytellerRoleResult = GetRoleForGuild(guild, rec.StorytellerRoleId, rec.StorytellerRole);
                 var villagerRoleResult = GetRoleForGuild(guild, rec.VillagerRoleId, rec.VillagerRole);

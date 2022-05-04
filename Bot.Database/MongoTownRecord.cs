@@ -19,7 +19,7 @@ namespace Bot.Database
 		[BsonElement("chatChannel")]
 		public string? ChatChannel { get; set; }
 		[BsonElement("chatChannelId")]
-		public ulong ChatChannelId { get; set; }
+		public ulong? ChatChannelId { get; set; }
 		[BsonElement("townSquare")]
 		public string? TownSquare { get; set; }
 		[BsonElement("townSquareId")]
