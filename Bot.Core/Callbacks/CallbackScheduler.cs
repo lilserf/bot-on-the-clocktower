@@ -12,13 +12,13 @@ namespace Bot.Core.Callbacks
 
         private readonly Dictionary<TKey, DateTime> m_keysToCallbackTime = new();
 
-        private readonly IDateTime DateTime;
-        private readonly ITask Task;
+        private readonly IDateTime m_dateTime;
+        private readonly ITask m_task;
 
         public CallbackScheduler(IServiceProvider serviceProvider, Func<TKey, Task> callback, TimeSpan period)
         {
-            serviceProvider.Inject(out DateTime);
-            serviceProvider.Inject(out Task);
+            serviceProvider.Inject(out m_dateTime);
+            serviceProvider.Inject(out m_task);
 
             m_callback = callback;
             m_period = period;
@@ -50,11 +50,11 @@ namespace Bot.Core.Callbacks
             bool keepPumping = true;
             do
             {
-                await Task.Delay(m_period);
+                await m_task.Delay(m_period);
 
                 lock (m_keysToCallbackTime)
                 {
-                    var now = DateTime.Now;
+                    var now = m_dateTime.Now;
                     foreach (var kvp in m_keysToCallbackTime)
                         if (now >= kvp.Value)
                             toCall.Add(kvp.Key);
@@ -83,6 +83,91 @@ namespace Bot.Core.Callbacks
             try
             {
                 await m_callback(key);
+            }
+            catch (Exception)
+            {
+                // Not a whole lot we can do about this, as we don't have anyone to report it to at present
+            }
+        }
+    }
+
+    public class CallbackScheduler : ICallbackScheduler
+    {
+        private readonly Func<Task> m_callback;
+        private readonly TimeSpan m_period;
+
+        private readonly object m_lock = new();
+        private DateTime? m_callbackTime;
+
+        private readonly IDateTime m_dateTime;
+        private readonly ITask m_task;
+
+        public CallbackScheduler(IServiceProvider serviceProvider, Func<Task> callback, TimeSpan period)
+        {
+            serviceProvider.Inject(out m_dateTime);
+            serviceProvider.Inject(out m_task);
+
+            m_callback = callback;
+            m_period = period;
+        }
+
+        public void ScheduleCallback(DateTime callTime)
+        {
+            lock (m_lock)
+            {
+                bool wasPumping = m_callbackTime.HasValue;
+                m_callbackTime = callTime;
+                if (!wasPumping)
+                    Pump().ConfigureAwait(true);
+            }
+        }
+
+        public void CancelCallback()
+        {
+            lock (m_lock)
+            {
+                m_callbackTime = null;
+            }
+        }
+
+        private async Task Pump()
+        {
+            bool keepPumping = true;
+            do
+            {
+                await m_task.Delay(m_period);
+
+                bool doCall = false;
+                lock (m_lock)
+                {
+                    if (m_callbackTime.HasValue)
+                    {
+                        var now = m_dateTime.Now;
+                        if (now >= m_callbackTime)
+                        {
+                            doCall = true;
+                            m_callbackTime = null;
+                            keepPumping = false;
+                        }
+                    }
+                }
+
+                if (doCall)
+                    CallCallback();
+
+            } while (keepPumping);
+        }
+
+        private void CallCallback()
+        {
+            CallCallbackAsync().ConfigureAwait(true);
+        }
+
+        private async Task CallCallbackAsync()
+        {
+            try
+            {
+                await m_callback();
             }
             catch (Exception)
             {
