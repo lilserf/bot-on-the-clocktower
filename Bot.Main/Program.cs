@@ -20,7 +20,7 @@ namespace Bot.Main
             var logConfig = new LoggerConfiguration()
                 .Destructure.ByIgnoringProperties<DSharpMember>(x => x.Wrapped, x => x.Roles, x => x.IsBot)
                 .Destructure.ByIgnoringProperties<DSharpRole>(x => x.Wrapped, x => x.Mention)
-                .Destructure.ByIgnoringProperties<DSharpGuild>(x => x.Wrapped, x => x.Roles, x => x.Members)
+                .Destructure.ByTransforming<DSharpGuild>(x => new { Id = x.Id, Name = x.Name })
                 .Destructure.ByIgnoringProperties<DSharpChannel>(x => x.Wrapped, x => x.Users)
                 .Destructure.ByIgnoringProperties<DSharpChannelCategory>(x => x.Wrapped, x => x.Channels)
                 .Destructure.ByIgnoringProperties<DSharpInteractionContext>(x => x.Wrapped, x => x.Services)
