@@ -16,5 +16,10 @@ namespace Bot.Core.Callbacks
         {
             return new CallbackScheduler<TKey>(m_serviceProvider, callback, checkPeriod);
         }
+
+        public ICallbackScheduler CreateScheduler(Func<Task> callback, TimeSpan checkPeriod)
+        {
+            return new CallbackScheduler(m_serviceProvider, callback, checkPeriod);
+        }
     }
 }

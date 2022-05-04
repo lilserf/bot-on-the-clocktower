@@ -7,4 +7,10 @@ namespace Bot.Core.Callbacks
         void ScheduleCallback(TKey key, DateTime callTime);
         public void CancelCallback(TKey key);
     }
+
+    public interface ICallbackScheduler
+    {
+        void ScheduleCallback(DateTime callTime);
+        public void CancelCallback();
+    }
 }
