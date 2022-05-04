@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="2.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bot.Api\Bot.Api.csproj" />
+    <ProjectReference Include="..\Bot.Base\Bot.Base.csproj" />
+    <ProjectReference Include="..\DSharpPlus\DSharpPlus.SlashCommands\DSharpPlus.SlashCommands.csproj" />
+    <ProjectReference Include="..\DSharpPlus\DSharpPlus\DSharpPlus.csproj" />
+  </ItemGroup>
+
+</Project>

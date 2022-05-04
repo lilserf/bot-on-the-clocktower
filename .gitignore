@@ -5,3 +5,7 @@ mongodb.txt
 __pycache__/
 .vscode/
 package-lock.json
+*/bin/
+*/obj/
+vultr.txt
+secrets.txt
