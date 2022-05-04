@@ -92,11 +92,14 @@ namespace Bot.Main
             Console.CancelKeyPress -= cancelCb;
         }
 
-        private void Console_CancelKeyPress(object? _, ConsoleCancelEventArgs e, CancellationTokenSource cts)
+        private static void Console_CancelKeyPress(object? _, ConsoleCancelEventArgs e, CancellationTokenSource cts)
         {
             e.Cancel = true;
             if (!cts.IsCancellationRequested)
+            {
+                Log.Information($"Application cancellation requested at {DateTime.UtcNow}");
                 cts.Cancel();
+            }
         }
     }
 }
