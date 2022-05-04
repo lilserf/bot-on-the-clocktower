@@ -1,3 +1,8 @@
+# THIS IS OLD!
+
+This is the readme for the old Python version of this bot, which uses `!`commands to run a game of BotC.
+The Python commands will eventually be disabled by Discord; you should use the new `/`commands from the C# bot instead.
+
 # Bot on the Clocktower
 Discord bot to assist with running a game of Blood on the Clocktower on Discord
 
