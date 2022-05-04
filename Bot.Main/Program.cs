@@ -46,6 +46,8 @@ namespace Bot.Main
 
             var program = new Program();
             await program.RunAsync();
+
+            Log.CloseAndFlush();
         }
 
         private async Task RunAsync(CancellationToken ct)
