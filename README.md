@@ -2,14 +2,7 @@
 
 A Discord bot to assist with running a game of Blood on the Clocktower on Discord
 
-# Introduction: What does this bot do?
-
-To easily play Blood on the Clocktower via Discord voice channels, you need:
-* A place for all players and the Storyteller to discuss openly (the Town Square channel)
-* Smaller gathering places for players to congregate for smaller semi-private conversations (other daytime channels)
-* Individual places for each player to go during the night, where the Storyteller can visit them privately (night "Cottage" channels)
-
-This bot handles setting up the channels, roles, and permissions automatically, as well as moving the players back and forth during the various phases of the game without needing to type in complex movement commands!
+This bot handles setting up all the channels, roles, and permissions you need to play Blood on the Clocktower, as well as moving the players back and forth during the various phases of the game without needing to type in complex movement commands!
 
 # Invite the Bot
 
