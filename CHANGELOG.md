@@ -1,5 +1,9 @@
 # Bot on the Clocktower Changelog
 
+## Version 3.0.0
+
+* Brand new version of the bot rewritten from scratch in C# using DSharpPlus
+
 ## Version 2.0.1
 
 * Fix crash when doing the `!character` command with no custom scripts registered
