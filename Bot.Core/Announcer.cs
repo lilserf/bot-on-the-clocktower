@@ -9,28 +9,24 @@ namespace Bot.Core
 {
     public class Announcer : IAnnouncer
     {
-        static List<ulong> s_guildAllowList = new List<ulong>()
+        private readonly static List<ulong> s_guildAllowList = new()
         {
             128585855097896963,
         };
 
-        IVersionProvider m_versionProvider;
-        IAnnouncementDatabase m_announcementDatabase;
-        ITownDatabase m_townDatabase;
-        IBotSystem m_botSystem;
-        IBotClient m_botClient;
-        IDateTime m_dateTime;
-        ITownMaintenance m_townMaintenance;
-        IEnvironment m_environment;
+        private readonly IVersionProvider m_versionProvider;
+        private readonly IAnnouncementDatabase m_announcementDatabase;
+        private readonly IBotSystem m_botSystem;
+        private readonly IBotClient m_botClient;
+        private readonly ITownMaintenance m_townMaintenance;
+        private readonly IEnvironment m_environment;
 
         public Announcer(IServiceProvider sp)
         {
             sp.Inject(out m_versionProvider);
             sp.Inject(out m_announcementDatabase);
-            sp.Inject(out m_townDatabase);
             sp.Inject(out m_botSystem);
             sp.Inject(out m_botClient);
-            sp.Inject(out m_dateTime);     
             sp.Inject(out m_townMaintenance);
             sp.Inject(out m_environment);
 
