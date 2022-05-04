@@ -1,9 +1,7 @@
 ﻿using Bot.Api;
-using Bot.Core;
 using Bot.Core.Callbacks;
 using Moq;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -14,8 +12,8 @@ namespace Test.Bot.Core
     {
         private static readonly DateTime s_defaultDateTimeNow = new(2021, 2, 3, 4, 5, 6, 7);
 
-        private readonly Mock<IDateTime> MockDateTime = new();
-        private readonly Mock<ITask> MockTask = new();
+        private readonly Mock<IDateTime> m_mockDateTime = new();
+        private readonly Mock<ITask> m_mockTask = new();
 
         private readonly AsyncAutoResetEvent m_delayReset = new();
 
@@ -24,13 +22,13 @@ namespace Test.Bot.Core
 
         public TestCallbackScheduler()
         {
-            RegisterMock(MockDateTime);
-            RegisterMock(MockTask);
+            RegisterMock(m_mockDateTime);
+            RegisterMock(m_mockTask);
 
-            MockDateTime.SetupGet(dt => dt.Now).Returns(() => m_currentTime);
-            MockTask.Setup(t => t.Delay(It.IsAny<TimeSpan>())).Returns(async () =>
+            m_mockDateTime.SetupGet(dt => dt.Now).Returns(() => m_currentTime);
+            m_mockTask.Setup(t => t.Delay(It.IsAny<TimeSpan>())).Returns(async () =>
             {
-                bool success = await m_delayReset.WaitOneAsync(TimeSpan.FromMilliseconds(50));
+                bool success = await m_delayReset.WaitOneAsync(TimeSpan.FromSeconds(2));
                 Assert.True(success);
             });
         }
@@ -87,7 +85,7 @@ namespace Test.Bot.Core
             m_delayReset.Set();
             await helper.WaitCallbackAsync();
 
-            MockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
             Assert.Equal(1, helper.CallbackCount);
         }
 
@@ -104,8 +102,8 @@ namespace Test.Bot.Core
 
             helper.CancelCallback();
 
-            MockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
-            MockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
 
             AdvanceTime(TimeSpan.FromSeconds(10));
             m_delayReset.Set();
@@ -137,8 +135,8 @@ namespace Test.Bot.Core
             m_delayReset.Set();
             await helper.WaitCallbackAsync();
 
-            MockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
-            MockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
             Assert.Equal(1, helper.CallbackCount);
         }
 
@@ -150,8 +148,8 @@ namespace Test.Bot.Core
             AdvanceTime(TimeSpan.FromSeconds(20));
             await Task.Delay(10);
 
-            MockDateTime.VerifyGet(dt => dt.Now, Times.Never);
-            MockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Never);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.Never);
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Never);
         }
 
         [Fact]
@@ -166,8 +164,7 @@ namespace Test.Bot.Core
             await helper.WaitCallbackAsync();
 
             Assert.Equal(1, helper.CallbackCount);
-            MockDateTime.VerifyGet(dt => dt.Now, Times.Once);
-            MockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Once);
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Once, "Task not called once");
         }
 
         [Fact]
@@ -212,7 +209,7 @@ namespace Test.Bot.Core
             m_delayReset.Set();
             await helper.WaitCallbackAsync();
 
-            MockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
             Assert.Equal(1, helper.CallbackCount);
         }
 
@@ -229,8 +226,8 @@ namespace Test.Bot.Core
 
             helper.CancelCallback();
 
-            MockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
-            MockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
 
             AdvanceTime(TimeSpan.FromSeconds(10));
             m_delayReset.Set();
@@ -262,8 +259,8 @@ namespace Test.Bot.Core
             m_delayReset.Set();
             await helper.WaitCallbackAsync();
 
-            MockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
-            MockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
             Assert.Equal(1, helper.CallbackCount);
         }
 
@@ -275,8 +272,8 @@ namespace Test.Bot.Core
             AdvanceTime(TimeSpan.FromSeconds(20));
             await Task.Delay(10);
 
-            MockDateTime.VerifyGet(dt => dt.Now, Times.Never);
-            MockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Never);
+            m_mockDateTime.VerifyGet(dt => dt.Now, Times.Never);
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Never);
         }
 
         [Fact]
@@ -291,8 +288,7 @@ namespace Test.Bot.Core
             await helper.WaitCallbackAsync();
 
             Assert.Equal(1, helper.CallbackCount);
-            MockDateTime.VerifyGet(dt => dt.Now, Times.Once);
-            MockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Once);
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Once, "Task not called once");
         }
 
         private class CallbackHelperWithKey
@@ -322,8 +318,8 @@ namespace Test.Bot.Core
 
             public async Task WaitCallbackAsync()
             {
-                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromMilliseconds(200));
-                Assert.True(success);
+                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromSeconds(2));
+                Assert.True(success, "Reset event not called within wait period");
             }
 
             private Task Callback(int key)
@@ -360,8 +356,8 @@ namespace Test.Bot.Core
 
             public async Task WaitCallbackAsync()
             {
-                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromMilliseconds(200));
-                Assert.True(success);
+                bool success = await m_resetEvent.WaitOneAsync(TimeSpan.FromSeconds(2));
+                Assert.True(success, "Reset event not called within wait period");
             }
 
             private Task Callback()
