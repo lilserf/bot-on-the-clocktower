@@ -62,7 +62,7 @@ namespace Test.Bot.Base
                 lock (m_waiters)
                 {
                     bool removed = m_waiters.Remove(tcs);
-                    Assert.True(removed);
+                    Assert.True(removed, "Timed out waiting for task to be completed, but then it was completed after the timeout");
                     return false;
                 }
             }

@@ -12,13 +12,13 @@ namespace Bot.Core.Callbacks
 
         private readonly Dictionary<TKey, DateTime> m_keysToCallbackTime = new();
 
-        private readonly IDateTime DateTime;
-        private readonly ITask Task;
+        private readonly IDateTime m_dateTime;
+        private readonly ITask m_task;
 
         public CallbackScheduler(IServiceProvider serviceProvider, Func<TKey, Task> callback, TimeSpan period)
         {
-            serviceProvider.Inject(out DateTime);
-            serviceProvider.Inject(out Task);
+            serviceProvider.Inject(out m_dateTime);
+            serviceProvider.Inject(out m_task);
 
             m_callback = callback;
             m_period = period;
@@ -50,11 +50,11 @@ namespace Bot.Core.Callbacks
             bool keepPumping = true;
             do
             {
-                await Task.Delay(m_period);
+                await m_task.Delay(m_period);
 
                 lock (m_keysToCallbackTime)
                 {
-                    var now = DateTime.Now;
+                    var now = m_dateTime.Now;
                     foreach (var kvp in m_keysToCallbackTime)
                         if (now >= kvp.Value)
                             toCall.Add(kvp.Key);
@@ -100,12 +100,12 @@ namespace Bot.Core.Callbacks
         private DateTime? m_callbackTime;
 
         private readonly IDateTime m_dateTime;
-        private readonly ITask Task;
+        private readonly ITask m_task;
 
         public CallbackScheduler(IServiceProvider serviceProvider, Func<Task> callback, TimeSpan period)
         {
             serviceProvider.Inject(out m_dateTime);
-            serviceProvider.Inject(out Task);
+            serviceProvider.Inject(out m_task);
 
             m_callback = callback;
             m_period = period;
@@ -135,7 +135,7 @@ namespace Bot.Core.Callbacks
             bool keepPumping = true;
             do
             {
-                await Task.Delay(m_period);
+                await m_task.Delay(m_period);
 
                 bool doCall = false;
                 lock (m_lock)
