@@ -25,7 +25,7 @@ namespace Bot.Core
             // VERSION 3.0.0
             {
                 IMessageBuilder msg = m_botSystem.CreateMessageBuilder();
-                string title = @"**New version of Bot on the Clocktower!**
+                string title = @"**Version 3.0.0 of Bot on the Clocktower!**
 Due to upcoming changes to Discord (and our own areas of expertise) this bot has been completely rewritten.
 Major things to be aware of are called out below.";
                 msg.WithContent(title);
@@ -57,7 +57,9 @@ These are extremely powerful, with nifty autocompletion, documentation, and inte
                     eb.WithColor(m_colorBuilder.DarkBlue);
                     string message =
                         @"In the future (currently slated for August), Discord will _require_ the use of Slash Commands to interact with bots.
-In most cases the slash commands are actually more cool and powerful than the old commands, so you're highly encouraged to learn them sooner rather than later.";
+In most cases the slash commands are actually more cool and powerful than the old commands, so you're highly encouraged to learn them sooner rather than later.
+
+You may have seen the bot telling you this for a few weeks, even though the slash commands weren't active yet. Sorry about that.";
                     eb.AddField("Old !commands will go away eventually", message);
                     msg.AddEmbed(eb.Build());
                 }
