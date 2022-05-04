@@ -6,7 +6,7 @@ name: Deploy
 on:
   # Triggers the workflow on push events to csharp_port
   push:
-    branches: [ feature/csharp_port ]
+    branches: [ release ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
