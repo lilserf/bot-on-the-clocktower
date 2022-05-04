@@ -11,7 +11,7 @@ namespace Bot.DSharp
     public class DSharpClient : IBotClient
     {
         private readonly IComponentService m_componentService;
-
+        private readonly IEnvironment m_environment;
         private readonly IDiscordClient m_discord;
 
         public event EventHandler<EventArgs>? Connected;
@@ -20,6 +20,7 @@ namespace Bot.DSharp
         public DSharpClient(IServiceProvider serviceProvider)
         {
             serviceProvider.Inject(out m_componentService);
+            serviceProvider.Inject(out m_environment);
 
             var environment = serviceProvider.GetService<IEnvironment>();
             var token = environment.GetEnvironmentVariable("DISCORD_TOKEN");
@@ -40,19 +41,38 @@ namespace Bot.DSharp
         {
             var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
 
-            // During development, register our commands to the dev guild only
-            List<ulong> devGuildIds = new() { 128585855097896963ul, 215551375608643586ul };
+            // If somehow neither deploy type is specified, don't screw around with anything
+            string deployType = Environment.GetEnvironmentVariable("DEPLOY_TYPE") ?? "none";
 
-            foreach (ulong devGuildId in devGuildIds)
-            { 
-                slash.RegisterCommands<DSharpGameSlashCommands>(devGuildId);
-                slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
-                slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
-                slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
-                slash.RegisterCommands<DSharpSetupSlashCommands>(devGuildId);
+            // The "dev" deploy should only be used by us doing development locally and using the 
+            // DEV bot token - so the DEV bot will remain registered only to our servers, with no global
+            // commands.
+            // The "prod" deploy should only be used by the real server using the real bot token,
+            // so it will now be registered globally
+            if (deployType == "dev")
+            {
+                // During development, register our commands to the dev guild only
+                List<ulong> devGuildIds = new() { 128585855097896963ul, 215551375608643586ul };
+
+                foreach (ulong devGuildId in devGuildIds)
+                {
+                    slash.RegisterCommands<DSharpGameSlashCommands>(devGuildId);
+                    slash.RegisterCommands<DSharpMessagingSlashCommands>(devGuildId);
+                    slash.RegisterCommands<DSharpLookupSlashCommands>(devGuildId);
+                    slash.RegisterCommands<DSharpMiscSlashCommands>(devGuildId);
+                    slash.RegisterCommands<DSharpSetupSlashCommands>(devGuildId);
+                }
+                // During development, register no commands globally
+                slash.RegisterCommands<EmptyCommands>();
             }
-            // During development, register no commands globally
-            slash.RegisterCommands<EmptyCommands>();
+            else if(deployType == "prod")
+            {
+                slash.RegisterCommands<DSharpGameSlashCommands>();
+                slash.RegisterCommands<DSharpMessagingSlashCommands>();
+                slash.RegisterCommands<DSharpLookupSlashCommands>();
+                slash.RegisterCommands<DSharpMiscSlashCommands>();
+                slash.RegisterCommands<DSharpSetupSlashCommands>();
+            }
 
             TaskCompletionSource readyTcs = new();
 
