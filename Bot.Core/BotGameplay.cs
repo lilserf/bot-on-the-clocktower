@@ -356,7 +356,7 @@ namespace Bot.Core
             var guild = await m_client.GetGuildAsync(townKey.GuildId);
             if (guild != null)
                 await EndGameForTownAsync(guild, town.StorytellerRole, town.VillagerRole, logger);
-            return "Cleanup of inactive game complete";
+            return "Thank you for playing Blood on the Clocktower!";
         }
 
         private static async Task EndGameForTownAsync(IGuild guild, IRole? storytellerRole, IRole? villagerRole, IProcessLogger logger)
