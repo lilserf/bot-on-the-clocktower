@@ -50,7 +50,7 @@ namespace Bot.Core
         private async Task ScheduleOutstandingCleanup()
         {
             var recs = await m_gameActivityDb.GetAllActivityRecords();
-            Serilog.Log.Debug("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
+            Serilog.Log.Information("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
             foreach (var rec in recs)
                 ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId), rec.LastActivity);
         }
@@ -63,7 +63,7 @@ namespace Bot.Core
             TimeSpan cleanupTime = TimeSpan.FromHours(5);
 #endif
             var time = lastActivity + cleanupTime;
-            Serilog.Log.Debug("ScheduleCleanup: {townKey} should be cleaned up at {time}", townKey, time);
+            Serilog.Log.Information("ScheduleCleanup: {townKey} should be cleaned up at {time}", townKey, time);
             m_callbackScheduler.ScheduleCallback(townKey, time);
         }
 
@@ -74,14 +74,15 @@ namespace Bot.Core
 
         private async Task CleanupTown(TownKey key)
         {
-            Serilog.Log.Debug("CleanupTown for town {@townKey}", key);
+            Serilog.Log.Information("CleanupTown for town {@townKey}", key);
 
             try
             {
                 CleanupRequested?.Invoke(this, new TownCleanupRequestedArgs(key));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Serilog.Log.Error("CleanupTown hit an exception: {@ex}", ex);
                 // Do what?
             }
             finally
