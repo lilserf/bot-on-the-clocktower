@@ -343,7 +343,7 @@ namespace Bot.Core
             }
         }
 
-        public async Task<string> EndGameUnsafeAsync(TownKey townKey, IProcessLogger logger)
+        public async Task<InteractionResult> EndGameUnsafeAsync(TownKey townKey, IProcessLogger logger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
