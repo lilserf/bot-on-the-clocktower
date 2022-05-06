@@ -44,11 +44,13 @@ namespace Bot.Main
             }
             Log.Logger = logConfig.CreateLogger();
 
+            Console.WriteLine("Bot started");
             Log.Information("Bot started");
 
             var program = new Program();
             await program.RunAsync();
 
+            Console.WriteLine("Bot stopped");
             Log.Information("Bot stopped");
             Log.CloseAndFlush();
         }
@@ -102,6 +104,7 @@ namespace Bot.Main
             e.Cancel = true;
             if (!cts.IsCancellationRequested)
             {
+                Console.WriteLine($"Application cancellation requested at {DateTime.UtcNow}");
                 Log.Information($"Application cancellation requested at {DateTime.UtcNow}");
                 cts.Cancel();
             }

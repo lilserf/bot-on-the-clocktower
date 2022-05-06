@@ -78,7 +78,7 @@ namespace Bot.Core
         }
         public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
         {
-            Serilog.Log.Information("AddStorytellerTag for member {@member}", member);
+            Serilog.Log.Debug("AddStorytellerTag for member {@member}", member);
 
             if (member.DisplayName.StartsWith(StorytellerTag))
                 return true;
@@ -106,7 +106,7 @@ namespace Bot.Core
 
         public static async Task<bool> RemoveStorytellerTag(IMember member, IProcessLogger logger)
         {
-            Serilog.Log.Information("RemoveStorytellerTag for member {@member}", member);
+            Serilog.Log.Debug("RemoveStorytellerTag for member {@member}", member);
             if (!member.DisplayName.StartsWith(StorytellerTag))
                 return true;
 
@@ -126,42 +126,7 @@ namespace Bot.Core
             }
         }
 
-        //public static async Task<bool> AddPermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
-        //{
-        //    try
-        //    {
-        //        await channel.AddOverwriteAsync(member);
-        //        return true;
-        //    }
-        //    catch(Exception ex)
-        //    {
-        //        Serilog.Log.Error(ex, "AddPermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
-        //        if (!IsHandledException(ex))
-        //            throw;
-
-        //        logger.LogException(ex, $"grant '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
-        //        return false;
-        //    }
-        //}
-
-        //public static async Task<bool> RemovePermissionsAsync(IMember member, IChannel channel, IProcessLogger logger)
-        //{
-        //    try
-        //    {
-        //        await channel.RemoveOverwriteAsync(member);
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Serilog.Log.Error(ex, "RemovePermissionsAsync failed while trying to override permissions for {user} on {channel}", member, channel);
-        //        if (!IsHandledException(ex))
-        //            throw;
-
-        //        logger.LogException(ex, $"remove '{member.DisplayName}' permissions to their cottage '{channel.Name}'");
-        //        return false;
-        //    }
-        //}
-
+     
         private static bool IsHandledException(Exception ex)
         {
             return (ex is UnauthorizedException || ex is NotFoundException || ex is ServerErrorException);
