@@ -85,7 +85,7 @@ namespace Bot.Core
         private void TownCleanup_CleanupRequested(object? sender, TownCleanupRequestedArgs e)
         {
             var logger = new ProcessLogger();
-            EndGameUnsafe(e.TownKey, logger).ConfigureAwait(continueOnCapturedContext: true);
+            EndGameUnsafeAsync(e.TownKey, logger).ConfigureAwait(continueOnCapturedContext: true);
         }
 
         private static async Task TagStorytellers(IGame game, IProcessLogger logger)
@@ -98,7 +98,7 @@ namespace Bot.Core
 
             foreach(var u in game.Villagers)
             {
-                await MemberHelper.RemoveStorytellerTag(u, logger);
+                await MemberHelper.RemoveStorytellerTagAsync(u, logger);
             }
         }
 
@@ -343,16 +343,7 @@ namespace Bot.Core
             }
         }
 
-        private static async Task EndGameForUser(IMember user, ITown town, IProcessLogger logger)
-        {
-            await MemberHelper.RemoveStorytellerTag(user, logger);
-            if (town.StorytellerRole != null)
-                await user.RevokeRoleAsync(town.StorytellerRole);
-            if (town.VillagerRole != null)
-                await user.RevokeRoleAsync(town.VillagerRole);
-        }
-
-        public async Task<string> EndGameUnsafe(TownKey townKey, IProcessLogger logger)
+        public async Task<string> EndGameUnsafeAsync(TownKey townKey, IProcessLogger logger)
         {
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
@@ -361,23 +352,32 @@ namespace Bot.Core
             await m_gameMetricsDatabase.RecordEndGameAsync(townKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("endgame", m_dateTime.Now);
 
-            var game = await CreateGameFromDiscordState(townKey, null, logger);
+            // We don't care if there are currently people in town doing stuff. All we care about is the current Discord role state
+            var guild = await m_client.GetGuildAsync(townKey.GuildId);
+            if (guild != null)
+                await EndGameForTownAsync(guild, town.StorytellerRole, town.VillagerRole, logger);
+            return "Cleanup of inactive game complete";
+        }
 
-            if (game != null)
-            {
-                foreach (var user in game.AllPlayers)
-                    await EndGameForUser(user, town, logger);
-                return "Thank you for playing Blood on the Clocktower!";
-            }
-            else
-            {
-                var guild = await m_client.GetGuildAsync(townKey.GuildId);
-                if (guild != null)
-                    foreach (var (_, user) in guild.Members)
-                        await EndGameForUser(user, town, logger);
-                return "Cleanup of inactive game complete";
-            }
+        private static async Task EndGameForTownAsync(IGuild guild, IRole? storytellerRole, IRole? villagerRole, IProcessLogger logger)
+        {
+            if (storytellerRole == null && villagerRole == null)
+                return;
 
+            var allMembers = guild.Members.Values.ToList();
+            foreach (var member in allMembers)
+            {
+                var roles = member.Roles.ToHashSet();
+                if (storytellerRole != null && roles.Contains(storytellerRole))
+                {
+                    await member.RevokeRoleAsync(storytellerRole);
+                    await MemberHelper.RemoveStorytellerTagAsync(member, logger);
+                }
+                if (villagerRole != null && roles.Contains(villagerRole))
+                {
+                    await member.RevokeRoleAsync(villagerRole);
+                }
+            }
         }
 
         public async Task<InteractionResult> SetStorytellersUnsafe(TownKey townKey, IMember requester, IEnumerable<IMember> users, IProcessLogger logger)

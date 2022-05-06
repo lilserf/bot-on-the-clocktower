@@ -44,21 +44,20 @@ namespace Test.Bot.Core
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void CurrGame_Cleanup(bool gameInProgress)
+        public void CleanupRequest_RemovesRolesAndTags(bool anyoneInTown)
         {
-            if(gameInProgress)
-                MockGameInProgress();
-            
-            BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
+            MockGameInProgress();
+            if (!anyoneInTown)
+                TownSquareMock.SetupGet(t => t.Users).Returns(Array.Empty<IMember>()); // game is ended at 4 AM, nobody is around anymore
 
+            BotGameplay bg = new(GetServiceProvider());
             TownCleanupMock.Raise(tc => tc.CleanupRequested += null, new TownCleanupRequestedArgs(MockTownKey));
 
-            Villager1Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-            Villager2Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
-            Villager3Mock.Verify(c => c.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
+            InteractionAuthorMock.Verify(m => m.SetDisplayName(It.Is<string>(s => s == StorytellerDisplayName)), Times.Once);
+            InteractionAuthorMock.Verify(m => m.RevokeRoleAsync(It.Is<IRole>(r => r == StorytellerRoleMock.Object)), Times.Once);
+            Villager1Mock.Verify(m => m.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
+            Villager2Mock.Verify(m => m.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
+            Villager3Mock.Verify(m => m.RevokeRoleAsync(It.Is<IRole>(r => r == VillagerRoleMock.Object)), Times.Once);
         }
     }
 }

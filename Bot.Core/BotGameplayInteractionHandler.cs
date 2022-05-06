@@ -156,7 +156,7 @@ namespace Bot.Core
                 {
                     return "Couldn't find a current game to end!";
                 }
-                return await m_gameplay.EndGameUnsafe(game.TownKey, processLog);
+                return await m_gameplay.EndGameUnsafeAsync(game.TownKey, processLog);
             });
         }
 
