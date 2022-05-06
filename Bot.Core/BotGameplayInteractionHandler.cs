@@ -149,20 +149,12 @@ namespace Bot.Core
 
         private async Task<InteractionResult> EndGameInternal(TownKey townKey, IMember requester)
         {
-            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, async (processLog) =>
-            {
-                var game = await m_gameplay.CurrentGameAsync(townKey, requester, processLog);
-                if (game == null)
-                {
-                    return "Couldn't find a current game to end!";
-                }
-                return await m_gameplay.EndGameUnsafeAsync(game.TownKey, processLog);
-            });
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_gameplay.EndGameUnsafeAsync(townKey, processLoggger));
         }
 
         public async Task<InteractionResult> SetStorytellersInternal(TownKey townKey, IMember requester, IEnumerable<IMember> users)
         {
-            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, (processLog) => m_gameplay.SetStorytellersUnsafe(townKey, requester, users, processLog));
+            return await m_townErrorHandler.TryProcessReportingErrorsAsync(townKey, requester, processLoggger => m_gameplay.SetStorytellersUnsafe(townKey, requester, users, processLoggger));
         }
 
         public async Task<InteractionResult> RunVoteTimerInternal(TownKey townKey, IMember requester, string timeString)
