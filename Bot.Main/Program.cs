@@ -44,14 +44,12 @@ namespace Bot.Main
             }
             Log.Logger = logConfig.CreateLogger();
 
-            Console.WriteLine("Bot started");
-            Log.Information("Bot started");
+            LogOutput($"Bot started at {DateTime.UtcNow} using C# runtime {Environment.Version}");
 
             var program = new Program();
             await program.RunAsync();
 
-            Console.WriteLine("Bot stopped");
-            Log.Information("Bot stopped");
+            LogOutput($"Bot stopped at {DateTime.UtcNow}");
             Log.CloseAndFlush();
         }
 
@@ -91,12 +89,19 @@ namespace Bot.Main
 
         private async Task RunAsync(CancellationTokenSource cts)
         {
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             ConsoleCancelEventHandler cancelCb = (s, e) => Console_CancelKeyPress(s, e, cts);
             Console.CancelKeyPress += cancelCb;
 
             await RunAsync(cts.Token);
 
             Console.CancelKeyPress -= cancelCb;
+            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
+        }
+
+        private void CurrentDomain_ProcessExit(object? sender, EventArgs e)
+        {
+            LogOutput($"ProcessExit at {DateTime.UtcNow}");
         }
 
         private static void Console_CancelKeyPress(object? _, ConsoleCancelEventArgs e, CancellationTokenSource cts)
@@ -104,10 +109,16 @@ namespace Bot.Main
             e.Cancel = true;
             if (!cts.IsCancellationRequested)
             {
-                Console.WriteLine($"Application cancellation requested at {DateTime.UtcNow}");
-                Log.Information($"Application cancellation requested at {DateTime.UtcNow}");
+                LogOutput($"Application cancellation requested at {DateTime.UtcNow}");
                 cts.Cancel();
             }
+        }
+
+        private static void LogOutput(string s)
+        {
+            // Until we figure out what's going on with shutdown, we're Console logging things in addition to Serilog logging things
+            Console.WriteLine(s);
+            Log.Information(s);
         }
     }
 }
