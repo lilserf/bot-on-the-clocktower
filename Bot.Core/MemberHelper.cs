@@ -104,7 +104,7 @@ namespace Bot.Core
             }
         }
 
-        public static async Task<bool> RemoveStorytellerTag(IMember member, IProcessLogger logger)
+        public static async Task<bool> RemoveStorytellerTagAsync(IMember member, IProcessLogger logger)
         {
             Serilog.Log.Debug("RemoveStorytellerTag for member {@member}", member);
             if (!member.DisplayName.StartsWith(StorytellerTag))
