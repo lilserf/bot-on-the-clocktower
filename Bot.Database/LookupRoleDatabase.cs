@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Bot.Api.Database;
+using MongoDB.Driver;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Bot.Api.Database;
-using MongoDB.Driver;
 
 namespace Bot.Database
 {
-    class LookupRoleDatabase : ILookupRoleDatabase
+    public class LookupRoleDatabase : ILookupRoleDatabase
     {
-        private const string CollectionName = "ServerRoleUrls";
+        public const string CollectionName = "ServerRoleUrls";
 
         private readonly IMongoCollection<MongoLookupRoleRecord> m_collection;
 
@@ -18,7 +18,7 @@ namespace Bot.Database
             if (m_collection == null) throw new MissingLookupRoleDatabaseException();
         }
 
-        private async Task<MongoLookupRoleRecord> GetRecordInternal(ulong guildId)
+        private async Task<MongoLookupRoleRecord?> GetRecordInternal(ulong guildId)
         {
             // Build a filter for the specific document we want
             var builder = Builders<MongoLookupRoleRecord>.Filter;
@@ -45,9 +45,11 @@ namespace Bot.Database
 
             if(doc == null)
             {
-                doc = new MongoLookupRoleRecord();
-                doc.GuildId = guildId;
-                doc.Urls = new List<string>();
+                doc = new MongoLookupRoleRecord
+                {
+                    GuildId = guildId,
+                    Urls = new List<string>()
+                };
             }
 
             doc.Urls.Add(url);
@@ -57,16 +59,18 @@ namespace Bot.Database
         public async Task<IReadOnlyCollection<string>> GetScriptUrlsAsync(ulong guildId)
         {
             var doc = await GetRecordInternal(guildId);
-            return doc.Urls;
+            return doc != null ? doc.Urls : Array.Empty<string>();
         }
 
         public async Task RemoveScriptUrlAsync(ulong guildId, string url)
         {
             var doc = await GetRecordInternal(guildId);
+            if (doc == null)
+                return;
             doc.Urls.Remove(url);
             await UpdateRecordInternal(doc);
         }
-        public class MissingLookupRoleDatabaseException : Exception { }
 
+        public class MissingLookupRoleDatabaseException : Exception { }
     }
 }
