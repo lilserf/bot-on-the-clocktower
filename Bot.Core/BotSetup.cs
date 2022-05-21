@@ -414,7 +414,7 @@ namespace Bot.Core
                 throw new CreateTownException($"Could not find or create day category '{townDesc.DayCategoryName}'");
             await newTown.DayCategory.AddOverwriteAsync(newTown.VillagerRole, Permissions.AccessChannels);
             await newTown.DayCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
-            await newTown.DayCategory.AddOverwriteAsync(newTown.VillagerRole, Permissions.MoveMembers);
+            await newTown.DayCategory.AddOverwriteAsync(newTown.StorytellerRole, Permissions.MoveMembers);
 
             newTown.ControlChannel = await ChannelHelper.GetOrCreateTextChannel(guild, newTown.DayCategory, townDesc.ControlChannelName!);
             if (newTown.ControlChannel == null)
