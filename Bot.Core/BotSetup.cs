@@ -414,6 +414,7 @@ namespace Bot.Core
                 throw new CreateTownException($"Could not find or create day category '{townDesc.DayCategoryName}'");
             await newTown.DayCategory.AddOverwriteAsync(newTown.VillagerRole, Permissions.AccessChannels);
             await newTown.DayCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
+            await newTown.DayCategory.AddOverwriteAsync(newTown.VillagerRole, Permissions.MoveMembers);
 
             newTown.ControlChannel = await ChannelHelper.GetOrCreateTextChannel(guild, newTown.DayCategory, townDesc.ControlChannelName!);
             if (newTown.ControlChannel == null)
@@ -467,7 +468,7 @@ namespace Bot.Core
                 if (newTown.NightCategory == null)
                     throw new CreateTownException($"Could not find or create night category '{townDesc.NightCategoryName}'");
 
-                await newTown.NightCategory.AddOverwriteAsync(newTown.StorytellerRole, Permissions.AccessChannels);
+                await newTown.NightCategory.AddOverwriteAsync(newTown.StorytellerRole, Permissions.AccessChannels | Permissions.MoveMembers);
                 await newTown.NightCategory.AddOverwriteAsync(botRole, Permissions.AccessChannels | Permissions.MoveMembers);
                 await newTown.NightCategory.AddOverwriteAsync(everyoneRole, allow: Permissions.None, deny: Permissions.AccessChannels);
 
