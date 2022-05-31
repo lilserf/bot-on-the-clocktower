@@ -247,7 +247,10 @@ namespace Bot.Core
 
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
                 foreach (var (cottage, user) in villagerPairs)
+                {
+                    await cottage.ClearOverwrites();
                     await cottage.AddOverwriteAsync(user, IBaseChannel.Permissions.AccessChannels);
+                }
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);

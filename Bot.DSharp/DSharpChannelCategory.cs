@@ -19,6 +19,14 @@ namespace Bot.DSharp
 
 		public string Name => Wrapped.Name;
 
+		public async Task ClearOverwrites()
+		{
+			foreach (var o in Wrapped.PermissionOverwrites)
+			{
+				await o.DeleteAsync();
+			}
+		}
+
 		public async Task AddOverwriteAsync(IMember m, Permissions allow, Permissions deny = Permissions.None)
 		{
 			if (m is DSharpMember member)
