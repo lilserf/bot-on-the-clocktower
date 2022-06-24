@@ -25,12 +25,20 @@ namespace Bot.DSharp
 
 		public string Name => Wrapped.Name;
 
-		public async Task ClearOverwrites()
+		public Task ClearOverwrites()
         {
-			foreach(var o in Wrapped.PermissionOverwrites)
-            {
-				await o.DeleteAsync();
-            }
+			var deletes = Wrapped.PermissionOverwrites.Select(DeletePermissionOverwriteAsync);
+			return Task.WhenAll(deletes);
+        }
+
+        private async Task DeletePermissionOverwriteAsync(DiscordOverwrite overwrite)
+		{
+			try
+			{
+				await ExceptionWrap.WrapExceptionsAsync(() => overwrite.DeleteAsync());
+			}
+			catch (Bot.Api.UnauthorizedException)
+			{ }
         }
 
         public async Task AddOverwriteAsync(IMember m, Permissions allow, Permissions deny = Permissions.None)
