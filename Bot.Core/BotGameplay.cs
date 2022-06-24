@@ -248,7 +248,8 @@ namespace Bot.Core
                 // Finally give members permission to see their cottages so they can move back if need be, or see 
                 foreach (var (cottage, user) in villagerPairs)
                 {
-                    await cottage.ClearOverwrites();
+                    // Removed because it makes the channels entirely public, oops
+                    //await cottage.ClearOverwrites();
                     await cottage.AddOverwriteAsync(user, IBaseChannel.Permissions.AccessChannels);
                 }
 
