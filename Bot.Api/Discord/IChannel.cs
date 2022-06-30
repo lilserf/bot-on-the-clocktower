@@ -5,21 +5,22 @@ namespace Bot.Api
 {
     public interface IChannel : IBaseChannel
 	{
-		public ulong Id { get; }
+		ulong Id { get; }
 
-		public IReadOnlyCollection<IMember> Users { get; }
+		IReadOnlyCollection<IMember> Users { get; }
 
-		public int Position { get; }
+		int Position { get; }
 		
-		public bool IsVoice { get; }
-		public bool IsText { get; }
+		bool IsVoice { get; }
+		bool IsText { get; }
 
-		public string Name { get; }
+		string Name { get; }
 
-		public Task<IMessage> SendMessageAsync(string msg);		
-		public Task<IMessage> SendMessageAsync(IEmbed embed);
-		public Task<IMessage> SendMessageAsync(IMessageBuilder builder);
+		Task<IMessage> SendMessageAsync(string msg);		
+		Task<IMessage> SendMessageAsync(IEmbed embed);
+		Task<IMessage> SendMessageAsync(IMessageBuilder builder);
+		Task RestrictOverwriteToMembersAsync(IReadOnlyCollection<IMember> memberPool, Permissions permission, params IMember[] allowedMembers);
 
-		public Task DeleteAsync(string? reason = null);
-	}
+		Task DeleteAsync(string? reason = null);
+    }
 }

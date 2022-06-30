@@ -245,13 +245,12 @@ namespace Bot.Core
                 // Now move STs
                 await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
-                // Finally give members permission to see their cottages so they can move back if need be, or see 
+                // Finally give members permission to see their cottages so they can move back if need be, or see screen shares (Spy, Widow)
+                List<Task> permissionTasks = new();
                 foreach (var (cottage, user) in villagerPairs)
-                {
-                    // Removed because it makes the channels entirely public, oops
-                    //await cottage.ClearOverwrites();
-                    await cottage.AddOverwriteAsync(user, IBaseChannel.Permissions.AccessChannels);
-                }
+                    permissionTasks.Add(cottage.RestrictOverwriteToMembersAsync(game.Villagers, IBaseChannel.Permissions.AccessChannels, user));
+
+                await Task.WhenAll(permissionTasks);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);

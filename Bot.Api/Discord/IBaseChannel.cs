@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Api
@@ -23,6 +20,5 @@ namespace Bot.Api
 		public Task AddOverwriteAsync(IRole role, Permissions allow, Permissions deny = Permissions.None);
 		public Task RemoveOverwriteAsync(IMember member);
 		public Task RemoveOverwriteAsync(IRole role);
-		public Task ClearOverwrites();
 	}
 }
