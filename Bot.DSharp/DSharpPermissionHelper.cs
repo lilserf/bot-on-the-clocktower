@@ -11,11 +11,11 @@ namespace Bot.DSharp
             return (IBaseChannel.Permissions)dSharpPermissions;
         }
 
-        public static DSharpPlus.Permissions DSharpPermissionsFromBasePermissions(IBaseChannel.Permissions dSharpPermissions)
+        public static DSharpPlus.Permissions DSharpPermissionsFromBasePermissions(IBaseChannel.Permissions basePermissions)
         {
             // TODO: Could be better than just a cast, we should probably seaprate these.
             // But note that flag status needs to be preserved
-            return (DSharpPlus.Permissions)dSharpPermissions;
+            return (DSharpPlus.Permissions)basePermissions;
         }
     }
 }

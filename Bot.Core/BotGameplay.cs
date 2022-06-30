@@ -249,7 +249,6 @@ namespace Bot.Core
                 List<Task> permissionTasks = new();
                 foreach (var (cottage, user) in villagerPairs)
                     permissionTasks.Add(cottage.RestrictOverwriteToMembersAsync(game.Villagers, IBaseChannel.Permissions.AccessChannels, user));
-
                 await Task.WhenAll(permissionTasks);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
