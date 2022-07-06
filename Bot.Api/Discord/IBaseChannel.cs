@@ -12,6 +12,7 @@ namespace Bot.Api
 			None = 0x00,
 			All = 1099511627775,
 			AccessChannels = 0x0000000000000400,
+			UseVoice = 0x0000000000100000,
 			MoveMembers = 0x0000000001000000,
 			Stream = 0x0000000000000200,
 		}

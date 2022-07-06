@@ -231,7 +231,8 @@ namespace Bot.Core
                 // First, put storytellers into the top cottages
                 var cottages = town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
                 int numStCottages = game.Storytellers.Count > 0 ? 1 : 0;
-                if (cottages.Count < numStCottages + game.Villagers.Count)
+                int numVillCottages = game.Villagers.Count;
+                if (cottages.Count < numStCottages + numVillCottages)
                     return "Not enough night channels to move all players"; // TODO: Test
 
                 var stPairs = game.Storytellers.Select(m => Tuple.Create(cottages.First(), m)).ToList();
@@ -245,10 +246,18 @@ namespace Bot.Core
                 // Now move STs
                 await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
-                // Finally give members permission to see their cottages so they can move back if need be, or see screen shares (Spy, Widow)
+                // Give members permission to see their cottages so they can move back if need be, or see screen shares (Spy, Widow)
+                var accessPerm = IBaseChannel.Permissions.AccessChannels | IBaseChannel.Permissions.UseVoice;
                 List<Task> permissionTasks = new();
                 foreach (var (cottage, user) in villagerPairs)
-                    permissionTasks.Add(cottage.RestrictOverwriteToMembersAsync(game.Villagers, IBaseChannel.Permissions.AccessChannels, user));
+                    permissionTasks.Add(cottage.RestrictOverwriteToMembersAsync(game.AllPlayers, accessPerm, user));
+
+                // And remove blanket access permission from all other cottages
+                foreach (var cottage in cottages.Take(numStCottages))
+                    permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers, accessPerm));
+                foreach (var cottage in cottages.Skip(numStCottages + numVillCottages))
+                    permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers, accessPerm));
+
                 await Task.WhenAll(permissionTasks);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);

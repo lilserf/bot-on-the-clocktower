@@ -104,15 +104,15 @@ namespace Bot.DSharp
 			return new DSharpMessage(messageRet);
 		}
 
-		public Task RestrictOverwriteToMembersAsync(IReadOnlyCollection<IMember> memberPool, IBaseChannel.Permissions permission, params IMember[] allowedMembers)
+		public Task RestrictOverwriteToMembersAsync(IReadOnlyCollection<IMember> memberPool, IBaseChannel.Permissions permission, IEnumerable<IMember> allowedMembers)
 		{
-			var dSharpPerm = DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(permission);
-
 			var membersNeedGranting = allowedMembers.ToDictionary(m => m.Id, m => m);
+
+			var dSharpPerm = DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(permission);
 			var overwritesToRemove = new HashSet<DiscordOverwrite>();
 			var allIds = memberPool.Select(m => m.Id).ToHashSet();
 
-			var relevantOverwrites = Wrapped.PermissionOverwrites.Where(o => o.Type == OverwriteType.Member && o.Allowed.HasFlag(dSharpPerm));
+			var relevantOverwrites = Wrapped.PermissionOverwrites.Where(o => o.Type == OverwriteType.Member);
 
 			foreach (var o in relevantOverwrites)
 			{
