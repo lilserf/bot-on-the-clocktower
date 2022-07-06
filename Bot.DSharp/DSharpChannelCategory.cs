@@ -50,14 +50,6 @@ namespace Bot.DSharp
 			return null;
         }
 
-        public async Task RemoveOverwriteAsync(IMember m)
-		{
-			if (m is DSharpMember member)
-			{
-				await Wrapped.DeleteOverwriteAsync(member.Wrapped);
-			}
-		}
-
 		public async Task RemoveOverwriteAsync(IRole r)
 		{
 			if (r is DSharpRole role)

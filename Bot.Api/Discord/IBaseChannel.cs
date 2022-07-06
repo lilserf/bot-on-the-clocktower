@@ -19,7 +19,6 @@ namespace Bot.Api
 
 		public Task AddOverwriteAsync(IMember member, Permissions allow, Permissions deny = Permissions.None);
 		public Task AddOverwriteAsync(IRole role, Permissions allow, Permissions deny = Permissions.None);
-		public Task RemoveOverwriteAsync(IMember member);
 		public Task RemoveOverwriteAsync(IRole role);
 	}
 }

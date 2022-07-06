@@ -21,6 +21,7 @@ namespace Bot.Api
 		Task<IMessage> SendMessageAsync(IEmbed embed);
 		Task<IMessage> SendMessageAsync(IMessageBuilder builder);
 		Task RestrictOverwriteToMembersAsync(IReadOnlyCollection<IMember> memberPool, Permissions permission, IEnumerable<IMember> allowedMembers);
+		Task RemoveOverwriteFromMembersAsync(IReadOnlyCollection<IMember> memberPool);
 
 		Task DeleteAsync(string? reason = null);
     }
@@ -30,11 +31,6 @@ namespace Bot.Api
 		public static Task RestrictOverwriteToMembersAsync(this IChannel @this, IReadOnlyCollection<IMember> memberPool, IBaseChannel.Permissions permission, IMember allowedMember)
         {
 			return @this.RestrictOverwriteToMembersAsync(memberPool, permission, new[] { allowedMember });
-		}
-
-		public static Task RemoveOverwriteFromMembersAsync(this IChannel @this, IReadOnlyCollection<IMember> memberPool, IBaseChannel.Permissions permission)
-		{
-			return @this.RestrictOverwriteToMembersAsync(memberPool, permission, Enumerable.Empty<IMember>());
 		}
 	}
 }

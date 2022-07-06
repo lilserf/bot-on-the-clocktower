@@ -56,20 +56,6 @@ namespace Bot.DSharp
 			await Wrapped.DeleteAsync(reason);
         }
 
-        public async Task RemoveOverwriteAsync(IMember m)
-        {
-			if (m is DSharpMember member)
-            {
-				try
-				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.DeleteOverwriteAsync(member.Wrapped));
-				}
-				catch (Bot.Api.UnauthorizedException)
-				{ }
-
-			}
-		}
-
 		public async Task RemoveOverwriteAsync(IRole m)
 		{
 			if (m is DSharpRole role)
@@ -127,6 +113,25 @@ namespace Bot.DSharp
 				tasks.Add(DeletePermissionOverwriteAsync(o));
 			foreach (var m in membersNeedGranting.Values)
 				tasks.Add(AddOverwriteAsync(m, permission));
+			return Task.WhenAll(tasks);
+		}
+
+		public Task RemoveOverwriteFromMembersAsync(IReadOnlyCollection<IMember> memberPool)
+		{
+			var overwritesToRemove = new HashSet<DiscordOverwrite>();
+			var allIds = memberPool.Select(m => m.Id).ToHashSet();
+
+			var relevantOverwrites = Wrapped.PermissionOverwrites.Where(o => o.Type == OverwriteType.Member);
+
+			foreach (var o in relevantOverwrites)
+			{
+				if (allIds.Contains(o.Id))
+					overwritesToRemove.Add(o);
+			}
+
+			List<Task> tasks = new();
+			foreach (var o in overwritesToRemove)
+				tasks.Add(DeletePermissionOverwriteAsync(o));
 			return Task.WhenAll(tasks);
 		}
 
