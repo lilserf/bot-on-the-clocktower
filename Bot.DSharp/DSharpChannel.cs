@@ -116,25 +116,6 @@ namespace Bot.DSharp
 			return Task.WhenAll(tasks);
 		}
 
-		public Task RemoveOverwriteFromMembersAsync(IReadOnlyCollection<IMember> memberPool)
-		{
-			var overwritesToRemove = new HashSet<DiscordOverwrite>();
-			var allIds = memberPool.Select(m => m.Id).ToHashSet();
-
-			var relevantOverwrites = Wrapped.PermissionOverwrites.Where(o => o.Type == OverwriteType.Member);
-
-			foreach (var o in relevantOverwrites)
-			{
-				if (allIds.Contains(o.Id))
-					overwritesToRemove.Add(o);
-			}
-
-			List<Task> tasks = new();
-			foreach (var o in overwritesToRemove)
-				tasks.Add(DeletePermissionOverwriteAsync(o));
-			return Task.WhenAll(tasks);
-		}
-
 		private static async Task DeletePermissionOverwriteAsync(DiscordOverwrite overwrite)
 		{
 			try
