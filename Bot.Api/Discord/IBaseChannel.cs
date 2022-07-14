@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Api
@@ -15,14 +12,13 @@ namespace Bot.Api
 			None = 0x00,
 			All = 1099511627775,
 			AccessChannels = 0x0000000000000400,
+			UseVoice = 0x0000000000100000,
 			MoveMembers = 0x0000000001000000,
 			Stream = 0x0000000000000200,
 		}
 
 		public Task AddOverwriteAsync(IMember member, Permissions allow, Permissions deny = Permissions.None);
 		public Task AddOverwriteAsync(IRole role, Permissions allow, Permissions deny = Permissions.None);
-		public Task RemoveOverwriteAsync(IMember member);
 		public Task RemoveOverwriteAsync(IRole role);
-		public Task ClearOverwrites();
 	}
 }

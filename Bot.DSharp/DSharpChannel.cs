@@ -1,10 +1,10 @@
 ﻿using Bot.Api;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Bot.Api.IBaseChannel;
 
 namespace Bot.DSharp
 {
@@ -20,51 +20,34 @@ namespace Bot.DSharp
 
 		public int Position => Wrapped.Position;
 
-		public bool IsVoice => Wrapped.Type == DSharpPlus.ChannelType.Voice;
-		public bool IsText => Wrapped.Type == DSharpPlus.ChannelType.Text;
+		public bool IsVoice => Wrapped.Type == ChannelType.Voice;
+		public bool IsText => Wrapped.Type == ChannelType.Text;
 
 		public string Name => Wrapped.Name;
 
-		public Task ClearOverwrites()
-        {
-			var deletes = Wrapped.PermissionOverwrites.Select(DeletePermissionOverwriteAsync);
-			return Task.WhenAll(deletes);
-        }
-
-        private async Task DeletePermissionOverwriteAsync(DiscordOverwrite overwrite)
-		{
-			try
-			{
-				await ExceptionWrap.WrapExceptionsAsync(() => overwrite.DeleteAsync());
-			}
-			catch (Bot.Api.UnauthorizedException)
-			{ }
-        }
-
-        public async Task AddOverwriteAsync(IMember m, Permissions allow, Permissions deny = Permissions.None)
+        public async Task AddOverwriteAsync(IMember m, IBaseChannel.Permissions allow, IBaseChannel.Permissions deny = IBaseChannel.Permissions.None)
         {
 			if (m is DSharpMember member)
 			{
 				try
 				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(member.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny));
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(member.Wrapped, DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(allow), DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(deny)));
 				}
 				catch (Bot.Api.UnauthorizedException)
 				{ }
 			}
         }
 
-		public async Task AddOverwriteAsync(IRole r, IChannel.Permissions allow, Permissions deny = Permissions.None)
+		public async Task AddOverwriteAsync(IRole r, IBaseChannel.Permissions allow, IBaseChannel.Permissions deny = IBaseChannel.Permissions.None)
 		{
 			if (r is DSharpRole role)
 			{
 				try
 				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(role.Wrapped, (DSharpPlus.Permissions)allow, (DSharpPlus.Permissions)deny));
+					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.AddOverwriteAsync(role.Wrapped, DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(allow), DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(deny)));
 				}
 				catch (Bot.Api.UnauthorizedException)
 				{ }
-
 			}
 		}
 
@@ -72,20 +55,6 @@ namespace Bot.DSharp
         {
 			await Wrapped.DeleteAsync(reason);
         }
-
-        public async Task RemoveOverwriteAsync(IMember m)
-        {
-			if (m is DSharpMember member)
-            {
-				try
-				{
-					await ExceptionWrap.WrapExceptionsAsync(() => Wrapped.DeleteOverwriteAsync(member.Wrapped));
-				}
-				catch (Bot.Api.UnauthorizedException)
-				{ }
-
-			}
-		}
 
 		public async Task RemoveOverwriteAsync(IRole m)
 		{
@@ -119,6 +88,42 @@ namespace Bot.DSharp
 			if(b is not DSharpMessageBuilder builder) throw new InvalidOperationException("Expected a MessageBuilder that works with DSharp");
 			var messageRet = await Wrapped.SendMessageAsync(builder.Wrapped);
 			return new DSharpMessage(messageRet);
-        }
-    }
+		}
+
+		public Task RestrictOverwriteToMembersAsync(IReadOnlyCollection<IMember> memberPool, IBaseChannel.Permissions permission, IEnumerable<IMember> allowedMembers)
+		{
+			var membersNeedGranting = allowedMembers.ToDictionary(m => m.Id, m => m);
+
+			var dSharpPerm = DSharpPermissionHelper.DSharpPermissionsFromBasePermissions(permission);
+			var overwritesToRemove = new HashSet<DiscordOverwrite>();
+			var allIds = memberPool.Select(m => m.Id).ToHashSet();
+
+			var relevantOverwrites = Wrapped.PermissionOverwrites.Where(o => o.Type == OverwriteType.Member);
+
+			foreach (var o in relevantOverwrites)
+			{
+				if (membersNeedGranting.ContainsKey(o.Id))
+					membersNeedGranting.Remove(o.Id);
+				else if (allIds.Contains(o.Id))
+					overwritesToRemove.Add(o);
+			}
+
+			List<Task> tasks = new();
+			foreach (var o in overwritesToRemove)
+				tasks.Add(DeletePermissionOverwriteAsync(o));
+			foreach (var m in membersNeedGranting.Values)
+				tasks.Add(AddOverwriteAsync(m, permission));
+			return Task.WhenAll(tasks);
+		}
+
+		private static async Task DeletePermissionOverwriteAsync(DiscordOverwrite overwrite)
+		{
+			try
+			{
+				await ExceptionWrap.WrapExceptionsAsync(() => overwrite.DeleteAsync());
+			}
+			catch (Bot.Api.UnauthorizedException)
+			{ }
+		}
+	}
 }

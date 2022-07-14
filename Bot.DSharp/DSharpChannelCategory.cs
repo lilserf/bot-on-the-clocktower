@@ -19,22 +19,6 @@ namespace Bot.DSharp
 
 		public string Name => Wrapped.Name;
 
-		public Task ClearOverwrites()
-		{
-			var deletes = Wrapped.PermissionOverwrites.Select(DeletePermissionOverwriteAsync);
-			return Task.WhenAll(deletes);
-		}
-
-		private async Task DeletePermissionOverwriteAsync(DiscordOverwrite overwrite)
-		{
-			try
-			{
-				await ExceptionWrap.WrapExceptionsAsync(() => overwrite.DeleteAsync());
-			}
-			catch (Bot.Api.UnauthorizedException)
-			{ }
-		}
-
 		public async Task AddOverwriteAsync(IMember m, Permissions allow, Permissions deny = Permissions.None)
 		{
 			if (m is DSharpMember member)
@@ -65,14 +49,6 @@ namespace Bot.DSharp
             }
 			return null;
         }
-
-        public async Task RemoveOverwriteAsync(IMember m)
-		{
-			if (m is DSharpMember member)
-			{
-				await Wrapped.DeleteOverwriteAsync(member.Wrapped);
-			}
-		}
 
 		public async Task RemoveOverwriteAsync(IRole r)
 		{

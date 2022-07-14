@@ -231,7 +231,8 @@ namespace Bot.Core
                 // First, put storytellers into the top cottages
                 var cottages = town.NightCategory.Channels.OrderBy(c => c.Position).ToList();
                 int numStCottages = game.Storytellers.Count > 0 ? 1 : 0;
-                if (cottages.Count < numStCottages + game.Villagers.Count)
+                int numVillCottages = game.Villagers.Count;
+                if (cottages.Count < numStCottages + numVillCottages)
                     return "Not enough night channels to move all players"; // TODO: Test
 
                 var stPairs = game.Storytellers.Select(m => Tuple.Create(cottages.First(), m)).ToList();
@@ -245,13 +246,18 @@ namespace Bot.Core
                 // Now move STs
                 await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
-                // Finally give members permission to see their cottages so they can move back if need be, or see 
+                // Give members permission to see their cottages so they can move back if need be, or see screen shares (Spy, Widow)
+                List<Task> permissionTasks = new();
                 foreach (var (cottage, user) in villagerPairs)
-                {
-                    // Removed because it makes the channels entirely public, oops
-                    //await cottage.ClearOverwrites();
-                    await cottage.AddOverwriteAsync(user, IBaseChannel.Permissions.AccessChannels);
-                }
+                    permissionTasks.Add(cottage.RestrictOverwriteToMembersAsync(game.AllPlayers, IBaseChannel.Permissions.AccessChannels | IBaseChannel.Permissions.UseVoice, user));
+
+                // And remove blanket access permission from all other cottages
+                foreach (var cottage in cottages.Take(numStCottages))
+                    permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers));
+                foreach (var cottage in cottages.Skip(numStCottages + numVillCottages))
+                    permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers));
+
+                await Task.WhenAll(permissionTasks);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
@@ -294,18 +300,14 @@ namespace Bot.Core
             var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
             if (town == null)
                 return "Failed to find a valid town!";
-            // Doesn't currently work :(
-            if (town.NightCategory != null)
-            {
-                foreach (var cottage in town.NightCategory.Channels)
-                {
-                    foreach (var user in cottage.Users)
-                    {
-                        await cottage.RemoveOverwriteAsync(user);
-                    }
-                }
-            }
             await MoveActivePlayersToTownSquare(game, town, processLog);
+
+            // Remove member-specific cottage view permissions that may have been added in the Night phase
+            var permissionTasks = new List<Task>();
+            if (town.NightCategory != null)
+                foreach (var cottage in town.NightCategory.Channels)
+                    permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers));
+            await Task.WhenAll(permissionTasks);
 
             await m_gameMetricsDatabase.RecordDayAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("day", m_dateTime.Now);
