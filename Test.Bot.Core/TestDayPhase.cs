@@ -21,5 +21,10 @@ namespace Test.Bot.Core
 			t.Wait(50);
 			Assert.True(t.IsCompleted);
 		}
+
+		[Fact(Skip="Not yet implemented")]
+		public void Day_OutputsVerboseLogging()
+		{
+		}
 	}
 }

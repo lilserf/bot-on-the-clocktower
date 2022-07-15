@@ -135,5 +135,14 @@ namespace Test.Bot.Core
 
             InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Never);
         }
+
+        [Fact]
+        public void Night_OutputsVerboseLogging()
+        {
+            var gs = CreateGameplayInteractionHandler();
+            AssertCompletedTask(() => gs.PhaseNightInternal(MockTownKey, InteractionAuthorMock.Object));
+
+            m_processLoggerMock.Verify(pl => pl.LogVerbose(It.IsAny<string>()), Times.AtLeastOnce);
+        }
     }
 }

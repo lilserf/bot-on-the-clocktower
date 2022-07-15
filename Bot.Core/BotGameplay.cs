@@ -112,6 +112,7 @@ namespace Bot.Core
             IRole? storytellerRole = town.StorytellerRole;
             IRole? villagerRole = town.VillagerRole;
 
+            logger.LogVerbose($"Granting roles for storytellers for town: {game.TownKey}");
             foreach(var u in game.Storytellers)
             {
                 if (storytellerRole != null && !u.Roles.Contains(storytellerRole))
@@ -120,6 +121,7 @@ namespace Bot.Core
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
             }
 
+            logger.LogVerbose($"Granting roles for villagers for town: {game.TownKey}");
             foreach (var u in game.Villagers)
             {
                 if (storytellerRole != null && u.Roles.Contains(storytellerRole))
@@ -137,7 +139,8 @@ namespace Bot.Core
                 return null;
             if (!CheckIsTownViable(town, logger))
                 return null;
-            
+
+            logger.LogVerbose($"Reporting town activity for town: {townKey}");
             var activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
             var gameTask = CreateGameFromDiscordState(townKey, requester, logger);
 
@@ -148,6 +151,7 @@ namespace Bot.Core
         // Create a new IGame with state matching what's going on in Discord
         public async Task<IGame?> CreateGameFromDiscordState(TownKey townKey, IMember? commandAuthor, IProcessLogger logger)
         {
+            logger.LogVerbose($"Setting up game for town: {townKey}");
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
                 return null;
@@ -243,10 +247,12 @@ namespace Bot.Core
                 // Put all the villagers into cottages first so the STs are the last to be auto-moved
                 var villagerPairs = cottages.Skip(numStCottages).Zip(game.Villagers.OrderBy(u => MemberHelper.DisplayName(u)), (c, u) => Tuple.Create(c, u)).ToList();
 
+                processLog.LogVerbose($"Moving villagers to cottages for town: {game.TownKey}");
                 foreach (var (cottage, user) in m_shuffle.Shuffle(villagerPairs))
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
 
                 // Now move STs
+                processLog.LogVerbose($"Moving storytellers to cottages for town: {game.TownKey}");
                 await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
                 // Give members permission to see their cottages so they can move back if need be, or see screen shares (Spy, Widow)
@@ -260,10 +266,13 @@ namespace Bot.Core
                 foreach (var cottage in cottages.Skip(numStCottages + numVillCottages))
                     permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers));
 
+                processLog.LogVerbose($"Setting permissions for all players for town: {game.TownKey}");
                 await Task.WhenAll(permissionTasks);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
+
+                processLog.LogVerbose($"Night phase complete for town: {game.TownKey}");
 
                 return $"Moved all players from {town.TownSquare?.Name ?? "Town Square"} to nighttime!";
             }

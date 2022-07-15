@@ -302,5 +302,10 @@ namespace Test.Bot.Core
             Assert.Null(result);
         }
 
+
+        [Fact(Skip = "Not yet implemented")]
+        public void CurrenGame_OutputsVerboseLogging()
+        {
+        }
     }
 }

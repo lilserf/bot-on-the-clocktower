@@ -133,6 +133,12 @@ namespace Test.Bot.Core
             Assert.True(t.IsCompleted);
         }
 
+
+        [Fact(Skip = "Not yet implemented")]
+        public void PerformVote_OutputsVerboseLogging()
+        {
+        }
+
         private void RunVoteTimerVerifyCompleted()
         {
             RunVoteTimerVerifyCompleted("");
