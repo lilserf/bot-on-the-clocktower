@@ -11,6 +11,8 @@ namespace Bot.Api
 
         void LogVerbose(string msg);
 
+        void EnableVerboseLogging();
+
         IReadOnlyCollection<string> Messages { get; }
     }
 }

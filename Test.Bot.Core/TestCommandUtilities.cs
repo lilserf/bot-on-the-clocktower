@@ -36,7 +36,7 @@ namespace Test.Bot.Core
             m_processLoggerMock.SetupGet(pl => pl.Messages).Returns(m_processLoggerMessages);
 
             m_taskMock = RegisterMock(new Mock<ITask>(MockBehavior.Strict));
-            m_taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(Task.Delay(TimeSpan.FromMilliseconds(1)));
+            m_taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(new TaskCompletionSource().Task);
         }
 
         [Fact]
@@ -114,8 +114,8 @@ namespace Test.Bot.Core
         }
 
 
-        [Fact(Skip="Not yet implemented")]
-        public void InteractionWrapper_ProcessTakesTooLong_StartsLogging()
+        [Fact]
+        public async Task InteractionWrapper_ProcessTakesTooLong_StartsLogging()
         {
             Mock<IMember> mockAuthor = new();
 
@@ -123,13 +123,21 @@ namespace Test.Bot.Core
 
             var tcs = new TaskCompletionSource<InteractionResult>();
 
+            var verboseIr = InteractionResult.FromMessage("verbose logging enabled");
+            m_processLoggerMock.Setup(pl => pl.EnableVerboseLogging()).Callback(() =>
+            {
+                tcs.SetResult(verboseIr);
+            });
+
+            m_taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
             mockFunc.Setup(f => f.Invoke(It.IsAny<IProcessLogger>())).Returns(tcs.Task);
 
             TestInteractionErrorHandler ih = new(GetServiceProvider());
-            AssertCompletedTask(() => ih.TryProcessReportingErrorsAsync(123, mockAuthor.Object, mockFunc.Object));
+            var ir = await ih.TryProcessReportingErrorsAsync(123, mockAuthor.Object, mockFunc.Object);
 
-            // TODO: TCS should take a while (may not be able to use AssertCompletedTask), and verify that PL had a "LogVerboseMessages" method called (or something)
-
+            Assert.Equal(verboseIr, ir);
+            m_processLoggerMock.Verify(pl => pl.EnableVerboseLogging(), Times.Once);
             mockAuthor.Verify(a => a.SendMessageAsync(It.IsAny<string>()), Times.Never);
         }
     }

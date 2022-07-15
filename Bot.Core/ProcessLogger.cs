@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Serilog;
 using System;
 using System.Collections.Generic;
 
@@ -6,6 +7,17 @@ namespace Bot.Core
 {
     public class ProcessLogger : IProcessLogger
     {
+        private readonly ILogger m_logger;
+
+        private bool m_verboseEnabled = false;
+
+        private readonly List<string> m_storedVerboseMessages = new();
+
+        public ProcessLogger(ILogger logger)
+        {
+            m_logger = logger;
+        }
+
         private readonly List<string> m_messages = new();
 
         public void LogException(Exception ex, string goal)
@@ -36,20 +48,36 @@ namespace Bot.Core
                 message = $"Couldn't {goal} - something was not found!";
             }
             m_messages.Add(message);
-            Serilog.Log.Debug("ProcessLogger caught exception {ex} while {goal}", ex, goal);
+            m_logger.Debug("ProcessLogger caught exception {ex} while {goal}", ex, goal);
         }
 
 		public void LogMessage(string msg)
 		{
             m_messages.Add(msg);
-            Serilog.Log.Debug("ProcessLogger message: {msg}", msg);
+            m_logger.Debug("ProcessLogger message: {msg}", msg);
 		}
 
         public void LogVerbose(string msg)
         {
-            throw new NotImplementedException();
+            if (m_verboseEnabled)
+                SendVerboseMessage(msg);
+            else
+                m_storedVerboseMessages.Add(msg);
+        }
+
+        public void EnableVerboseLogging()
+        {
+            m_verboseEnabled = true;
+            foreach(var msg in m_storedVerboseMessages)
+                SendVerboseMessage(msg);
+            m_storedVerboseMessages.Clear();
         }
 
         public IReadOnlyCollection<string> Messages => m_messages;
+
+        private void SendVerboseMessage(string msg)
+        {
+            m_logger.Debug("ProcessLogger verbose message: {msg}", msg);
+        }
 	}
 }

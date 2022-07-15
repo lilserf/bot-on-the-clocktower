@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using Bot.Core.Interaction;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace Bot.Core
         private readonly IGameMetricDatabase m_gameMetricsDatabase;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
+        private readonly ILogger m_logger;
 
         public const string NoGameInProgressMessage = "Could not start a game. This might mean there was a permission issue, or it could mean nobody is currently in the Town channels. Are you ready to play?";
 
@@ -28,6 +30,7 @@ namespace Bot.Core
             services.Inject(out m_gameMetricsDatabase);
             services.Inject(out m_commandMetricsDatabase);
             services.Inject(out m_dateTime);
+            services.Inject(out m_logger);
 
             m_townCleanup.CleanupRequested += TownCleanup_CleanupRequested;
         }
@@ -84,7 +87,7 @@ namespace Bot.Core
 
         private void TownCleanup_CleanupRequested(object? sender, TownCleanupRequestedArgs e)
         {
-            var logger = new ProcessLogger();
+            var logger = new ProcessLogger(m_logger);
             EndGameUnsafeAsync(e.TownKey, logger).ConfigureAwait(continueOnCapturedContext: true);
         }
 
@@ -331,7 +334,7 @@ namespace Bot.Core
 
         public async Task PerformVoteAsync(TownKey townKey)
         {
-            var logger = new ProcessLogger();
+            var logger = new ProcessLogger(m_logger);
 
             var game = await CreateGameFromDiscordState(townKey, null, logger);
             

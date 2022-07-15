@@ -10,14 +10,14 @@ namespace Test.Bot.Base
         {
             var t = runTask();
             t.Wait(50);
-            Assert.True(t.IsCompleted);
+            Assert.True(t.IsCompleted, "Task did not complete in time allotted");
         }
 
         public static T AssertCompletedTask<T>(Func<Task<T>> runTask)
         {
             var t = runTask();
             t.Wait(50);
-            Assert.True(t.IsCompleted);
+            Assert.True(t.IsCompleted, "Task did not complete in time allotted");
             return t.Result;
         }
     }

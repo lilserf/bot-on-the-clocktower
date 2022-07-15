@@ -1,4 +1,5 @@
 ﻿using Bot.Api;
+using Serilog;
 
 namespace Bot.Core
 {
@@ -9,6 +10,13 @@ namespace Bot.Core
 
     public class ProcessLoggerFactory : IProcessLoggerFactory
     {
-        public IProcessLogger Create() => new ProcessLogger();
+        private readonly ILogger m_logger;
+
+        public ProcessLoggerFactory(ILogger logger)
+        {
+            m_logger = logger;
+        }
+
+        public IProcessLogger Create() => new ProcessLogger(m_logger);
     }
 }
