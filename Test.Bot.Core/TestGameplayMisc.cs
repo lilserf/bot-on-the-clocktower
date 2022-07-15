@@ -13,7 +13,7 @@ namespace Test.Bot.Core
     {
         public TestGameplayMisc()
         {
-            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler(GetServiceProvider()));
         }
 
         [Fact]

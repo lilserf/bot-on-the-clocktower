@@ -5,10 +5,12 @@ namespace Bot.Api
 {
     public interface IProcessLogger
     {
-        public void LogException(Exception ex, string goal);
+        void LogException(Exception ex, string goal);
 
-        public void LogMessage(string msg);
+        void LogMessage(string msg);
 
-        public IReadOnlyCollection<string> Messages { get; }
+        void LogVerbose(string msg);
+
+        IReadOnlyCollection<string> Messages { get; }
     }
 }

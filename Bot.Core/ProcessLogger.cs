@@ -45,6 +45,11 @@ namespace Bot.Core
             Serilog.Log.Debug("ProcessLogger message: {msg}", msg);
 		}
 
+        public void LogVerbose(string msg)
+        {
+            throw new NotImplementedException();
+        }
+
         public IReadOnlyCollection<string> Messages => m_messages;
 	}
 }

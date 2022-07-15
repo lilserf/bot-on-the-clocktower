@@ -70,8 +70,17 @@ namespace Test.Bot.Core
         protected readonly Mock<IGameMetricDatabase> GameMetricDatabaseMock = new();
         protected readonly Mock<ICommandMetricDatabase> CommandMetricDatabaseMock = new();
 
+        protected readonly Mock<IProcessLogger> m_processLoggerMock;
+        protected readonly Mock<IProcessLoggerFactory> m_processLoggerFactoryMock;
+        protected readonly List<string> m_processLoggerMessages = new();
+
         public GameTestBase()
         {
+            m_processLoggerMock = new(MockBehavior.Strict);
+            m_processLoggerFactoryMock = RegisterMock(new Mock<IProcessLoggerFactory>(MockBehavior.Strict));
+            m_processLoggerFactoryMock.Setup(plf => plf.Create()).Returns(m_processLoggerMock.Object);
+            m_processLoggerMock.SetupGet(pl => pl.Messages).Returns(m_processLoggerMessages);
+
             RegisterMock(CallbackSchedulerFactoryMock);
             CallbackSchedulerFactoryMock
                 .Setup(csf => csf.CreateScheduler(It.IsAny<Func<TownKey, Task>>(), It.IsAny<TimeSpan>())).Returns(TownKeyCallbackSchedulerMock.Object)

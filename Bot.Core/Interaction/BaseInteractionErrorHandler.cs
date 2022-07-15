@@ -6,11 +6,18 @@ namespace Bot.Core.Interaction
 {
     public abstract class BaseInteractionErrorHandler<TKey> where TKey : notnull
     {
+        private readonly IProcessLoggerFactory m_processLoggerFactory;
+
+        public BaseInteractionErrorHandler(IServiceProvider serviceProvider)
+        {
+            serviceProvider.Inject(out m_processLoggerFactory);
+        }
+
         protected abstract string GetFriendlyStringForKey(TKey key);
 
         public async Task<InteractionResult> TryProcessReportingErrorsAsync(TKey key, IMember requester, Func<IProcessLogger, Task<InteractionResult>> process)
         {
-            var logger = new ProcessLogger();
+            var logger = m_processLoggerFactory.Create();
             InteractionResult result = "An error occurred processing this command - please check your private messages for a detailed report.";
             try
             {

@@ -11,7 +11,7 @@ namespace Test.Bot.Core
     {
         public TestNightPhase()
         {
-            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler(GetServiceProvider()));
         }
 
         [Theory]
