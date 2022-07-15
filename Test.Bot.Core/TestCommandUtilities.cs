@@ -4,6 +4,7 @@ using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -25,12 +26,17 @@ namespace Test.Bot.Core
         private readonly Mock<IProcessLoggerFactory> m_processLoggerFactoryMock;
         private readonly List<string> m_processLoggerMessages = new();
 
+        private readonly Mock<ITask> m_taskMock;
+
         public TestCommandUtilities()
         {
             m_processLoggerMock = new(MockBehavior.Strict);
             m_processLoggerFactoryMock = RegisterMock(new Mock<IProcessLoggerFactory>(MockBehavior.Strict));
             m_processLoggerFactoryMock.Setup(plf => plf.Create()).Returns(m_processLoggerMock.Object);
             m_processLoggerMock.SetupGet(pl => pl.Messages).Returns(m_processLoggerMessages);
+
+            m_taskMock = RegisterMock(new Mock<ITask>(MockBehavior.Strict));
+            m_taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(Task.Delay(TimeSpan.FromMilliseconds(1)));
         }
 
         [Fact]
