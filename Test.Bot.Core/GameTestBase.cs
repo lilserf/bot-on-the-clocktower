@@ -76,13 +76,13 @@ namespace Test.Bot.Core
 
         public GameTestBase()
         {
+            m_processLoggerMock = new(MockBehavior.Strict);
             m_processLoggerMock.Setup(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
             m_processLoggerMock.Setup(pl => pl.LogMessage(It.IsAny<string>()));
             m_processLoggerMock.Setup(pl => pl.LogVerbose(It.IsAny<string>()));
             m_processLoggerMock.Setup(pl => pl.EnableVerboseLogging());
             m_processLoggerMock.SetupGet(pl => pl.Messages).Returns(m_processLoggerMessages);
 
-            m_processLoggerMock = new(MockBehavior.Strict);
             m_processLoggerFactoryMock = RegisterMock(new Mock<IProcessLoggerFactory>(MockBehavior.Strict));
             m_processLoggerFactoryMock.Setup(plf => plf.Create()).Returns(m_processLoggerMock.Object);
 
