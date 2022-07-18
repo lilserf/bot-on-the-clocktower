@@ -7,13 +7,14 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
 
 namespace Test.Bot.Core
 {
-    public class GameTestBase : TestBase
+    public class GameTestBase : TestBase, IDisposable
     {
         protected const ulong MockGuildId = 1337;
         protected const ulong MockControlChannelId = 42;
@@ -28,6 +29,7 @@ namespace Test.Bot.Core
         protected readonly Mock<ICallbackScheduler<bool>> BoolCallbackSchedulerMock = new(MockBehavior.Strict);
         protected readonly Mock<ICallbackScheduler> NoKeyCallbackSchedulerMock = new(MockBehavior.Strict);
 
+        protected readonly Mock<ITask> TaskMock = new(MockBehavior.Strict);
         protected readonly Mock<IBotSystem> BotSystemMock = new();
         protected readonly Mock<IShutdownPreventionService> ShutdownPreventionMock = new();
         protected readonly Mock<IBotWebhookBuilder> WebhookBuilderMock = new();
@@ -64,27 +66,28 @@ namespace Test.Bot.Core
         protected readonly Mock<IMember> Villager3Mock = new();
 
         protected readonly Mock<IBotInteractionContext> InteractionContextMock = new();
-        protected readonly Mock<IProcessLogger> ProcessLoggerMock = new();
+        protected readonly Mock<IProcessLogger> ProcessLoggerMock = new(MockBehavior.Strict);
         protected readonly Mock<IComponentService> ComponentServiceMock = new();
         protected readonly Mock<IShuffleService> ShuffleServiceMock = new();
         protected readonly Mock<IGameMetricDatabase> GameMetricDatabaseMock = new();
         protected readonly Mock<ICommandMetricDatabase> CommandMetricDatabaseMock = new();
 
-        protected readonly Mock<IProcessLogger> m_processLoggerMock;
-        protected readonly Mock<IProcessLoggerFactory> m_processLoggerFactoryMock;
-        protected readonly List<string> m_processLoggerMessages = new();
+        protected readonly Mock<IProcessLoggerFactory> ProcessLoggerFactoryMock;
+        protected readonly List<string> ProcessLoggerMessages = new();
 
         public GameTestBase()
         {
-            m_processLoggerMock = new(MockBehavior.Strict);
-            m_processLoggerMock.Setup(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
-            m_processLoggerMock.Setup(pl => pl.LogMessage(It.IsAny<string>()));
-            m_processLoggerMock.Setup(pl => pl.LogVerbose(It.IsAny<string>()));
-            m_processLoggerMock.Setup(pl => pl.EnableVerboseLogging());
-            m_processLoggerMock.SetupGet(pl => pl.Messages).Returns(m_processLoggerMessages);
+            TaskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(Task.Delay(1));
+            RegisterMock(TaskMock);
 
-            m_processLoggerFactoryMock = RegisterMock(new Mock<IProcessLoggerFactory>(MockBehavior.Strict));
-            m_processLoggerFactoryMock.Setup(plf => plf.Create()).Returns(m_processLoggerMock.Object);
+            ProcessLoggerMock.Setup(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()));
+            ProcessLoggerMock.Setup(pl => pl.LogMessage(It.IsAny<string>()));
+            ProcessLoggerMock.Setup(pl => pl.LogVerbose(It.IsAny<string>()));
+            ProcessLoggerMock.Setup(pl => pl.EnableVerboseLogging());
+            ProcessLoggerMock.SetupGet(pl => pl.Messages).Returns(ProcessLoggerMessages);
+
+            ProcessLoggerFactoryMock = RegisterMock(new Mock<IProcessLoggerFactory>(MockBehavior.Strict));
+            ProcessLoggerFactoryMock.Setup(plf => plf.Create()).Returns(ProcessLoggerMock.Object);
 
             RegisterMock(CallbackSchedulerFactoryMock);
             CallbackSchedulerFactoryMock
@@ -210,6 +213,12 @@ namespace Test.Bot.Core
             SetupUserMock(Villager3Mock, "Carl");
         }
 
+        public void Dispose()
+        {
+            // We want to fail a test if it fails because of mock problems, but currently we catch those exceptions and do nothing about them. Fail tests here.
+            InteractionAuthorMock.Verify(a => a.SendMessageAsync(It.Is<string>(s => s.Contains("invocation failed with mock behavior Strict", StringComparison.InvariantCultureIgnoreCase))), Times.Never);            
+        }
+
         protected static void SetupChannelMock(Mock<IChannel> channel, string name, bool isVoice=true)
         {
             channel.Name = name;
@@ -250,6 +259,7 @@ namespace Test.Bot.Core
 
         protected BotGameplayInteractionHandler CreateGameplayInteractionHandler()
         {
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler(GetServiceProvider())); // NOTE: This catches exceptions. This is checked in Dispose(). Could be changed to a mock that does not catch exceptions
             RegisterService<ITownInteractionQueue>(new TownInteractionQueue(GetServiceProvider()));
             return new(GetServiceProvider(), new BotGameplay(GetServiceProvider()), new BotVoteTimer(GetServiceProvider()));
         }
