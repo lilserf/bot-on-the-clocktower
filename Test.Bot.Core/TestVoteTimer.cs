@@ -128,15 +128,7 @@ namespace Test.Bot.Core
         {
             var bc = new BotGameplay(GetServiceProvider());
 
-            var t = bc.PerformVoteAsync(MockTownKey);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
-        }
-
-
-        [Fact(Skip = "Not yet implemented")]
-        public void PerformVote_OutputsVerboseLogging()
-        {
+            AssertCompletedTask(() => bc.PerformVoteAsync(MockTownKey));
         }
 
         private void RunVoteTimerVerifyCompleted()

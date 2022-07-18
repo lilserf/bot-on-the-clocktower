@@ -312,9 +312,12 @@ namespace Bot.Core
             var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
             if (town == null)
                 return "Failed to find a valid town!";
+
+            processLog.LogVerbose($"Moving players to Town Square for town: {game.TownKey}");
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
             // Remove member-specific cottage view permissions that may have been added in the Night phase
+            processLog.LogVerbose($"Removing cottage permission overwrites for town: {game.TownKey}");
             var permissionTasks = new List<Task>();
             if (town.NightCategory != null)
                 foreach (var cottage in town.NightCategory.Channels)
@@ -324,6 +327,7 @@ namespace Bot.Core
             await m_gameMetricsDatabase.RecordDayAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("day", m_dateTime.Now);
 
+            processLog.LogVerbose($"Day phase complete for town: {game.TownKey}");
             return "Moved all players from Cottages back to Town Square!";
         }
 
@@ -333,11 +337,13 @@ namespace Bot.Core
             if (town == null)
                 return "Failed to find a valid town!";
 
+            processLog.LogVerbose($"Moving players to Town Square for town: {game.TownKey}");
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
             await m_gameMetricsDatabase.RecordVoteAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("vote", m_dateTime.Now);
 
+            processLog.LogVerbose($"Vote phase complete for town: {game.TownKey}");
             return "Moved all players to Town Square for voting!";
         }
 

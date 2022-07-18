@@ -1,4 +1,7 @@
-﻿using Xunit;
+﻿using Moq;
+using System;
+using Test.Bot.Core.Interaction;
+using Xunit;
 
 namespace Test.Bot.Core
 {
@@ -8,23 +11,38 @@ namespace Test.Bot.Core
 		public void TestDay_Completes()
 		{
 			var gs = CreateGameplayInteractionHandler();
-			var t = gs.CommandDayAsync(InteractionContextMock.Object);
-			t.Wait(50);
-			Assert.True(t.IsCompleted);
+
+			AssertCompletedTask(() => gs.CommandDayAsync(InteractionContextMock.Object));
 		}
 
 		[Fact]
 		public void TestVote_Completes()
 		{
 			var gs = CreateGameplayInteractionHandler();
-			var t = gs.CommandVoteAsync(InteractionContextMock.Object);
-			t.Wait(50);
-			Assert.True(t.IsCompleted);
+
+			AssertCompletedTask(() => gs.CommandVoteAsync(InteractionContextMock.Object));
 		}
 
-		[Fact(Skip="Not yet implemented")]
+		[Fact]
 		public void Day_OutputsVerboseLogging()
 		{
+			var gs = CreateGameplayInteractionHandler();
+
+
+			AssertCompletedTask(() => gs.CommandDayAsync(InteractionContextMock.Object));
+
+            ProcessLoggerMock.Verify(pl => pl.LogVerbose(It.Is<string>(s => s.Contains("day", StringComparison.InvariantCultureIgnoreCase))), Times.AtLeastOnce);
+		}
+
+
+		[Fact]
+		public void Vote_OutputsVerboseLogging()
+		{
+			var gs = CreateGameplayInteractionHandler();
+
+			AssertCompletedTask(() => gs.CommandVoteAsync(InteractionContextMock.Object));
+
+			ProcessLoggerMock.Verify(pl => pl.LogVerbose(It.Is<string>(s => s.Contains("vote", StringComparison.InvariantCultureIgnoreCase))), Times.AtLeastOnce);
 		}
 	}
 }
