@@ -142,7 +142,7 @@ namespace Test.Bot.Core
             var gs = CreateGameplayInteractionHandler();
             AssertCompletedTask(() => gs.PhaseNightInternal(MockTownKey, InteractionAuthorMock.Object));
 
-            m_processLoggerMock.Verify(pl => pl.LogVerbose(It.IsAny<string>()), Times.AtLeastOnce);
+            m_processLoggerMock.Verify(pl => pl.LogVerbose(It.Is<string>(s => s.Contains("night", StringComparison.InvariantCultureIgnoreCase))), Times.AtLeastOnce);
         }
     }
 }
