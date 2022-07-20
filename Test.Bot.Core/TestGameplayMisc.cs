@@ -4,6 +4,7 @@ using Bot.Core.Interaction;
 using Moq;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -13,7 +14,10 @@ namespace Test.Bot.Core
     {
         public TestGameplayMisc()
         {
-            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+            var taskMock = RegisterMock(new Mock<ITask>(MockBehavior.Strict));
+            taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(new TaskCompletionSource().Task);
+
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler(GetServiceProvider()));
         }
 
         [Fact]

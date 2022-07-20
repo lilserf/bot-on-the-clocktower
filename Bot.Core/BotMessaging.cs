@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using Bot.Core.Interaction;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,12 +14,14 @@ namespace Bot.Core
         private readonly ITownInteractionQueue m_townCommandQueue;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
+        private readonly ILogger m_logger;
 
         public BotMessaging(IServiceProvider services)
         {
             services.Inject(out m_townCommandQueue);
             services.Inject(out m_commandMetricsDatabase);
             services.Inject(out m_dateTime);
+            services.Inject(out m_logger);
         }
 
         private const string DemonGreeting = "{0}: You are the **demon**. ";
@@ -69,7 +72,7 @@ namespace Bot.Core
 
         public async Task<string> SendEvilMessage(IMember demon, IReadOnlyCollection<IMember> minions)
         {
-            ProcessLogger logger = new();
+            ProcessLogger logger = new(m_logger);
             try
             {
                 await SendDemonMessage(new[] { demon }, minions, logger);
@@ -85,7 +88,7 @@ namespace Bot.Core
 
         public async Task<string> SendLegionMessage(IReadOnlyCollection<IMember> legions)
         {
-            ProcessLogger logger = new();
+            ProcessLogger logger = new(m_logger);
             try
             {
                 await SendDemonMessage(legions, Enumerable.Empty<IMember>().ToList(), logger);
@@ -100,7 +103,7 @@ namespace Bot.Core
 
         public async Task<string> SendLunaticMessage(IMember lunatic, IReadOnlyCollection<IMember> fakeMinions)
         {
-            ProcessLogger logger = new();
+            ProcessLogger logger = new(m_logger);
             try
             {
                 await SendDemonMessage(new[] { lunatic }, fakeMinions, logger);
@@ -115,7 +118,7 @@ namespace Bot.Core
 
         public async Task<string> SendMagicianMessage(IMember demon, IReadOnlyCollection<IMember> minions, IMember magician)
         {
-            ProcessLogger logger = new();
+            ProcessLogger logger = new(m_logger);
             try
             {
                 var fakeMinions = minions.ToList();

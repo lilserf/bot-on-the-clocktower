@@ -2,6 +2,7 @@
 using Bot.Base;
 using Bot.Core.Callbacks;
 using Bot.Core.Interaction;
+using Serilog;
 using System;
 using System.Threading;
 
@@ -19,8 +20,9 @@ namespace Bot.Core
             var shutdown = new ShutdownService(sp, applicationCancelToken);
             sp.AddService<IFinalShutdownService>(shutdown);
             sp.AddService<IShutdownPreventionService>(shutdown);
-            sp.AddService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
-            sp.AddService<IGuildInteractionErrorHandler>(new GuildInteractionErrorHandler());
+            sp.AddService<IProcessLoggerFactory>(new ProcessLoggerFactory(sp.GetService<ILogger>()));
+            sp.AddService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler(sp));
+            sp.AddService<IGuildInteractionErrorHandler>(new GuildInteractionErrorHandler(sp));
 
             sp.AddService<ICallbackSchedulerFactory>(new CallbackSchedulerFactory(sp));
             sp.AddService<IComponentService>(new ComponentService());

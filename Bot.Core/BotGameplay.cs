@@ -1,6 +1,7 @@
 ﻿using Bot.Api;
 using Bot.Api.Database;
 using Bot.Core.Interaction;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace Bot.Core
         private readonly IGameMetricDatabase m_gameMetricsDatabase;
         private readonly ICommandMetricDatabase m_commandMetricsDatabase;
         private readonly IDateTime m_dateTime;
+        private readonly ILogger m_logger;
 
         public const string NoGameInProgressMessage = "Could not start a game. This might mean there was a permission issue, or it could mean nobody is currently in the Town channels. Are you ready to play?";
 
@@ -28,6 +30,7 @@ namespace Bot.Core
             services.Inject(out m_gameMetricsDatabase);
             services.Inject(out m_commandMetricsDatabase);
             services.Inject(out m_dateTime);
+            services.Inject(out m_logger);
 
             m_townCleanup.CleanupRequested += TownCleanup_CleanupRequested;
         }
@@ -84,7 +87,7 @@ namespace Bot.Core
 
         private void TownCleanup_CleanupRequested(object? sender, TownCleanupRequestedArgs e)
         {
-            var logger = new ProcessLogger();
+            var logger = new ProcessLogger(m_logger);
             EndGameUnsafeAsync(e.TownKey, logger).ConfigureAwait(continueOnCapturedContext: true);
         }
 
@@ -109,6 +112,7 @@ namespace Bot.Core
             IRole? storytellerRole = town.StorytellerRole;
             IRole? villagerRole = town.VillagerRole;
 
+            logger.LogVerbose($"Granting roles for storytellers for town: {game.TownKey}");
             foreach(var u in game.Storytellers)
             {
                 if (storytellerRole != null && !u.Roles.Contains(storytellerRole))
@@ -117,6 +121,7 @@ namespace Bot.Core
                     await MemberHelper.GrantRoleLoggingErrorsAsync(u, villagerRole, logger);
             }
 
+            logger.LogVerbose($"Granting roles for villagers for town: {game.TownKey}");
             foreach (var u in game.Villagers)
             {
                 if (storytellerRole != null && u.Roles.Contains(storytellerRole))
@@ -134,7 +139,8 @@ namespace Bot.Core
                 return null;
             if (!CheckIsTownViable(town, logger))
                 return null;
-            
+
+            logger.LogVerbose($"Reporting town activity for town: {townKey}");
             var activityRecordTask = m_townCleanup.RecordActivityAsync(townKey);
             var gameTask = CreateGameFromDiscordState(townKey, requester, logger);
 
@@ -145,6 +151,7 @@ namespace Bot.Core
         // Create a new IGame with state matching what's going on in Discord
         public async Task<IGame?> CreateGameFromDiscordState(TownKey townKey, IMember? commandAuthor, IProcessLogger logger)
         {
+            logger.LogVerbose($"Setting up game for town: {townKey}");
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
                 return null;
@@ -240,10 +247,12 @@ namespace Bot.Core
                 // Put all the villagers into cottages first so the STs are the last to be auto-moved
                 var villagerPairs = cottages.Skip(numStCottages).Zip(game.Villagers.OrderBy(u => MemberHelper.DisplayName(u)), (c, u) => Tuple.Create(c, u)).ToList();
 
+                processLog.LogVerbose($"Moving villagers to cottages for town: {game.TownKey}");
                 foreach (var (cottage, user) in m_shuffle.Shuffle(villagerPairs))
                     await MemberHelper.MoveToChannelLoggingErrorsAsync(user, cottage, processLog);
 
                 // Now move STs
+                processLog.LogVerbose($"Moving storytellers to cottages for town: {game.TownKey}");
                 await MoveStorytellersToCottages(processLog, town, m_shuffle.Shuffle(stPairs));
 
                 // Give members permission to see their cottages so they can move back if need be, or see screen shares (Spy, Widow)
@@ -257,10 +266,13 @@ namespace Bot.Core
                 foreach (var cottage in cottages.Skip(numStCottages + numVillCottages))
                     permissionTasks.Add(cottage.RemoveOverwriteFromMembersAsync(game.AllPlayers));
 
+                processLog.LogVerbose($"Setting permissions for all players for town: {game.TownKey}");
                 await Task.WhenAll(permissionTasks);
 
                 await m_gameMetricsDatabase.RecordNightAsync(game.TownKey, m_dateTime.Now);
                 await m_commandMetricsDatabase.RecordCommand("night", m_dateTime.Now);
+
+                processLog.LogVerbose($"Night phase complete for town: {game.TownKey}");
 
                 return $"Moved all players from {town.TownSquare?.Name ?? "Town Square"} to nighttime!";
             }
@@ -300,9 +312,12 @@ namespace Bot.Core
             var town = await GetValidTownOrLogErrorAsync(game.TownKey, processLog);
             if (town == null)
                 return "Failed to find a valid town!";
+
+            processLog.LogVerbose($"Moving players to Town Square for town: {game.TownKey}");
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
             // Remove member-specific cottage view permissions that may have been added in the Night phase
+            processLog.LogVerbose($"Removing cottage permission overwrites for town: {game.TownKey}");
             var permissionTasks = new List<Task>();
             if (town.NightCategory != null)
                 foreach (var cottage in town.NightCategory.Channels)
@@ -312,6 +327,7 @@ namespace Bot.Core
             await m_gameMetricsDatabase.RecordDayAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("day", m_dateTime.Now);
 
+            processLog.LogVerbose($"Day phase complete for town: {game.TownKey}");
             return "Moved all players from Cottages back to Town Square!";
         }
 
@@ -321,17 +337,19 @@ namespace Bot.Core
             if (town == null)
                 return "Failed to find a valid town!";
 
+            processLog.LogVerbose($"Moving players to Town Square for town: {game.TownKey}");
             await MoveActivePlayersToTownSquare(game, town, processLog);
 
             await m_gameMetricsDatabase.RecordVoteAsync(game.TownKey, m_dateTime.Now);
             await m_commandMetricsDatabase.RecordCommand("vote", m_dateTime.Now);
 
+            processLog.LogVerbose($"Vote phase complete for town: {game.TownKey}");
             return "Moved all players to Town Square for voting!";
         }
 
         public async Task PerformVoteAsync(TownKey townKey)
         {
-            var logger = new ProcessLogger();
+            var logger = new ProcessLogger(m_logger);
 
             var game = await CreateGameFromDiscordState(townKey, null, logger);
             

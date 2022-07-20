@@ -294,13 +294,20 @@ namespace Test.Bot.Core
             TownSquareMock.SetupGet(c => c.Users).Returns(Enumerable.Empty<IMember>().ToList());
 
             BotGameplay gs = new(GetServiceProvider());
-            var t = gs.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
+            var t = AssertCompletedTask(() => gs.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object));
 
-            IGame? result = t.Result;
-            Assert.Null(result);
+            Assert.Null(t);
         }
 
+
+        [Fact]
+        public void CurrenGame_OutputsVerboseLogging()
+        {
+            BotGameplay gs = new(GetServiceProvider());
+
+            AssertCompletedTask(() => gs.CurrentGameAsync(MockTownKey, InteractionAuthorMock.Object, ProcessLoggerMock.Object));
+
+            ProcessLoggerMock.Verify(pl => pl.LogVerbose(It.Is<string>(s => s.Contains("game", StringComparison.InvariantCultureIgnoreCase))), Times.AtLeastOnce);
+        }
     }
 }

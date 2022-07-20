@@ -11,7 +11,7 @@ namespace Test.Bot.Core
     {
         public TestNightPhase()
         {
-            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler());
+            RegisterService<ITownInteractionErrorHandler>(new TownInteractionErrorHandler(GetServiceProvider()));
         }
 
         [Theory]
@@ -134,6 +134,15 @@ namespace Test.Bot.Core
             AssertCompletedTask(() => g.PhaseNightUnsafe(game!, ProcessLoggerMock.Object));
 
             InteractionAuthorMock.Verify(m => m.MoveToChannelAsync(It.Is<IChannel>(c => c == Cottage1Mock.Object)), Times.Never);
+        }
+
+        [Fact]
+        public void Night_OutputsVerboseLogging()
+        {
+            var gs = CreateGameplayInteractionHandler();
+            AssertCompletedTask(() => gs.PhaseNightInternal(MockTownKey, InteractionAuthorMock.Object));
+
+            ProcessLoggerMock.Verify(pl => pl.LogVerbose(It.Is<string>(s => s.Contains("night", StringComparison.InvariantCultureIgnoreCase))), Times.AtLeastOnce);
         }
     }
 }

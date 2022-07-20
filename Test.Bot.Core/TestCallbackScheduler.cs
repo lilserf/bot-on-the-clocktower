@@ -2,6 +2,7 @@
 using Bot.Core.Callbacks;
 using Moq;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -26,7 +27,7 @@ namespace Test.Bot.Core
             RegisterMock(m_mockTask);
 
             m_mockDateTime.SetupGet(dt => dt.Now).Returns(() => m_currentTime);
-            m_mockTask.Setup(t => t.Delay(It.IsAny<TimeSpan>())).Returns(async () =>
+            m_mockTask.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(async () =>
             {
                 bool success = await m_delayReset.WaitOneAsync(TimeSpan.FromSeconds(2));
                 Assert.True(success);
@@ -102,7 +103,7 @@ namespace Test.Bot.Core
 
             helper.CancelCallback();
 
-            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1)), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
 
             AdvanceTime(TimeSpan.FromSeconds(10));
@@ -135,7 +136,7 @@ namespace Test.Bot.Core
             m_delayReset.Set();
             await helper.WaitCallbackAsync();
 
-            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1)), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
             Assert.Equal(1, helper.CallbackCount);
         }
@@ -149,7 +150,7 @@ namespace Test.Bot.Core
             await Task.Delay(10);
 
             m_mockDateTime.VerifyGet(dt => dt.Now, Times.Never);
-            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Never);
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -164,7 +165,7 @@ namespace Test.Bot.Core
             await helper.WaitCallbackAsync();
 
             Assert.Equal(1, helper.CallbackCount);
-            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Once, "Task not called once");
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once, "Task not called once");
         }
 
         [Fact]
@@ -226,7 +227,7 @@ namespace Test.Bot.Core
 
             helper.CancelCallback();
 
-            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1)), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
 
             AdvanceTime(TimeSpan.FromSeconds(10));
@@ -259,7 +260,7 @@ namespace Test.Bot.Core
             m_delayReset.Set();
             await helper.WaitCallbackAsync();
 
-            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1))), Times.AtLeastOnce);
+            m_mockTask.Verify(t => t.Delay(It.Is<TimeSpan>(ts => ts == TimeSpan.FromSeconds(1)), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             m_mockDateTime.VerifyGet(dt => dt.Now, Times.AtLeastOnce);
             Assert.Equal(1, helper.CallbackCount);
         }
@@ -273,7 +274,7 @@ namespace Test.Bot.Core
             await Task.Delay(10);
 
             m_mockDateTime.VerifyGet(dt => dt.Now, Times.Never);
-            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Never);
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -288,7 +289,7 @@ namespace Test.Bot.Core
             await helper.WaitCallbackAsync();
 
             Assert.Equal(1, helper.CallbackCount);
-            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>()), Times.Once, "Task not called once");
+            m_mockTask.Verify(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once, "Task not called once");
         }
 
         private class CallbackHelperWithKey
