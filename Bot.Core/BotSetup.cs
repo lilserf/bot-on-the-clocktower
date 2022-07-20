@@ -403,7 +403,7 @@ namespace Bot.Core
             if (newTown.StorytellerRole == null)
                 throw new CreateTownException($"Could not find or create Storyteller role '{townDesc.StorytellerRoleName}'");
 
-            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName, Color.DarkMagenta);
+            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName, Color.Orange);
             if (newTown.VillagerRole == null)
                 throw new CreateTownException($"Could not find or create Villager role '{townDesc.VillagerRoleName}'");
 
