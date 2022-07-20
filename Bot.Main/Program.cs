@@ -73,6 +73,7 @@ namespace Bot.Main
         public static IServiceProvider RegisterServices()
         {
             var sp = new ServiceProvider();
+            sp.AddService(Log.Logger);
             sp.AddService<IDateTime>(new DateTimeStatic());
             sp.AddService<IEnvironment>(new ProgramEnvironment());
             sp.AddService<ITask>(new TaskStatic());

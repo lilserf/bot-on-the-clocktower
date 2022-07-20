@@ -3,6 +3,8 @@ using Bot.Core;
 using Bot.Core.Interaction;
 using Moq;
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Test.Bot.Base;
 using Xunit;
@@ -13,7 +15,28 @@ namespace Test.Bot.Core
     {
         private class TestInteractionErrorHandler : BaseInteractionErrorHandler<int>
         {
+            public TestInteractionErrorHandler(IServiceProvider serviceProvider) 
+                : base(serviceProvider)
+            {}
+
             protected override string GetFriendlyStringForKey(int key) => key.ToString();
+        }
+
+        private readonly Mock<IProcessLogger> m_processLoggerMock;
+        private readonly Mock<IProcessLoggerFactory> m_processLoggerFactoryMock;
+        private readonly List<string> m_processLoggerMessages = new();
+
+        private readonly Mock<ITask> m_taskMock;
+
+        public TestCommandUtilities()
+        {
+            m_processLoggerMock = new(MockBehavior.Strict);
+            m_processLoggerFactoryMock = RegisterMock(new Mock<IProcessLoggerFactory>(MockBehavior.Strict));
+            m_processLoggerFactoryMock.Setup(plf => plf.Create()).Returns(m_processLoggerMock.Object);
+            m_processLoggerMock.SetupGet(pl => pl.Messages).Returns(m_processLoggerMessages);
+
+            m_taskMock = RegisterMock(new Mock<ITask>(MockBehavior.Strict));
+            m_taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(new TaskCompletionSource().Task);
         }
 
         [Fact]
@@ -23,25 +46,34 @@ namespace Test.Bot.Core
             Mock<Func<IProcessLogger, Task<InteractionResult>>> mockFunc = new();
             mockFunc.Setup(f => f.Invoke(It.IsAny<IProcessLogger>())).ReturnsAsync(InteractionResult.FromMessage("message"));
 
-            TestInteractionErrorHandler ih = new();
+            TestInteractionErrorHandler ih = new(GetServiceProvider());
             AssertCompletedTask(() => ih.TryProcessReportingErrorsAsync(123, mockRequester.Object, mockFunc.Object));
 
             mockFunc.Verify(m => m(It.IsAny<IProcessLogger>()), Times.Once);
+            mockRequester.Verify(a => a.SendMessageAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public void InteractionWrapper_NoException_InnerFuncPassedProcessLogger()
         {
-            Mock<IMember> mockRequester = new();
+            Mock<IMember> mockAuthor = new();
 
             Mock<Func<IProcessLogger, Task<InteractionResult>>> mockFunc = new();
-            mockFunc.Setup(f => f.Invoke(It.IsAny<IProcessLogger>())).ReturnsAsync(InteractionResult.FromMessage("message"));
 
-            TestInteractionErrorHandler ih = new();
-            AssertCompletedTask(() => ih.TryProcessReportingErrorsAsync(123, mockRequester.Object, mockFunc.Object));
+            bool isProcessLoggerEqual = false;
 
-            mockFunc.Verify(m => m(It.IsNotNull<IProcessLogger>()), Times.Once);
-            mockFunc.Verify(m => m(It.Is<IProcessLogger>(pl => pl.GetType() == typeof(ProcessLogger))), Times.Once);
+            mockFunc.Setup(f => f.Invoke(It.IsAny<IProcessLogger>())).Callback<IProcessLogger>(pl =>
+            {
+                isProcessLoggerEqual = m_processLoggerMock.Object == pl;
+            }).ReturnsAsync(InteractionResult.FromMessage("message"));
+
+            TestInteractionErrorHandler ih = new(GetServiceProvider());
+            AssertCompletedTask(() => ih.TryProcessReportingErrorsAsync(123, mockAuthor.Object, mockFunc.Object));
+
+            Assert.True(isProcessLoggerEqual, "Process Logger from factory not passed");
+            mockAuthor.Verify(a => a.SendMessageAsync(It.IsAny<string>()), Times.Never);
+            m_processLoggerFactoryMock.Verify(lf => lf.Create(), Times.Once);
+            mockFunc.Verify(mf => mf.Invoke(It.IsAny<IProcessLogger>()), Times.Once);
         }
 
         [Fact]
@@ -55,7 +87,7 @@ namespace Test.Bot.Core
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
 
-            TestInteractionErrorHandler ih = new();
+            TestInteractionErrorHandler ih = new(GetServiceProvider());
             AssertCompletedTask(() => ih.TryProcessReportingErrorsAsync(mockKey, mockAuthor.Object, mockFunc.Object));
 
             mockAuthor.Verify(m => m.SendMessageAsync(It.Is<string>(s => s.Contains(mockKey.ToString()))), Times.Once);
@@ -77,8 +109,36 @@ namespace Test.Bot.Core
             var thrownException = new ApplicationException();
             mockFunc.Setup(m => m(It.IsAny<IProcessLogger>())).ThrowsAsync(thrownException);
 
-            TestInteractionErrorHandler ih = new();
+            TestInteractionErrorHandler ih = new(GetServiceProvider());
             AssertCompletedTask(() => ih.TryProcessReportingErrorsAsync(123, mockAuthor.Object, mockFunc.Object));
+        }
+
+
+        [Fact]
+        public async Task InteractionWrapper_ProcessTakesTooLong_StartsLogging()
+        {
+            Mock<IMember> mockAuthor = new();
+
+            Mock<Func<IProcessLogger, Task<InteractionResult>>> mockFunc = new();
+
+            var tcs = new TaskCompletionSource<InteractionResult>();
+
+            var verboseIr = InteractionResult.FromMessage("verbose logging enabled");
+            m_processLoggerMock.Setup(pl => pl.EnableVerboseLogging()).Callback(() =>
+            {
+                tcs.SetResult(verboseIr);
+            });
+
+            m_taskMock.Setup(t => t.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            mockFunc.Setup(f => f.Invoke(It.IsAny<IProcessLogger>())).Returns(tcs.Task);
+
+            TestInteractionErrorHandler ih = new(GetServiceProvider());
+            var ir = await ih.TryProcessReportingErrorsAsync(123, mockAuthor.Object, mockFunc.Object);
+
+            Assert.Equal(verboseIr, ir);
+            m_processLoggerMock.Verify(pl => pl.EnableVerboseLogging(), Times.Once);
+            mockAuthor.Verify(a => a.SendMessageAsync(It.IsAny<string>()), Times.Never);
         }
     }
 }

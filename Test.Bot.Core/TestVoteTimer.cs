@@ -128,9 +128,7 @@ namespace Test.Bot.Core
         {
             var bc = new BotGameplay(GetServiceProvider());
 
-            var t = bc.PerformVoteAsync(MockTownKey);
-            t.Wait(50);
-            Assert.True(t.IsCompleted);
+            AssertCompletedTask(() => bc.PerformVoteAsync(MockTownKey));
         }
 
         private void RunVoteTimerVerifyCompleted()
