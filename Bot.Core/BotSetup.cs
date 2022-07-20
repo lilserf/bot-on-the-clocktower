@@ -399,11 +399,11 @@ namespace Bot.Core
             townDesc.FallbackToDefaults();
 
             // First create the roles for this town
-            newTown.StorytellerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName, Color.Orange);
+            newTown.StorytellerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.StorytellerRoleName, Color.Magenta);
             if (newTown.StorytellerRole == null)
                 throw new CreateTownException($"Could not find or create Storyteller role '{townDesc.StorytellerRoleName}'");
 
-            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName, Color.DarkMagenta);
+            newTown.VillagerRole = await RoleHelper.GetOrCreateRole(guild, townDesc.VillagerRoleName, Color.Orange);
             if (newTown.VillagerRole == null)
                 throw new CreateTownException($"Could not find or create Villager role '{townDesc.VillagerRoleName}'");
 
