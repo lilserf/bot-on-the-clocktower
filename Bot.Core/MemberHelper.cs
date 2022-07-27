@@ -85,11 +85,10 @@ namespace Bot.Core
         }
         public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
         {
-            Serilog.Log.Verbose("AddStorytellerTag for member {@member}", member);
-
             if (member.DisplayName.StartsWith(StorytellerTag))
                 return true;
 
+            Serilog.Log.Verbose("AddStorytellerTag for member {@member}", member);
             try
             {
                 await member.SetDisplayName(StorytellerTag + member.DisplayName);
@@ -115,10 +114,10 @@ namespace Bot.Core
 
         public static async Task<bool> RemoveStorytellerTagAsync(IMember member, IProcessLogger logger)
         {
-            Serilog.Log.Verbose("RemoveStorytellerTag for member {@member}", member);
             if (!member.DisplayName.StartsWith(StorytellerTag))
                 return true;
 
+            Serilog.Log.Verbose("RemoveStorytellerTag for member {@member}", member);
             try
             {
                 await member.SetDisplayName(member.DisplayName[StorytellerTag.Length..]);
