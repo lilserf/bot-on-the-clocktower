@@ -60,6 +60,20 @@ namespace Test.Bot.Core
         }
 
         [Fact]
+        public void MoveToChannel_ThrowsBadRequestExceptionForUserMove_LoggerNotUpdated()
+        {
+            var thrownException = new BadRequestException(new Exception("Bad request: 400 : Target user is not connected to voice."), "No other info");
+            MemberMock.Setup(m => m.MoveToChannelAsync(It.IsAny<IChannel>())).ThrowsAsync(thrownException);
+
+            var t = MemberHelper.MoveToChannelLoggingErrorsAsync(MemberMock.Object, ChannelMock.Object, ProcessLoggerMock.Object);
+            t.Wait(5);
+            Assert.True(t.IsCompleted);
+            Assert.False(t.Result);
+
+            ProcessLoggerMock.Verify(pl => pl.LogException(It.IsAny<Exception>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public void GrantRole_NoException_NoLoggerCalls()
         {
             MemberMock.Setup(m => m.GrantRoleAsync(It.IsAny<IRole>())).Returns(Task.CompletedTask);

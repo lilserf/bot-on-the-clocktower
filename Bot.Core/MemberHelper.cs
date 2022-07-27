@@ -22,11 +22,14 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "MoveToChannel failed while moving {@user} to {@channel}", member, channel);
-                if (!IsHandledException(ex))
+                if (!IsHandledMoveException(ex))
+                {
+                    Serilog.Log.Error(ex, "MoveToChannel failed while moving {@user} to {@channel}", member, channel);
                     throw;
+                }
 
-                logger.LogException(ex, $"move {member.DisplayName} to channel {channel.Name}");
+                if (IsHandledException(ex)) // The special Move-related exceptions don't deserve logging here
+                    logger.LogException(ex, $"move {member.DisplayName} to channel {channel.Name}");
                 return false;
             }
         }
@@ -41,9 +44,11 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "GrantRole failed while granting {@user} role {@role}", member, role);
                 if (!IsHandledException(ex))
+                {
+                    Serilog.Log.Error(ex, "GrantRole failed while granting {@user} role {@role}", member, role);
                     throw;
+                }
 
                 logger.LogException(ex, $"grant role '{role.Name}' to {member.DisplayName}");
                 return false;
@@ -60,9 +65,11 @@ namespace Bot.Core
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "RevokeRole failed while revoking {@user} role {@role}", member, role);
                 if (!IsHandledException(ex))
+                {
+                    Serilog.Log.Error(ex, "RevokeRole failed while revoking {@user} role {@role}", member, role);
                     throw;
+                }
 
                 logger.LogException(ex, $"revoke role '{role.Name}' from {member.DisplayName}");
                 return false;
@@ -78,7 +85,7 @@ namespace Bot.Core
         }
         public static async Task<bool> AddStorytellerTag(IMember member, IProcessLogger logger)
         {
-            Serilog.Log.Debug("AddStorytellerTag for member {@member}", member);
+            Serilog.Log.Verbose("AddStorytellerTag for member {@member}", member);
 
             if (member.DisplayName.StartsWith(StorytellerTag))
                 return true;
@@ -95,9 +102,11 @@ namespace Bot.Core
             }
             catch(Exception ex)
             {
-                Serilog.Log.Error(ex, "AddStorytellerTag failed while changing display name of {@member}", member);
                 if (!IsHandledException(ex))
+                {
+                    Serilog.Log.Error(ex, "AddStorytellerTag failed while changing display name of {@member}", member);
                     throw;
+                }
 
                 logger.LogException(ex, $"change display name of '{member.DisplayName}'");
                 return false;
@@ -106,7 +115,7 @@ namespace Bot.Core
 
         public static async Task<bool> RemoveStorytellerTagAsync(IMember member, IProcessLogger logger)
         {
-            Serilog.Log.Debug("RemoveStorytellerTag for member {@member}", member);
+            Serilog.Log.Verbose("RemoveStorytellerTag for member {@member}", member);
             if (!member.DisplayName.StartsWith(StorytellerTag))
                 return true;
 
@@ -115,18 +124,31 @@ namespace Bot.Core
                 await member.SetDisplayName(member.DisplayName[StorytellerTag.Length..]);
                 return true;
             }
-            catch(Exception ex)
+            catch (UnauthorizedException)
             {
-                Serilog.Log.Error(ex, "RemoveStorytellerTag failed while changing display name of {@member}", member);
+                // Don't spam the server owner, just let this succeed without adding the (ST) tag
+                return true;
+            }
+            catch (Exception ex)
+            {
                 if (!IsHandledException(ex))
+                {
+                    Serilog.Log.Error(ex, "RemoveStorytellerTag failed while changing display name of {@member}", member);
                     throw;
+                }
 
                 logger.LogException(ex, $"change display name of '{member.DisplayName}'");
                 return false;
             }
         }
 
-     
+        private static bool IsHandledMoveException(Exception ex)
+        {
+            return IsHandledException(ex) ||
+                // Because moving users sometimes takes time, users can disconnect while the bot is working. In that case this exception is expected
+                (ex is BadRequestException bre && bre.Message.Contains("Target user is not connected to voice"));
+        }
+
         private static bool IsHandledException(Exception ex)
         {
             return (ex is UnauthorizedException || ex is NotFoundException || ex is ServerErrorException);
