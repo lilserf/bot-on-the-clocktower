@@ -29,7 +29,7 @@ namespace Bot.Core
 
         private async Task CleanupGhostTown(TownKey townKey)
         {
-            Serilog.Log.Information("GhostTownCleanup: Checking town {townKey}", townKey);
+            Serilog.Log.Verbose("GhostTownCleanup: Checking town {townKey}", townKey);
 
             // If there was activity in the last 30 days, skip this town
             var mostRecent = await m_gameMetricDatabase.GetMostRecentGameAsync(townKey);

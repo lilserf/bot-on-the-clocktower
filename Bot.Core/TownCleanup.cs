@@ -41,7 +41,7 @@ namespace Bot.Core
 
         public async Task RecordActivityAsync(TownKey townKey)
         {
-            Serilog.Log.Debug("RecordActivity for town {@townKey}", townKey);
+            Serilog.Log.Verbose("RecordActivity for town {@townKey}", townKey);
             var now = m_dateTime.Now;
             await m_gameActivityDb.RecordActivityAsync(townKey, now);
             ScheduleCleanup(townKey, now);
@@ -50,7 +50,7 @@ namespace Bot.Core
         private async Task ScheduleOutstandingCleanup()
         {
             var recs = await m_gameActivityDb.GetAllActivityRecords();
-            Serilog.Log.Information("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
+            Serilog.Log.Verbose("ScheduleOutstandingCleanup: {numRecords} records found", recs.Count());
             foreach (var rec in recs)
                 ScheduleCleanup(new TownKey(rec.GuildId, rec.ChannelId), rec.LastActivity);
         }
@@ -63,7 +63,7 @@ namespace Bot.Core
             TimeSpan cleanupTime = TimeSpan.FromHours(5);
 #endif
             var time = lastActivity + cleanupTime;
-            Serilog.Log.Information("ScheduleCleanup: {townKey} should be cleaned up at {time}", townKey, time);
+            Serilog.Log.Verbose("ScheduleCleanup: {townKey} should be cleaned up at {time}", townKey, time);
             m_callbackScheduler.ScheduleCallback(townKey, time);
         }
 

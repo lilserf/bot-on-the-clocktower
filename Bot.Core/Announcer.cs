@@ -44,7 +44,7 @@ namespace Bot.Core
             if (restricted && !s_guildAllowList.Contains(townKey.GuildId))
                 return;
 
-            Serilog.Log.Information("AnnounceToTown: Checking town {townKey}", townKey);
+            Serilog.Log.Verbose("AnnounceToTown: Checking town {townKey}", townKey);
 
             var guild = await m_botClient.GetGuildAsync(townKey.GuildId);
             if (guild == null) 
@@ -56,9 +56,10 @@ namespace Bot.Core
 
             foreach (var versionObj in m_versionProvider.Versions)
             {
-                Serilog.Log.Information("AnnounceToTowns: Checking version {versionObj}", versionObj);
+                Serilog.Log.Verbose("AnnounceToTowns: Checking version {versionObj}", versionObj.Key);
                 if (!await m_announcementDatabase.HasSeenVersion(townKey.GuildId, versionObj.Key))
                 {
+                    Serilog.Log.Information("AnnounceToTowns: Sending message about version {versionObj} to town {townKey}", versionObj.Key, townKey);
                     await chan.SendMessageAsync(versionObj.Value);
                     await m_announcementDatabase.RecordGuildHasSeenVersion(townKey.GuildId, versionObj.Key);
                 }
