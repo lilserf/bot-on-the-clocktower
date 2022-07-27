@@ -228,7 +228,7 @@ namespace Bot.Core
         {
             return m_townCommandQueue.QueueInteractionAsync("Expanding options...", context, () =>
             {
-                Serilog.Log.Information(ButtonLogMsg, "More", context.Guild, context.Member);
+                Serilog.Log.Verbose(ButtonLogMsg, "More", context.Guild, context.Member);
                 var message = "Here are all the options again!";
                 return Task.FromResult(InteractionResult.FromMessageAndComponents(message, new[] { m_nightButton, m_dayButton, m_voteButton, m_endGameButton }, new[] { m_voteTimerMenu  }));
             });
