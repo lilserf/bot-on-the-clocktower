@@ -19,4 +19,4 @@ These roles combine with Town-specific roles to affect the visibility of the var
 
 ### A note on Server Administrators
 
-Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators or Owners can always see all channels and cannot have their nicknames changes. For these reasons, if a server Administrator/Owner wants to play too, it is recommended that they create a separate non-Admininstrator/Owner Discord account for playing with the bot.
+Bot on the Clocktower works best by hiding nighttime channels from members. Unfortunately, server Administrators or Owners can always see all channels and cannot have their nicknames changed. For these reasons, if a server Administrator/Owner wants to play too, it is recommended that they create a separate non-Admininstrator/Owner Discord account for playing with the bot.
