@@ -40,7 +40,7 @@ namespace Bot.Database
 
         public Task RecordActivityAsync(TownKey townKey, DateTime activityTime)
         {
-            Serilog.Log.Debug("Recording activity for {townKey} at {time}", townKey, activityTime);
+            Serilog.Log.Verbose("Recording activity for {townKey} at {time}", townKey, activityTime);
             var filter = FilterFromKey(townKey);
 
             MongoGameActivityRecord rec = new()

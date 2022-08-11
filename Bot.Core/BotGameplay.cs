@@ -93,7 +93,7 @@ namespace Bot.Core
 
         private static async Task TagStorytellers(IGame game, IProcessLogger logger)
         {
-            Serilog.Log.Debug("TagStorytellers in game {@game}", game);
+            Serilog.Log.Verbose("TagStorytellers in game {@game}", game);
             foreach (var u in game.Storytellers)
             {
                 await MemberHelper.AddStorytellerTag(u, logger);
@@ -107,7 +107,7 @@ namespace Bot.Core
 
         private static async Task GrantAndRevokeRoles(IGame game, ITown town, IProcessLogger logger)
         {
-            Serilog.Log.Debug("GrantAndRevokeRoles in game {@game}", game);
+            Serilog.Log.Verbose("GrantAndRevokeRoles in game {@game}", game);
 
             IRole? storytellerRole = town.StorytellerRole;
             IRole? villagerRole = town.VillagerRole;
@@ -133,7 +133,7 @@ namespace Bot.Core
 
         public async Task<IGame?> CurrentGameAsync(TownKey townKey, IMember requester, IProcessLogger logger)
         {
-            Serilog.Log.Debug("CurrentGameAsync from town {@townKey}", townKey);
+            logger.LogVerbose($"CurrentGameAsync from town: {townKey}");
             var town = await GetValidTownOrLogErrorAsync(townKey, logger);
             if (town == null)
                 return null;

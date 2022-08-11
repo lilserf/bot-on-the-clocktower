@@ -66,7 +66,7 @@ namespace Bot.Core
 
         private async Task ProcessQueueInternalAsync(Queue<TownKey> towns)
         {
-            Serilog.Log.Information("TownMaintenance: {townCount} towns remain...", towns.Count);
+            Serilog.Log.Verbose("TownMaintenance: {townCount} towns remain...", towns.Count);
 
             await ProcessPartialTownQueueAsync(towns);
 
@@ -82,7 +82,7 @@ namespace Bot.Core
             {
                 var townKey = towns.Dequeue();
 
-                Serilog.Log.Information("TownMaintenance: Processing town {townKey}", townKey);
+                Serilog.Log.Verbose("TownMaintenance: Processing town {townKey}", townKey);
 
                 foreach (var task in m_startupTasks)
                 {
@@ -108,7 +108,7 @@ namespace Bot.Core
 
         private void ScheduleProcessMoreTowns(Queue<TownKey> towns)
         {
-            Serilog.Log.Information("TownMaintenance: {townCount} towns remain, scheduling callback...", towns.Count);
+            Serilog.Log.Verbose("TownMaintenance: {townCount} towns remain, scheduling callback...", towns.Count);
             DateTime nextTime = m_dateTime.Now + TimeSpan.FromMinutes(MINUTES_PER_CALLBACK);
             m_callbackScheduler.ScheduleCallback(towns, nextTime);
         }
@@ -129,6 +129,10 @@ namespace Bot.Core
         {
             var allTowns = await m_townDatabase.GetAllTowns();
             var allTownsQueue = new Queue<TownKey>(allTowns);
+            if (allTownsQueue.Count == 0)
+                return;
+
+            Serilog.Log.Information("TownMaintenance: Performing maintenace on {numTowns} towns.", allTownsQueue.Count);
             await ProcessQueueAsync(allTownsQueue);
         }
     }
