@@ -67,6 +67,24 @@ You may have seen the bot telling you this for a few weeks, even though the slas
                 m_versions.Add(new Version(3, 0, 0), msg);
             }
 
+            // VERSION 3.0.1
+            {
+                IMessageBuilder msg = m_botSystem.CreateMessageBuilder();
+                string title = @"**Version 3.0.1 of Bot on the Clocktower**";
+                msg.WithContent(title);
+                {
+                    IEmbedBuilder eb = m_botSystem.CreateEmbedBuilder();
+                    eb.WithColor(m_colorBuilder.Blurple);
+                    string message = @"Slash commands are now required to interact with Bot on the Clocktower. The old `!commands` will no longer work due to changes to Discord APIs.";
+                    eb.AddField("No more !commands", message);
+                    msg.AddEmbed(eb.Build());
+                }
+
+                m_versions.Add(new Version(3, 0, 1), msg);
+            }
+
+
+
         }
     }
 }
