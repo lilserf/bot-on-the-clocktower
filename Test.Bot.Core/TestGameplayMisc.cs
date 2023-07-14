@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Test.Bot.Core.Interaction;
 using Xunit;
 
 namespace Test.Bot.Core
@@ -161,6 +162,40 @@ namespace Test.Bot.Core
             // Verify the new storytellers had the role granted
             Villager1Mock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Once);
             Villager2Mock.Verify(x => x.GrantRoleAsync(StorytellerRoleMock.Object), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(typeof(UnauthorizedException))]
+        [InlineData(typeof(NotFoundException))]
+        [InlineData(typeof(ServerErrorException))]
+        public void GameEnd_STRevokeError_LoggerUpdated(Type exceptionType)
+        {
+            MockGameInProgress();
+
+            var thrownException = CreateException(exceptionType);
+            InteractionAuthorMock.Setup(m => m.RevokeRoleAsync(It.IsAny<IRole>())).ThrowsAsync(thrownException);
+
+            var createTestableGIH = (IServiceProvider sp) => new BotGameplayInteractionHandler(sp, new BotGameplay(sp), new BotVoteTimer(sp));
+            TestInteractionQueueHelper.TestTownQueueMethod(GetServiceProvider(), (sp) => createTestableGIH(sp).CommandEndGameAsync(InteractionContextMock.Object));
+
+            ProcessLoggerMock.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains(StorytellerRoleMock.Object.Name) && s.Contains(InteractionAuthorMock.Object.DisplayName))), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(typeof(UnauthorizedException))]
+        [InlineData(typeof(NotFoundException))]
+        [InlineData(typeof(ServerErrorException))]
+        public void GameEnd_PlayerRevokeError_LoggerUpdated(Type exceptionType)
+        {
+            MockGameInProgress();
+
+            var thrownException = CreateException(exceptionType);
+            Villager2Mock.Setup(m => m.RevokeRoleAsync(It.IsAny<IRole>())).ThrowsAsync(thrownException);
+
+            var createTestableGIH = (IServiceProvider sp) => new BotGameplayInteractionHandler(sp, new BotGameplay(sp), new BotVoteTimer(sp));
+            TestInteractionQueueHelper.TestTownQueueMethod(GetServiceProvider(), (sp) => createTestableGIH(sp).CommandEndGameAsync(InteractionContextMock.Object));
+
+            ProcessLoggerMock.Verify(pl => pl.LogException(It.Is<Exception>(e => e == thrownException), It.Is<string>(s => s.Contains(VillagerRoleMock.Object.Name) && s.Contains(Villager2Mock.Object.DisplayName))), Times.Once);
         }
     }
 }
