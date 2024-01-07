@@ -394,12 +394,12 @@ namespace Bot.Core
                 var roles = member.Roles.ToHashSet();
                 if (storytellerRole != null && roles.Contains(storytellerRole))
                 {
-                    await member.RevokeRoleAsync(storytellerRole);
+                    await MemberHelper.RevokeRoleLoggingErrorsAsync(member, storytellerRole, logger);
                     await MemberHelper.RemoveStorytellerTagAsync(member, logger);
                 }
                 if (villagerRole != null && roles.Contains(villagerRole))
                 {
-                    await member.RevokeRoleAsync(villagerRole);
+                    await MemberHelper.RevokeRoleLoggingErrorsAsync(member, villagerRole, logger);
                 }
             }
         }

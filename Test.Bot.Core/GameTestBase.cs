@@ -175,10 +175,8 @@ namespace Test.Bot.Core
             var townSquareName = "Town Square Mock";
             var darkAlleyName = "Dark Alley Mock";
 
-            VillagerRoleMock.SetupGet(r => r.Name).Returns(villagerRoleName);
-            VillagerRoleMock.SetupGet(r => r.Mention).Returns($"@{villagerRoleName}");
-            VillagerRoleMock.Name = $"Role: {villagerRoleName}";
-            StorytellerRoleMock.Name = $"Role: {storytellerRoleName}";
+            SetupRoleMock(VillagerRoleMock, villagerRoleName);
+            SetupRoleMock(StorytellerRoleMock, storytellerRoleName);
 
             SetupChannelMock(ControlChannelMock, controlChannelName, false);
             SetupChannelMock(ChatChannelMock, chatChannelName, false);
@@ -232,6 +230,13 @@ namespace Test.Bot.Core
             member.Name = name;
             member.SetupGet(x => x.DisplayName).Returns(name);
             member.SetupGet(x => x.Roles).Returns(Array.Empty<IRole>());
+        }
+
+        private void SetupRoleMock(Mock<IRole> roleMock, string roleName)
+        {
+            roleMock.Name = $"Role: {roleName}";
+            roleMock.SetupGet(r => r.Name).Returns(roleName);
+            roleMock.SetupGet(r => r.Mention).Returns($"@{roleName}");
         }
 
         protected static void UserShouldHaveRole(Mock<IMember> member, IRole role)
