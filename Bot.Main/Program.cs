@@ -30,7 +30,8 @@ namespace Bot.Main
                 .Destructure.ByTransforming<Game>(x => new { TownKey = x.TownKey, Storytellers = x.Storytellers, VillagerCount = x.Villagers.Count })
                 .WriteTo.File("logs/botc.log", rollingInterval: RollingInterval.Day);
 
-            DotEnv.Load(@"..\..\..\..\.env");
+            //DotEnv.Load(@"..\..\..\..\.env");
+            DotEnv.Load(@"..\.env"); // somehow in VS Code the CWD is Bot.Main
 
             string deployType = Environment.GetEnvironmentVariable("DEPLOY_TYPE") ?? "prod";
             if(deployType.Equals("dev"))

@@ -119,7 +119,7 @@ namespace Bot.DSharp
 
             private Task Wrapped_Handler(DiscordClient sender, T e)
             {
-                if (!Equals(sender, mClientWrapper.Wrapped)) throw new InvalidCastException("Unexpected DiscordClient returned from event handler");
+                //if (!Equals(sender, mClientWrapper.Wrapped)) throw new InvalidCastException("Unexpected DiscordClient returned from event handler");
 
                 AsyncEventHandler<IDiscordClient, T>[] ehCopy;
                 lock (mEventHandlers)
