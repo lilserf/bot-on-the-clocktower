@@ -37,17 +37,20 @@ namespace Bot.DSharp
             m_discord = discordFactory.CreateClient(config);
         }
 
-        private void RegisterCommands(SlashCommandsExtension slash, IEnumerable<Type> commands, ulong? guildId = null)
+        private void RegisterCommands(IEnumerable<SlashCommandsExtension> slash, IEnumerable<Type> commands, ulong? guildId = null)
         {
             foreach (var t in commands)
             {
-                slash.RegisterCommands(t, guildId);
+                foreach(var s in slash)
+                {
+                    s.RegisterCommands(t, guildId);
+                }
             }
         }
 
         public async Task ConnectAsync(IServiceProvider botServices)
         {
-            var slash = m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
+            var slash = await m_discord.UseSlashCommands(new SlashCommandsConfiguration { Services = botServices });
 
             var commandTypes = new[]
             {
@@ -67,7 +70,7 @@ namespace Bot.DSharp
 
                 foreach (ulong devGuildId in devGuildIds)
                 {
-                    RegisterCommands(slash, commandTypes, devGuildId);
+                    RegisterCommands(slash.Values, commandTypes, devGuildId);
                 }
                 // During development, register no commands globally
                 slash.RegisterCommands<EmptyCommands>();
@@ -81,7 +84,7 @@ namespace Bot.DSharp
                 }
                 // The "prod" deploy should only be used by the real server using the real bot token,
                 // so it will now be registered globally
-                RegisterCommands(slash, commandTypes);
+                RegisterCommands(slash.Values, commandTypes);
             }
             else
             {
