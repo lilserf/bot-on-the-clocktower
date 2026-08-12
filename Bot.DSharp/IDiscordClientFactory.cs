@@ -11,7 +11,8 @@ namespace Bot.DSharp
     {
         public IDiscordClient CreateClient(DiscordConfiguration config)
         {
-            return new DiscordClientWrapper(new DiscordClient(config));
+            var client = new DiscordShardedClient(config);
+            return new DiscordClientWrapper(client);
         }
     }
 }
