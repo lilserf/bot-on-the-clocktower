@@ -30,7 +30,7 @@ namespace Bot.DSharp
             {
                 Token = token,
                 TokenType = TokenType.Bot,
-                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
+                Intents = DiscordIntents.AllUnprivileged,
             };
 
             var discordFactory = serviceProvider.GetService<IDiscordClientFactory>();
